@@ -4,7 +4,7 @@ A needlessly software-rendered 3D game about turning a small county into an econ
 ### Building
 Whenever a file is added, removed or moved, run: 
 ```
-cmake ..
+cmake .
 ```
 
 Then run the following to build a binary `house_of_atmos`:
