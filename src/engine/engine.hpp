@@ -1,7 +1,12 @@
 
-#include "raylib.h"
+#pragma once
+
+#include <raylib.h>
+#include "math.hpp"
 
 namespace houseofatmos::engine::rendering {
+
+    using namespace houseofatmos::engine::math;
 
     struct FrameBuffer {
         int width;
@@ -10,10 +15,18 @@ namespace houseofatmos::engine::rendering {
 
         FrameBuffer(int width, int height);
         FrameBuffer(const FrameBuffer&) = delete;
+        FrameBuffer& operator=(const FrameBuffer& other) = delete;
+        FrameBuffer& operator=(FrameBuffer&& other);
         ~FrameBuffer();
         Color get_pixel_at(int x, int y);
+        Color get_pixel_at(Vec<2> location);
         void set_pixel_at(int x, int y, Color c);
-        void resize(int new_width, int new_height);
+        void set_pixel_at(Vec<2> location, Color c);
+
+        void clear();
+
+        void draw_line(Vec<2> a, Vec<2> b, Color color);
+        void draw_triangle(Vec<2> a, Vec<2> b, Vec<2> c, Color color);
     };
 
 }

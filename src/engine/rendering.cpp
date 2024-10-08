@@ -1,45 +1,112 @@
 
 #include "engine.hpp"
 #include <cstring>
+#include <iostream>
+
+using namespace houseofatmos::engine::math;
 
 namespace houseofatmos::engine::rendering {
 
-    static Color* initialize_buffer(int width, int height) {
-        Color* data = new Color[width * height];
+    FrameBuffer::FrameBuffer(int width, int height) {
+        this->width = width;
+        this->height = height;
+        this->data = new Color[width * height];
         for(int y = 0; y < height; y += 1) {
             for(int x = 0; x < width; x += 1) {
                 data[y * width + x] = BLACK;
             }
         }
-        return data;
     }
 
-    FrameBuffer::FrameBuffer(int width, int height) {
-        this->width = width;
-        this->height = height;
-        this->data = initialize_buffer(width, height);
+    FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) {
+        if(this == &other) { return *this; }
+        delete[] this->data;
+        this->data = other.data;
+        this->width = other.width;
+        this->height = other.height;
+        other.data = nullptr;
+        other.width = 0;
+        other.height = 0;
+        return *this;
     }
 
     FrameBuffer::~FrameBuffer() {
-        delete this->data;
+        if(this->data == nullptr) { return; }
+        delete[] this->data;
+        this->data = nullptr;
     }
 
     Color FrameBuffer::get_pixel_at(int x, int y) {
+        if(x < 0 || x > this->width || y < 0 || y > this->width) {
+            return BLACK;
+        }
         return this->data[y * this->width + x];
+    }
+    Color FrameBuffer::get_pixel_at(Vec<2> location) {
+        return this->get_pixel_at(location.x(), location.y());
     }
 
     void FrameBuffer::set_pixel_at(int x, int y, Color c) {
-        this->data[y * this->width + x] = c;
-    }
-
-    void FrameBuffer::resize(int new_width, int new_height) {
-        if(new_width == this->width && new_height == this->height) {
+        if(x < 0 || x > this->width || y < 0 || y > this->width) {
             return;
         }
-        delete this->data;
-        this->width = new_width;
-        this->height = new_height;
-        this->data = initialize_buffer(new_width, new_height);
+        this->data[y * this->width + x] = c;
+    }
+    void FrameBuffer::set_pixel_at(Vec<2> location, Color c) {
+        this->set_pixel_at(location.x(), location.y(), c);
+    }
+
+    void FrameBuffer::clear() {
+        for(int i = 0; i < this->width * this->height; i += 1) {
+            this->data[i] = BLACK;
+        }
+    }
+
+    void FrameBuffer::draw_line(Vec<2> a, Vec<2> b, Color color) {
+        Vec<2> direction = b - a;
+        int step_count = direction.abs().sum();
+        Vec<2> step = direction * (1.0 / step_count);
+        Vec<2> position = a;
+        for(int step_taken = 0; step_taken < step_count; step_taken += 1) {
+            this->set_pixel_at(position, color);
+            position += step;
+        }
+    }
+
+    static void render_triangle_segment(
+        FrameBuffer* buffer,
+        Vec<2> t_high, // top vertex of the triangle
+        Vec<2> t_low,  // bottom vertex of the triangle
+        Vec<2> s_high, // top vertex of the segment
+        Vec<2> s_low, // bottom vertex of the segment
+        Color color
+    ) {
+        Vec<2> s_line = s_low - s_high; // vector from top to bottom of segment
+        Vec<2> t_line = t_low - t_high; // vector from top to bottom of triangle
+        for(int y = s_high.y(); y <= s_low.y(); y += 1) {
+            double s_progress = (y - s_high.y()) / s_line.y();
+            Vec<2> r_point = s_line * s_progress + s_high;
+            double t_progress = (y - t_high.y()) / t_line.y();
+            Vec<2> l_point = t_line * t_progress + t_high;
+            if(l_point.x() > r_point.x()) { std::swap(l_point, r_point); }
+            for(int x = l_point.x(); x <= r_point.x(); x += 1) {
+                buffer->set_pixel_at(x, y, color);
+            }
+        }
+    }
+
+    void FrameBuffer::draw_triangle(Vec<2> a, Vec<2> b, Vec<2> c, Color color) {
+        // sort three points according to their y-coordinate
+        Vec<2> high = a;
+        Vec<2> mid = b;
+        Vec<2> low = c;
+        if(high.y() > mid.y()) { std::swap(high, mid); } 
+        if(mid.y() > low.y()) { std::swap(mid, low); } 
+        if(high.y() > mid.y()) { std::swap(high, mid); }
+        // segment: high -> mid (top half)
+        render_triangle_segment(this, high, low, high, mid, color);
+        // segment: mid -> low (bottom half)
+        render_triangle_segment(this, high, low, mid, low, color);
     }
 
 }
