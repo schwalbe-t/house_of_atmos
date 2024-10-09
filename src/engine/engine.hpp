@@ -18,8 +18,8 @@ namespace houseofatmos::engine::rendering {
         FrameBuffer& operator=(const FrameBuffer& other) = delete;
         FrameBuffer& operator=(FrameBuffer&& other);
         ~FrameBuffer();
-        Color get_pixel_at(int x, int y);
-        Color get_pixel_at(Vec<2> location);
+        Color get_pixel_at(int x, int y) const;
+        Color get_pixel_at(Vec<2> location) const;
         void set_pixel_at(int x, int y, Color c);
         void set_pixel_at(Vec<2> location, Color c);
 
@@ -27,6 +27,12 @@ namespace houseofatmos::engine::rendering {
 
         void draw_line(Vec<2> a, Vec<2> b, Color color);
         void draw_triangle(Vec<2> a, Vec<2> b, Vec<2> c, Color color);
+
+        void blit_buffer(
+            const FrameBuffer& src, 
+            int dest_pos_x, int dest_pos_y,
+            int dest_width, int dest_height
+        );
     };
 
 }

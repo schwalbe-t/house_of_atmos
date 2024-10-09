@@ -36,13 +36,13 @@ namespace houseofatmos::engine::rendering {
         this->data = nullptr;
     }
 
-    Color FrameBuffer::get_pixel_at(int x, int y) {
+    Color FrameBuffer::get_pixel_at(int x, int y) const {
         if(x < 0 || x > this->width || y < 0 || y > this->width) {
             return BLACK;
         }
         return this->data[y * this->width + x];
     }
-    Color FrameBuffer::get_pixel_at(Vec<2> location) {
+    Color FrameBuffer::get_pixel_at(Vec<2> location) const {
         return this->get_pixel_at(location.x(), location.y());
     }
 
@@ -83,7 +83,9 @@ namespace houseofatmos::engine::rendering {
     ) {
         Vec<2> s_line = s_low - s_high; // vector from top to bottom of segment
         Vec<2> t_line = t_low - t_high; // vector from top to bottom of triangle
-        for(int y = s_high.y(); y <= s_low.y(); y += 1) {
+        // buffer->set_pixel_at(s_high, RED);
+        // buffer->set_pixel_at(s_low, RED);
+        for(int y = s_high.y() + 1; y < s_low.y(); y += 1) {
             double s_progress = (y - s_high.y()) / s_line.y();
             Vec<2> r_point = s_line * s_progress + s_high;
             double t_progress = (y - t_high.y()) / t_line.y();
@@ -107,6 +109,25 @@ namespace houseofatmos::engine::rendering {
         render_triangle_segment(this, high, low, high, mid, color);
         // segment: mid -> low (bottom half)
         render_triangle_segment(this, high, low, mid, low, color);
+    }
+
+    void FrameBuffer::blit_buffer(
+        const FrameBuffer& src, 
+        int dest_pos_x, int dest_pos_y,
+        int dest_width, int dest_height
+    ) {
+        int dest_end_x = dest_pos_x + dest_width;
+        int dest_end_y = dest_pos_y + dest_height;
+        for(int dest_x = dest_pos_x; dest_x < dest_end_x; dest_x += 1) {
+            for(int dest_y = dest_pos_y; dest_y < dest_end_y; dest_y += 1) {
+                float perc_x = (float) (dest_x - dest_pos_x) / dest_width;
+                float perc_y = (float) (dest_y - dest_pos_y) / dest_height;
+                int src_x = (int) (perc_x * src.width);
+                int src_y = (int) (perc_y * src.height);
+                Color pixel = src.get_pixel_at(src_x, src_y);
+                this->set_pixel_at(dest_x, dest_y, pixel);
+            }
+        }
     }
 
 }
