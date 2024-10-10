@@ -4,10 +4,6 @@
 using namespace houseofatmos;
 using namespace houseofatmos::engine::math;
 
-#include <iostream>
-#include <cmath>
-#include <chrono>
-
 struct RectShader: engine::rendering::Shader<Vec<3>> {
     Mat<4> projection;
     Mat<4> view;
@@ -27,7 +23,7 @@ struct RectShader: engine::rendering::Shader<Vec<3>> {
 int main() {
     engine::init("House of Atmos", 800, 800, 60);
     auto main_buffer = engine::rendering::FrameBuffer(800, 800);
-    auto sub_buffer = engine::rendering::FrameBuffer(800, 800);
+    auto sub_buffer = engine::rendering::FrameBuffer(200, 200);
     auto square = engine::rendering::Mesh<Vec<3>>();
     square.add_vertex(Vec<3>(-1.0, -1.0,  1.0));
     square.add_vertex(Vec<3>( 1.0, -1.0,  1.0));
