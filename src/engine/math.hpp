@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <cmath>
 #include <iostream>
+#include <cstring>
 
 namespace houseofatmos::engine::math {
 
@@ -12,6 +13,7 @@ namespace houseofatmos::engine::math {
         double elements[N];
 
         Vec() {
+            static_assert(N >= 1, "Must at least have one element!");
             for(int i = 0; i < N; i += 1) {
                 this->elements[i] = 0.0;
             }
@@ -22,6 +24,7 @@ namespace houseofatmos::engine::math {
             typename = typename std::enable_if<sizeof...(Args) == N>::type
         >
         Vec(Args... values) {
+            static_assert(N >= 1, "Must at least have one element!");
             double args[] = { static_cast<double>(values)... };
             for(int i = 0; i < N; i += 1) {
                 this->elements[i] = args[i];
@@ -35,26 +38,71 @@ namespace houseofatmos::engine::math {
             return this->elements[index];
         }
 
-        double& x() { return this->elements[0]; }
-        double& y() { return this->elements[1]; }
-        double& z() { return this->elements[2]; }
-        double& w() { return this->elements[3]; }
-        const double& x() const { return this->elements[0]; }
-        const double& y() const { return this->elements[1]; }
-        const double& z() const { return this->elements[2]; }
-        const double& w() const { return this->elements[3]; }
+        double& x() {
+            return this->elements[0]; 
+        }
+        double& y() { 
+            static_assert(N >= 2, "Must at least have 2 elements!");
+            return this->elements[1]; 
+        }
+        double& z() { 
+            static_assert(N >= 3, "Must at least have 3 elements!");
+            return this->elements[2]; 
+        }
+        double& w() {
+            static_assert(N >= 4, "Must at least have 4 elements!");
+            return this->elements[3]; 
+        }
+        const double& x() const { 
+            return this->elements[0]; 
+        }
+        const double& y() const { 
+            static_assert(N >= 2, "Must at least have 2 elements!");
+            return this->elements[1]; 
+        }
+        const double& z() const { 
+            static_assert(N >= 3, "Must at least have 3 elements!");
+            return this->elements[2]; 
+        }
+        const double& w() const { 
+            static_assert(N >= 4, "Must at least have 4 elements!");
+            return this->elements[3]; 
+        }
 
-        double& r() { return this->elements[0]; }
-        double& g() { return this->elements[1]; }
-        double& b() { return this->elements[2]; }
-        double& a() { return this->elements[3]; }
-        const double& r() const { return this->elements[0]; }
-        const double& g() const { return this->elements[1]; }
-        const double& b() const { return this->elements[2]; }
-        const double& a() const { return this->elements[3]; }
+        double& r() { 
+            return this->elements[0];
+        }
+        double& g() { 
+            static_assert(N >= 2, "Must at least have 2 elements!");
+            return this->elements[1];
+        }
+        double& b() { 
+            static_assert(N >= 3, "Must at least have 3 elements!");
+            return this->elements[2]; 
+        }
+        double& a() { 
+            static_assert(N >= 4, "Must at least have 4 elements!");
+            return this->elements[3]; 
+        }
+        const double& r() const { 
+            return this->elements[0];
+        }
+        const double& g() const { 
+            static_assert(N >= 2, "Must at least have 2 elements!");
+            return this->elements[1];
+        }
+        const double& b() const { 
+            static_assert(N >= 3, "Must at least have 3 elements!");
+            return this->elements[2]; 
+        }
+        const double& a() const { 
+            static_assert(N >= 4, "Must at least have 4 elements!");
+            return this->elements[3]; 
+        }
 
         template<int L>
         Vec<L> swizzle(const char elements[L + 1]) {
+            static_assert(L >= 1, "Must at least have one element!");
             Vec<L> result = Vec<L>();
             for(int i = 0; i < L; i += 1) {
                 int index;
@@ -75,6 +123,13 @@ namespace houseofatmos::engine::math {
                 }
                 result[i] = this->elements[index];
             }
+            return result;
+        }
+
+        Vec<N + 1> with(double value) const {
+            Vec<N + 1> result = Vec<N + 1>();
+            memcpy(result.elements, this->elements, sizeof(double) * N);
+            result.elements[N] = value;
             return result;
         }
 
@@ -132,10 +187,10 @@ namespace houseofatmos::engine::math {
             return product;
         }
 
-        Vec<N> operator*(const double factor) const {
+        Vec<N> operator*(const double scalar) const {
             Vec<N> scaled = *this;
             for(int i = 0; i < N; i += 1) {
-                scaled.elements[i] *= factor;
+                scaled.elements[i] *= scalar;
             }
             return scaled;
         }
@@ -148,12 +203,16 @@ namespace houseofatmos::engine::math {
             return quotient;
         }
 
-        Vec<N> operator/(const double factor) const {
+        Vec<N> operator/(const double scalar) const {
             Vec<N> scaled = *this;
             for(int i = 0; i < N; i += 1) {
-                scaled.elements[i] /= factor;
+                scaled.elements[i] /= scalar;
             }
             return scaled;
+        }
+
+        Vec<N> operator-() const {
+            return *this * -1;
         }
 
         Vec<N>& operator+=(const Vec<N>& other) {
@@ -171,8 +230,8 @@ namespace houseofatmos::engine::math {
             return *this;
         }
 
-        Vec<N>& operator*=(double factor) {
-            *this = *this * factor;
+        Vec<N>& operator*=(double scalar) {
+            *this = *this * scalar;
             return *this;
         }
 
@@ -181,8 +240,8 @@ namespace houseofatmos::engine::math {
             return *this;
         }
 
-        Vec<N>& operator/=(double factor) {
-            *this = *this * factor;
+        Vec<N>& operator/=(double scalar) {
+            *this = *this * scalar;
             return *this;
         }
 
@@ -197,13 +256,26 @@ namespace houseofatmos::engine::math {
         }
 
         double len() const {
-            return sqrt((this * this).sum());
+            return sqrt((*this * *this).sum());
         }
 
         Vec<N> normalized() const {
             double length = this->len();
             if(length == 0.0) { return *this; }
-            return this * (1.0 / length);
+            return *this * (1.0 / length);
+        }
+
+        Vec<N> cross(const Vec<N>& rhs) { 
+            static_assert(N == 3, "Both vectors must only have 3 elements!");
+            return Vec<3>(
+                (this->y() * rhs.z() - this->z() * rhs.y()),
+                (this->x() * rhs.z() - this->z() * rhs.x()) * -1,
+                (this->x() * rhs.y() - this->y() * rhs.x())
+            );
+        }
+
+        double dot(const Vec<N>& rhs) {
+            return (*this * rhs).sum();
         }
 
     };
@@ -225,8 +297,10 @@ namespace houseofatmos::engine::math {
         Vec<R> columns[C];
 
         Mat() {
+            static_assert(R >= 1, "Matrix must have at least 1 row!");
+            static_assert(C >= 1, "Matrix must have at least 1 column!");
             for(int i = 0; i < R && i < C; i += 1) {
-                this->columns[i][i] = 1.0;
+                this->element(i, i) = 1.0;
             }
         }
 
@@ -235,13 +309,117 @@ namespace houseofatmos::engine::math {
             typename = typename std::enable_if<sizeof...(Args) == R * C>::type
         >
         Mat(Args... values) {
+            static_assert(R >= 1, "Matrix must have at least 1 row!");
+            static_assert(C >= 1, "Matrix must have at least 1 column!");
             double args[] = { static_cast<double>(values)... };
             for(int row_i = 0; row_i < R; row_i += 1) {
                 for(int column_i = 0; column_i < C; column_i += 1) {
                     int args_i = row_i * C + column_i;
-                    this->columns[column_i][row_i] = args[args_i];
+                    this->element(row_i, column_i) = args[args_i];
                 }
             }
+        }
+
+        static Mat<R> rotate_x(double angle_rad) {
+            static_assert(R == C, "Must be a square matrix!");
+            static_assert(R >= 3, "Matrix size must at least be 3!");
+            Mat<R> result = Mat<R>();
+            result.element(1, 1) =  cos(angle_rad);
+            result.element(2, 1) =  sin(angle_rad);
+            result.element(1, 2) = -sin(angle_rad);
+            result.element(2, 2) =  cos(angle_rad);
+            return result;
+        }
+
+        static Mat<R> rotate_y(double angle_rad) {
+            static_assert(R == C, "Must be a square matrix!");
+            static_assert(R >= 3, "Matrix size must at least be 3!");
+            Mat<R> result = Mat<R>();
+            result.element(0, 0) =  cos(angle_rad);
+            result.element(2, 0) =  sin(angle_rad);
+            result.element(0, 2) = -sin(angle_rad);
+            result.element(2, 2) =  cos(angle_rad);
+            return result;
+        }
+
+        static Mat<R> rotate_z(double angle_rad) {
+            static_assert(R == C, "Must be a square matrix!");
+            static_assert(R >= 2, "Matrix size must at least be 2!");
+            Mat<R> result = Mat<R>();
+            result.element(0, 0) =  cos(angle_rad);
+            result.element(1, 0) =  sin(angle_rad);
+            result.element(0, 1) = -sin(angle_rad);
+            result.element(1, 1) =  cos(angle_rad);
+            return result;
+        }
+
+        template<int N>
+        static Mat<R> scale(Vec<N> scalars) {
+            static_assert(R == C, "Must be a square matrix!");
+            static_assert(R >= 1, "Matrix size must at least be 1!");
+            static_assert(N <= R, "Scalars must fit inside the Matrix!");
+            Mat<R> result = Mat<R>();
+            for(int i = 0; i < N; i += 1) {
+                result.element(i, i) = scalars[i];
+            }
+            return result;
+        }
+
+        template<int N>
+        static Mat<R> translate(Vec<N> offsets) {
+            static_assert(R >= 1, "Matrix size must at least be 1!");
+            static_assert(N <= R, "Offsets must fit inside the Matrix!");
+            Mat<R> result = Mat<R>();
+            for(int row_i = 0; row_i < N; row_i += 1) {
+                result.element(row_i, C - 1) = offsets[row_i];
+            }
+            return result;
+        }
+
+        static Mat<4> look_at(Vec<3> eye, Vec<3> at, Vec<3> up) {
+            Vec<3> forward = (at - eye).normalized();
+            Vec<3> right = up.cross(forward).normalized();
+            Vec<3> c_up = forward.cross(right).normalized();
+            return Mat<4>(
+                   right.x(),    right.y(),    right.z(),   -right.dot(eye),
+                    c_up.x(),     c_up.y(),     c_up.z(),    -c_up.dot(eye),
+                -forward.x(), -forward.y(), -forward.z(),  forward.dot(eye),
+                         0.0,          0.0,          0.0,               1.0        
+            );
+        }
+
+        static Mat<4> orthographic(
+            double left, double right, double top, double bottom,
+            double near, double far
+        ) {
+            double m00 = 2.0 / (right - left);
+            double m11 = 2.0 / (top - bottom);
+            double m22 = 2.0 / (near - far);
+            double m03 = (right + left) / (left - right);
+            double m13 = (top + bottom) / (bottom - top);
+            double m23 = (far + near) / (near - far);
+            return Mat<4>(
+                m00, 0.0, 0.0, m03,
+                0.0, m11, 0.0, m13,
+                0.0, 0.0, m22, m23,
+                0.0, 0.0, 0.0, 1.0
+            );
+        }
+
+        static Mat<4> perspective(
+            double fov, double aspect_ratio, double near, double far
+        ) {
+            double focal_length = 1.0 / tan(fov / 2.0);
+            double m00 = focal_length / aspect_ratio;
+            double m11 = focal_length;
+            double m22 = (far + near) / (near - far);
+            double m23 = (2.0 * far * near) / (near - far);
+            return Mat<4>(
+                m00, 0.0,  0.0, 0.0,
+                0.0, m11,  0.0, 0.0,
+                0.0, 0.0,  m22, m23,
+                0.0, 0.0, -1.0, 0.0
+            );
         }
 
         Vec<C> operator[](int index) const {

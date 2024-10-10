@@ -18,7 +18,7 @@ namespace houseofatmos::engine::rendering {
         }
     }
 
-    FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) {
+    FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) noexcept {
         if(this == &other) { return *this; }
         delete[] this->data;
         this->data = other.data;
@@ -37,7 +37,7 @@ namespace houseofatmos::engine::rendering {
     }
 
     Color FrameBuffer::get_pixel_at(int x, int y) const {
-        if(x < 0 || x > this->width || y < 0 || y > this->width) {
+        if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
             return BLACK;
         }
         return this->data[y * this->width + x];
@@ -47,7 +47,7 @@ namespace houseofatmos::engine::rendering {
     }
 
     void FrameBuffer::set_pixel_at(int x, int y, Color c) {
-        if(x < 0 || x > this->width || y < 0 || y > this->width) {
+        if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
             return;
         }
         this->data[y * this->width + x] = c;
@@ -60,55 +60,6 @@ namespace houseofatmos::engine::rendering {
         for(int i = 0; i < this->width * this->height; i += 1) {
             this->data[i] = BLACK;
         }
-    }
-
-    void FrameBuffer::draw_line(Vec<2> a, Vec<2> b, Color color) {
-        Vec<2> direction = b - a;
-        int step_count = direction.abs().sum();
-        Vec<2> step = direction * (1.0 / step_count);
-        Vec<2> position = a;
-        for(int step_taken = 0; step_taken < step_count; step_taken += 1) {
-            this->set_pixel_at(position, color);
-            position += step;
-        }
-    }
-
-    static void render_triangle_segment(
-        FrameBuffer* buffer,
-        Vec<2> t_high, // top vertex of the triangle
-        Vec<2> t_low,  // bottom vertex of the triangle
-        Vec<2> s_high, // top vertex of the segment
-        Vec<2> s_low, // bottom vertex of the segment
-        Color color
-    ) {
-        Vec<2> s_line = s_low - s_high; // vector from top to bottom of segment
-        Vec<2> t_line = t_low - t_high; // vector from top to bottom of triangle
-        // buffer->set_pixel_at(s_high, RED);
-        // buffer->set_pixel_at(s_low, RED);
-        for(int y = s_high.y() + 1; y < s_low.y(); y += 1) {
-            double s_progress = (y - s_high.y()) / s_line.y();
-            Vec<2> r_point = s_line * s_progress + s_high;
-            double t_progress = (y - t_high.y()) / t_line.y();
-            Vec<2> l_point = t_line * t_progress + t_high;
-            if(l_point.x() > r_point.x()) { std::swap(l_point, r_point); }
-            for(int x = l_point.x(); x <= r_point.x(); x += 1) {
-                buffer->set_pixel_at(x, y, color);
-            }
-        }
-    }
-
-    void FrameBuffer::draw_triangle(Vec<2> a, Vec<2> b, Vec<2> c, Color color) {
-        // sort three points according to their y-coordinate
-        Vec<2> high = a;
-        Vec<2> mid = b;
-        Vec<2> low = c;
-        if(high.y() > mid.y()) { std::swap(high, mid); } 
-        if(mid.y() > low.y()) { std::swap(mid, low); } 
-        if(high.y() > mid.y()) { std::swap(high, mid); }
-        // segment: high -> mid (top half)
-        render_triangle_segment(this, high, low, high, mid, color);
-        // segment: mid -> low (bottom half)
-        render_triangle_segment(this, high, low, mid, low, color);
     }
 
     void FrameBuffer::blit_buffer(

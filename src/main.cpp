@@ -8,50 +8,60 @@ using namespace houseofatmos::engine::math;
 #include <cmath>
 #include <chrono>
 
+struct RectShader: engine::rendering::Shader<Vec<3>> {
+    Mat<4> projection;
+    Mat<4> view;
+    Mat<4> model;
+
+    RectShader() {}
+
+    void vertex(Vec<3> vertex, Vec<4>* pos) override {
+        *pos = this->projection * this->view * this->model * vertex.with(1.0);
+    }
+
+    void fragment(Color* color) override {
+        *color = GRAY;
+    }
+};
+
 int main() {
-    engine::init("House of Atmos", 800, 600, 60);
-    auto main_buffer = engine::rendering::FrameBuffer(800, 600);
-    auto sub_buffer = engine::rendering::FrameBuffer(200, 150);
-    Vec<3> a = Vec<3>(-30.0, -30.0, 1.0);
-    Vec<3> b = Vec<3>( 30.0, -30.0, 1.0);
-    Vec<3> c = Vec<3>(-30.0,  30.0, 1.0);
-    Vec<3> d = Vec<3>( 30.0,  30.0, 1.0);
-    Mat<3> translation = Mat<3>(
-        1.0, 0.0, 100.0,
-        0.0, 1.0,  75.0,
-        0.0, 0.0,   1.0
-    );
+    engine::init("House of Atmos", 800, 800, 60);
+    auto main_buffer = engine::rendering::FrameBuffer(800, 800);
+    auto sub_buffer = engine::rendering::FrameBuffer(800, 800);
+    auto square = engine::rendering::Mesh<Vec<3>>();
+    square.add_vertex(Vec<3>(-1.0, -1.0,  1.0));
+    square.add_vertex(Vec<3>( 1.0, -1.0,  1.0));
+    square.add_vertex(Vec<3>( 1.0,  1.0,  1.0));
+    square.add_vertex(Vec<3>(-1.0,  1.0,  1.0));
+    square.add_vertex(Vec<3>(-1.0, -1.0, -1.0));
+    square.add_vertex(Vec<3>( 1.0, -1.0, -1.0));
+    square.add_vertex(Vec<3>( 1.0,  1.0, -1.0));
+    square.add_vertex(Vec<3>(-1.0,  1.0, -1.0));
+    square.add_element(0, 1, 2);
+    square.add_element(2, 3, 0);
+    square.add_element(1, 5, 6);
+    square.add_element(6, 2, 1);
+    square.add_element(7, 6, 5);
+    square.add_element(5, 4, 7);
+    square.add_element(4, 0, 3);
+    square.add_element(3, 7, 4);
+    square.add_element(4, 5, 1);
+    square.add_element(1, 0, 4);
+    square.add_element(3, 2, 6);
+    square.add_element(6, 7, 3);
+    auto shader = RectShader();
+    shader.projection = Mat<4>::perspective(PI / 2.0, sub_buffer.width / sub_buffer.height, 0.1, 1000.0);
+    shader.view = Mat<4>::look_at(Vec<3>(3, 0, 3), Vec<3>(0, 0, 0), Vec<3>(0, 1, 0));
+    double rot_angle = 0.0;
     while(engine::is_running()) {
-        double r = GetFrameTime();
-        Mat<3> rotation = Mat<3>(
-            cos(r), -sin(r), 0.0,
-            sin(r),  cos(r), 0.0,
-               0.0,     0.0, 1.0
-        );
-        auto before = std::chrono::system_clock::now();
-        a = rotation * a;
-        b = rotation * b;
-        c = rotation * c;
-        d = rotation * d;
+        rot_angle += GetFrameTime();
         main_buffer.clear();
         sub_buffer.clear();
-        sub_buffer.draw_triangle(
-            (translation * a).swizzle<2>("xy"), 
-            (translation * b).swizzle<2>("xy"), 
-            (translation * c).swizzle<2>("xy"), 
-            GREEN
-        );
-        sub_buffer.draw_triangle(
-            (translation * b).swizzle<2>("xy"), 
-            (translation * c).swizzle<2>("xy"), 
-            (translation * d).swizzle<2>("xy"), 
-            BLUE
-        );
-        sub_buffer.set_pixel_at(100, 75, WHITE);
-        main_buffer.blit_buffer(sub_buffer, 0, 0, 800, 600);
+        shader.model = Mat<4>::rotate_y(rot_angle)
+            * Mat<4>::rotate_z(rot_angle);
+        sub_buffer.draw_mesh(square, shader);
+        main_buffer.blit_buffer(sub_buffer, 0, 0, 800, 800);
         engine::display_buffer(&main_buffer);
-        auto after = std::chrono::system_clock::now();
-        std::cout << "Frame took " << std::chrono::duration_cast<std::chrono::nanoseconds>(after - before).count() << "ns" << std::endl;
     }
     engine::stop();
 }
