@@ -7,63 +7,89 @@ using namespace houseofatmos::engine::math;
 
 namespace houseofatmos::engine::rendering {
 
-    FrameBuffer::FrameBuffer(int width, int height) {
+    Surface::Surface(int width, int height) {
         this->width = width;
         this->height = height;
-        this->data = new Color[width * height];
+        this->color = new Color[width * height];
+        this->depth = new float[width * height];
         for(int y = 0; y < height; y += 1) {
             for(int x = 0; x < width; x += 1) {
-                data[y * width + x] = BLACK;
+                this->color[y * width + x] = BLACK;
+                this->depth[y * width + x] = INFINITY;
             }
         }
     }
 
-    FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) noexcept {
+    Surface& Surface::operator=(Surface&& other) noexcept {
         if(this == &other) { return *this; }
-        delete[] this->data;
-        this->data = other.data;
+        delete[] this->color;
+        this->color = other.color;
+        this->depth = other.depth;
         this->width = other.width;
         this->height = other.height;
-        other.data = nullptr;
+        other.color = nullptr;
+        other.depth = nullptr;
         other.width = 0;
         other.height = 0;
         return *this;
     }
 
-    FrameBuffer::~FrameBuffer() {
-        if(this->data == nullptr) { return; }
-        delete[] this->data;
-        this->data = nullptr;
+    Surface::~Surface() {
+        if(this->color != nullptr) {
+            delete[] this->color;
+            this->color = nullptr;
+        }
+        if(this->depth != nullptr) {
+            delete[] this->depth;
+            this->depth = nullptr;
+        }
     }
 
-    Color FrameBuffer::get_pixel_at(int x, int y) const {
+    Color Surface::get_color_at(int x, int y) const {
         if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
             return BLACK;
         }
-        return this->data[y * this->width + x];
-    }
-    Color FrameBuffer::get_pixel_at(Vec<2> location) const {
-        return this->get_pixel_at(location.x(), location.y());
+        return this->color[y * this->width + x];
     }
 
-    void FrameBuffer::set_pixel_at(int x, int y, Color c) {
+    void Surface::set_color_at(int x, int y, Color c) {
         if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
             return;
         }
-        this->data[y * this->width + x] = c;
-    }
-    void FrameBuffer::set_pixel_at(Vec<2> location, Color c) {
-        this->set_pixel_at(location.x(), location.y(), c);
+        this->color[y * this->width + x] = c;
     }
 
-    void FrameBuffer::clear() {
+    double Surface::get_depth_at(int x, int y) const {
+        if(this->depth == nullptr) { 
+            return INFINITY; 
+        }
+        if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
+            return INFINITY;
+        }
+        return this->depth[y * this->width + x];
+    }
+
+    void Surface::set_depth_at(int x, int y, double d) {
+        if(this->depth == nullptr) { 
+            return; 
+        }
+        if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
+            return;
+        }
+        this->depth[y * this->width + x] = d;
+    }
+
+    void Surface::clear() {
         for(int i = 0; i < this->width * this->height; i += 1) {
-            this->data[i] = BLACK;
+            this->color[i] = BLACK;
+            if(this->depth != nullptr) {
+                this->depth[i] = INFINITY;
+            }
         }
     }
 
-    void FrameBuffer::blit_buffer(
-        const FrameBuffer& src, 
+    void Surface::blit_buffer(
+        const Surface& src, 
         int dest_pos_x, int dest_pos_y,
         int dest_width, int dest_height
     ) {
@@ -75,8 +101,8 @@ namespace houseofatmos::engine::rendering {
                 float perc_y = (float) (dest_y - dest_pos_y) / dest_height;
                 int src_x = (int) (perc_x * src.width);
                 int src_y = (int) (perc_y * src.height);
-                Color pixel = src.get_pixel_at(src_x, src_y);
-                this->set_pixel_at(dest_x, dest_y, pixel);
+                Color pixel = src.get_color_at(src_x, src_y);
+                this->set_color_at(dest_x, dest_y, pixel);
             }
         }
     }

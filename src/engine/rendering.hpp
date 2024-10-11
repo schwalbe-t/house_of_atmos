@@ -11,6 +11,14 @@ namespace houseofatmos::engine::rendering {
 
     using namespace houseofatmos::engine::math;
 
+    static double triangle_area(Vec<2> a, Vec<2> b, Vec<2> c) {
+        return 0.5 * fabs(
+            a.x() * (b.y() - c.y())
+                + b.x() * (c.y() - a.y())
+                + c.x() * (a.y() - b.y())
+        );
+    }
+
     template<typename V>
     struct Mesh {
         std::vector<V> vertices;
@@ -36,44 +44,93 @@ namespace houseofatmos::engine::rendering {
         }
     };
 
-    template<typename V>
-    struct Shader {
-        virtual void vertex(V vertex, Vec<4>* pos) = 0;
-        virtual void fragment(Color* color) = 0;
+    template<typename V, typename S>
+    struct VertexStates {
+        S a_state; // shader after running 'vertex' for A
+        double a_bc; // barycentric coordinate for A
+        S b_state; // shader after running 'vertex' for B
+        double b_bc; // barycentric coordinate for B
+        S c_state; // shader after running 'vertex' for C
+        double c_bc; // barycentric coordinate for C
     };
 
-    struct FrameBuffer {
+    template<typename V, typename S>
+    struct Shader {
+        virtual Vec<4> vertex(V vertex) = 0;
+        virtual Vec<4> fragment() = 0;
+
+        private:
+        const VertexStates<V, S>* vertex_states;
+
+        public:
+        void set_vertex_states(const VertexStates<V, S>* states) {
+            this->vertex_states = states;
+        }
+
+        void clear_vertex_states() {
+            this->vertex_states = nullptr;
+        }
+
+        template<typename T>
+        void interpolate(T* value) {
+            // check that pointers are correct
+            if(this->vertex_states == nullptr) {
+                std::cout << "'interpolate' can only be called from 'fragment'!" 
+                    << std::endl;
+                std::abort();
+            }
+            int64_t offset = (char*) value - (char*) this;
+            if(offset < 0 || (size_t) offset > sizeof(S)) {
+                std::cout << "Interpolated value must be a shader property!" 
+                    << std::endl;
+                std::abort();
+            }
+            const VertexStates<V, S>* vs = this->vertex_states;
+            // get values for all three vertices
+            const T* a = (const T*) ((char*) &vs->a_state + offset);
+            const T* b = (const T*) ((char*) &vs->b_state + offset);
+            const T* c = (const T*) ((char*) &vs->c_state + offset);
+            // interpolate them using the barycentric coordinates
+            *value = (*a * vs->a_bc) + (*b * vs->b_bc) + (*c * vs->c_bc);
+        }
+    };
+
+    struct Surface {
         int width;
         int height;
-        Color* data;
+        Color* color;
+        float* depth;
 
-        FrameBuffer(int width, int height);
-        FrameBuffer(const FrameBuffer&) = delete;
-        FrameBuffer& operator=(const FrameBuffer& other) = delete;
-        FrameBuffer& operator=(FrameBuffer&& other) noexcept;
-        ~FrameBuffer();
-        Color get_pixel_at(int x, int y) const;
-        Color get_pixel_at(Vec<2> location) const;
-        void set_pixel_at(int x, int y, Color c);
-        void set_pixel_at(Vec<2> location, Color c);
+        Surface(int width, int height);
+        Surface(const Surface&) = delete;
+        Surface& operator=(const Surface& other) = delete;
+        Surface& operator=(Surface&& other) noexcept;
+        ~Surface();
+        Color get_color_at(int x, int y) const;
+        void set_color_at(int x, int y, Color c);
+        double get_depth_at(int x, int y) const;
+        void set_depth_at(int x, int y, double d);
 
         void clear();
 
         void blit_buffer(
-            const FrameBuffer& src, 
+            const Surface& src, 
             int dest_pos_x, int dest_pos_y,
             int dest_width, int dest_height
         );
 
         private: 
-        template<typename V>
+        template<typename V, typename S>
         void render_triangle_segment(
-            Vec<2> t_high, // top vertex of the triangle
-            Vec<2> t_low,  // bottom vertex of the triangle
+            Vec<2> a, Vec<2> b, Vec<2> c, double t_area,
+            double a_depth, double b_depth, double c_depth,
             Vec<2> s_high, // top vertex of the segment
             Vec<2> s_low, // bottom vertex of the segment
-            Shader<V>& shader
+            VertexStates<V, S>* vs,
+            S& shader
         ) {
+            Vec<2> t_high = a; // top vertex of the triangle
+            Vec<2> t_low = c; // bottom vertex of the triangle
             Vec<2> s_line = s_low - s_high; // vector from top to bottom of segment
             Vec<2> t_line = t_low - t_high; // vector from top to bottom of triangle
             for(int y = s_high.y() + 1; y < s_low.y(); y += 1) {
@@ -84,44 +141,82 @@ namespace houseofatmos::engine::rendering {
                 double t_progress = (y - t_high.y()) / t_line.y();
                 Vec<2> l_point = t_line * t_progress + t_high;
                 if(l_point.x() > r_point.x()) { std::swap(l_point, r_point); }
-                for(int x = l_point.x(); x < r_point.x(); x += 1) {
+                for(int x = l_point.x() + 1; x <= r_point.x(); x += 1) {
                     if(x < 0) { x = 0; }
                     if(x > this->width) { break; }
-                    Color color = PURPLE;
-                    shader.fragment(&color);
-                    this->set_pixel_at(x, y, color);
+                    Vec<2> p = Vec<2>(x, y);
+                    vs->a_bc = triangle_area(p, b, c) / t_area;
+                    vs->b_bc = triangle_area(p, c, a) / t_area;
+                    vs->c_bc = triangle_area(p, a, b) / t_area;
+                    double depth = vs->a_bc * a_depth + vs->b_bc * b_depth
+                        + vs->c_bc * c_depth;
+                    if(depth >= this->get_depth_at(x, y)) {
+                        continue;
+                    }
+                    Color color = shader.fragment().as_color();
+                    this->set_color_at(x, y, color);
+                    this->set_depth_at(x, y, depth);
                 }
             }
         }
 
-        template<typename V>
-        void draw_rectangle(V a, V b, V c, Shader<V>& shader) {
+        template<typename V, typename S>
+        void draw_rectangle(V vertex_a, V vertex_b, V vertex_c, S& shader) {
+            VertexStates<V, S> vs;
             // get positions from vertex shader
-            Vec<4> a_ndc, b_ndc, c_ndc;
-            shader.vertex(a, &a_ndc);
-            shader.vertex(b, &b_ndc);
-            shader.vertex(c, &c_ndc);
+            vs.a_state = shader;
+            Vec<4> a_ndc = vs.a_state.vertex(vertex_a);
+            vs.b_state = shader;
+            Vec<4> b_ndc = vs.b_state.vertex(vertex_b);
+            vs.c_state = shader;
+            Vec<4> c_ndc = vs.c_state.vertex(vertex_c);
             // convert vertices to pixel space
             Mat<4> to_pixel_space
                 = Mat<4>::translate(Vec<2>(this->width, this->height))
                 * Mat<4>::scale(Vec<2>(this->width / 2 * -1, this->height / 2 * -1))
                 * Mat<4>::translate(Vec<2>(1.0, 1.0));
-            Vec<2> high = (to_pixel_space * (a_ndc / a_ndc.w())).swizzle<2>("xy"); 
-            Vec<2> mid = (to_pixel_space * (b_ndc / b_ndc.w())).swizzle<2>("xy");
-            Vec<2> low = (to_pixel_space * (c_ndc / c_ndc.w())).swizzle<2>("xy");
-            // sort vertex pixel positions by y position
-            if(high.y() > mid.y()) { std::swap(high, mid); } 
-            if(mid.y() > low.y()) { std::swap(mid, low); } 
-            if(high.y() > mid.y()) { std::swap(high, mid); }
+            Vec<3> a = (to_pixel_space * (a_ndc / a_ndc.w())).swizzle<3>("xyz");
+            Vec<3> b = (to_pixel_space * (b_ndc / b_ndc.w())).swizzle<3>("xyz");
+            Vec<3> c = (to_pixel_space * (c_ndc / c_ndc.w())).swizzle<3>("xyz");
+            // sort vertex pixel positions (a, b, c in order of ascending y)
+            if(a.y() > b.y()) {
+                std::swap(a, b);
+                std::swap(vs.a_state, vs.b_state);
+            } 
+            if(b.y() > c.y()) { 
+                std::swap(b, c);
+                std::swap(vs.b_state, vs.c_state);
+            } 
+            if(a.y() > b.y()) { 
+                std::swap(a, b); 
+                std::swap(vs.a_state, vs.b_state);
+            }
+            // compute size of triangle
+            double t_area = triangle_area(
+                a.swizzle<2>("xy"), b.swizzle<2>("xy"), c.swizzle<2>("xy")
+            );
+            // draw traingle segments
+            shader.set_vertex_states(&vs);
             // segment: high -> mid (top half)
-            render_triangle_segment(high, low, high, mid, shader);
+            render_triangle_segment(
+                a.swizzle<2>("xy"), b.swizzle<2>("xy"), c.swizzle<2>("xy"), 
+                t_area, a.z(), b.z(), c.z(),
+                a.swizzle<2>("xy"), b.swizzle<2>("xy"), &vs, shader
+            );
             // segment: mid -> low (bottom half)
-            render_triangle_segment(high, low, mid, low, shader);
+            render_triangle_segment(
+                a.swizzle<2>("xy"), b.swizzle<2>("xy"), c.swizzle<2>("xy"), 
+                t_area, a.z(), b.z(), c.z(),
+                b.swizzle<2>("xy"), c.swizzle<2>("xy"), &vs, shader
+            );
+            shader.clear_vertex_states();
         }
 
         public:
-        template<typename V>
-        void draw_mesh(const Mesh<V>& mesh, Shader<V>& shader) {
+        template<typename V, typename S>
+        void draw_mesh(const Mesh<V>& mesh, S& shader) {
+            static_assert(std::is_base_of<Shader<V, S>, S>(), "Must be a shader!");
+            static_assert(std::is_copy_constructible<S>(), "Must be copyable!");
             for(uint16_t elem_i = 0; elem_i < mesh.elements.size(); elem_i += 1) {
                 auto indices = mesh.elements[elem_i];
                 this->draw_rectangle(
