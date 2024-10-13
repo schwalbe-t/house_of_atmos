@@ -22,10 +22,16 @@ namespace houseofatmos::engine::rendering {
     template<typename V>
     struct Mesh {
         std::vector<V> vertices;
-        std::vector<std::tuple<uint16_t, uint16_t, uint16_t>> elements;
+        std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> elements;
 
         Mesh() {}
+        
         Mesh(const Mesh&) = delete;
+        Mesh(Mesh&& other) {
+            this->vertices = std::move(other.vertices);
+            this->elements = std::move(other.elements);
+        }
+
         Mesh& operator=(const Mesh& other) = delete;
         Mesh& operator=(Mesh&& other) noexcept {
             this->vertices = std::move(other.vertices);
@@ -33,13 +39,13 @@ namespace houseofatmos::engine::rendering {
             return *this;
         }
 
-        uint16_t add_vertex(V vertex) {
-            uint16_t idx = this->vertices.size();
+        uint32_t add_vertex(V vertex) {
+            uint32_t idx = this->vertices.size();
             this->vertices.push_back(vertex);
             return idx;
         }
 
-        void add_element(uint16_t a, uint16_t b, uint16_t c) {
+        void add_element(uint32_t a, uint32_t b, uint32_t c) {
             this->elements.push_back(std::make_tuple(a, b, c));
         }
     };
@@ -143,16 +149,14 @@ namespace houseofatmos::engine::rendering {
             Vec<2> t_low = c.swizzle<2>("xy"); // bottom vertex of the triangle
             Vec<2> s_line = s_low - s_high; // vector from top to bottom of segment
             Vec<2> t_line = t_low - t_high; // vector from top to bottom of triangle
-            for(int y = s_high.y() + 1; y < s_low.y(); y += 1) {
-                if(y < 0) { y = 0; }
+            for(int y = std::max((int) s_high.y() + 1, 0); y < s_low.y(); y += 1) {
                 if(y > this->height) { break; }
                 double s_progress = (y - s_high.y()) / s_line.y();
                 Vec<2> r_point = s_line * s_progress + s_high;
                 double t_progress = (y - t_high.y()) / t_line.y();
                 Vec<2> l_point = t_line * t_progress + t_high;
                 if(l_point.x() > r_point.x()) { std::swap(l_point, r_point); }
-                for(int x = l_point.x() + 1; x <= r_point.x(); x += 1) {
-                    if(x < 0) { x = 0; }
+                for(int x = std::max((int) l_point.x() + 1, 0); x <= r_point.x(); x += 1) {
                     if(x > this->width) { break; }
                     Vec<2> p = Vec<2>(x, y);
                     vs->a_bc = triangle_area(p, b.swizzle<2>("xy"), c.swizzle<2>("xy")) / t_area;
@@ -172,7 +176,7 @@ namespace houseofatmos::engine::rendering {
         }
 
         template<typename V, typename S>
-        void draw_rectangle(V vertex_a, V vertex_b, V vertex_c, S& shader) {
+        void draw_triangle(V vertex_a, V vertex_b, V vertex_c, S& shader) {
             VertexStates<V, S> vs;
             // get positions from vertex shader
             vs.a_state = shader;
@@ -234,7 +238,7 @@ namespace houseofatmos::engine::rendering {
             static_assert(std::is_copy_constructible<S>(), "Must be copyable!");
             for(uint16_t elem_i = 0; elem_i < mesh.elements.size(); elem_i += 1) {
                 auto indices = mesh.elements[elem_i];
-                this->draw_rectangle(
+                this->draw_triangle(
                     mesh.vertices[std::get<0>(indices)],
                     mesh.vertices[std::get<1>(indices)],
                     mesh.vertices[std::get<2>(indices)],

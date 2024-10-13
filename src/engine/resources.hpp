@@ -11,8 +11,8 @@ namespace houseofatmos::engine::resources {
 
     struct ModelVertex {
         Vec<3> pos;
-        Vec<3> normal;
         Vec<2> uv;
+        Vec<3> normal;
     };
     engine::rendering::Mesh<ModelVertex> read_model(const char* file);
 

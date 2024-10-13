@@ -419,8 +419,9 @@ namespace houseofatmos::engine::math {
         }
 
         static Mat<4> perspective(
-            double fov, double aspect_ratio, double near, double far
+            double fov, int width, int height, double near, double far
         ) {
+            double aspect_ratio = (double) width / height;
             double focal_length = 1.0 / tan(fov / 2.0);
             double m00 = focal_length / aspect_ratio;
             double m11 = focal_length;
