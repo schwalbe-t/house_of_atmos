@@ -47,11 +47,15 @@ namespace houseofatmos::engine::rendering {
     template<typename V, typename S>
     struct VertexStates {
         S a_state; // shader after running 'vertex' for A
+        double a_idepth; // inverse of depth of A
         double a_bc; // barycentric coordinate for A
         S b_state; // shader after running 'vertex' for B
+        double b_idepth ; // inverse of depth of B
         double b_bc; // barycentric coordinate for B
         S c_state; // shader after running 'vertex' for C
+        double c_idepth; // inverse of depth of C
         double c_bc; // barycentric coordinate for C
+        double idepth; // current inverse depth
     };
 
     template<typename V, typename S>
@@ -91,7 +95,11 @@ namespace houseofatmos::engine::rendering {
             const T* b = (const T*) ((char*) &vs->b_state + offset);
             const T* c = (const T*) ((char*) &vs->c_state + offset);
             // interpolate them using the barycentric coordinates
-            *value = (*a * vs->a_bc) + (*b * vs->b_bc) + (*c * vs->c_bc);
+            *value = (
+                (*a * vs->a_idepth * vs->a_bc) + 
+                (*b * vs->b_idepth * vs->b_bc) + 
+                (*c * vs->c_idepth * vs->c_bc)
+            ) / vs->idepth;
         }
     };
 
@@ -102,7 +110,9 @@ namespace houseofatmos::engine::rendering {
         float* depth;
 
         Surface(int width, int height);
+        Surface(const Color* color, const float* depth, int width, int height);
         Surface(const Surface&) = delete;
+        Surface(Surface&&);
         Surface& operator=(const Surface& other) = delete;
         Surface& operator=(Surface&& other) noexcept;
         ~Surface();
@@ -110,6 +120,7 @@ namespace houseofatmos::engine::rendering {
         void set_color_at(int x, int y, Color c);
         double get_depth_at(int x, int y) const;
         void set_depth_at(int x, int y, double d);
+        Vec<4> sample(const Vec<2>& uv) const;
 
         void clear();
 
@@ -122,15 +133,14 @@ namespace houseofatmos::engine::rendering {
         private: 
         template<typename V, typename S>
         void render_triangle_segment(
-            Vec<2> a, Vec<2> b, Vec<2> c, double t_area,
-            double a_depth, double b_depth, double c_depth,
+            Vec<3> a, Vec<3> b, Vec<3> c, double t_area,
             Vec<2> s_high, // top vertex of the segment
             Vec<2> s_low, // bottom vertex of the segment
             VertexStates<V, S>* vs,
             S& shader
         ) {
-            Vec<2> t_high = a; // top vertex of the triangle
-            Vec<2> t_low = c; // bottom vertex of the triangle
+            Vec<2> t_high = a.swizzle<2>("xy"); // top vertex of the triangle
+            Vec<2> t_low = c.swizzle<2>("xy"); // bottom vertex of the triangle
             Vec<2> s_line = s_low - s_high; // vector from top to bottom of segment
             Vec<2> t_line = t_low - t_high; // vector from top to bottom of triangle
             for(int y = s_high.y() + 1; y < s_low.y(); y += 1) {
@@ -145,11 +155,12 @@ namespace houseofatmos::engine::rendering {
                     if(x < 0) { x = 0; }
                     if(x > this->width) { break; }
                     Vec<2> p = Vec<2>(x, y);
-                    vs->a_bc = triangle_area(p, b, c) / t_area;
-                    vs->b_bc = triangle_area(p, c, a) / t_area;
-                    vs->c_bc = triangle_area(p, a, b) / t_area;
-                    double depth = vs->a_bc * a_depth + vs->b_bc * b_depth
-                        + vs->c_bc * c_depth;
+                    vs->a_bc = triangle_area(p, b.swizzle<2>("xy"), c.swizzle<2>("xy")) / t_area;
+                    vs->b_bc = triangle_area(p, c.swizzle<2>("xy"), a.swizzle<2>("xy")) / t_area;
+                    vs->c_bc = triangle_area(p, a.swizzle<2>("xy"), b.swizzle<2>("xy")) / t_area;
+                    vs->idepth = vs->a_bc * vs->a_idepth + vs->b_bc * vs->b_idepth
+                        + vs->c_bc * vs->c_idepth;
+                    double depth = 1.0 / vs->idepth;
                     if(depth >= this->get_depth_at(x, y)) {
                         continue;
                     }
@@ -166,10 +177,13 @@ namespace houseofatmos::engine::rendering {
             // get positions from vertex shader
             vs.a_state = shader;
             Vec<4> a_ndc = vs.a_state.vertex(vertex_a);
+            vs.a_idepth = 1.0 / a_ndc.z();
             vs.b_state = shader;
             Vec<4> b_ndc = vs.b_state.vertex(vertex_b);
+            vs.b_idepth = 1.0 / b_ndc.z();
             vs.c_state = shader;
             Vec<4> c_ndc = vs.c_state.vertex(vertex_c);
+            vs.c_idepth = 1.0 / c_ndc.z();
             // convert vertices to pixel space
             Mat<4> to_pixel_space
                 = Mat<4>::translate(Vec<2>(this->width, this->height))
@@ -182,14 +196,17 @@ namespace houseofatmos::engine::rendering {
             if(a.y() > b.y()) {
                 std::swap(a, b);
                 std::swap(vs.a_state, vs.b_state);
+                std::swap(vs.a_idepth, vs.b_idepth);
             } 
             if(b.y() > c.y()) { 
                 std::swap(b, c);
                 std::swap(vs.b_state, vs.c_state);
+                std::swap(vs.b_idepth, vs.c_idepth);
             } 
             if(a.y() > b.y()) { 
                 std::swap(a, b); 
                 std::swap(vs.a_state, vs.b_state);
+                std::swap(vs.a_idepth, vs.b_idepth);
             }
             // compute size of triangle
             double t_area = triangle_area(
@@ -199,14 +216,12 @@ namespace houseofatmos::engine::rendering {
             shader.set_vertex_states(&vs);
             // segment: high -> mid (top half)
             render_triangle_segment(
-                a.swizzle<2>("xy"), b.swizzle<2>("xy"), c.swizzle<2>("xy"), 
-                t_area, a.z(), b.z(), c.z(),
+                a, b, c, t_area,
                 a.swizzle<2>("xy"), b.swizzle<2>("xy"), &vs, shader
             );
             // segment: mid -> low (bottom half)
             render_triangle_segment(
-                a.swizzle<2>("xy"), b.swizzle<2>("xy"), c.swizzle<2>("xy"), 
-                t_area, a.z(), b.z(), c.z(),
+                a, b, c, t_area,
                 b.swizzle<2>("xy"), c.swizzle<2>("xy"), &vs, shader
             );
             shader.clear_vertex_states();

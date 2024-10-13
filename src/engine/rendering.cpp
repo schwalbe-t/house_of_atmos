@@ -8,6 +8,11 @@ using namespace houseofatmos::engine::math;
 namespace houseofatmos::engine::rendering {
 
     Surface::Surface(int width, int height) {
+        if(width < 0 || height < 0) {
+            std::cout << "'width' and 'height' must both be positive!"
+                << std::endl;
+            std::abort();
+        }
         this->width = width;
         this->height = height;
         this->color = new Color[width * height];
@@ -20,9 +25,54 @@ namespace houseofatmos::engine::rendering {
         }
     }
 
+    Surface::Surface(
+        const Color* color, const float* depth, int width, int height
+    ) {
+        if(width < 0 || height < 0) {
+            std::cout << "'width' and 'height' must both be positive!"
+                << std::endl;
+            std::abort();
+        }
+        this->width = width;
+        this->height = height; 
+        if(color == nullptr) {
+            std::cout << "'color' must not be a null pointer!" << std::endl;
+            std::abort();
+        }
+        this->color = new Color[width * height];
+        if(depth == nullptr) {
+            this->depth = nullptr;
+        } else {
+            this->depth = new float[width * height];
+        }
+        for(int y = 0; y < height; y += 1) {
+            for(int x = 0; x < width; x += 1) {
+                int offset = y * width + x;
+                this->color[offset] = color[offset];
+                if(depth != nullptr) {
+                    this->depth[offset] = depth[offset];
+                }
+            }
+        }
+    }
+
+    Surface::Surface(Surface&& other) {
+        this->color = other.color;
+        this->depth = other.depth;
+        this->width = other.width;
+        this->height = other.height;
+        other.color = nullptr;
+        other.depth = nullptr;
+        other.width = 0;
+        other.height = 0;
+    }
+
     Surface& Surface::operator=(Surface&& other) noexcept {
         if(this == &other) { return *this; }
         delete[] this->color;
+        if(this->depth != nullptr) {
+            delete[] this->depth;
+        }
         this->color = other.color;
         this->depth = other.depth;
         this->width = other.width;
@@ -77,6 +127,24 @@ namespace houseofatmos::engine::rendering {
             return;
         }
         this->depth[y * this->width + x] = d;
+    }
+
+    Vec<4> Surface::sample(const Vec<2>& uv) const {
+        // normalise uv coordinates
+        double u = fmod(uv.x(), 1.0); // u=0 -> left, u=1 -> right
+        if(u < 0.0) { u += 1.0; }
+        double v = fmod(uv.y(), 1.0); // v=0 -> bottom, v=1 -> top
+        if(v < 0.0) { v += 1.0; }
+        // convert to pixels (note that y needs to be flipped)
+        int x_px = static_cast<int>(u * this->width);
+        x_px = std::min(x_px, this->width - 1); // in case x_uv ends up as 1.0
+        int y_px = this->height - static_cast<int>(v * this->height);
+        y_px = std::min(y_px, this->height - 1); // in case y_uv ends up as 1.0
+        // read the color and return as normalized vector
+        Color color = this->color[y_px * this->width + x_px];
+        return Vec<4>(
+            color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255
+        );
     }
 
     void Surface::clear() {
