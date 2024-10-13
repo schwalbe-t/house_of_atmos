@@ -47,7 +47,7 @@ int main() {
     model_shader.view = Mat<4>::look_at(Vec<3>(0, 3, 3), Vec<3>(0, 0, 0), Vec<3>(0, 1, 0));
     model_shader.tex = &ramen_tex;
     model_shader.light = Vec<3>(5, 1.5, 5);
-    model_shader.ambient = 0.1;
+    model_shader.ambient = 0.6;
     double rot_angle = 0.0;
     while(engine::is_running()) {
         rot_angle += GetFrameTime();
