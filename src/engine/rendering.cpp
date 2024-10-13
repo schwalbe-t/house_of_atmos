@@ -95,37 +95,32 @@ namespace houseofatmos::engine::rendering {
         }
     }
 
+    bool Surface::contains(int x, int y) const {
+        return x >= 0 && x < this->width
+            && y >= 0 && y < this->height;
+    }
+
+    bool Surface::contains(const Vec<2>& pixel) const {
+        return this->contains(pixel.x(), pixel.y());
+    }
+
     Color Surface::get_color_at(int x, int y) const {
-        if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
-            return BLACK;
-        }
+        if(!this->contains(x, y)) { return BLACK; }
         return this->color[y * this->width + x];
     }
 
     void Surface::set_color_at(int x, int y, Color c) {
-        if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
-            return;
-        }
+        if(!this->contains(x, y)) { return; }
         this->color[y * this->width + x] = c;
     }
 
     double Surface::get_depth_at(int x, int y) const {
-        if(this->depth == nullptr) { 
-            return INFINITY; 
-        }
-        if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
-            return INFINITY;
-        }
+        if(this->depth == nullptr || !this->contains(x, y)) { return INFINITY; }
         return this->depth[y * this->width + x];
     }
 
     void Surface::set_depth_at(int x, int y, double d) {
-        if(this->depth == nullptr) { 
-            return; 
-        }
-        if(x < 0 || x >= this->width || y < 0 || y >= this->height) {
-            return;
-        }
+        if(this->depth == nullptr || !this->contains(x, y)) { return; }
         this->depth[y * this->width + x] = d;
     }
 

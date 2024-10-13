@@ -61,7 +61,7 @@ namespace houseofatmos::engine::rendering {
         S c_state; // shader after running 'vertex' for C
         double c_idepth; // inverse of depth of C
         double c_bc; // barycentric coordinate for C
-        double idepth; // current inverse depth
+        double depth; // current depth
     };
 
     template<typename V, typename S>
@@ -105,7 +105,7 @@ namespace houseofatmos::engine::rendering {
                 (*a * vs->a_idepth * vs->a_bc) + 
                 (*b * vs->b_idepth * vs->b_bc) + 
                 (*c * vs->c_idepth * vs->c_bc)
-            ) / vs->idepth;
+            ) * vs->depth;
         }
     };
 
@@ -122,6 +122,9 @@ namespace houseofatmos::engine::rendering {
         Surface& operator=(const Surface& other) = delete;
         Surface& operator=(Surface&& other) noexcept;
         ~Surface();
+
+        bool contains(int x, int y) const;
+        bool contains(const Vec<2>& pixel) const;
         Color get_color_at(int x, int y) const;
         void set_color_at(int x, int y, Color c);
         double get_depth_at(int x, int y) const;
@@ -162,15 +165,17 @@ namespace houseofatmos::engine::rendering {
                     vs->a_bc = triangle_area(p, b.swizzle<2>("xy"), c.swizzle<2>("xy")) / t_area;
                     vs->b_bc = triangle_area(p, c.swizzle<2>("xy"), a.swizzle<2>("xy")) / t_area;
                     vs->c_bc = triangle_area(p, a.swizzle<2>("xy"), b.swizzle<2>("xy")) / t_area;
-                    vs->idepth = vs->a_bc * vs->a_idepth + vs->b_bc * vs->b_idepth
-                        + vs->c_bc * vs->c_idepth;
-                    double depth = 1.0 / vs->idepth;
-                    if(depth >= this->get_depth_at(x, y)) {
+                    vs->depth = 1.0 / (
+                        vs->a_bc * vs->a_idepth +
+                        vs->b_bc * vs->b_idepth + 
+                        vs->c_bc * vs->c_idepth
+                    );
+                    if(vs->depth >= this->get_depth_at(x, y)) {
                         continue;
                     }
                     Color color = shader.fragment().as_color();
                     this->set_color_at(x, y, color);
-                    this->set_depth_at(x, y, depth);
+                    this->set_depth_at(x, y, vs->depth);
                 }
             }
         }
@@ -196,6 +201,11 @@ namespace houseofatmos::engine::rendering {
             Vec<3> a = (to_pixel_space * (a_ndc / a_ndc.w())).swizzle<3>("xyz");
             Vec<3> b = (to_pixel_space * (b_ndc / b_ndc.w())).swizzle<3>("xyz");
             Vec<3> c = (to_pixel_space * (c_ndc / c_ndc.w())).swizzle<3>("xyz");
+            // return if all vertices out of bounds
+            bool is_on_screen = this->contains(a.x(), a.y())
+                || this->contains(b.x(), b.y())
+                || this->contains(c.x(), c.y());
+            if(!is_on_screen) { return; }
             // sort vertex pixel positions (a, b, c in order of ascending y)
             if(a.y() > b.y()) {
                 std::swap(a, b);
