@@ -22,4 +22,4 @@ add_executable(
 target_link_libraries(house_of_atmos raylib)
 
 target_compile_features(house_of_atmos PRIVATE cxx_std_20)
-target_compile_options(house_of_atmos PRIVATE -Wall -Wextra -Wpedantic -O3 -g)
+target_compile_options(house_of_atmos PRIVATE -Wall -Wextra -Wpedantic -O3 -funroll-loops -flto -ffast-math -ftree-vectorize -g)

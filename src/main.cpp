@@ -45,7 +45,7 @@ int main() {
     model_shader.projection = Mat<4>::perspective(PI / 2.0, sub_buffer.width, sub_buffer.height, 0.1, 1000.0);
     model_shader.view = Mat<4>::look_at(Vec<3>(0, 3, 3), Vec<3>(0, 0, 0), Vec<3>(0, 0, -1));
     model_shader.tex = &ramen_tex;
-    model_shader.light = Vec<3>(20, 20, 20);
+    model_shader.light = Vec<3>(5, 1.5, 5);
     model_shader.ambient = 0.6;
     double rot_angle = 0.0;
     while(engine::is_running()) {
@@ -53,13 +53,6 @@ int main() {
         rot_angle += GetFrameTime();
         main_buffer.clear();
         sub_buffer.clear();
-        // for(int x = -13; x <= 13; x += 1) {
-        //     for(int z = -13; z <= 13; z += 1) {
-        //         model_shader.model = Mat<4>::translate(Vec<3>(x * 2, -1.0, z * 2))
-        //             * Mat<4>::rotate_y(rot_angle);
-        //         sub_buffer.draw_mesh(ramen_mesh, model_shader);
-        //     }
-        // }
         model_shader.model = Mat<4>::translate(Vec<3>(0.0, -1.0, 0.0))
            * Mat<4>::rotate_y(rot_angle);
         sub_buffer.draw_mesh(ramen_mesh, model_shader);
