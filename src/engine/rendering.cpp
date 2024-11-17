@@ -3,10 +3,12 @@
 #include <cstring>
 #include <iostream>
 
-using namespace houseofatmos::engine::math;
 
 namespace houseofatmos::engine::rendering {
 
+    using namespace houseofatmos::engine::math;
+    
+    
     Surface::Surface(int width, int height) {
         if(width < 0 || height < 0) {
             std::cout << "'width' and 'height' must both be positive!"

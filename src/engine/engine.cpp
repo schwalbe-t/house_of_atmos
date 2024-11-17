@@ -1,13 +1,15 @@
 
 #include "engine.hpp"
+#include "logging.hpp"
 #include <cstdlib>
 #include <utility>
 
 namespace houseofatmos::engine {
 
     void init(const char* title, int width, int height, int fps) {
-        SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         SetTraceLogLevel(LOG_ERROR);
+        SetTraceLogCallback(&houseofatmos::engine::logging::raylib);
+        SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         InitWindow(width, height, title);
         SetTargetFPS(fps);
     }

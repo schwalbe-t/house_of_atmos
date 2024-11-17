@@ -7,10 +7,12 @@
 #include <cstdint>
 #include "math.hpp"
 
+
 namespace houseofatmos::engine::rendering {
 
     using namespace houseofatmos::engine::math;
-
+    
+    
     static double triangle_area(Vec<2> a, Vec<2> b, Vec<2> c) {
         return 0.5 * fabs(
             a.x() * (b.y() - c.y())

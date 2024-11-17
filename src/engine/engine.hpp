@@ -3,7 +3,6 @@
 
 #include <raylib.h>
 #include "rendering.hpp"
-#include "resources.hpp"
 
 namespace houseofatmos::engine {
 

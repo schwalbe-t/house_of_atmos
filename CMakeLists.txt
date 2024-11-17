@@ -19,6 +19,7 @@ add_executable(
     ${SOURCES}
 )
 
+target_include_directories(house_of_atmos PRIVATE "lib")
 target_link_libraries(house_of_atmos raylib)
 
 target_compile_features(house_of_atmos PRIVATE cxx_std_20)
