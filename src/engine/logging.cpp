@@ -5,6 +5,7 @@
 namespace houseofatmos::engine::logging {
 
     void raylib(int log_level, const char* text, va_list args) {
+        (void) args;
         if(log_level == 3) { info(std::string(text)); }
         else if(log_level == 4) { warning(std::string(text)); }
         else if(log_level >= 5) { error(std::string(text)); }

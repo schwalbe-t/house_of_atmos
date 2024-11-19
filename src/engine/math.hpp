@@ -462,8 +462,11 @@ namespace houseofatmos::engine::math {
         template<int N>
         Mat<R, N> operator*(const Mat<C, N>& rhs) const {
             Mat<R, N> composition = Mat<R, N>();
-            for(int column_i = 0; column_i < N; column_i += 1) {
-                composition.columns[column_i] = *this * rhs.columns[column_i];
+            for(int row_i = 0; row_i < R; row_i += 1) {
+                for(int column_i = 0; column_i < N; column_i += 1) {
+                    composition.element(row_i, column_i)
+                        = (*this)[row_i].dot(rhs.columns[column_i]);
+                }
             }
             return composition;
         }

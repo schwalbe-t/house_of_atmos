@@ -32,10 +32,10 @@ struct ModelShader: engine::rendering::Shader<engine::resources::ModelVertex, Mo
 
 int main() {
     engine::init("House of Atmos", 1200, 800, 60);
-    engine::resources::read_rigged_model("res/player.gltf");
+    engine::resources::read_gltf_model("res/player.gltf");
     auto main_buffer = rendering::Surface(1200, 800);
     auto sub_buffer = rendering::Surface(300, 200);
-    auto model_mesh = resources::read_model("res/player.obj");
+    auto model_mesh = resources::read_obj_model("res/player.obj");
     auto model_tex = resources::read_texture("res/player.png");
     auto model_shader = ModelShader();
     model_shader.projection = Mat<4>::perspective(PI / 2.0, sub_buffer.width, sub_buffer.height, 0.1, 1000.0);
