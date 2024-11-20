@@ -5,6 +5,7 @@
 namespace engine = houseofatmos::engine;
 namespace rendering = houseofatmos::engine::rendering;
 namespace resources = houseofatmos::engine::resources;
+namespace animation = houseofatmos::engine::animation;
 using namespace houseofatmos::engine::math;
 
 
@@ -35,12 +36,17 @@ struct RiggedModelShader: rendering::Shader<resources::RiggedModelVertex, Rigged
     Mat<4> view;
     Mat<4> model;
     Mat<4> local;
+    const std::vector<resources::RiggedModelBone>* bones;
     const rendering::Surface* texture;
 
     Vec<4> vertex(resources::RiggedModelVertex vertex) override {
         this->uv = vertex.uv;
-        return this->projection * this->view * this->model * this->local
-            * vertex.pos.with(1.0);
+        Vec<4> pos;
+        for(size_t i = 0; i < 4; i += 1) {
+            pos += this->bones->at(vertex.joints[i]).anim_transform 
+                * vertex.pos.with(1.0) * vertex.weights[i];
+        }
+        return this->projection * this->view * this->model * this->local * pos;
     }
 
     Vec<2> uv;
@@ -54,19 +60,19 @@ struct RiggedModelShader: rendering::Shader<resources::RiggedModelVertex, Rigged
 int main() {
     engine::init("House of Atmos", 1200, 800, 60);
     auto model = engine::resources::read_gltf_model("res/player.gltf");
+    animation::Animation floss = model.animations["floss"];
     auto main_buffer = rendering::Surface(1200, 800);
-    auto sub_buffer = rendering::Surface(300, 200);
+    auto sub_buffer = rendering::Surface(1200, 800);
     auto model_shader = RiggedModelShader();
     model_shader.projection = Mat<4>::perspective(PI / 2.0, sub_buffer.width, sub_buffer.height, 0.1, 1000.0);
-    model_shader.view = Mat<4>::look_at(Vec<3>(0, 5, 7), Vec<3>(0, 3, 0), Vec<3>(0, 1, 0));
-    double rot_angle = 0.0;
+    model_shader.view = Mat<4>::look_at(Vec<3>(0, 5, 10), Vec<3>(0, 5, 0), Vec<3>(0, 1, 0));
+    model_shader.bones = &model.bones;
+    double anim_timer = 0.0;
     while(engine::is_running()) {
-        // std::cout << 1.0 / GetFrameTime() << std::endl;
-        rot_angle += GetFrameTime();
+        anim_timer = fmod(anim_timer + GetFrameTime(), floss.length);
+        floss.compute_transforms(model.bones, anim_timer);
         main_buffer.clear();
         sub_buffer.clear();
-        model_shader.model = Mat<4>::translate(Vec<3>(0.0, -1.0, 0.0))
-           * Mat<4>::rotate_y(rot_angle);
         model.draw(sub_buffer, model_shader);
         main_buffer.blit_buffer(sub_buffer, 0, 0, 1200, 800);
         engine::display_buffer(&main_buffer);

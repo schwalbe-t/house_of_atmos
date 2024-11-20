@@ -265,7 +265,7 @@ namespace houseofatmos::engine::math {
             return *this * (1.0 / length);
         }
 
-        Vec<N> cross(const Vec<N>& rhs) { 
+        Vec<N> cross(const Vec<N>& rhs) const { 
             static_assert(N == 3, "Both vectors must only have 3 elements!");
             return Vec<3>(
                 (this->y() * rhs.z() - this->z() * rhs.y()),
@@ -274,7 +274,7 @@ namespace houseofatmos::engine::math {
             );
         }
 
-        double dot(const Vec<N>& rhs) {
+        double dot(const Vec<N>& rhs) const {
             return (*this * rhs).sum();
         }
 
@@ -368,8 +368,13 @@ namespace houseofatmos::engine::math {
             return result;
         }
 
+        static Mat<R> quaternion(const Vec<4>& q) {
+            static_assert(R >= 3, "Matrix size must at least be 3!");
+            return Mat<R>::quaternion(q.x(), q.y(), q.z(), q.w());
+        }
+
         template<int N>
-        static Mat<R> scale(Vec<N> scalars) {
+        static Mat<R> scale(const Vec<N>& scalars) {
             static_assert(R == C, "Must be a square matrix!");
             static_assert(R >= 1, "Matrix size must at least be 1!");
             static_assert(N <= R, "Scalars must fit inside the Matrix!");
@@ -381,7 +386,7 @@ namespace houseofatmos::engine::math {
         }
 
         template<int N>
-        static Mat<R> translate(Vec<N> offsets) {
+        static Mat<R> translate(const Vec<N>& offsets) {
             static_assert(R >= 1, "Matrix size must at least be 1!");
             static_assert(N <= R, "Offsets must fit inside the Matrix!");
             Mat<R> result = Mat<R>();
@@ -391,7 +396,9 @@ namespace houseofatmos::engine::math {
             return result;
         }
 
-        static Mat<4> look_at(Vec<3> eye, Vec<3> at, Vec<3> up) {
+        static Mat<4> look_at(
+            const Vec<3>& eye, const Vec<3>& at, const Vec<3>& up
+        ) {
             Vec<3> forward = (at - eye).normalized();
             Vec<3> right = up.cross(forward).normalized();
             Vec<3> c_up = forward.cross(right).normalized();

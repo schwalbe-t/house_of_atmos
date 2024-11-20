@@ -3,6 +3,7 @@
 
 #include "math.hpp"
 #include <vector>
+#include <cassert>
 
 namespace houseofatmos::engine::animation {
 
@@ -13,15 +14,38 @@ namespace houseofatmos::engine::animation {
         MISSING, STEP, LINEAR
     };
 
+
     struct KeyFrame {
-        float timestamp;
+        float timestamp = 0.0;
         Interpolation translation_itpl = Interpolation::MISSING;
-        Vec<3> translation;
+        Vec<3> translation = Vec<3>(0.0, 0.0, 0.0);
         Interpolation rotation_itpl = Interpolation::MISSING;
-        Vec<4> rotation;
+        Vec<4> rotation = Vec<4>(0.0, 0.0, 0.0, 1.0);
         Interpolation scale_itpl = Interpolation::MISSING;
-        Vec<3> scale;
+        Vec<3> scale = Vec<3>(1.0, 1.0, 1.0);
     };
+
+
+    static Mat<4> build_anim_transform(
+        const Vec<3>& translation, const Vec<4>& rotation, const Vec<3>& scale
+    ) {
+        return Mat<4>::translate(translation)
+            * Mat<4>::quaternion(rotation)
+            * Mat<4>::scale(scale);
+    }
+
+    template<typename B>
+    static void propagate_anim_transform(
+        const Mat<4>* parent_transform, B& bone, std::vector<B>& bones
+    ) {
+        if(parent_transform != NULL) {
+            bone.anim_transform = bone.anim_transform * *parent_transform;
+        }
+        for(size_t child_i = 0; child_i < bone.children.size(); child_i += 1) {
+            B& child = bones[bone.children[child_i]];
+            propagate_anim_transform(&bone.anim_transform, child, bones);
+        }
+    }
 
     struct Animation {
         // one list of keyframes for each bone
@@ -31,13 +55,30 @@ namespace houseofatmos::engine::animation {
         void complete_keyframe_values();
         void compute_length();
 
-        KeyFrame compute_frame(size_t bone, double timestamp);
+        KeyFrame compute_frame(size_t bone, double timestamp) const;
 
         template<typename B>
         void compute_transforms(
             std::vector<B>& bones, size_t timestamp
-        ) {
-            std::abort(); // TODO!
+        ) const {
+            size_t joint_count = this->keyframes.size();
+            assert(bones.size() == joint_count);
+            for(size_t joint_i = 0; joint_i < joint_count; joint_i += 1) {
+                KeyFrame frame = this->compute_frame(joint_i, timestamp);
+                B& bone = bones[joint_i];
+                bone.anim_transform = build_anim_transform(
+                    frame.translation, frame.rotation, frame.scale
+                );
+            }
+            for(size_t joint_i = 0; joint_i < joint_count; joint_i += 1) {
+                B& bone = bones[joint_i];
+                if(bone.has_parent) { continue; }
+                propagate_anim_transform(NULL, bone, bones);
+            }
+            for(size_t joint_i = 0; joint_i < joint_count; joint_i += 1) {
+                B& bone = bones[joint_i];
+                bone.anim_transform = bone.anim_transform * bone.inverse_bind;
+            }
         }
     };
 

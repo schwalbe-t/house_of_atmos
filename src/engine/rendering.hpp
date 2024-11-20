@@ -187,18 +187,23 @@ namespace houseofatmos::engine::rendering {
             }
         }
 
+        #define RENDERER_MIN_DEPTH 0.0000005
+
         template<typename V, typename S>
         void draw_triangle(V vertex_a, V vertex_b, V vertex_c, S& shader) {
             VertexStates<V, S> vs;
             // get positions from vertex shader
             vs.a_state = shader;
             Vec<4> a_ndc = vs.a_state.vertex(vertex_a);
+            if(a_ndc.z() < RENDERER_MIN_DEPTH) { a_ndc.z() = RENDERER_MIN_DEPTH; }
             vs.a_idepth = 1.0 / a_ndc.z();
             vs.b_state = shader;
             Vec<4> b_ndc = vs.b_state.vertex(vertex_b);
+            if(b_ndc.z() < RENDERER_MIN_DEPTH) { b_ndc.z() = RENDERER_MIN_DEPTH; }
             vs.b_idepth = 1.0 / b_ndc.z();
             vs.c_state = shader;
             Vec<4> c_ndc = vs.c_state.vertex(vertex_c);
+            if(c_ndc.z() < RENDERER_MIN_DEPTH) { c_ndc.z() = RENDERER_MIN_DEPTH; }
             vs.c_idepth = 1.0 / c_ndc.z();
             // convert vertices to pixel space
             Mat<4> to_pixel_space
@@ -233,6 +238,7 @@ namespace houseofatmos::engine::rendering {
             double t_area = triangle_area(
                 a.swizzle<2>("xy"), b.swizzle<2>("xy"), c.swizzle<2>("xy")
             );
+            if(t_area == 0.0) { return; }
             // draw traingle segments
             shader.set_vertex_states(&vs);
             // segment: high -> mid (top half)

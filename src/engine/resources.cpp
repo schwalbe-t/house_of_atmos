@@ -16,7 +16,6 @@ namespace animation = houseofatmos::engine::animation;
 
 namespace houseofatmos::engine::resources {
 
-
     template<typename T>
     static std::ifstream open_stream(T file) {
         auto stream = std::ifstream(file);
@@ -170,19 +169,6 @@ namespace houseofatmos::engine::resources {
         }
     }
 
-    static void apply_inv_bind_matrix(
-        Mat<4>* parent_inverse_bind, RiggedModel& model, RiggedModelBone& bone
-    ) {
-        if(parent_inverse_bind != NULL) {
-            bone.inverse_bind = bone.inverse_bind * *parent_inverse_bind;
-        }
-        for(size_t child_i = 0; child_i < bone.children.size(); child_i += 1) {
-            RiggedModelBone& child = model.bones[bone.children[child_i]];
-            Mat<4> inverse_bind = bone.inverse_bind;
-            apply_inv_bind_matrix(&inverse_bind, model, child);
-        }
-    }
-
     static size_t find_gltf_joint_idx(json& joint_nodes, size_t node_idx) {
         for(size_t s_idx = 0; s_idx < joint_nodes.size(); s_idx += 1) {
             size_t s_node_idx = joint_nodes[s_idx];
@@ -230,7 +216,6 @@ namespace houseofatmos::engine::resources {
         // read children for all joints
         for(size_t joint_idx = 0; joint_idx < joint_count; joint_idx += 1) {
             RiggedModelBone& bone = model.bones[joint_idx];
-            bone.has_parent = false;
             size_t node_idx = skin["joints"][joint_idx];
             json& node = j["nodes"][node_idx];
             size_t child_count = node["children"].size();
@@ -243,12 +228,6 @@ namespace houseofatmos::engine::resources {
                 child.has_parent = true;
                 bone.children.push_back(child_joint_idx);
             }
-        }
-        // apply the inverse bind matrix of all parents to their children
-        for(size_t joint_idx = 0; joint_idx < joint_count; joint_idx += 1) {
-            RiggedModelBone& bone = model.bones[joint_idx];
-            if(bone.has_parent) { continue; }
-            apply_inv_bind_matrix(NULL, model, bone);
         }
         // return the joints array for later usage
         return skin["joints"];
@@ -618,6 +597,5 @@ namespace houseofatmos::engine::resources {
         read_gltf_animations(j, model, buffers, joint_nodes, file);
         return model;
     }
-
 
 }

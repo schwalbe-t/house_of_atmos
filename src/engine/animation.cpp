@@ -144,8 +144,45 @@ namespace houseofatmos::engine::animation {
     }
 
 
-    KeyFrame Animation::compute_frame(size_t bone, double timestamp) {
-        std::abort(); // TODO!
+    static size_t find_next_keyframe(
+        const std::vector<KeyFrame>& keyframes, double timestamp
+    ) {
+        for(size_t s_kf_i = 0; s_kf_i < keyframes.size(); s_kf_i += 1) {
+            const KeyFrame& keyframe = keyframes[s_kf_i];
+            if(keyframe.timestamp < timestamp) { continue; }
+            return s_kf_i;
+        }
+        std::abort(); // should be unreachable
+    }
+
+    KeyFrame Animation::compute_frame(
+        size_t joint_idx, double timestamp
+    ) const {
+        const std::vector<KeyFrame>& keyframes = this->keyframes[joint_idx];
+        if(keyframes.size() == 0) { return KeyFrame(); }
+        const KeyFrame& f_frame = keyframes[0];
+        if(timestamp <= f_frame.timestamp) { return keyframes[0]; }
+        const KeyFrame& l_frame = keyframes[keyframes.size() - 1];
+        if(timestamp >= l_frame.timestamp) { return l_frame; }
+        size_t next_frame_i = find_next_keyframe(keyframes, timestamp);
+        size_t prev_frame_i = next_frame_i == 0? 0 : next_frame_i - 1;
+        const KeyFrame& prev = keyframes[next_frame_i];
+        const KeyFrame& next = keyframes[prev_frame_i];
+        // copy interpolation types from the next keyframe, interpolate rest
+        KeyFrame result = next;
+        result.timestamp = timestamp;
+        double frame_diff = next.timestamp - prev.timestamp;
+        double t = (timestamp - prev.timestamp) / frame_diff;
+        result.translation = interpolate(
+            prev.translation, next.translation, t, result.translation_itpl
+        );
+        result.rotation = interpolate_spherical(
+            prev.rotation, next.rotation, t, result.rotation_itpl
+        );
+        result.scale = interpolate(
+            prev.scale, next.scale, t, result.scale_itpl
+        );
+        return result;
     }
 
 }

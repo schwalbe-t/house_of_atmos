@@ -3,6 +3,8 @@
 #include <cstring>
 #include <iostream>
 
+#include <cassert>
+
 
 namespace houseofatmos::engine::rendering {
 
@@ -134,10 +136,12 @@ namespace houseofatmos::engine::rendering {
         if(v < 0.0) { v += 1.0; }
         // convert to pixels (note that y needs to be flipped)
         int x_px = static_cast<int>(u * this->width);
-        x_px = std::min(x_px, this->width - 1); // in case x_uv ends up as 1.0
         int y_px = this->height - static_cast<int>(v * this->height);
-        y_px = std::min(y_px, this->height - 1); // in case y_uv ends up as 1.0
         // read the color and return as normalized vector
+        assert(x_px >= 0);
+        assert(x_px < this->width);
+        assert(y_px >= 0);
+        assert(y_px < this->height);
         Color color = this->color[y_px * this->width + x_px];
         return Vec<4>(
             color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255

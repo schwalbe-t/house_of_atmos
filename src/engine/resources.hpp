@@ -41,7 +41,7 @@ namespace houseofatmos::engine::resources {
         Mat<4> inverse_bind;
         Mat<4> anim_transform;
         std::vector<uint8_t> children;
-        bool has_parent;
+        bool has_parent = false;
     };
     struct RiggedModel {
         std::vector<RiggedModelMesh> meshes;
