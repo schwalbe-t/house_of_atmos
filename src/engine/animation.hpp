@@ -10,16 +10,16 @@ namespace houseofatmos::engine::animation {
 
 
     enum Interpolation {
-        ITPL_STEP, ITPL_LINEAR
+        MISSING, STEP, LINEAR
     };
 
     struct KeyFrame {
-        double timestamp;
-        Interpolation translation_itpl;
+        float timestamp;
+        Interpolation translation_itpl = Interpolation::MISSING;
         Vec<3> translation;
-        Interpolation rotation_itpl;
+        Interpolation rotation_itpl = Interpolation::MISSING;
         Vec<4> rotation;
-        Interpolation scale_itpl;
+        Interpolation scale_itpl = Interpolation::MISSING;
         Vec<3> scale;
     };
 
@@ -36,5 +36,39 @@ namespace houseofatmos::engine::animation {
             std::abort(); // TODO!
         }
     };
+
+
+    template<typename T>
+    T lerp(T start, T end, double t) {
+        return start + (end - start) * t;
+    }
+
+    template<int N>
+    Vec<N> slerp(Vec<N> start, Vec<N> end, double t) {
+        double dot = start.dot(end);
+        if(dot < 0) {
+            end *= -1;
+            dot *= -1;
+        }
+        if(dot > 0.9995) { return lerp(start, end, t); }
+        double theta = acos(dot);
+        double sin_theta = sin(theta);
+        return start * sin((1 - t) * theta) / sin_theta
+            + end * sin(t * theta) / sin_theta;
+    }
+
+    template<typename T>
+    T interpolate(T start, T end, double t, Interpolation i) {
+        if(i != Interpolation::LINEAR) { return start; }
+        return lerp(start, end, t);
+    }
+
+    template<int N>
+    Vec<N> interpolate_spherical(
+        Vec<N> start, Vec<N> end, double t, Interpolation i
+    ) {
+        if(i != Interpolation::LINEAR) { return start; }
+        return slerp(start, end, t);
+    }
 
 }
