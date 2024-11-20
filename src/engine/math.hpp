@@ -365,6 +365,21 @@ namespace houseofatmos::engine::math {
             return result;
         }
 
+        static Mat<R> quaternion(double x, double y, double z, double w) {
+            static_assert(R >= 3, "Matrix size must at least be 3!");
+            Mat<R> result = Mat<R>();
+            result.element(0, 0) = 1 - 2*y*y - 2*z*z;
+            result.element(0, 1) = 2*x*y - 2*z*w;
+            result.element(0, 2) = 2*x*z + 2*y*w;
+            result.element(1, 0) = 2*x*y + 2*z*w;
+            result.element(1, 1) = 1 - 2*x*x - 2*z*z;
+            result.element(1, 2) = 2*y*z - 2*x*w;
+            result.element(2, 0) = 2*x*z - 2*y*w;
+            result.element(2, 1) = 2*y*z + 2*x*w;
+            result.element(2, 2) = 1 - 2*x*x - 2*y*y;
+            return result;
+        }
+
         template<int N>
         static Mat<R> scale(Vec<N> scalars) {
             static_assert(R == C, "Must be a square matrix!");

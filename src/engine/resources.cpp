@@ -247,50 +247,72 @@ namespace houseofatmos::engine::resources {
         }
     }
 
+    static char* get_gltf_view_ptr(
+        json& j, std::vector<std::vector<char>>& buffers, size_t accessor_idx
+    ) {
+        json& acessor = j["accessors"][accessor_idx];
+        size_t view_idx = acessor["bufferView"];
+        json& view_j = j["bufferViews"][view_idx];
+        size_t buffer_idx = view_j["buffer"];
+        size_t byte_offset = view_j["byteOffset"];
+        return &buffers[buffer_idx][byte_offset];
+    }
+
     static void read_gltf_mesh(
-        json& j, json& mesh_j, RiggedModel& model, const char* file,
+        json& j, json& node, json& mesh_j, RiggedModel& model, const char* file,
         std::vector<std::vector<char>>& buffers
     ) {
         size_t mesh_idx = model.meshes.size();
         model.meshes.push_back(RiggedModelMesh());
         RiggedModelMesh& mesh = model.meshes[mesh_idx];
-        mesh.texture = mesh_j["primitives"]["material"];
-        json& attributes = mesh_j["primitives"]["attributes"];
-        size_t indices_acc_idx = mesh_j["primitives"]["indices"];
+        mesh.texture = mesh_j["primitives"][0]["material"];
+        // construct the local transformation matrix
+        Mat<4>& lt = mesh.local_transform;
+        if(node.contains("translation")) {
+            json& translation = node["translation"];
+            lt = lt * Mat<4>::translate(Vec<3>(
+                translation[0], translation[1], translation[2]
+            ));
+        }
+        if(node.contains("rotation")) {
+            json& rotation = node["rotation"];
+            lt = lt * Mat<4>::quaternion(
+                rotation[0], rotation[1], rotation[2], rotation[3]
+            );
+        }
+        if(node.contains("scale")) {
+            json& scale = node["scale"];
+            lt = lt * Mat<4>::scale(Vec<3>(
+                scale[0], scale[1], scale[2]
+            ));
+        }
         // get pointers into the buffers for each vertex property
-        // position
-        float (*position_view)[3];
-        json& position_acc = j["accessors"][attributes["POSITION"]];
-        json& position_view_j = j["bufferViews"][position_acc["bufferView"]];
-        size_t position_buf_i = position_view_j["buffer"];
-        size_t position_offset = position_view_j["byteOffset"];
-        position_view = (float(*)[3]) &buffers[position_buf_i][position_offset];
-        // normal
-        float (*normal_view)[3];
-        json& normal_acc = j["accessors"][attributes["NORMAL"]];
-        json& normal_view_j = j["bufferViews"][normal_acc["bufferView"]];
-        size_t normal_buf_i = normal_view_j["buffer"];
-        size_t normal_offset = normal_view_j["byteOffset"];
-        normal_view = (float(*)[3]) &buffers[normal_buf_i][normal_offset];
-        // texcoord
-        float (*texcoord_view)[2];
-        json& texcoord_acc = j["accessors"][attributes["TEXCOORD_0"]];
-        json& texcoord_view_j = j["bufferViews"][texcoord_acc["bufferView"]];
-        size_t texcoord_buf_i = texcoord_view_j["buffer"];
-        size_t texcoord_offset = texcoord_view_j["byteOffset"];
-        texcoord_view = (float(*)[2]) &buffers[texcoord_buf_i][texcoord_offset];
-        // joints
+        json& attributes = mesh_j["primitives"][0]["attributes"];
+        size_t indices_acc_idx = mesh_j["primitives"][0]["indices"];
+        size_t position_acc_idx = attributes["POSITION"];
+        size_t vertex_count = j["accessors"][position_acc_idx]["count"];
+        float (*position_view)[3] = (float(*)[3]) get_gltf_view_ptr(
+            j, buffers, position_acc_idx
+        );
+        float (*normal_view)[3] = (float(*)[3]) get_gltf_view_ptr(
+            j, buffers, attributes["NORMAL"]
+        );
+        float (*texcoord_view)[2] = (float(*)[2]) get_gltf_view_ptr(
+            j, buffers, attributes["TEXCOORD_0"]
+        );
         uint8_t (*joints_view)[4] = NULL;
         if(attributes.contains("JOINTS_0")) {
-            // TODO!
+            joints_view = (uint8_t(*)[4]) get_gltf_view_ptr(
+                j, buffers, attributes["JOINTS_0"]
+            );
         }
-        // weights
         float (*weigths_view)[4] = NULL;
         if(attributes.contains("WEIGHTS_0")) {
-            // TODO!
+            weigths_view = (float(*)[4]) get_gltf_view_ptr(
+                j, buffers, attributes["WEIGHTS_0"]
+            );
         }
         // read the data into a single array
-        size_t vertex_count = position_acc["count"];
         for(size_t vert_i = 0; vert_i < vertex_count; vert_i += 1) {
             RiggedModelVertex vertex;
             float* view_pos = position_view[vert_i];
@@ -298,9 +320,26 @@ namespace houseofatmos::engine::resources {
             float* view_norm = normal_view[vert_i];
             vertex.normal = Vec<3>(view_norm[0], view_norm[1], view_norm[2]);
             float* view_uv = texcoord_view[vert_i];
-            vertex.uv = Vec<2>(view_uv[0], view_uv[1]);
+            // .gltf        - (0, 0) = top left
+            // OpenGL, .obj - (0, 0) = bottom left
+            // since we are using the OpenGL UV coordinate convention,
+            // we need to flip the coordinates read from the file vertically
+            vertex.uv = Vec<2>(view_uv[0], 1.0 - view_uv[1]);
             if(joints_view != NULL && weigths_view != NULL) {
-                // TODO!
+                static_assert(
+                    RIGGED_MESH_MAX_VERTEX_JOINTS == 4, 
+                    "GLTF uses 4 weights and joints per vertex"
+                );
+                memcpy(
+                    (void*) vertex.joints.data(), 
+                    (void*) joints_view[vert_i], 
+                    sizeof(uint8_t) * RIGGED_MESH_MAX_VERTEX_JOINTS
+                );
+                memcpy(
+                    (void*) vertex.weights.elements, 
+                    (void*) weigths_view[vert_i], 
+                    sizeof(float) * RIGGED_MESH_MAX_VERTEX_JOINTS
+                );
             }
             mesh.mesh.add_vertex(vertex);
         }
@@ -313,7 +352,8 @@ namespace houseofatmos::engine::resources {
                     + " for its element indices!"
             );
         }
-        json& indices_view_j = j["bufferViews"][indices_acc["bufferView"]];
+        size_t indices_view_i = indices_acc["bufferView"];
+        json& indices_view_j = j["bufferViews"][indices_view_i];
         size_t ind_buf_i = indices_view_j["buffer"];
         size_t ind_offset = indices_view_j["byteOffset"];
         uint16_t* indices_view = (uint16_t*) &buffers[ind_buf_i][ind_offset];
@@ -332,12 +372,10 @@ namespace houseofatmos::engine::resources {
         std::vector<std::vector<char>>& buffers
     ) {
         for(size_t s_node_i = 0; s_node_i < nodes.size(); s_node_i += 1) {
-            json& node = j["nodes"][nodes[s_node_i]];
-            // TODO! we need to apply rotation and translation
-            //       to the meshes we collect!
+            json& node = j["nodes"][(size_t) nodes[s_node_i]];
             if(node.contains("mesh")) {
-                json& mesh = j["meshes"][node["mesh"]];
-                read_gltf_mesh(j, mesh, model, file, buffers);
+                json& mesh = j["meshes"][(size_t) node["mesh"]];
+                read_gltf_mesh(j, node, mesh, model, file, buffers);
             }
             collect_gltf_meshes(j, node["children"], model, file, buffers);
         }
@@ -352,7 +390,7 @@ namespace houseofatmos::engine::resources {
         read_gltf_buffers(j, dir, buffers);
         read_gltf_materials(j, dir, file, model);
         read_gltf_bones(j, buffers, file, model);
-        json& scene = j["scenes"][j["scene"]];
+        json& scene = j["scenes"][(size_t) j["scene"]];
         collect_gltf_meshes(j, scene["nodes"], model, file, buffers);
         // read animations - TODO!
         return model;
