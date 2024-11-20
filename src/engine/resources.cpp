@@ -415,16 +415,13 @@ namespace houseofatmos::engine::resources {
         return r;
     }
 
-    static animation::Animation read_gltf_animation(
-        json& j, json& anim_j, std::vector<std::vector<char>>& buffers,
-        json& joint_nodes, const char* file
+    static void collect_gltf_keyframes(
+        json& j, json& anim_j, json& joint_nodes, 
+        std::vector<std::vector<char>>& buffers, const char* file,
+        animation::Animation& animation
     ) {
-        auto animation = animation::Animation();
-        animation.keyframes = std::vector(
-            joint_nodes.size(), std::vector<animation::KeyFrame>()
-        );
-        // read all keyframes and their timestamps for each joint
-        for(size_t joint_i = 0; joint_i < joint_nodes.size(); joint_i += 1) {
+        size_t joint_count = animation.keyframes.size();
+        for(size_t joint_i = 0; joint_i < joint_count; joint_i += 1) {
             std::vector<animation::KeyFrame>& keyframes
                 = animation.keyframes[joint_i];
             size_t joint_node_i = joint_nodes[joint_i];
@@ -455,7 +452,31 @@ namespace houseofatmos::engine::resources {
                 }
             }
         }
-        // populate the keyframes with the initial data
+    }
+
+    static animation::Interpolation parse_gltf_interpolation_type(
+        std::string interpolation_s, const char* file
+    ) {
+        if(interpolation_s == "STEP") {
+            return animation::Interpolation::STEP;
+        } else if(interpolation_s == "LINEAR") {
+            return animation::Interpolation::LINEAR;
+        } else {
+            logging::error(
+                "The file '" + std::string(file) 
+                    + "' makes use of the animation interpolation type '"
+                    + std::string(interpolation_s)
+                    + "', which is currently not supported"
+            );
+            return animation::Interpolation::MISSING;
+        }
+    }
+
+    static void read_gltf_keyframe_values(
+        json& j, json& anim_j, json& joint_nodes,
+        std::vector<std::vector<char>>& buffers, const char* file,
+        animation::Animation& animation
+    ) {
         for(size_t ch_i = 0; ch_i < anim_j["channels"].size(); ch_i += 1) {
             json& channel_j = anim_j["channels"][ch_i];
             std::string property_s = channel_j["target"]["path"];
@@ -465,20 +486,9 @@ namespace houseofatmos::engine::resources {
             json& sampler_j = anim_j["samplers"][sampler_i];
             // parse the interpolation type
             std::string interpolation_s = sampler_j["interpolation"];
-            animation::Interpolation interpolation;
-            if(interpolation_s == "STEP") {
-                interpolation = animation::Interpolation::STEP;
-            } else if(interpolation_s == "LINEAR") {
-                interpolation = animation::Interpolation::LINEAR;
-            } else {
-                logging::error(
-                    "The file '" + std::string(file) 
-                        + "' makes use of the animation interpolation type '"
-                        + std::string(interpolation_s)
-                        + "', which is currently not supported"
-                );
-            }
-            // get the timestamp and value view
+            animation::Interpolation interpolation
+                = parse_gltf_interpolation_type(interpolation_s, file);
+            // get the timestamp and value views
             size_t ts_accessor_i = sampler_j["input"];
             size_t timestamp_count = j["accessors"][ts_accessor_i]["count"];
             float* timestamp_view = (float*) get_gltf_view_ptr(
@@ -493,7 +503,7 @@ namespace houseofatmos::engine::resources {
             size_t value_offset = 0;
             for(size_t ts_i = 0; ts_i < timestamp_count; ts_i += 1) {
                 float timestamp = timestamp_view[ts_i];
-                // find the keyframe
+                // find the keyframe to populate
                 size_t keyframe_i;
                 for(size_t s_kf_i = 0; s_kf_i < keyframes.size(); s_kf_i += 1) {
                     if(keyframes[s_kf_i].timestamp != timestamp) { continue; }
@@ -523,13 +533,16 @@ namespace houseofatmos::engine::resources {
                 }
             }
         }
-        // In the above section, keyframes can receive data for only some
-        // properties. This section fills in the data for incomplete frames. 
-        for(size_t joint_i = 0; joint_i < joint_nodes.size(); joint_i += 1) {
+    }
+
+    static void complete_first_gltf_keyframes(
+        json& j, json& joint_nodes, animation::Animation& animation
+    ) {
+        size_t joint_count = animation.keyframes.size();
+        for(size_t joint_i = 0; joint_i < joint_count; joint_i += 1) {
             std::vector<animation::KeyFrame>& keyframes
                 = animation.keyframes[joint_i];
             if(keyframes.size() == 0) { continue; }
-            // fill in data for the first frame (defaults to node values)
             size_t node_idx = joint_nodes[joint_i];
             json& node_j = j["nodes"][node_idx];
             animation::KeyFrame& f_frame = keyframes[0];
@@ -551,71 +564,28 @@ namespace houseofatmos::engine::resources {
                 );
                 f_frame.scale_itpl = animation::Interpolation::STEP;
             }
-            // fill in data for following frames
-            Vec<3> last_transl = f_frame.translation;
-            size_t last_transl_i = 0;
-            Vec<4> last_rot = f_frame.rotation;
-            size_t last_rot_i = 0;
-            Vec<3> last_scale = f_frame.scale;
-            size_t last_scale_i = 0;
-            for(size_t kf_i = 1; kf_i < keyframes.size(); kf_i += 1) {
-                animation::KeyFrame& kf = keyframes[kf_i];
-                bool insert_translation
-                    = kf.translation_itpl != animation::Interpolation::MISSING
-                    && kf_i > last_transl_i + 1;
-                bool insert_rotation
-                    = kf.rotation_itpl != animation::Interpolation::MISSING
-                    && kf_i > last_rot_i + 1;
-                bool insert_scale
-                    = kf.scale_itpl != animation::Interpolation::MISSING
-                    && kf_i > last_scale_i + 1;
-                if(insert_translation) {
-                    size_t i_kf_i = last_transl_i;
-                    for(; i_kf_i < kf_i; i_kf_i += 1) {
-                        double t = (double) (i_kf_i - last_transl_i) / kf_i;
-                        animation::KeyFrame& i_kf = keyframes[i_kf_i];
-                        i_kf.translation = animation::interpolate(
-                            last_transl, kf.translation, t, kf.translation_itpl
-                        );
-                        i_kf.translation_itpl = kf.translation_itpl;
-                    }
-                }
-                if(insert_rotation) {
-                    size_t i_kf_i = last_rot_i;
-                    for(; i_kf_i < kf_i; i_kf_i += 1) {
-                        double t = (double) (i_kf_i - last_rot_i) / kf_i;
-                        animation::KeyFrame& i_kf = keyframes[i_kf_i];
-                        i_kf.rotation = animation::interpolate_spherical(
-                            last_rot, kf.rotation, t, kf.rotation_itpl
-                        );
-                        i_kf.rotation_itpl = kf.rotation_itpl;
-                    }
-                }
-                if(insert_scale) {
-                    size_t i_kf_i = last_scale_i;
-                    for(; i_kf_i < kf_i; i_kf_i += 1) {
-                        double t = (double) (i_kf_i - last_scale_i) / kf_i;
-                        animation::KeyFrame& i_kf = keyframes[i_kf_i];
-                        i_kf.scale = animation::interpolate(
-                            last_scale, kf.scale, t, kf.scale_itpl
-                        );
-                        i_kf.scale_itpl = kf.scale_itpl;
-                    }
-                }
-                if(kf.translation_itpl != animation::Interpolation::MISSING) {
-                    last_transl = kf.translation;
-                    last_transl_i = kf_i;
-                }
-                if(kf.rotation_itpl != animation::Interpolation::MISSING) {
-                    last_rot = kf.rotation;
-                    last_rot_i = kf_i;
-                }
-                if(kf.scale_itpl != animation::Interpolation::MISSING) {
-                    last_scale = kf.scale;
-                    last_scale_i = kf_i;
-                }
-            }
         }
+    }
+
+    static animation::Animation read_gltf_animation(
+        json& j, json& anim_j, std::vector<std::vector<char>>& buffers,
+        json& joint_nodes, const char* file
+    ) {
+        auto animation = animation::Animation();
+        animation.keyframes = std::vector(
+            joint_nodes.size(), std::vector<animation::KeyFrame>()
+        );
+        collect_gltf_keyframes(
+            j, anim_j, joint_nodes, buffers, file, animation
+        );
+        read_gltf_keyframe_values(
+            j, anim_j, joint_nodes, buffers, file, animation
+        );
+        complete_first_gltf_keyframes(
+            j, joint_nodes, animation
+        );
+        animation.complete_keyframe_values();
+        animation.compute_length();
         return animation;
     }
 

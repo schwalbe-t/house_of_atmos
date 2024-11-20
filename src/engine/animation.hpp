@@ -26,8 +26,12 @@ namespace houseofatmos::engine::animation {
     struct Animation {
         // one list of keyframes for each bone
         std::vector<std::vector<KeyFrame>> keyframes;
+        double length;
 
-        KeyFrame get_frame(size_t bone, size_t timestamp);
+        void complete_keyframe_values();
+        void compute_length();
+
+        KeyFrame compute_frame(size_t bone, double timestamp);
 
         template<typename B>
         void compute_transforms(
