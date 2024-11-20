@@ -175,7 +175,12 @@ namespace houseofatmos::engine::rendering {
                     if(vs->depth >= this->get_depth_at(x, y)) {
                         continue;
                     }
-                    Color color = shader.fragment().as_color();
+                    Vec<4> fr_color = shader.fragment();
+                    Color color;
+                    color.r = fr_color.r() * 255.0;
+                    color.g = fr_color.g() * 255.0;
+                    color.b = fr_color.b() * 255.0;
+                    color.a = fr_color.a() * 255.0;
                     this->set_color_at(x, y, color);
                     this->set_depth_at(x, y, vs->depth);
                 }

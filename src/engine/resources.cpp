@@ -7,10 +7,12 @@
 #include <sstream>
 #include <nlohmann/json.hpp>
 #include <filesystem>
+#include <unordered_set>
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 namespace logging = houseofatmos::engine::logging;
+namespace animation = houseofatmos::engine::animation;
 
 namespace houseofatmos::engine::resources {
 
@@ -181,12 +183,22 @@ namespace houseofatmos::engine::resources {
         }
     }
 
-    static void read_gltf_bones(
+    static size_t find_gltf_joint_idx(json& joint_nodes, size_t node_idx) {
+        for(size_t s_idx = 0; s_idx < joint_nodes.size(); s_idx += 1) {
+            size_t s_node_idx = joint_nodes[s_idx];
+            if(s_node_idx == node_idx) {
+                return s_idx;
+            }
+        }
+        std::abort();
+    }
+
+    static json& read_gltf_bones(
         json& j, std::vector<std::vector<char>>& buffers, const char* file,
         RiggedModel& model
     ) {
         size_t skin_count = j["skins"].size();
-        if(skin_count == 0) { return; }
+        if(skin_count == 0) { return j["skins"]; /* any empty array works */ }
         if(skin_count > 1) {
             logging::error(
                 "The file '" + std::string(file)
@@ -224,16 +236,9 @@ namespace houseofatmos::engine::resources {
             size_t child_count = node["children"].size();
             for(size_t child_idx = 0; child_idx < child_count; child_idx += 1) {
                 size_t child_node_idx = node["children"][child_idx];
-                // search for the node index in the joints array
-                size_t child_joint_idx;
-                for(size_t s_idx = 0; s_idx < joint_count; s_idx += 1) {
-                    size_t s_node_idx = skin["joints"][s_idx];
-                    if(s_node_idx == child_node_idx) {
-                        child_joint_idx = s_idx;
-                        break;
-                    }
-                }
-                // add the joint index as a child
+                size_t child_joint_idx = find_gltf_joint_idx(
+                    skin["joints"], child_node_idx
+                );
                 RiggedModelBone& child = model.bones[child_joint_idx];
                 child.has_parent = true;
                 bone.children.push_back(child_joint_idx);
@@ -245,13 +250,28 @@ namespace houseofatmos::engine::resources {
             if(bone.has_parent) { continue; }
             apply_inv_bind_matrix(NULL, model, bone);
         }
+        // return the joints array for later usage
+        return skin["joints"];
     }
 
     static char* get_gltf_view_ptr(
-        json& j, std::vector<std::vector<char>>& buffers, size_t accessor_idx
+        json& j, std::vector<std::vector<char>>& buffers, size_t accessor_idx,
+        size_t expected_component_type, const char* file
     ) {
-        json& acessor = j["accessors"][accessor_idx];
-        size_t view_idx = acessor["bufferView"];
+        json& accessor = j["accessors"][accessor_idx];
+        if(accessor["componentType"] != expected_component_type) {
+            logging::error(
+                "Expected component type " 
+                    + std::to_string(expected_component_type)
+                    + " for accessor with index "
+                    + std::to_string(accessor_idx)
+                    + " in file '" + std::string(file)
+                    + "', but got component type "
+                    + std::string(accessor["componentType"])
+                    + ", which is either incorrect or currently not supported"
+            );
+        }
+        size_t view_idx = accessor["bufferView"];
         json& view_j = j["bufferViews"][view_idx];
         size_t buffer_idx = view_j["buffer"];
         size_t byte_offset = view_j["byteOffset"];
@@ -292,24 +312,25 @@ namespace houseofatmos::engine::resources {
         size_t position_acc_idx = attributes["POSITION"];
         size_t vertex_count = j["accessors"][position_acc_idx]["count"];
         float (*position_view)[3] = (float(*)[3]) get_gltf_view_ptr(
-            j, buffers, position_acc_idx
+            j, buffers, position_acc_idx, 5126 /* GL_FLOAT */, file
         );
         float (*normal_view)[3] = (float(*)[3]) get_gltf_view_ptr(
-            j, buffers, attributes["NORMAL"]
+            j, buffers, attributes["NORMAL"], 5126 /* GL_FLOAT */, file
         );
         float (*texcoord_view)[2] = (float(*)[2]) get_gltf_view_ptr(
-            j, buffers, attributes["TEXCOORD_0"]
+            j, buffers, attributes["TEXCOORD_0"], 5126 /* GL_FLOAT */, file
         );
         uint8_t (*joints_view)[4] = NULL;
         if(attributes.contains("JOINTS_0")) {
             joints_view = (uint8_t(*)[4]) get_gltf_view_ptr(
-                j, buffers, attributes["JOINTS_0"]
+                j, buffers, attributes["JOINTS_0"], 5121 /* GL_UNSIGNED_BYTE */, 
+                file
             );
         }
         float (*weigths_view)[4] = NULL;
         if(attributes.contains("WEIGHTS_0")) {
             weigths_view = (float(*)[4]) get_gltf_view_ptr(
-                j, buffers, attributes["WEIGHTS_0"]
+                j, buffers, attributes["WEIGHTS_0"], 5126 /* GL_FLOAT */, file
             );
         }
         // read the data into a single array
@@ -344,20 +365,10 @@ namespace houseofatmos::engine::resources {
             mesh.mesh.add_vertex(vertex);
         }
         // read the element data out of the buffers
-        json& indices_acc = j["accessors"][indices_acc_idx];
-        if(indices_acc["componentType"] != 5123) {
-            logging::error(
-                "The file '" + std::string(file) 
-                    + "' does not use component type 5123 (GL_UNSIGNED_SHORT)"
-                    + " for its element indices!"
-            );
-        }
-        size_t indices_view_i = indices_acc["bufferView"];
-        json& indices_view_j = j["bufferViews"][indices_view_i];
-        size_t ind_buf_i = indices_view_j["buffer"];
-        size_t ind_offset = indices_view_j["byteOffset"];
-        uint16_t* indices_view = (uint16_t*) &buffers[ind_buf_i][ind_offset];
-        size_t index_count = indices_acc["count"];
+        uint16_t* indices_view = (uint16_t*) get_gltf_view_ptr(
+            j, buffers, indices_acc_idx, 5123 /* GL_UNSIGNED_SHORT */, file
+        );
+        size_t index_count = j["accessors"][indices_acc_idx]["count"];
         for(size_t idx_i = 0; idx_i < index_count; idx_i += 3) {
             mesh.mesh.add_element(
                 indices_view[idx_i + 0],
@@ -381,6 +392,64 @@ namespace houseofatmos::engine::resources {
         }
     }
 
+    static animation::Animation read_gltf_animation(
+        json& j, json& anim_j, std::vector<std::vector<char>>& buffers,
+        json& joint_nodes, const char* file
+    ) {
+        auto animation = animation::Animation();
+        for(size_t joint_i = 0; joint_i < joint_nodes.size(); joint_i += 1) {
+            std::vector<animation::KeyFrame> keyframes;
+            size_t joint_node_i = joint_nodes[joint_i];
+            // read all keyframes and their timestamps for the joint
+            std::unordered_set<double> seen_timestamps;
+            for(size_t ch_i = 0; ch_i < anim_j["channels"].size(); ch_i += 1) {
+                json& channel_j = anim_j["channels"][ch_i];
+                if(channel_j["target"]["node"] != joint_node_i) { continue; }
+                size_t sampler_i = channel_j["sampler"];
+                json& sampler_j = anim_j["samplers"][sampler_i];
+                size_t ts_accessor_i = sampler_j["input"];
+                size_t timestamp_count = j["accessors"][ts_accessor_i]["count"];
+                float* timestamp_view = (float*) get_gltf_view_ptr(
+                    j, buffers, ts_accessor_i, 5126 /* GL_FLOAT */, file
+                );
+                for(size_t ts_i = 0; ts_i < timestamp_count; ts_i += 1) {
+                    float timestamp = timestamp_view[ts_i];
+                    if(seen_timestamps.count(timestamp)) { continue; }
+                    size_t insert_idx = keyframes.size();
+                    for(size_t kf_i = 0; kf_i < keyframes.size(); kf_i += 1) {
+                        if(keyframes[kf_i].timestamp < timestamp) { continue; }
+                        insert_idx = kf_i;
+                        break;
+                    }
+                    auto keyframe = animation::KeyFrame();
+                    keyframe.timestamp = timestamp;
+                    keyframes.insert(keyframes.begin() + insert_idx, keyframe);
+                    seen_timestamps.insert(timestamp);
+                }
+            }
+            // populate the keyframes with data
+            
+            // submit the keyframes
+            animation.keyframes.push_back(std::move(keyframes));
+        }
+        return animation;
+    }
+
+    static void read_gltf_animations(
+        json& j, RiggedModel& model, std::vector<std::vector<char>>& buffers,
+        json& joint_nodes, const char* file
+    ) {
+        size_t anim_count = j["animations"].size();
+        for(size_t anim_i = 0; anim_i < anim_count; anim_i += 1) {
+            json& anim_j = j["animations"][anim_i];
+            std::string anim_name = anim_j["name"];
+            animation::Animation anim = read_gltf_animation(
+                j, anim_j, buffers, joint_nodes, file
+            );
+            model.animations[anim_name] = anim;
+        }
+    }
+
     engine::resources::RiggedModel read_gltf_model(const char* file) {
         fs::path dir = fs::path(file).parent_path();
         auto stream = open_stream(file);
@@ -389,10 +458,10 @@ namespace houseofatmos::engine::resources {
         std::vector<std::vector<char>> buffers;
         read_gltf_buffers(j, dir, buffers);
         read_gltf_materials(j, dir, file, model);
-        read_gltf_bones(j, buffers, file, model);
+        json& joint_nodes = read_gltf_bones(j, buffers, file, model);
         json& scene = j["scenes"][(size_t) j["scene"]];
         collect_gltf_meshes(j, scene["nodes"], model, file, buffers);
-        // read animations - TODO!
+        read_gltf_animations(j, model, buffers, joint_nodes, file);
         return model;
     }
 

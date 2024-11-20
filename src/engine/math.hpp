@@ -278,18 +278,6 @@ namespace houseofatmos::engine::math {
             return (*this * rhs).sum();
         }
 
-        Color as_color() {
-            static_assert(N == 3 || N == 4, "Must have 3 or 4 elements!");
-            Color result = WHITE;
-            result.r = this->r() * 255;
-            result.g = this->g() * 255;
-            result.b = this->b() * 255;
-            if(N == 4) {
-                result.a = this->a() * 255;
-            }
-            return result;
-        }
-
     };
 
     template<int N>

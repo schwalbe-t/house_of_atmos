@@ -2,13 +2,15 @@
 #pragma once
 
 #include "rendering.hpp"
+#include "animation.hpp"
 #include <array>
-
+#include <unordered_map>
 
 namespace houseofatmos::engine::resources {
     
     using namespace houseofatmos::engine::math;
     namespace rendering = houseofatmos::engine::rendering;
+    namespace animation = houseofatmos::engine::animation;
 
 
     std::string read_string(const char* file);
@@ -37,7 +39,7 @@ namespace houseofatmos::engine::resources {
     };
     struct RiggedModelBone {
         Mat<4> inverse_bind;
-        Mat<4> current_transform;
+        Mat<4> anim_transform;
         std::vector<uint8_t> children;
         bool has_parent;
     };
@@ -45,6 +47,7 @@ namespace houseofatmos::engine::resources {
         std::vector<RiggedModelMesh> meshes;
         std::vector<rendering::Surface> textures;
         std::vector<RiggedModelBone> bones;
+        std::unordered_map<std::string, animation::Animation> animations;
 
         template<typename S>
         void draw(rendering::Surface& surface, S& shader) {
