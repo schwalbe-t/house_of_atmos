@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cstring>
 
+#include <cassert>
+
 namespace houseofatmos::engine::math {
 
     template<int N>
@@ -356,15 +358,15 @@ namespace houseofatmos::engine::math {
         static Mat<R> quaternion(double x, double y, double z, double w) {
             static_assert(R >= 3, "Matrix size must at least be 3!");
             Mat<R> result = Mat<R>();
-            result.element(0, 0) = 1 - 2*y*y - 2*z*z;
-            result.element(0, 1) = 2*x*y - 2*z*w;
-            result.element(0, 2) = 2*x*z + 2*y*w;
-            result.element(1, 0) = 2*x*y + 2*z*w;
-            result.element(1, 1) = 1 - 2*x*x - 2*z*z;
-            result.element(1, 2) = 2*y*z - 2*x*w;
-            result.element(2, 0) = 2*x*z - 2*y*w;
-            result.element(2, 1) = 2*y*z + 2*x*w;
-            result.element(2, 2) = 1 - 2*x*x - 2*y*y;
+            result.element(0, 0) = 1 - 2 * (y * y + z * z);
+            result.element(0, 1) =     2 * (x * y - w * z);
+            result.element(0, 2) =     2 * (x * z + w * y);
+            result.element(1, 0) =     2 * (x * y + w * z);
+            result.element(1, 1) = 1 - 2 * (x * x + z * z);
+            result.element(1, 2) =     2 * (y * z - w * x);
+            result.element(2, 0) =     2 * (x * z - w * y);
+            result.element(2, 1) =     2 * (y * z + w * x);
+            result.element(2, 2) = 1 - 2 * (x * x + y * y);
             return result;
         }
 
@@ -479,6 +481,28 @@ namespace houseofatmos::engine::math {
                 }
             }
             return composition;
+        }
+        
+        Mat<R, C> operator*(const double& rhs) const {
+            Mat<R, C> scaled = Mat<R, C>();
+            for(int row_i = 0; row_i < R; row_i += 1) {
+                for(int column_i = 0; column_i < C; column_i += 1) {
+                    scaled.element(row_i, column_i) 
+                        = this->element(row_i, column_i) * rhs;
+                }
+            }
+            return scaled;
+        }
+
+        Mat<R, C> operator+(const Mat<R, C>& rhs) const {
+            Mat<R, C> sum = Mat<R, C>();
+            for(int row_i = 0; row_i < R; row_i += 1) {
+                for(int column_i = 0; column_i < C; column_i += 1) {
+                    sum.element(row_i, column_i) = this->element(row_i, column_i)
+                        + rhs.element(row_i, column_i);
+                }
+            }
+            return sum;
         }
 
     };

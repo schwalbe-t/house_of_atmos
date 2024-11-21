@@ -21,7 +21,7 @@ namespace houseofatmos::engine::animation {
                 = kf.scale_itpl != Interpolation::MISSING
                 && kf_i > last_scale_i + 1;
             if(insert_translation) {
-                size_t i_kf_i = last_transl_i;
+                size_t i_kf_i = last_transl_i + 1;
                 for(; i_kf_i < kf_i; i_kf_i += 1) {
                     double t = (double) (i_kf_i - last_transl_i) / kf_i;
                     KeyFrame& i_kf = keyframes[i_kf_i];
@@ -32,7 +32,7 @@ namespace houseofatmos::engine::animation {
                 }
             }
             if(insert_rotation) {
-                size_t i_kf_i = last_rot_i;
+                size_t i_kf_i = last_rot_i + 1;
                 for(; i_kf_i < kf_i; i_kf_i += 1) {
                     double t = (double) (i_kf_i - last_rot_i) / kf_i;
                     KeyFrame& i_kf = keyframes[i_kf_i];
@@ -43,7 +43,7 @@ namespace houseofatmos::engine::animation {
                 }
             }
             if(insert_scale) {
-                size_t i_kf_i = last_scale_i;
+                size_t i_kf_i = last_scale_i + 1;
                 for(; i_kf_i < kf_i; i_kf_i += 1) {
                     double t = (double) (i_kf_i - last_scale_i) / kf_i;
                     KeyFrame& i_kf = keyframes[i_kf_i];
@@ -149,7 +149,7 @@ namespace houseofatmos::engine::animation {
     ) {
         for(size_t s_kf_i = 0; s_kf_i < keyframes.size(); s_kf_i += 1) {
             const KeyFrame& keyframe = keyframes[s_kf_i];
-            if(keyframe.timestamp < timestamp) { continue; }
+            if(keyframe.timestamp <= timestamp) { continue; }
             return s_kf_i;
         }
         std::abort(); // should be unreachable
@@ -165,9 +165,9 @@ namespace houseofatmos::engine::animation {
         const KeyFrame& l_frame = keyframes[keyframes.size() - 1];
         if(timestamp >= l_frame.timestamp) { return l_frame; }
         size_t next_frame_i = find_next_keyframe(keyframes, timestamp);
-        size_t prev_frame_i = next_frame_i == 0? 0 : next_frame_i - 1;
-        const KeyFrame& prev = keyframes[next_frame_i];
-        const KeyFrame& next = keyframes[prev_frame_i];
+        size_t prev_frame_i = next_frame_i - 1;
+        const KeyFrame& prev = keyframes[prev_frame_i];
+        const KeyFrame& next = keyframes[next_frame_i];
         // copy interpolation types from the next keyframe, interpolate rest
         KeyFrame result = next;
         result.timestamp = timestamp;

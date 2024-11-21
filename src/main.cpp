@@ -70,7 +70,7 @@ int main() {
     double anim_timer = 0.0;
     while(engine::is_running()) {
         anim_timer = fmod(anim_timer + GetFrameTime(), floss.length);
-        floss.compute_transforms(model.bones, anim_timer);
+        floss.compute_transforms(model.bones, model.root_bone_i, anim_timer);
         main_buffer.clear();
         sub_buffer.clear();
         model.draw(sub_buffer, model_shader);

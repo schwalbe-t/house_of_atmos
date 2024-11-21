@@ -59,7 +59,7 @@ namespace houseofatmos::engine::animation {
 
         template<typename B>
         void compute_transforms(
-            std::vector<B>& bones, size_t timestamp
+            std::vector<B>& bones, size_t root_bone, double timestamp
         ) const {
             size_t joint_count = this->keyframes.size();
             assert(bones.size() == joint_count);
@@ -70,11 +70,7 @@ namespace houseofatmos::engine::animation {
                     frame.translation, frame.rotation, frame.scale
                 );
             }
-            for(size_t joint_i = 0; joint_i < joint_count; joint_i += 1) {
-                B& bone = bones[joint_i];
-                if(bone.has_parent) { continue; }
-                propagate_anim_transform(NULL, bone, bones);
-            }
+            propagate_anim_transform(NULL, bones[root_bone], bones);
             for(size_t joint_i = 0; joint_i < joint_count; joint_i += 1) {
                 B& bone = bones[joint_i];
                 bone.anim_transform = bone.anim_transform * bone.inverse_bind;

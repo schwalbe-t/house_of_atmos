@@ -136,7 +136,9 @@ namespace houseofatmos::engine::rendering {
         if(v < 0.0) { v += 1.0; }
         // convert to pixels (note that y needs to be flipped)
         int x_px = static_cast<int>(u * this->width);
+        if(x_px >= this->width) { x_px = this->width - 1; }
         int y_px = this->height - static_cast<int>(v * this->height);
+        if(y_px >= this->height) { y_px = this->height - 1; }
         // read the color and return as normalized vector
         assert(x_px >= 0);
         assert(x_px < this->width);

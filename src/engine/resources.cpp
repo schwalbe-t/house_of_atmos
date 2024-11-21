@@ -181,7 +181,7 @@ namespace houseofatmos::engine::resources {
 
     static json& read_gltf_bones(
         json& j, std::vector<std::vector<char>>& buffers, const char* file,
-        RiggedModel& model
+        RiggedModel& model, json** root_node
     ) {
         size_t skin_count = j["skins"].size();
         if(skin_count == 0) { return j["skins"]; /* any empty array works */ }
@@ -207,14 +207,22 @@ namespace houseofatmos::engine::resources {
             RiggedModelBone& bone = model.bones[joint_idx];
             for(size_t row_i = 0; row_i < 4; row_i += 1) {
                 for(size_t column_i = 0; column_i < 4; column_i += 1) {
-                    size_t flat_i = row_i * 4 + column_i;
+                    size_t flat_i = column_i * 4 + row_i;
                     float value = view[joint_idx * 16 + flat_i];
                     bone.inverse_bind.element(row_i, column_i) = value;
                 }
             }
         }
+        // get the root bone
+        json& scene = j["scenes"][(size_t) j["scene"]];
+        *root_node = &j["nodes"][(size_t) scene["nodes"][0]];
+        size_t root_bone_idx = joint_count;
+        model.bones.push_back(RiggedModelBone());
+        RiggedModelBone& root_bone = model.bones[root_bone_idx];
+        model.root_bone_i = root_bone_idx;
         // read children for all joints
         for(size_t joint_idx = 0; joint_idx < joint_count; joint_idx += 1) {
+            root_bone.children.push_back(joint_idx);
             RiggedModelBone& bone = model.bones[joint_idx];
             size_t node_idx = skin["joints"][joint_idx];
             json& node = j["nodes"][node_idx];
@@ -224,8 +232,6 @@ namespace houseofatmos::engine::resources {
                 size_t child_joint_idx = find_gltf_joint_idx(
                     skin["joints"], child_node_idx
                 );
-                RiggedModelBone& child = model.bones[child_joint_idx];
-                child.has_parent = true;
                 bone.children.push_back(child_joint_idx);
             }
         }
@@ -299,18 +305,38 @@ namespace houseofatmos::engine::resources {
         float (*texcoord_view)[2] = (float(*)[2]) get_gltf_view_ptr(
             j, buffers, attributes["TEXCOORD_0"], 5126 /* GL_FLOAT */, file
         );
-        uint8_t (*joints_view)[4] = NULL;
+        uint8_t (*joints_view)[RIGGED_MESH_MAX_VERTEX_JOINTS] = NULL;
         if(attributes.contains("JOINTS_0")) {
-            joints_view = (uint8_t(*)[4]) get_gltf_view_ptr(
+            joints_view = (uint8_t(*)[RIGGED_MESH_MAX_VERTEX_JOINTS]) get_gltf_view_ptr(
                 j, buffers, attributes["JOINTS_0"], 5121 /* GL_UNSIGNED_BYTE */, 
                 file
             );
+            std::string joints_type = j["accessors"][(size_t) attributes["JOINTS_0"]]["type"];
+            if(joints_type != "VEC" + std::to_string(RIGGED_MESH_MAX_VERTEX_JOINTS)) {
+                logging::error(
+                    "File '" + std::string(file)
+                        + "' uses an incorrect data type for vertex joints"
+                        + " (expected 'VEC" 
+                        + std::to_string(RIGGED_MESH_MAX_VERTEX_JOINTS)
+                        + "', got '" + joints_type + "')"
+                );
+            }
         }
-        float (*weigths_view)[4] = NULL;
+        float (*weights_view)[RIGGED_MESH_MAX_VERTEX_JOINTS] = NULL;
         if(attributes.contains("WEIGHTS_0")) {
-            weigths_view = (float(*)[4]) get_gltf_view_ptr(
+            weights_view = (float(*)[RIGGED_MESH_MAX_VERTEX_JOINTS]) get_gltf_view_ptr(
                 j, buffers, attributes["WEIGHTS_0"], 5126 /* GL_FLOAT */, file
             );
+            std::string weights_type = j["accessors"][(size_t) attributes["WEIGHTS_0"]]["type"];
+            if(weights_type != "VEC" + std::to_string(RIGGED_MESH_MAX_VERTEX_JOINTS)) {
+                logging::error(
+                    "File '" + std::string(file)
+                        + "' uses an incorrect data type for vertex weights"
+                        + " (expected 'VEC" 
+                        + std::to_string(RIGGED_MESH_MAX_VERTEX_JOINTS)
+                        + "', got '" + weights_type + "')"
+                );
+            }
         }
         // read the data into a single array
         for(size_t vert_i = 0; vert_i < vertex_count; vert_i += 1) {
@@ -325,21 +351,15 @@ namespace houseofatmos::engine::resources {
             // since we are using the OpenGL UV coordinate convention,
             // we need to flip the coordinates read from the file vertically
             vertex.uv = Vec<2>(view_uv[0], 1.0 - view_uv[1]);
-            if(joints_view != NULL && weigths_view != NULL) {
-                static_assert(
-                    RIGGED_MESH_MAX_VERTEX_JOINTS == 4, 
-                    "GLTF uses 4 weights and joints per vertex"
-                );
-                memcpy(
-                    (void*) vertex.joints.data(), 
-                    (void*) joints_view[vert_i], 
-                    sizeof(uint8_t) * RIGGED_MESH_MAX_VERTEX_JOINTS
-                );
-                memcpy(
-                    (void*) vertex.weights.elements, 
-                    (void*) weigths_view[vert_i], 
-                    sizeof(float) * RIGGED_MESH_MAX_VERTEX_JOINTS
-                );
+            if(joints_view != NULL && weights_view != NULL) {
+                vertex.joints[0] = joints_view[vert_i][0];
+                vertex.joints[1] = joints_view[vert_i][1];
+                vertex.joints[2] = joints_view[vert_i][2];
+                vertex.joints[3] = joints_view[vert_i][3];
+                vertex.weights[0] = weights_view[vert_i][0];
+                vertex.weights[1] = weights_view[vert_i][1];
+                vertex.weights[2] = weights_view[vert_i][2];
+                vertex.weights[3] = weights_view[vert_i][3];
             }
             mesh.mesh.add_vertex(vertex);
         }
@@ -392,6 +412,40 @@ namespace houseofatmos::engine::resources {
             r[i] = values[i];
         }
         return r;
+    }
+
+    static void add_gltf_root_node_keyframe(
+        json* root_node, animation::Animation& animation
+    ) {
+        auto root_keyframes = std::vector<animation::KeyFrame>();
+        animation::KeyFrame root_keyframe;
+        if(root_node->contains("translation")) {
+            root_keyframe.translation = Vec<3>(
+                root_node->at("translation")[0], 
+                root_node->at("translation")[1], 
+                root_node->at("translation")[2]
+            );
+        }
+        root_keyframe.translation_itpl = animation::Interpolation::STEP;
+        if(root_node->contains("rotation")) {
+            root_keyframe.rotation = Vec<4>(
+                root_node->at("rotation")[0], 
+                root_node->at("rotation")[1], 
+                root_node->at("rotation")[2], 
+                root_node->at("rotation")[3]
+            );
+        }
+        root_keyframe.rotation_itpl = animation::Interpolation::STEP;
+        if(root_node->contains("scale")) {
+            root_keyframe.scale = Vec<3>(
+                root_node->at("scale")[0], 
+                root_node->at("scale")[1], 
+                root_node->at("scale")[2]
+            );
+        }
+        root_keyframe.scale_itpl = animation::Interpolation::STEP;
+        root_keyframes.push_back(root_keyframe);
+        animation.keyframes.push_back(std::move(root_keyframes));
     }
 
     static void collect_gltf_keyframes(
@@ -547,7 +601,8 @@ namespace houseofatmos::engine::resources {
     }
 
     static animation::Animation read_gltf_animation(
-        json& j, json& anim_j, std::vector<std::vector<char>>& buffers,
+        json& j, json& anim_j, json* root_node, 
+        std::vector<std::vector<char>>& buffers,
         json& joint_nodes, const char* file
     ) {
         auto animation = animation::Animation();
@@ -563,21 +618,23 @@ namespace houseofatmos::engine::resources {
         complete_first_gltf_keyframes(
             j, joint_nodes, animation
         );
+        add_gltf_root_node_keyframe(root_node, animation);
         animation.complete_keyframe_values();
         animation.compute_length();
         return animation;
     }
 
     static void read_gltf_animations(
-        json& j, RiggedModel& model, std::vector<std::vector<char>>& buffers,
-        json& joint_nodes, const char* file
+        json& j, json* root_node, RiggedModel& model, 
+        std::vector<std::vector<char>>& buffers, json& joint_nodes,
+        const char* file
     ) {
         size_t anim_count = j["animations"].size();
         for(size_t anim_i = 0; anim_i < anim_count; anim_i += 1) {
             json& anim_j = j["animations"][anim_i];
             std::string anim_name = anim_j["name"];
             animation::Animation anim = read_gltf_animation(
-                j, anim_j, buffers, joint_nodes, file
+                j, anim_j, root_node, buffers, joint_nodes, file
             );
             model.animations[anim_name] = anim;
         }
@@ -591,10 +648,11 @@ namespace houseofatmos::engine::resources {
         std::vector<std::vector<char>> buffers;
         read_gltf_buffers(j, dir, buffers);
         read_gltf_materials(j, dir, file, model);
-        json& joint_nodes = read_gltf_bones(j, buffers, file, model);
+        json* root_node;
+        json& joint_nodes = read_gltf_bones(j, buffers, file, model, &root_node);
         json& scene = j["scenes"][(size_t) j["scene"]];
         collect_gltf_meshes(j, scene["nodes"], model, file, buffers);
-        read_gltf_animations(j, model, buffers, joint_nodes, file);
+        read_gltf_animations(j, root_node, model, buffers, joint_nodes, file);
         return model;
     }
 

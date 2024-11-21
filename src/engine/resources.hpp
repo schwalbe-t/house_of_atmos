@@ -41,12 +41,12 @@ namespace houseofatmos::engine::resources {
         Mat<4> inverse_bind;
         Mat<4> anim_transform;
         std::vector<uint8_t> children;
-        bool has_parent = false;
     };
     struct RiggedModel {
         std::vector<RiggedModelMesh> meshes;
         std::vector<rendering::Surface> textures;
         std::vector<RiggedModelBone> bones;
+        uint8_t root_bone_i;
         std::unordered_map<std::string, animation::Animation> animations;
 
         template<typename S>
