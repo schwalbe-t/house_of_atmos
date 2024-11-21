@@ -14,12 +14,14 @@ project(
 find_package(raylib REQUIRED)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE DRUCK_SOURCES "./../druck/src/*.cpp")
 add_executable(
     house_of_atmos
     ${SOURCES}
+    ${DRUCK_SOURCES}
 )
 
-target_include_directories(house_of_atmos PRIVATE "lib")
+target_include_directories(house_of_atmos PRIVATE "./../druck/include")
 target_link_libraries(house_of_atmos raylib)
 
 target_compile_features(house_of_atmos PRIVATE cxx_std_20)
