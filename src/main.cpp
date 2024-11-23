@@ -8,28 +8,6 @@ namespace animation = druck::animation;
 using namespace druck::math;
 
 
-// struct ModelShader: engine::rendering::Shader<engine::resources::ModelVertex, ModelShader> {
-//     Mat<4> projection;
-//     Mat<4> view;
-//     Mat<4> model;
-//     const engine::rendering::Surface* tex;
-
-//     ModelShader() {}
-
-//     Vec<4> vertex(engine::resources::ModelVertex vertex) override {
-//         this->uv = vertex.uv;
-//         return this->projection * this->view * this->model 
-//             * vertex.pos.with(1.0);
-//     }
-
-//     Vec<2> uv;
-
-//     Vec<4> fragment() override {
-//         this->interpolate(&this->uv);
-//         return this->tex->sample(uv);
-//     }
-// };
-
 struct RiggedModelShader: rendering::Shader<resources::RiggedModelVertex, RiggedModelShader> {
     Mat<4> projection;
     Mat<4> view;
@@ -61,10 +39,10 @@ int main() {
     auto model = resources::read_gltf_model("res/player.gltf");
     animation::Animation floss = model.animations["floss"];
     auto main_buffer = rendering::Surface(1200, 800);
-    auto sub_buffer = rendering::Surface(1200, 800);
+    auto sub_buffer = rendering::Surface(600, 400);
     auto model_shader = RiggedModelShader();
-    model_shader.projection = Mat<4>::perspective(PI / 2.0, sub_buffer.width, sub_buffer.height, 0.1, 1000.0);
-    model_shader.view = Mat<4>::look_at(Vec<3>(0, 5, 10), Vec<3>(0, 5, 0), Vec<3>(0, 1, 0));
+    model_shader.projection = Mat<4>::perspective(pi / 2.0, sub_buffer.width, sub_buffer.height, 0.1, 1000.0);
+    model_shader.view = Mat<4>::look_at(Vec<3>(7, 5, 0), Vec<3>(0, 5, 0), Vec<3>(0, 1, 0));
     model_shader.bones = &model.bones;
     double anim_timer = 0.0;
     while(druck::is_running()) {
