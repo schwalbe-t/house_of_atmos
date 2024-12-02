@@ -1,11 +1,13 @@
 
 #include <druck/window.hpp>
 #include <druck/resources.hpp>
+#include "terrain.hpp"
 
 namespace rendering = druck::rendering;
 namespace resources = druck::resources;
 namespace animation = druck::animation;
 using namespace druck::math;
+using namespace houseofatmos;
 
 
 struct RiggedModelShader: rendering::Shader<resources::RiggedModelVertex, RiggedModelShader> {
@@ -34,23 +36,26 @@ struct RiggedModelShader: rendering::Shader<resources::RiggedModelVertex, Rigged
     }
 };
 
+
 int main() {
     druck::init("House of Atmos", 1200, 800, 60);
-    auto model = resources::read_gltf_model("res/player.gltf");
-    animation::Animation floss = model.animations["floss"];
     auto main_buffer = rendering::Surface(1200, 800);
     auto sub_buffer = rendering::Surface(600, 400);
-    auto model_shader = RiggedModelShader();
-    model_shader.projection = Mat<4>::perspective(pi / 2.0, sub_buffer.width, sub_buffer.height, 0.1, 1000.0);
-    model_shader.view = Mat<4>::look_at(Vec<3>(7, 5, 0), Vec<3>(0, 5, 0), Vec<3>(0, 1, 0));
-    model_shader.bones = &model.bones;
-    double anim_timer = 0.0;
+    auto terrain_grass = resources::read_texture("res/terrain/grass.png");
+    auto terrain_sand = resources::read_texture("res/terrain/sand.png");
+    auto terrain_dirt = resources::read_texture("res/terrain/dirt.png");
+    auto terrain = Terrain(69);
+    auto terrain_shader = Terrain::Shader();
+    terrain_shader.projection = Mat<4>::perspective(pi / 2.0, sub_buffer.width, sub_buffer.height, 0.1, 1000.0);
+    terrain_shader.texture = &terrain_grass;
+    double theta = 0.0;
     while(druck::is_running()) {
-        anim_timer = fmod(anim_timer + GetFrameTime(), floss.length);
-        floss.compute_transforms(model.bones, model.root_bone_i, anim_timer);
+        theta += GetFrameTime();
+        const Vec<3> pos = Vec<3>(sin(theta) * 20, 20, cos(theta) * 20);
+        terrain_shader.view = Mat<4>::look_at(pos, Vec<3>(0, 5, 0), Vec<3>(0, 1, 0));
         main_buffer.clear();
         sub_buffer.clear();
-        model.draw(sub_buffer, model_shader);
+        terrain.draw(sub_buffer, terrain_shader);
         main_buffer.blit_buffer(sub_buffer, 0, 0, 1200, 800);
         druck::display_buffer(&main_buffer);
     }
