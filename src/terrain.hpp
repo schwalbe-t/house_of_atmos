@@ -22,12 +22,11 @@ namespace houseofatmos {
             static const int water_g = 115;
             static const int water_b = 221;
 
-            Mat<4> projection;
-            Mat<4> view;
+            Mat<4> view_proj;
 
             Vec<4> vertex(Vertex vertex) override {
                 this->uv = vertex.uv;
-                return this->projection * this->view * vertex.pos.with(1.0);
+                return this->view_proj * vertex.pos.with(1.0);
             }
 
             Vec<2> uv;
@@ -55,8 +54,7 @@ namespace houseofatmos {
         };
 
         struct Shader: rendering::Shader<Vertex, Shader> {
-            Mat<4> projection;
-            Mat<4> view;
+            Mat<4> view_proj;
             Vec<3> light;
             const rendering::Surface* grass; 
             const rendering::Surface* dirt;
@@ -69,7 +67,7 @@ namespace houseofatmos {
                 diffuse += 1.0;
                 diffuse /= 2.0;
                 this->lightness = diffuse * 0.8 + 0.2;
-                return this->projection * this->view * vertex.pos.with(1.0);
+                return this->view_proj * vertex.pos.with(1.0);
             }
 
             Terrain::Material material;
@@ -92,11 +90,14 @@ namespace houseofatmos {
 
         static const size_t tile_count = 64; // 256;
         static const uint8_t tile_size = 10;
+        static const size_t size = Terrain::tile_count * Terrain::tile_size;
     
         int16_t height[tile_count + 1][tile_count + 1];
         rendering::Mesh<Terrain::Vertex> meshes[tile_count][tile_count];
 
         Terrain(uint32_t seed);
+
+        double height_at(const Vec<2>& pos);
 
         void draw(rendering::Surface& surface, Shader& shader);  
 

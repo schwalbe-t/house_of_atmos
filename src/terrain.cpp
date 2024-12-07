@@ -148,6 +148,48 @@ namespace houseofatmos {
         generate_terrain_mesh(this);
     }
 
+    double Terrain::height_at(const Vec<2>& pos) {
+        if(pos.x() < 0 || pos.y() < 0) { return 0.0; }
+        uint64_t tile_x = pos.x() / Terrain::tile_size;
+        uint64_t tile_y = pos.y() / Terrain::tile_size;
+        if(tile_x >= Terrain::tile_count || tile_y >= Terrain::tile_count) {
+            return 0.0;
+        }
+        double h_tl = this->height[tile_x    ][tile_y    ];
+        double h_tr = this->height[tile_x + 1][tile_y    ];
+        double h_bl = this->height[tile_x    ][tile_y + 1];
+        double h_br = this->height[tile_x + 1][tile_y + 1];
+        double tl_to_br = fabs(h_tl - h_br);
+        double tr_to_bl = fabs(h_tr - h_bl);
+        double local_x = pos.x() - tile_x;
+        double local_y = pos.y() - tile_y;
+        int elem_idx = tl_to_br > tr_to_bl
+                // +---+
+                // |0/1|
+                // +---+
+            ? (local_x + local_y < 1
+                ? 0 // top left
+                : 1 // bottom right
+            )
+                // +---+
+                // |0\1|
+                // +---+
+            : (local_x < local_y
+                ? 0 // bottom left triangle
+                : 1 // top right triangle
+            );
+        const rendering::Mesh<Terrain::Vertex>& mesh
+            = this->meshes[tile_x][tile_y];
+        size_t vert_idx = std::get<0>(mesh.elements[elem_idx]);
+        const Vec<3>& normal = mesh.vertices[vert_idx].normal;
+        const Vec<3>& vertex = mesh.vertices[vert_idx].pos;
+        // 'pos' is a 2D vector on a horizontal plane in world space ([x, z]),
+        // therefore 'pos.y()' results in the Z-coordinate in world space
+        double plane_proj = normal.x() * (pos.x() - vertex.x())
+            + normal.z() * (pos.y() - vertex.z());
+        return vertex.y() - plane_proj / normal.y();
+    }
+
     void Terrain::draw(rendering::Surface& surface, Shader& shader) {
         for(size_t x = 0; x < Terrain::tile_count; x += 1) {
             for(size_t z = 0; z < Terrain::tile_count; z += 1) {
