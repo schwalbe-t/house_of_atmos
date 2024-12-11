@@ -1,6 +1,6 @@
 
-#include "engine/rendering.hpp"
-#include "engine/logging.hpp"
+#include <engine/rendering.hpp>
+#include <engine/logging.hpp>
 #include <glad/gl.h>
 
 namespace houseofatmos::engine {
@@ -63,5 +63,7 @@ namespace houseofatmos::engine {
         glDeleteShader(this->frag_id);
         glDeleteProgram(this->prog_id);
     }
+
+    u64 Shader::internal_prog_id() { return this->prog_id; }
 
 }

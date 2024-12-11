@@ -1,6 +1,6 @@
 
-#include "engine/window.hpp"
-#include "engine/logging.hpp"
+#include <engine/window.hpp>
+#include <engine/logging.hpp>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
@@ -50,6 +50,10 @@ namespace houseofatmos::engine {
     bool Window::is_open() {
         glfwPollEvents();
         return !glfwWindowShouldClose((GLFWwindow*) this->ptr);
+    }
+
+    void* Window::internal_ptr() {
+        return this->ptr;
     }
 
     Window::~Window() {

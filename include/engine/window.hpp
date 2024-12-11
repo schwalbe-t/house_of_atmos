@@ -10,6 +10,7 @@ namespace houseofatmos::engine {
         private:
         void* ptr;
 
+
         public:
         Window(u32 width, u32 height, const char* name, bool vsync);
         Window(const Window& other) = delete;
@@ -17,6 +18,8 @@ namespace houseofatmos::engine {
         ~Window();
 
         bool is_open();
+        
+        void* internal_ptr();
 
     };
 
