@@ -8,7 +8,7 @@
 #include "nums.hpp"
 
 
-namespace druck::math {
+namespace houseofatmos::engine {
 
     const f64 pi = 3.141592653589793238463;
 

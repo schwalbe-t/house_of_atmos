@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "nums.hpp"
+#include "rendering.hpp"
 
 namespace houseofatmos::engine {
 
@@ -9,6 +9,10 @@ namespace houseofatmos::engine {
 
         private:
         void* ptr;
+        int last_width;
+        int last_height;
+        f64 last_time;
+        f64 frame_delta;
 
 
         public:
@@ -17,9 +21,12 @@ namespace houseofatmos::engine {
         Window& operator=(const Window& other) = delete;
         ~Window();
 
-        bool is_open();
-        
-        void* internal_ptr();
+        bool next_frame();
+        u32 width() const;
+        u32 height() const;
+        f64 delta_time() const;
+
+        void show_texture(const Texture& texture);
 
     };
 

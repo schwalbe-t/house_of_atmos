@@ -12,6 +12,49 @@ namespace houseofatmos::engine {
         this->init_buffers();
     }
 
+    Mesh::Mesh(Mesh&& other) noexcept {
+        if(other.moved) {
+            error("Attempted to move an already moved 'Mesh'");
+        }
+        this->attrib_sizes = std::move(other.attrib_sizes);
+        this->vertex_size = other.vertex_size;
+        this->vertices = std::move(other.vertices);
+        this->elements = std::move(other.elements);
+        this->vbo_id = other.vbo_id;
+        this->ebo_id = other.ebo_id;
+        this->buff_index_count = other.buff_index_count;
+        this->modified = other.modified;
+        this->moved = false;
+        other.moved = true;
+    }
+
+    Mesh& Mesh::operator=(Mesh&& other) noexcept {
+        if(this == &other) { return *this; }
+        if(other.moved) {
+            error("Attempted to move an already moved 'Mesh'");
+        }
+        if(!this->moved) {
+            this->delete_buffers();
+        }
+        this->attrib_sizes = std::move(other.attrib_sizes);
+        this->vertex_size = other.vertex_size;
+        this->vertices = std::move(other.vertices);
+        this->elements = std::move(other.elements);
+        this->vbo_id = other.vbo_id;
+        this->ebo_id = other.ebo_id;
+        this->buff_index_count = other.buff_index_count;
+        this->modified = other.modified;
+        this->moved = false;
+        other.moved = true;
+        return *this;
+    }
+
+    Mesh::~Mesh() {
+        if(this->moved) { return; }
+        this->delete_buffers();
+    }
+
+
     u16 Mesh::add_vertex(std::span<f32> data) {
         if(data.size() != this->vertex_size) {
             error("Attempted to push a vertex with "
@@ -23,6 +66,7 @@ namespace houseofatmos::engine {
         }
         u16 index = this->vertex_count();
         this->vertices.insert(this->vertices.end(), data.begin(), data.end());
+        this->modified = true;
         return index;
     }
 
@@ -37,10 +81,11 @@ namespace houseofatmos::engine {
         }
         u16 index = this->vertex_count();
         this->vertices.insert(this->vertices.end(), data.begin(), data.end());
+        this->modified = true;
         return index;
     }
 
-    u16 Mesh::vertex_count() {
+    u16 Mesh::vertex_count() const {
         return this->vertices.size() / this->vertex_size;
     }
 
@@ -48,9 +93,10 @@ namespace houseofatmos::engine {
         this->elements.push_back(a);
         this->elements.push_back(b);
         this->elements.push_back(c);
+        this->modified = true;
     }
 
-    u32 Mesh::element_count() {
+    u32 Mesh::element_count() const {
         return this->elements.size() / 3;
     }
 
@@ -58,72 +104,87 @@ namespace houseofatmos::engine {
         this->vertices.clear();
         this->elements.clear();
         this->buff_index_count = 0;
+        this->modified = true;
     }
 
 
     void Mesh::init_buffers() {
-        GLuint current_gid;
-        glGenBuffers(1, &current_gid);
-        this->vert_id = current_gid;
-        glGenBuffers(1, &current_gid);
-        this->elem_id = current_gid;
-        glGenVertexArrays(1, &current_gid);
-        this->varr_id = current_gid;
+        GLuint vbo_id;
+        glGenBuffers(1, &vbo_id);
+        this->vbo_id = vbo_id;
+        GLuint ebo_id;
+        glGenBuffers(1, &ebo_id);
+        this->ebo_id = ebo_id;
     }
 
-    void Mesh::init_property_pointers() {
-        glBindBuffer(GL_ARRAY_BUFFER, this->vert_id);
-        glBindVertexArray(this->varr_id);
-        u64 vertex_size = this->vertex_size * sizeof(f32);
+    void Mesh::bind_properties() const {
+        u64 vertex_size_b = this->vertex_size * sizeof(f32);
         u64 offset = 0;
         for(u64 attr = 0; attr < this->attrib_sizes.size(); attr += 1) {
             u8 attr_size = this->attrib_sizes[attr];
             glEnableVertexAttribArray(attr);
             glVertexAttribPointer(
-                attr, attr_size, GL_FLOAT, GL_FALSE, vertex_size, (void*) offset
+                attr, attr_size, 
+                GL_FLOAT, GL_FALSE, 
+                vertex_size_b, (void*) offset
             );
             offset += attr_size * sizeof(f32);
         }
-        glBindVertexArray(GL_NONE);
-        glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
     }
+
+    void Mesh::unbind_properties() const {
+        for(u64 attr = 0; attr < this->attrib_sizes.size(); attr += 1) {
+            glDisableVertexAttribArray(attr);
+        }
+    }
+
+    void Mesh::delete_buffers() const {
+        GLuint vbo_id = this->vbo_id;
+        glDeleteBuffers(1, &vbo_id);
+        GLuint ebo_id = this->ebo_id;
+        glDeleteBuffers(1, &ebo_id);
+    }
+
 
     void Mesh::submit() {
         if(this->vertices.size() == 0 || this->elements.size() == 0) {
             return;
         }
-        glBindVertexArray(this->varr_id);
-        glBindBuffer(GL_ARRAY_BUFFER, this->vert_id);
+        glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
         glBufferData(
             GL_ARRAY_BUFFER,
             this->vertices.size() * sizeof(f32),
             this->vertices.data(),
             GL_STATIC_DRAW
         );
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elem_id);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
         glBufferData(
             GL_ELEMENT_ARRAY_BUFFER,
             this->elements.size() * sizeof(u16),
             this->elements.data(),
             GL_STATIC_DRAW
         );
-        glBindVertexArray(GL_NONE);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         this->buff_index_count = this->elements.size();
+        this->modified = false;
     }
 
-    Mesh::~Mesh() {
-        GLuint current_gid;
-        current_gid = this->vert_id;
-        glDeleteBuffers(1, &current_gid);
-        current_gid = this->elem_id;
-        glDeleteBuffers(1, &current_gid);
-        current_gid = this->varr_id;
-        glDeleteVertexArrays(1, &current_gid);
+    void Mesh::render(const Shader& shader, const Texture& dest) {
+        if(this->modified) { this->submit(); }
+        dest.internal_bind_frame();
+        shader.internal_bind();
+        glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
+        this->bind_properties();
+        glDrawElements(
+            GL_TRIANGLES, this->buff_index_count, GL_UNSIGNED_SHORT, nullptr
+        );
+        this->unbind_properties();
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        shader.internal_unbind();
+        dest.internal_unbind_frame();
     }
-
-    u64 Mesh::internal_vert_id() { return this->vert_id; }
-    u64 Mesh::internal_elem_id() { return this->elem_id; }
-    u64 Mesh::internal_varr_id() { return this->varr_id; }
-    u64 Mesh::internal_buffered_indices() { return this->buff_index_count; }
 
 }

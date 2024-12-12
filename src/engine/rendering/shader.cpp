@@ -56,14 +56,53 @@ namespace houseofatmos::engine {
         this->vert_id = compile_shader(vertex_src, GL_VERTEX_SHADER);
         this->frag_id = compile_shader(fragment_src, GL_FRAGMENT_SHADER);
         this->prog_id = link_shaders(this->vert_id, this->frag_id);
+        this->moved = false;
+    }
+
+    Shader::Shader(Shader&& other) noexcept {
+        if(other.moved) {
+            error("Attempted to move an already moved 'Shader'");
+        }
+        this->vert_id = other.vert_id;
+        this->frag_id = other.frag_id;
+        this->prog_id = other.prog_id;
+        this->moved = false;
+        other.moved = true;
+    }
+
+    Shader& Shader::operator=(Shader&& other) noexcept {
+        if(this == &other) { return *this; }
+        if(other.moved) {
+            error("Attempted to move an already moved 'Shader'");
+        }
+        if(!this->moved) {
+            glDeleteShader(this->vert_id);
+            glDeleteShader(this->frag_id);
+            glDeleteProgram(this->prog_id);
+        }
+        this->vert_id = other.vert_id;
+        this->frag_id = other.frag_id;
+        this->prog_id = other.prog_id;
+        this->moved = false;
+        other.moved = true;
+        return *this;
     }
 
     Shader::~Shader() {
+        if(this->moved) { return; }
         glDeleteShader(this->vert_id);
         glDeleteShader(this->frag_id);
         glDeleteProgram(this->prog_id);
     }
 
-    u64 Shader::internal_prog_id() { return this->prog_id; }
+
+    void Shader::internal_bind() const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Shader'");
+        }
+        glUseProgram(this->prog_id);
+    }
+
+    void Shader::internal_unbind() const { glUseProgram(0); }
 
 }

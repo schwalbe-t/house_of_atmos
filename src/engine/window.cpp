@@ -40,20 +40,14 @@ namespace houseofatmos::engine {
             glfwTerminate();
             error("Unable to initialize the window!");
         }
+        this->last_width = width;
+        this->last_height= height;
         center_window((GLFWwindow*) this->ptr, width, height);
         glfwMakeContextCurrent((GLFWwindow*) this->ptr);
         gladLoadGL(&glfwGetProcAddress);
         glfwSwapInterval(vsync? 1 : 0);
+        glEnable(GL_DEPTH_TEST);
         existing_windows += 1;
-    }
-
-    bool Window::is_open() {
-        glfwPollEvents();
-        return !glfwWindowShouldClose((GLFWwindow*) this->ptr);
-    }
-
-    void* Window::internal_ptr() {
-        return this->ptr;
     }
 
     Window::~Window() {
@@ -62,6 +56,39 @@ namespace houseofatmos::engine {
         if(existing_windows == 0) {
             glfwTerminate();
         }
+    }
+
+
+    bool Window::next_frame() {
+        glfwSwapBuffers((GLFWwindow*) this->ptr);
+        glfwPollEvents();
+        glfwGetFramebufferSize(
+            (GLFWwindow*) this->ptr, &this->last_width, &this->last_height
+        );
+        f64 current_time = glfwGetTime();
+        this->frame_delta = current_time - this->last_time;
+        this->last_time = current_time;
+        return !glfwWindowShouldClose((GLFWwindow*) this->ptr);
+    }
+
+    u32 Window::width() const { return this->last_width; }
+    u32 Window::height() const { return this->last_height; }
+    f64 Window::delta_time() const { return this->frame_delta; }
+
+
+    void Window::show_texture(const Texture& texture) {
+        f64 scale = (f64) this->height() / texture.height();
+        f64 dest_width = texture.width() * scale;
+        i64 dest_x = (this->width() - dest_width) / 2;
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, texture.internal_fbo_id());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(
+            0,      0, texture.width(),     texture.height(),
+            dest_x, 0, dest_x + dest_width, this->height(),
+            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        );
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
 }
