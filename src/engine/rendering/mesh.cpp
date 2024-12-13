@@ -10,6 +10,8 @@ namespace houseofatmos::engine {
         this->attrib_sizes = std::vector(attrib_sizes);
         this->vertex_size = std::reduce(attrib_sizes.begin(), attrib_sizes.end());
         this->init_buffers();
+        this->modified = false;
+        this->moved = false;
     }
 
     Mesh::Mesh(Mesh&& other) noexcept {
@@ -171,8 +173,18 @@ namespace houseofatmos::engine {
     }
 
     void Mesh::render(const Shader& shader, const Texture& dest) {
+        this->internal_render(
+            shader, dest.internal_fbo_id(), dest.width(), dest.height()
+        );
+    }
+
+    void Mesh::internal_render(
+        const Shader& shader, u64 dest_fbo_id, 
+        i32 dest_width, i32 dest_height
+    ) {
         if(this->modified) { this->submit(); }
-        dest.internal_bind_frame();
+        glBindFramebuffer(GL_FRAMEBUFFER, dest_fbo_id);
+        glViewport(0, 0, dest_width, dest_height);
         shader.internal_bind();
         glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
@@ -183,8 +195,7 @@ namespace houseofatmos::engine {
         this->unbind_properties();
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        shader.internal_unbind();
-        dest.internal_unbind_frame();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
 }

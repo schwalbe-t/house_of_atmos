@@ -15,7 +15,7 @@ namespace houseofatmos::engine {
         }
     }
 
-    static void center_window(GLFWwindow* window, u32 width, u32 height) {
+    static void center_window(GLFWwindow* window, i32 width, i32 height) {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         if(monitor == NULL) {
             warning("Unable to center the window!");
@@ -26,12 +26,18 @@ namespace houseofatmos::engine {
             warning("Unable to center the window!");
             return;
         }
-        u32 window_x = (mode->width - width) / 2;
-        u32 window_y = (mode->height - height) / 2;
+        i32 window_x = (mode->width - width) / 2;
+        i32 window_y = (mode->height - height) / 2;
         glfwSetWindowPos(window, window_x, window_y);        
     }
 
-    Window::Window(u32 width, u32 height, const char* name, bool vsync) {
+    Window::Window(i32 width, i32 height, const char* name) {
+        if(width <= 0 || height <= 0) {
+            error("Window width and height must both be larger than 0"
+                " (given was " + std::to_string(width)
+                + "x" + std::to_string(height) + ")"
+            );
+        }
         if(existing_windows == 0) { init_gltf(); }
         this->ptr = (GLFWwindow*) glfwCreateWindow(
             width, height, name, NULL, NULL
@@ -45,7 +51,7 @@ namespace houseofatmos::engine {
         center_window((GLFWwindow*) this->ptr, width, height);
         glfwMakeContextCurrent((GLFWwindow*) this->ptr);
         gladLoadGL(&glfwGetProcAddress);
-        glfwSwapInterval(vsync? 1 : 0);
+        glfwSwapInterval(0);
         glEnable(GL_DEPTH_TEST);
         existing_windows += 1;
     }
@@ -71,8 +77,8 @@ namespace houseofatmos::engine {
         return !glfwWindowShouldClose((GLFWwindow*) this->ptr);
     }
 
-    u32 Window::width() const { return this->last_width; }
-    u32 Window::height() const { return this->last_height; }
+    i32 Window::width() const { return this->last_width; }
+    i32 Window::height() const { return this->last_height; }
     f64 Window::delta_time() const { return this->frame_delta; }
 
 
@@ -80,15 +86,10 @@ namespace houseofatmos::engine {
         f64 scale = (f64) this->height() / texture.height();
         f64 dest_width = texture.width() * scale;
         i64 dest_x = (this->width() - dest_width) / 2;
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, texture.internal_fbo_id());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(
-            0,      0, texture.width(),     texture.height(),
-            dest_x, 0, dest_x + dest_width, this->height(),
-            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        texture.internal_blit(
+            0, this->width(), this->height(),
+            dest_x, 0, dest_width, this->height()
         );
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
 }

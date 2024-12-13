@@ -13,9 +13,9 @@ namespace houseofatmos::engine {
     const f64 pi = 3.141592653589793238463;
 
 
-    template<int N>
+    template<int N, typename T = f64>
     struct Vec {
-        f64 elements[N];
+        T elements[N];
 
         Vec() {
             static_assert(N >= 1, "Must at least have one element!");
@@ -30,77 +30,77 @@ namespace houseofatmos::engine {
         >
         Vec(Args... values) {
             static_assert(N >= 1, "Must at least have one element!");
-            f64 args[] = { static_cast<f64>(values)... };
+            T args[] = { static_cast<T>(values)... };
             for(int i = 0; i < N; i += 1) {
                 this->elements[i] = args[i];
             }
         }
 
-        f64& operator[](int index) {
+        T& operator[](int index) {
             return this->elements[index];
         }
-        const f64& operator[](int index) const {
+        const T& operator[](int index) const {
             return this->elements[index];
         }
 
-        f64& x() {
+        T& x() {
             return this->elements[0]; 
         }
-        f64& y() { 
+        T& y() { 
             static_assert(N >= 2, "Must at least have 2 elements!");
             return this->elements[1]; 
         }
-        f64& z() { 
+        T& z() { 
             static_assert(N >= 3, "Must at least have 3 elements!");
             return this->elements[2]; 
         }
-        f64& w() {
+        T& w() {
             static_assert(N >= 4, "Must at least have 4 elements!");
             return this->elements[3]; 
         }
-        const f64& x() const { 
+        const T& x() const { 
             return this->elements[0]; 
         }
-        const f64& y() const { 
+        const T& y() const { 
             static_assert(N >= 2, "Must at least have 2 elements!");
             return this->elements[1]; 
         }
-        const f64& z() const { 
+        const T& z() const { 
             static_assert(N >= 3, "Must at least have 3 elements!");
             return this->elements[2]; 
         }
-        const f64& w() const { 
+        const T& w() const { 
             static_assert(N >= 4, "Must at least have 4 elements!");
             return this->elements[3]; 
         }
 
-        f64& r() { 
+        T& r() { 
             return this->elements[0];
         }
-        f64& g() { 
+        T& g() { 
             static_assert(N >= 2, "Must at least have 2 elements!");
             return this->elements[1];
         }
-        f64& b() { 
+        T& b() { 
             static_assert(N >= 3, "Must at least have 3 elements!");
             return this->elements[2]; 
         }
-        f64& a() { 
+        T& a() { 
             static_assert(N >= 4, "Must at least have 4 elements!");
             return this->elements[3]; 
         }
-        const f64& r() const { 
+        const T& r() const { 
             return this->elements[0];
         }
-        const f64& g() const { 
+        const T& g() const { 
             static_assert(N >= 2, "Must at least have 2 elements!");
             return this->elements[1];
         }
-        const f64& b() const { 
+        const T& b() const { 
             static_assert(N >= 3, "Must at least have 3 elements!");
             return this->elements[2]; 
         }
-        const f64& a() const { 
+        const T& a() const { 
             static_assert(N >= 4, "Must at least have 4 elements!");
             return this->elements[3]; 
         }
@@ -131,17 +131,17 @@ namespace houseofatmos::engine {
             return result;
         }
 
-        Vec<N + 1> with(f64 value) const {
+        Vec<N + 1> with(T value) const {
             Vec<N + 1> result = Vec<N + 1>();
-            memcpy(result.elements, this->elements, sizeof(f64) * N);
+            memcpy(result.elements, this->elements, sizeof(T) * N);
             result.elements[N] = value;
             return result;
         }
 
-        f64 min() const {
-            f64 min = INFINITY;
+        T min() const {
+            T min = INFINITY;
             for(int i = 0; i < N; i += 1) {
-                f64 element = this->elements[i];
+                T element = this->elements[i];
                 if(element < min) {
                     min = element;
                 }
@@ -149,10 +149,10 @@ namespace houseofatmos::engine {
             return min;
         }
 
-        f64 max() const {
-            f64 max = -INFINITY;
+        T max() const {
+            T max = -INFINITY;
             for(int i = 0; i < N; i += 1) {
-                f64 element = this->elements[i];
+                T element = this->elements[i];
                 if(element > max) {
                     max = element;
                 }
@@ -160,8 +160,8 @@ namespace houseofatmos::engine {
             return max;
         }
 
-        f64 sum() const {
-            f64 sum = 0.0;
+        T sum() const {
+            T sum = 0.0;
             for(int i = 0; i < N; i += 1) {
                 sum += this->elements[i];
             }
@@ -192,7 +192,7 @@ namespace houseofatmos::engine {
             return product;
         }
 
-        Vec<N> operator*(const f64 scalar) const {
+        Vec<N> operator*(const T scalar) const {
             Vec<N> scaled = *this;
             for(int i = 0; i < N; i += 1) {
                 scaled.elements[i] *= scalar;
@@ -208,7 +208,7 @@ namespace houseofatmos::engine {
             return quotient;
         }
 
-        Vec<N> operator/(const f64 scalar) const {
+        Vec<N> operator/(const T scalar) const {
             Vec<N> scaled = *this;
             for(int i = 0; i < N; i += 1) {
                 scaled.elements[i] /= scalar;
@@ -235,7 +235,7 @@ namespace houseofatmos::engine {
             return *this;
         }
 
-        Vec<N>& operator*=(f64 scalar) {
+        Vec<N>& operator*=(T scalar) {
             *this = *this * scalar;
             return *this;
         }
@@ -245,7 +245,7 @@ namespace houseofatmos::engine {
             return *this;
         }
 
-        Vec<N>& operator/=(f64 scalar) {
+        Vec<N>& operator/=(T scalar) {
             *this = *this * scalar;
             return *this;
         }
@@ -260,12 +260,12 @@ namespace houseofatmos::engine {
             return absolute;
         }
 
-        f64 len() const {
+        T len() const {
             return sqrt((*this * *this).sum());
         }
 
         Vec<N> normalized() const {
-            f64 length = this->len();
+            T length = this->len();
             if(length == 0.0) { return *this; }
             return *this * (1.0 / length);
         }
@@ -279,11 +279,19 @@ namespace houseofatmos::engine {
             );
         }
 
-        f64 dot(const Vec<N>& rhs) const {
+        T dot(const Vec<N>& rhs) const {
             return (*this * rhs).sum();
         }
 
     };
+
+    template<int N>
+    using IVec = Vec<N, i64>;
+
+    template<int N>
+    using UVec = Vec<N, u64>;
+
+    
 
     template<int N>
     std::ostream& operator<<(std::ostream& outs, const Vec<N>& v) {

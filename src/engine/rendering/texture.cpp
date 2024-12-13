@@ -2,6 +2,7 @@
 #include <engine/rendering.hpp>
 #include <engine/logging.hpp>
 #include <glad/gl.h>
+#include <optional>
 
 namespace houseofatmos::engine {
 
@@ -12,7 +13,7 @@ namespace houseofatmos::engine {
         return fbo_id;
     }
 
-    static GLuint init_tex(u64 width, u64 height) {
+    static GLuint init_tex(i64 width, i64 height) {
         GLuint tex_id;
         glGenTextures(1, &tex_id);
         glBindTexture(GL_TEXTURE_2D, tex_id);
@@ -26,7 +27,7 @@ namespace houseofatmos::engine {
         return tex_id;
     }
 
-    static GLuint init_dbo(u64 width, u64 height) {
+    static GLuint init_dbo(i64 width, i64 height) {
         GLuint dbo_id;
         glGenRenderbuffers(1, &dbo_id);
         glBindRenderbuffer(GL_RENDERBUFFER, dbo_id);
@@ -36,9 +37,12 @@ namespace houseofatmos::engine {
         return dbo_id;
     }
 
-    Texture::Texture(u64 width, u64 height) {
-        if(width == 0 || height == 0) {
-            error("Attempted to create a texture with size 0");
+    Texture::Texture(i64 width, i64 height) {
+        if(width <= 0 || height <= 0) {
+            error("Texture width and height must both be larger than 0"
+                " (given was " + std::to_string(width)
+                + "x" + std::to_string(height) + ")"
+            );
         }
         this->width_px = width;
         this->height_px = height;
@@ -60,6 +64,7 @@ namespace houseofatmos::engine {
             glDeleteTextures(1, &tex_id);
             GLuint dbo_id = this->dbo_id;
             glDeleteRenderbuffers(1, &dbo_id);
+            debug(std::to_string(width) + "x" + std::to_string(height));
             error(std::string("Unable to initialize a texture.")
                 + " GPU capabilities may be insufficient."
             );
@@ -112,18 +117,9 @@ namespace houseofatmos::engine {
     }
 
 
-    u64 Texture::width() const { return this->width_px; }
-    u64 Texture::height() const { return this->height_px; }
+    i64 Texture::width() const { return this->width_px; }
+    i64 Texture::height() const { return this->height_px; }
 
-
-    void Texture::internal_bind_frame() const {
-        glBindFramebuffer(GL_FRAMEBUFFER, this->fbo_id);
-        glViewport(0, 0, this->width_px, this->height_px);
-    }
-
-    void Texture::internal_unbind_frame() const {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
 
     u64 Texture::internal_fbo_id() const { return this->fbo_id; }
     u64 Texture::internal_tex_id() const { return this->tex_id; }
@@ -144,28 +140,81 @@ namespace houseofatmos::engine {
     }
 
 
-    void Texture::resize_fast(u64 width, u64 height) {
+    void Texture::resize_fast(i64 width, i64 height) {
         if(this->width() == width && this->height() == height) {
             return;
         }
         *this = std::move(Texture(width, height));
     }
 
-    void Texture::resize(u64 width, u64 height) {
+    void Texture::resize(i64 width, i64 height) {
         if(this->width() == width && this->height() == height) {
             return;
         }
-        Texture old = Texture(width, height);
-        std::swap(old, *this);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, old.fbo_id);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, this->fbo_id);
-        glBlitFramebuffer(
-            0, 0, old.width(),   old.height(),
-            0, 0, this->width(), this->height(),
-            GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST
+        Texture result = Texture(width, height);
+        this->blit(result, 0, 0, width, height);
+        std::swap(result, *this);
+    }
+
+
+    void Texture::blit(const Texture& dest, f64 x, f64 y, f64 w, f64 h) const {
+        this->internal_blit(
+            dest.internal_fbo_id(), dest.width(), dest.height(),
+            x, y, w, h
         );
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    }
+
+    static std::optional<Shader> blit_shader = std::nullopt;
+    static std::optional<Mesh> blit_quad = std::nullopt;
+
+    static void init_blit_resources() {
+        blit_shader = Shader(
+            "#version 130 \n"
+            "in vec2 v_pos; \n"
+            "in vec2 v_uv; \n"
+            "out vec2 f_uv; \n"
+            "uniform vec2 u_scale; \n"
+            "uniform vec2 u_offset; \n"
+            "void main() { \n"
+            "    gl_Position = vec4(v_pos * u_scale + u_offset, 0.0, 1.0); \n"
+            "    f_uv = v_uv; \n"
+            "}",
+            "#version 130 \n"
+            "in vec2 f_uv; \n"
+            "uniform sampler2D u_texture; \n"
+            "void main() { \n"
+            "    gl_FragColor = texture2D(u_texture, f_uv); \n"
+            "}"
+        );
+        Mesh quad = Mesh { 2, 2 };
+        quad.add_vertex({ 0, 1,   0, 1 });
+        quad.add_vertex({ 1, 1,   1, 1 });
+        quad.add_vertex({ 0, 0,   0, 0 });
+        quad.add_vertex({ 1, 0,   1, 0 });
+        quad.add_element(0, 2, 3);
+        quad.add_element(3, 1, 0);
+        quad.submit();
+        blit_quad = std::move(quad);
+    }
+
+    void Texture::internal_blit(
+        u64 dest_fbo_id, u32 dest_width, u32 dest_height,
+        f64 x, f64 y, f64 w, f64 h
+    ) const {
+        if(!blit_shader || !blit_quad) { init_blit_resources(); }
+        Vec<2> scale = Vec<2>(w, h)
+            / Vec<2>(dest_width, dest_height)
+            * 2;
+        Vec<2> offset = Vec<2>(x, y)
+            / Vec<2>(dest_width, dest_height)
+            * 2
+            - Vec<2>(1.0, 1.0);
+        blit_shader.value().set_uniform("u_scale", scale);
+        blit_shader.value().set_uniform("u_offset", offset);
+        blit_shader.value().set_uniform("u_texture", *this);
+        blit_quad.value().internal_render(
+            blit_shader.value(), dest_fbo_id, dest_width, dest_height
+        );
     }
 
 }

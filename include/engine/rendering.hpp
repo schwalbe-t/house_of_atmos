@@ -4,12 +4,64 @@
 #include "math.hpp"
 #include <vector>
 #include <span>
+#include <unordered_map>
 
 namespace houseofatmos::engine {
+
+    struct Texture {
+
+        private:
+        i64 width_px;
+        i64 height_px;
+
+        u64 fbo_id;
+        u64 tex_id;
+        u64 dbo_id;
+        bool moved;
+
+
+        public:
+        Texture(i64 width, i64 height);
+        Texture(const Texture& other) = delete;
+        Texture(Texture&& other) noexcept;
+        Texture& operator=(const Texture& other) = delete;
+        Texture& operator=(Texture&& other) noexcept;
+        ~Texture();
+
+        i64 width() const;
+        i64 height() const;
+
+        u64 internal_fbo_id() const;
+        u64 internal_tex_id() const;
+
+        void clear_color(Vec<4> color) const;
+        void clear_depth(f64 depth) const;
+
+        void resize_fast(i64 width, i64 height);
+        void resize(i64 width, i64 height);
+
+        void blit(const Texture& dest, f64 x, f64 y, f64 w, f64 h) const;
+        void internal_blit(
+            u64 dest_fbo_id, u32 dest_width, u32 dest_height,
+            f64 x, f64 y, f64 w, f64 h
+        ) const;
+
+    };
+
 
     struct Shader {
 
         private:
+        // <uniform name> -> <tex id>
+        std::unordered_map<std::string, u64> uniform_textures;
+        // <tex id> -> <count of uniforms using it>
+        std::unordered_map<u64, u64> texture_uniform_count;
+        // <tex id> -> <tex slot>
+        std::unordered_map<u64, u64> texture_slots;
+        // free tex slots
+        std::vector<u64> free_tex_slots;
+        u64 next_slot;
+
         u64 vert_id;
         u64 frag_id;
         u64 prog_id;
@@ -25,44 +77,56 @@ namespace houseofatmos::engine {
         ~Shader();
 
         void internal_bind() const;
-        void internal_unbind() const;
+ 
+        static u64 max_textures();
 
-    };
+        void set_uniform(std::string_view name, const Texture& texture);
 
+        void set_uniform(std::string_view name, f64 value);
+        void set_uniform(std::string_view name, Vec<2> value);
+        void set_uniform(std::string_view name, Vec<3> value);
+        void set_uniform(std::string_view name, Vec<4> value);
+        void set_uniform(std::string_view name, std::span<f64> value);
+        void set_uniform(std::string_view name, std::span<Vec<2>> value);
+        void set_uniform(std::string_view name, std::span<Vec<3>> value);
+        void set_uniform(std::string_view name, std::span<Vec<4>> value);
 
-    struct Texture {
+        void set_uniform(std::string_view name, i64 value);
+        void set_uniform(std::string_view name, IVec<2> value);
+        void set_uniform(std::string_view name, IVec<3> value);
+        void set_uniform(std::string_view name, IVec<4> value);
+        void set_uniform(std::string_view name, std::span<i64> value);
+        void set_uniform(std::string_view name, std::span<IVec<2>> value);
+        void set_uniform(std::string_view name, std::span<IVec<3>> value);
+        void set_uniform(std::string_view name, std::span<IVec<4>> value);
 
-        private:
-        u64 width_px;
-        u64 height_px;
+        void set_uniform(std::string_view name, u64 value);
+        void set_uniform(std::string_view name, UVec<2> value);
+        void set_uniform(std::string_view name, UVec<3> value);
+        void set_uniform(std::string_view name, UVec<4> value);
+        void set_uniform(std::string_view name, std::span<u64> value);
+        void set_uniform(std::string_view name, std::span<UVec<2>> value);
+        void set_uniform(std::string_view name, std::span<UVec<3>> value);
+        void set_uniform(std::string_view name, std::span<UVec<4>> value);
 
-        u64 fbo_id;
-        u64 tex_id;
-        u64 dbo_id;
-        bool moved;
-
-
-        public:
-        Texture(u64 width, u64 height);
-        Texture(const Texture& other) = delete;
-        Texture(Texture&& other) noexcept;
-        Texture& operator=(const Texture& other) = delete;
-        Texture& operator=(Texture&& other) noexcept;
-        ~Texture();
-
-        u64 width() const;
-        u64 height() const;
-
-        void internal_bind_frame() const;
-        void internal_unbind_frame() const;
-        u64 internal_fbo_id() const;
-        u64 internal_tex_id() const;
-
-        void clear_color(Vec<4> color) const;
-        void clear_depth(f64 depth) const;
-
-        void resize_fast(u64 width, u64 height);
-        void resize(u64 width, u64 height);
+        void set_uniform(std::string_view name, const Mat<2>& value);
+        void set_uniform(std::string_view name, const Mat<3>& value);
+        void set_uniform(std::string_view name, const Mat<4>& value);
+        void set_uniform(std::string_view name, const Mat<2, 3>& value);
+        void set_uniform(std::string_view name, const Mat<3, 2>& value);
+        void set_uniform(std::string_view name, const Mat<2, 4>& value);
+        void set_uniform(std::string_view name, const Mat<4, 2>& value);
+        void set_uniform(std::string_view name, const Mat<3, 4>& value);
+        void set_uniform(std::string_view name, const Mat<4, 3>& value);
+        void set_uniform(std::string_view name, std::span<Mat<2>> value);
+        void set_uniform(std::string_view name, std::span<Mat<3>> value);
+        void set_uniform(std::string_view name, std::span<Mat<4>> value);
+        void set_uniform(std::string_view name, std::span<Mat<2, 3>> value);
+        void set_uniform(std::string_view name, std::span<Mat<3, 2>> value);
+        void set_uniform(std::string_view name, std::span<Mat<2, 4>> value);
+        void set_uniform(std::string_view name, std::span<Mat<4, 2>> value);
+        void set_uniform(std::string_view name, std::span<Mat<3, 4>> value);
+        void set_uniform(std::string_view name, std::span<Mat<4, 3>> value);
 
     };
 
@@ -104,6 +168,14 @@ namespace houseofatmos::engine {
 
         void submit();
         void render(const Shader& shader, const Texture& dest);
+        void internal_render(
+            const Shader& shader, u64 dest_fbo_id, 
+            i32 dest_width, i32 dest_height
+        );
+
+        bool was_moved() {
+            return this->moved;
+        }
 
     };
 
