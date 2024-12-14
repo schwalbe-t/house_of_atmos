@@ -15,11 +15,11 @@ project(
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 
+file(GLOB_RECURSE LIB_SOURCES "libsrc/*.cpp")
 file(GLOB_RECURSE SOURCES "src/*.cpp")
-set_source_files_properties("glad/src/gl.c" PROPERTIES LANGUAGE CXX)
 add_executable(
     house_of_atmos
-    "glad/src/gl.c"
+    ${LIB_SOURCES}
     ${SOURCES}
 )
 

@@ -47,7 +47,10 @@ namespace houseofatmos::engine {
             error("Unable to initialize the window!");
         }
         this->last_width = width;
-        this->last_height= height;
+        this->last_height = height;
+        this->last_time = 0;
+        this->frame_delta = 0;
+        this->current_scene = nullptr;
         center_window((GLFWwindow*) this->ptr, width, height);
         glfwMakeContextCurrent((GLFWwindow*) this->ptr);
         gladLoadGL(&glfwGetProcAddress);
@@ -65,24 +68,42 @@ namespace houseofatmos::engine {
     }
 
 
-    bool Window::next_frame() {
-        glfwSwapBuffers((GLFWwindow*) this->ptr);
-        glfwPollEvents();
-        glfwGetFramebufferSize(
-            (GLFWwindow*) this->ptr, &this->last_width, &this->last_height
-        );
-        f64 current_time = glfwGetTime();
-        this->frame_delta = current_time - this->last_time;
-        this->last_time = current_time;
-        return !glfwWindowShouldClose((GLFWwindow*) this->ptr);
-    }
-
     i32 Window::width() const { return this->last_width; }
     i32 Window::height() const { return this->last_height; }
     f64 Window::delta_time() const { return this->frame_delta; }
 
 
-    void Window::show_texture(const Texture& texture) {
+    void Window::set_scene(std::shared_ptr<Scene> scene) {
+        if(this->current_scene) {
+            this->current_scene->internal_forget_all();
+        }
+        this->current_scene = scene;
+        scene->internal_load_all();
+    }
+
+    std::shared_ptr<Scene> Window::scene() {
+        return this->current_scene;
+    }
+
+    void Window::start() {
+        while(!glfwWindowShouldClose((GLFWwindow*) this->ptr)) {
+            glfwPollEvents();
+            glfwGetFramebufferSize(
+                (GLFWwindow*) this->ptr, &this->last_width, &this->last_height
+            );
+            f64 current_time = glfwGetTime();
+            this->frame_delta = current_time - this->last_time;
+            this->last_time = current_time;
+            if(this->current_scene) {
+                this->current_scene->update(*this);
+                this->current_scene->render(*this);
+            }
+            glfwSwapBuffers((GLFWwindow*) this->ptr);
+        }
+    }
+
+
+    void Window::show_texture(const Texture& texture) const {
         f64 scale = (f64) this->height() / texture.height();
         f64 dest_width = texture.width() * scale;
         i64 dest_x = (this->width() - dest_width) / 2;

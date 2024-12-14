@@ -19,9 +19,12 @@ namespace houseofatmos::engine {
         u64 dbo_id;
         bool moved;
 
+        void init(i64 width, i64 height, const void* data);
+
 
         public:
         Texture(i64 width, i64 height);
+        Texture(const std::string& path);
         Texture(const Texture& other) = delete;
         Texture(Texture&& other) noexcept;
         Texture& operator=(const Texture& other) = delete;

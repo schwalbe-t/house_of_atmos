@@ -58,6 +58,9 @@ namespace houseofatmos::engine {
 
 
     u16 Mesh::add_vertex(std::span<f32> data) {
+        if(this->moved) {
+            error("Attempted to use a moved 'Mesh'");
+        }
         if(data.size() != this->vertex_size) {
             error("Attempted to push a vertex with "
                 + std::to_string(data.size())
@@ -73,6 +76,9 @@ namespace houseofatmos::engine {
     }
 
     u16 Mesh::add_vertex(std::initializer_list<f32> data) {
+        if(this->moved) {
+            error("Attempted to use a moved 'Mesh'");
+        }
         if(data.size() != this->vertex_size) {
             error("Attempted to push a vertex with "
                 + std::to_string(data.size())
@@ -88,10 +94,16 @@ namespace houseofatmos::engine {
     }
 
     u16 Mesh::vertex_count() const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Mesh'");
+        }
         return this->vertices.size() / this->vertex_size;
     }
 
     void Mesh::add_element(u16 a, u16 b, u16 c) {
+        if(this->moved) {
+            error("Attempted to use a moved 'Mesh'");
+        }
         this->elements.push_back(a);
         this->elements.push_back(b);
         this->elements.push_back(c);
@@ -99,10 +111,16 @@ namespace houseofatmos::engine {
     }
 
     u32 Mesh::element_count() const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Mesh'");
+        }
         return this->elements.size() / 3;
     }
 
     void Mesh::clear() {
+        if(this->moved) {
+            error("Attempted to use a moved 'Mesh'");
+        }
         this->vertices.clear();
         this->elements.clear();
         this->buff_index_count = 0;
@@ -149,6 +167,9 @@ namespace houseofatmos::engine {
 
 
     void Mesh::submit() {
+        if(this->moved) {
+            error("Attempted to use a moved 'Mesh'");
+        }
         if(this->vertices.size() == 0 || this->elements.size() == 0) {
             return;
         }
@@ -182,6 +203,9 @@ namespace houseofatmos::engine {
         const Shader& shader, u64 dest_fbo_id, 
         i32 dest_width, i32 dest_height
     ) {
+        if(this->moved) {
+            error("Attempted to use a moved 'Mesh'");
+        }
         if(this->modified) { this->submit(); }
         glBindFramebuffer(GL_FRAMEBUFFER, dest_fbo_id);
         glViewport(0, 0, dest_width, dest_height);

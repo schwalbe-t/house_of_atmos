@@ -1,7 +1,9 @@
 
 #include <engine/rendering.hpp>
 #include <engine/logging.hpp>
+#include <engine/scene.hpp>
 #include <glad/gl.h>
+#include <stb/stb_image.h>
 #include <optional>
 
 namespace houseofatmos::engine {
@@ -13,14 +15,14 @@ namespace houseofatmos::engine {
         return fbo_id;
     }
 
-    static GLuint init_tex(i64 width, i64 height) {
+    static GLuint init_tex(i64 width, i64 height, const void* data) {
         GLuint tex_id;
         glGenTextures(1, &tex_id);
         glBindTexture(GL_TEXTURE_2D, tex_id);
         glTexImage2D(
             GL_TEXTURE_2D, 0, GL_RGBA, 
             width, height, 0, GL_RGBA, 
-            GL_UNSIGNED_BYTE, 0
+            GL_UNSIGNED_BYTE, data
         );
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -37,7 +39,7 @@ namespace houseofatmos::engine {
         return dbo_id;
     }
 
-    Texture::Texture(i64 width, i64 height) {
+    void Texture::init(i64 width, i64 height, const void* data) {
         if(width <= 0 || height <= 0) {
             error("Texture width and height must both be larger than 0"
                 " (given was " + std::to_string(width)
@@ -47,7 +49,7 @@ namespace houseofatmos::engine {
         this->width_px = width;
         this->height_px = height;
         this->fbo_id = init_fbo();
-        this->tex_id = init_tex(width, height);
+        this->tex_id = init_tex(width, height, data);
         this->dbo_id = init_dbo(width, height);
         glFramebufferRenderbuffer(
             GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, this->dbo_id
@@ -72,6 +74,24 @@ namespace houseofatmos::engine {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
         this->moved = false;
+    }
+
+    Texture::Texture(i64 width, i64 height) {
+        this->init(width, height, nullptr);
+    }
+
+    Texture::Texture(const std::string& path) {
+        std::vector<char> bytes = GenericResource::read_bytes(path);
+        int width, height, file_channels;
+        stbi_uc* data = stbi_load_from_memory(
+            (stbi_uc*) bytes.data(), bytes.size(), 
+            &width, &height, nullptr, STBI_rgb_alpha
+        );
+        if(data == nullptr) {
+            error("The file '" + path + "' contains invalid image data!");
+        }
+        this->init(width, height, (void*) data);
+        stbi_image_free((void*) data);
     }
 
     Texture::Texture(Texture&& other) noexcept {
@@ -121,11 +141,24 @@ namespace houseofatmos::engine {
     i64 Texture::height() const { return this->height_px; }
 
 
-    u64 Texture::internal_fbo_id() const { return this->fbo_id; }
-    u64 Texture::internal_tex_id() const { return this->tex_id; }
+    u64 Texture::internal_fbo_id() const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Texture'");
+        }
+        return this->fbo_id;
+    }
+    u64 Texture::internal_tex_id() const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Texture'");
+        }
+        return this->tex_id;
+    }
 
 
     void Texture::clear_color(Vec<4> color) const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Texture'");
+        }
         glBindFramebuffer(GL_FRAMEBUFFER, this->fbo_id);
         glClearColor(color.r(), color.g(), color.b(), color.a());
         glClear(GL_COLOR_BUFFER_BIT);
@@ -133,6 +166,9 @@ namespace houseofatmos::engine {
     }
 
     void Texture::clear_depth(f64 depth) const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Texture'");
+        }
         glBindFramebuffer(GL_FRAMEBUFFER, this->fbo_id);
         glClearDepth(depth);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -141,13 +177,16 @@ namespace houseofatmos::engine {
 
 
     void Texture::resize_fast(i64 width, i64 height) {
-        if(this->width() == width && this->height() == height) {
+        if(this->width() == width && this->height() == height && !this->moved) {
             return;
         }
         *this = std::move(Texture(width, height));
     }
 
     void Texture::resize(i64 width, i64 height) {
+        if(this->moved) {
+            error("Attempted to use a moved 'Texture'");
+        }
         if(this->width() == width && this->height() == height) {
             return;
         }
@@ -158,6 +197,9 @@ namespace houseofatmos::engine {
 
 
     void Texture::blit(const Texture& dest, f64 x, f64 y, f64 w, f64 h) const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Texture'");
+        }
         this->internal_blit(
             dest.internal_fbo_id(), dest.width(), dest.height(),
             x, y, w, h
@@ -201,6 +243,9 @@ namespace houseofatmos::engine {
         u64 dest_fbo_id, u32 dest_width, u32 dest_height,
         f64 x, f64 y, f64 w, f64 h
     ) const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Texture'");
+        }
         if(!blit_shader || !blit_quad) { init_blit_resources(); }
         Vec<2> scale = Vec<2>(w, h)
             / Vec<2>(dest_width, dest_height)
