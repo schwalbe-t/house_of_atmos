@@ -51,6 +51,7 @@ namespace houseofatmos::engine {
         this->last_time = 0;
         this->frame_delta = 0;
         this->current_scene = nullptr;
+        this->next_scene = nullptr;
         center_window((GLFWwindow*) this->ptr, width, height);
         glfwMakeContextCurrent((GLFWwindow*) this->ptr);
         gladLoadGL(&glfwGetProcAddress);
@@ -74,11 +75,7 @@ namespace houseofatmos::engine {
 
 
     void Window::set_scene(std::shared_ptr<Scene> scene) {
-        if(this->current_scene) {
-            this->current_scene->internal_forget_all();
-        }
-        this->current_scene = scene;
-        scene->internal_load_all();
+        this->next_scene = scene;
     }
 
     std::shared_ptr<Scene> Window::scene() {
@@ -97,6 +94,14 @@ namespace houseofatmos::engine {
             if(this->current_scene) {
                 this->current_scene->update(*this);
                 this->current_scene->render(*this);
+            }
+            if(this->next_scene) {
+                if(this->current_scene) {
+                    this->current_scene->internal_forget_all();
+                }
+                this->current_scene = this->next_scene;
+                this->current_scene->internal_load_all();
+                this->next_scene = nullptr;
             }
             glfwSwapBuffers((GLFWwindow*) this->ptr);
         }

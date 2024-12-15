@@ -41,7 +41,11 @@ namespace houseofatmos::engine {
             this->args = arg;
             this->loaded_value = std::nullopt;
         }
-        Resource& operator=(Resource&& other) = default;
+        Resource(Resource&& other) {
+            this->has_value = other.has_value;
+            this->args = std::move(other.args);
+            this->loaded_value = std::move(other.loaded_value);
+        }
         ~Resource() override = default;
 
 
@@ -54,7 +58,7 @@ namespace houseofatmos::engine {
             this->loaded_value = std::nullopt;
         }
         const A& arg() const { return this->args; }
-        const T& value() const { return this->loaded_value.value(); }
+        T& value() { return this->loaded_value.value(); }
     };
 
     struct Window;
@@ -87,8 +91,8 @@ namespace houseofatmos::engine {
                     + " has not been registered, but access was attempted"
                 );
             }
-            const GenericResource* dr = this->resources[identifier];
-            auto r = dynamic_cast<const Resource<T, A>*>(dr);
+            GenericResource* dr = this->resources[identifier];
+            auto r = dynamic_cast<Resource<T, A>*>(dr);
             if(!r->loaded()) {
                 error("Resource "
                     + arg.pretty_identifier()

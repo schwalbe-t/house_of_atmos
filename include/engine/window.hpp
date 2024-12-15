@@ -17,6 +17,7 @@ namespace houseofatmos::engine {
         f64 frame_delta;
 
         std::shared_ptr<Scene> current_scene;
+        std::shared_ptr<Scene> next_scene;
 
 
         public:
