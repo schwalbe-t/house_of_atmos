@@ -13,31 +13,32 @@ namespace houseofatmos::engine {
     struct GenericResource {
 
         protected:
-        std::string path;
         bool has_value;
 
 
         public:
+        GenericResource& operator=(GenericResource&& other) = default;
         virtual ~GenericResource() = default;
 
         virtual void load() = 0;
         virtual void forget() = 0;
         bool loaded() const { return this->has_value; }
-        const std::string& source() { return this->path; }
     
         static std::vector<char> read_bytes(const std::string& path);
+        static std::string read_string(const std::string& path);
     };
 
-    template<typename T>
+    template<typename T, typename A>
     struct Resource: GenericResource {
 
         private:
         std::optional<T> loaded_value;
+        A args;
 
 
         public:
-        Resource(std::string_view path) {
-            this->path = std::string(path);
+        constexpr Resource(A arg) {
+            this->args = arg;
             this->loaded_value = std::nullopt;
         }
         Resource& operator=(Resource&& other) = default;
@@ -46,12 +47,13 @@ namespace houseofatmos::engine {
 
         void load() override {
             this->has_value = true;
-            this->loaded_value = T(this->path);
+            this->loaded_value = T::from_resource(this->args);
         }
         void forget() override {
             this->has_value = false;
             this->loaded_value = std::nullopt;
         }
+        const A& arg() const { return this->args; }
         const T& value() const { return this->loaded_value.value(); }
     };
 
@@ -71,27 +73,26 @@ namespace houseofatmos::engine {
         Scene& operator=(Scene&& other) = delete;
         virtual ~Scene();
 
-        template<typename T>
-        void load(Resource<T>&& resource) {
-            Resource<T>* hr = new Resource<T>(resource.source());
-            *hr = std::move(resource);
-            this->resources[resource.source()] = hr;
+        template<typename T, typename A>
+        void load(Resource<T, A>&& resource) {
+            Resource<T, A>* hr = new Resource<T, A>(std::move(resource));
+            this->resources[hr->arg().identifier()] = hr;
         }
-        template<typename T>
-        const T& get(std::string_view path) {
-            auto path_s = std::string(path);
-            if(!this->resources.contains(path_s)) {
-                error("Resource '"
-                    + path_s
-                    + "' has not been registered, but access was attempted"
+        template<typename T, typename A>
+        T& get(const A& arg) {
+            std::string identifier = arg.identifier();
+            if(!this->resources.contains(identifier)) {
+                error("Resource "
+                    + arg.pretty_identifier()
+                    + " has not been registered, but access was attempted"
                 );
             }
-            const GenericResource* dr = this->resources[path_s];
-            auto r = dynamic_cast<const Resource<T>*>(dr);
+            const GenericResource* dr = this->resources[identifier];
+            auto r = dynamic_cast<const Resource<T, A>*>(dr);
             if(!r->loaded()) {
-                error("Resource '"
-                    + path_s
-                    + "' has not yet been loaded, but access was attempted"
+                error("Resource "
+                    + arg.pretty_identifier()
+                    + " has not yet been loaded, but access was attempted"
                 );
             }
             return r->value();

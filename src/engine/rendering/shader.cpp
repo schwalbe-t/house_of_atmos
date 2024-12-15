@@ -1,6 +1,7 @@
 
 #include <engine/rendering.hpp>
 #include <engine/logging.hpp>
+#include <engine/scene.hpp>
 #include <glad/gl.h>
 
 namespace houseofatmos::engine {
@@ -52,12 +53,18 @@ namespace houseofatmos::engine {
         return id;
     }
 
-    Shader::Shader(const char* vertex_src, const char* fragment_src) {
+    Shader::Shader(const std::string& vertex_src, const std::string& fragment_src) {
         this->next_slot = 0;
-        this->vert_id = compile_shader(vertex_src, GL_VERTEX_SHADER);
-        this->frag_id = compile_shader(fragment_src, GL_FRAGMENT_SHADER);
+        this->vert_id = compile_shader(vertex_src.data(), GL_VERTEX_SHADER);
+        this->frag_id = compile_shader(fragment_src.data(), GL_FRAGMENT_SHADER);
         this->prog_id = link_shaders(this->vert_id, this->frag_id);
         this->moved = false;
+    }
+
+    Shader Shader::from_resource(const Shader::LoadArgs& args) {
+        std::string vertex_src = GenericResource::read_string(args.vertex_path);
+        std::string fragment_src = GenericResource::read_string(args.fragment_path);
+        return Shader(vertex_src, fragment_src);
     }
 
     Shader::Shader(Shader&& other) noexcept {

@@ -2,13 +2,24 @@
 #pragma once
 
 #include "math.hpp"
+#include "scene.hpp"
 #include <vector>
 #include <span>
 #include <unordered_map>
+#include <utility>
 
 namespace houseofatmos::engine {
 
     struct Texture {
+        struct LoadArgs {
+            std::string path;
+
+            std::string identifier() const { return path; }
+            std::string pretty_identifier() const {
+                return "Texture@'" + path + "'"; 
+            }
+        };
+        using Loader = Resource<Texture, LoadArgs>;
 
         private:
         i64 width_px;
@@ -19,12 +30,12 @@ namespace houseofatmos::engine {
         u64 dbo_id;
         bool moved;
 
-        void init(i64 width, i64 height, const void* data);
+        Texture(i64 width, i64 height, const void* data);
 
 
         public:
         Texture(i64 width, i64 height);
-        Texture(const std::string& path);
+        static Texture from_resource(const LoadArgs& arg);
         Texture(const Texture& other) = delete;
         Texture(Texture&& other) noexcept;
         Texture& operator=(const Texture& other) = delete;
@@ -53,6 +64,18 @@ namespace houseofatmos::engine {
 
 
     struct Shader {
+        struct LoadArgs {
+            std::string vertex_path;
+            std::string fragment_path;
+
+            std::string identifier() const {
+                return vertex_path + "|||" + fragment_path;
+            }
+            std::string pretty_identifier() const {
+                return "Shader@'" + vertex_path + "'&'" + fragment_path + "'";
+            }
+        };
+        using Loader = Resource<Shader, LoadArgs>;
 
         private:
         // <uniform name> -> <tex id>
@@ -72,7 +95,8 @@ namespace houseofatmos::engine {
 
 
         public:
-        Shader(const char* vertex, const char* fragment);
+        Shader(const std::string& vertex_src, const std::string& fragment_src);
+        static Shader from_resource(const LoadArgs& args);
         Shader(const Shader& other) = delete;
         Shader(Shader&& other) noexcept;
         Shader& operator=(const Shader& other) = delete;
@@ -179,6 +203,50 @@ namespace houseofatmos::engine {
         bool was_moved() {
             return this->moved;
         }
+
+    };
+
+
+    struct Property {
+        enum Type {
+            Position,
+            UvMapping,
+            Normal
+        };
+        Type type;
+
+        u8 size() {
+            switch(this->type) {
+                case Property::Position: return 3;
+                case Property::UvMapping: return 2;
+                case Property::Normal: return 3;
+                default: return 0;
+            }
+        }
+    };
+
+    struct Model {
+        struct LoadArgs {
+            std::string path;
+            std::vector<Property> properties;
+
+            std::string identifier() const { return path; }
+            std::string pretty_identifier() const { 
+                return "Model@'" + path + "'"; 
+            }
+        };
+        using Loder = Resource<Model, LoadArgs>;
+
+        private:
+        // ... properties here ...
+
+        Model(/* ... property values here ... */);
+
+        public:
+        Model(const std::string& path);
+        static Model from_resource(const LoadArgs& args);
+        Model(const Model& other) = delete;
+        Model& operator=(const Model& other) = delete;
 
     };
 

@@ -11,9 +11,17 @@ namespace houseofatmos::engine {
         if(stream.fail()) {
             error("The file '" + path + "' could not be read");
         }
-        info("Reading file '" + path + "'");
         auto iter = std::istreambuf_iterator<char>(stream);
         return std::vector(iter, std::istreambuf_iterator<char>());
+    }
+
+    std::string GenericResource::read_string(const std::string& path) {
+        auto stream = std::ifstream(path);
+        if(stream.fail()) {
+            error("The file '" + path + "' could not be read");
+        }
+        auto iter = std::istreambuf_iterator<char>(stream);
+        return std::string(iter, std::istreambuf_iterator<char>());
     }
 
 

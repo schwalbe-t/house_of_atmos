@@ -39,7 +39,7 @@ namespace houseofatmos::engine {
         return dbo_id;
     }
 
-    void Texture::init(i64 width, i64 height, const void* data) {
+    Texture::Texture(i64 width, i64 height, const void* data) {
         if(width <= 0 || height <= 0) {
             error("Texture width and height must both be larger than 0"
                 " (given was " + std::to_string(width)
@@ -77,21 +77,23 @@ namespace houseofatmos::engine {
     }
 
     Texture::Texture(i64 width, i64 height) {
-        this->init(width, height, nullptr);
+        this->moved = true;
+        *this = std::move(Texture(width, height, nullptr));
     }
 
-    Texture::Texture(const std::string& path) {
-        std::vector<char> bytes = GenericResource::read_bytes(path);
+    Texture Texture::from_resource(const Texture::LoadArgs& args) {
+        std::vector<char> bytes = GenericResource::read_bytes(args.path);
         int width, height, file_channels;
         stbi_uc* data = stbi_load_from_memory(
             (stbi_uc*) bytes.data(), bytes.size(), 
             &width, &height, nullptr, STBI_rgb_alpha
         );
         if(data == nullptr) {
-            error("The file '" + path + "' contains invalid image data!");
+            error("The file '" + args.path + "' contains invalid image data!");
         }
-        this->init(width, height, (void*) data);
+        auto instance = Texture(width, height, (void*) data);
         stbi_image_free((void*) data);
+        return instance;
     }
 
     Texture::Texture(Texture&& other) noexcept {

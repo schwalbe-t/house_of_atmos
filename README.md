@@ -16,3 +16,5 @@ This requires the following dependencies to be installed when building from sour
 Additionally, this project uses these dependencies directly (install not needed):
 - `glad`
 - `stb_image`
+- `nlohmann/json`
+- `syoyo/tinygltf`
