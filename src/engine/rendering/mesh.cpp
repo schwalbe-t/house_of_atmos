@@ -6,21 +6,88 @@
 
 namespace houseofatmos::engine {
 
-    Mesh::Mesh(std::initializer_list<u8> attrib_sizes) {
-        this->attrib_sizes = std::vector(attrib_sizes);
-        this->vertex_size = std::reduce(attrib_sizes.begin(), attrib_sizes.end());
+    size_t Mesh::Attrib::type_size_bytes() const {
+        switch(this->type) {
+            case Mesh::F32: return sizeof(f32);
+            case Mesh::I8: return sizeof(i8);
+            case Mesh::I16: return sizeof(i16);
+            case Mesh::I32: return sizeof(i32);
+            case Mesh::U8: return sizeof(u8);
+            case Mesh::U16: return sizeof(u16);
+            case Mesh::U32: return sizeof(u32);
+        }
+        error("Unhandled mesh attribute type in 'Mesh::Attrib::type_size_bytes'");
+        return 0;
+    }
+
+    size_t Mesh::Attrib::size_bytes() const {
+        return this->type_size_bytes() * this->count;
+    }
+
+    size_t Mesh::Attrib::gl_type_constant() const {
+        switch(this->type) {
+            case Mesh::F32: return GL_FLOAT;
+            case Mesh::I8: return GL_BYTE;
+            case Mesh::I16: return GL_SHORT;
+            case Mesh::I32: return GL_INT;
+            case Mesh::U8: return GL_UNSIGNED_BYTE;
+            case Mesh::U16: return GL_UNSIGNED_SHORT;
+            case Mesh::U32: return GL_UNSIGNED_INT;
+        }
+        error("Unhandled mesh attribute type in 'Mesh::Attrib::gl_type_constant'");
+        return 0;
+    }
+
+    std::string Mesh::Attrib::display_type() const {
+        switch(this->type) {
+            case Mesh::F32: return "f32";
+            case Mesh::I8: return "i8";
+            case Mesh::I16: return "i16"; 
+            case Mesh::I32: return "i32";
+            case Mesh::U8: return "u8";
+            case Mesh::U16: return "u16";
+            case Mesh::U32: return "u32";
+        }
+        error("Unhandled mesh attribute type in 'Mesh::Attrib::display_type'");
+        return "<unknown>";
+    }
+
+    std::string Mesh::Attrib::display() const {
+        return std::to_string(this->count) + "x'" + this->display_type() + "'";
+    }
+
+
+    static size_t compute_vertex_size(const std::vector<Mesh::Attrib>& attribs) {
+        size_t sum = 0;
+        for(const Mesh::Attrib& attrib: attribs) {
+            sum += attrib.size_bytes();
+        }
+        return sum;
+    }
+
+    Mesh::Mesh(std::span<const Attrib> attrib_sizes) {
+        this->attributes.assign(attrib_sizes.begin(), attrib_sizes.end());
+        this->vertex_size = compute_vertex_size(this->attributes);
+        this->vertices = 0;
+        this->current_attrib = 0;
         this->init_buffers();
         this->modified = false;
         this->moved = false;
+    }
+
+    Mesh::Mesh(std::initializer_list<Attrib> attrib_sizes) {
+        *this = Mesh(std::span(attrib_sizes));
     }
 
     Mesh::Mesh(Mesh&& other) noexcept {
         if(other.moved) {
             error("Attempted to move an already moved 'Mesh'");
         }
-        this->attrib_sizes = std::move(other.attrib_sizes);
+        this->attributes = std::move(other.attributes);
         this->vertex_size = other.vertex_size;
-        this->vertices = std::move(other.vertices);
+        this->vertex_data = std::move(other.vertex_data);
+        this->vertices = other.vertices;
+        this->current_attrib = other.current_attrib;
         this->elements = std::move(other.elements);
         this->vbo_id = other.vbo_id;
         this->ebo_id = other.ebo_id;
@@ -38,9 +105,11 @@ namespace houseofatmos::engine {
         if(!this->moved) {
             this->delete_buffers();
         }
-        this->attrib_sizes = std::move(other.attrib_sizes);
+        this->attributes = std::move(other.attributes);
         this->vertex_size = other.vertex_size;
-        this->vertices = std::move(other.vertices);
+        this->vertex_data = std::move(other.vertex_data);
+        this->vertices = other.vertices;
+        this->current_attrib = other.current_attrib;
         this->elements = std::move(other.elements);
         this->vbo_id = other.vbo_id;
         this->ebo_id = other.ebo_id;
@@ -57,47 +126,145 @@ namespace houseofatmos::engine {
     }
 
 
-    u16 Mesh::add_vertex(std::span<f32> data) {
-        if(this->moved) {
-            error("Attempted to use a moved 'Mesh'");
+    void Mesh::start_vertex() {
+        if(this->current_attrib != 0) {
+            error("Attempted to build multiple mesh vertices at the same time");
         }
-        if(data.size() != this->vertex_size) {
-            error("Attempted to push a vertex with "
-                + std::to_string(data.size())
-                + " onto a mesh with vertices of size "
-                + std::to_string(this->vertex_size)
-                + " (sizes must match)"
-            );
-        }
-        u16 index = this->vertex_count();
-        this->vertices.insert(this->vertices.end(), data.begin(), data.end());
-        this->modified = true;
-        return index;
     }
 
-    u16 Mesh::add_vertex(std::initializer_list<f32> data) {
-        if(this->moved) {
-            error("Attempted to use a moved 'Mesh'");
-        }
-        if(data.size() != this->vertex_size) {
-            error("Attempted to push a vertex with "
-                + std::to_string(data.size())
-                + " onto a mesh with vertices of size "
-                + std::to_string(this->vertex_size)
-                + " (sizes must match)"
+    static void assert_current_attrib(
+        const std::vector<Mesh::Attrib>& attributes, size_t expected_attrib_i, 
+        Mesh::Attrib got
+    ) {
+        if(expected_attrib_i >= attributes.size()) {
+            error("Mesh expected no more data for the current vertex, but got "
+                + got.display()
             );
         }
-        u16 index = this->vertex_count();
-        this->vertices.insert(this->vertices.end(), data.begin(), data.end());
-        this->modified = true;
-        return index;
+        const Mesh::Attrib& expected = attributes[expected_attrib_i];
+        if(expected.type != got.type || expected.count != got.count) {
+            error("Mesh expected "
+                + expected.display()
+                + " for the current vertex, but got "
+                + got.display()
+            );
+        }
     }
+
+    template<typename T>
+    static void append_attrib_data(
+        std::vector<u8>& vertex_data, std::span<const T> values
+    ) {
+        size_t existing_length = vertex_data.size();
+        size_t copied_length = values.size() * sizeof(T);
+        vertex_data.resize(existing_length + copied_length);
+        std::memcpy(
+            (void*) (vertex_data.data() + existing_length), 
+            (void*) values.data(), copied_length
+        );
+    }
+
+    void Mesh::put_f32(std::span<const f32> values) {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        assert_current_attrib(
+            this->attributes, this->current_attrib, { Mesh::F32, values.size() }
+        );
+        append_attrib_data(this->vertex_data, values);
+        this->unsafe_next_attr();
+    }
+    void Mesh::put_f32(std::initializer_list<f32> values) { this->put_f32(std::span(values)); }
+
+    void Mesh::put_i8(std::span<const i8> values) {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        assert_current_attrib(
+            this->attributes, this->current_attrib, { Mesh::I8, values.size() }
+        );
+        append_attrib_data(this->vertex_data, values);
+        this->unsafe_next_attr();
+    }
+    void Mesh::put_i8(std::initializer_list<i8> values) { this->put_i8(std::span(values)); }
+
+    void Mesh::put_i16(std::span<const i16> values) {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        assert_current_attrib(
+            this->attributes, this->current_attrib, { Mesh::I16, values.size() }
+        );
+        append_attrib_data(this->vertex_data, values);
+        this->unsafe_next_attr();
+    }
+    void Mesh::put_i16(std::initializer_list<i16> values) { this->put_i16(std::span(values)); }
+
+    void Mesh::put_i32(std::span<const i32> values) {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        assert_current_attrib(
+            this->attributes, this->current_attrib, { Mesh::I32, values.size() }
+        );
+        append_attrib_data(this->vertex_data, values);
+        this->unsafe_next_attr();
+    }
+    void Mesh::put_i32(std::initializer_list<i32> values) { this->put_i32(std::span(values)); }
+
+    void Mesh::put_u8(std::span<const u8> values) {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        assert_current_attrib(
+            this->attributes, this->current_attrib, { Mesh::U8, values.size() }
+        );
+        append_attrib_data(this->vertex_data, values);
+        this->unsafe_next_attr();
+    }
+    void Mesh::put_u8(std::initializer_list<u8> values) { this->put_u8(std::span(values)); }
+
+    void Mesh::put_u16(std::span<const u16> values) {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        assert_current_attrib(
+            this->attributes, this->current_attrib, { Mesh::U16, values.size() }
+        );
+        append_attrib_data(this->vertex_data, values);
+        this->unsafe_next_attr();
+    }
+    void Mesh::put_u16(std::initializer_list<u16> values) { this->put_u16(std::span(values)); }
+
+    void Mesh::put_u32(std::span<const u32> values) {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        assert_current_attrib(
+            this->attributes, this->current_attrib, { Mesh::U32, values.size() }
+        );
+        append_attrib_data(this->vertex_data, values);
+        this->unsafe_next_attr();
+    }
+    void Mesh::put_u32(std::initializer_list<u32> values) { this->put_u32(std::span(values)); }
+
+    void Mesh::unsafe_put_raw(std::span<const u8> data) {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        append_attrib_data(this->vertex_data, data);
+    }
+
+    void Mesh::unsafe_next_attr() {
+        this->current_attrib += 1;
+    }
+
+    u16 Mesh::complete_vertex() {
+        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
+        if(this->current_attrib < this->attributes.size()) {
+            const Attrib& attribute = this->attributes[this->current_attrib];
+            error("Mesh expected "
+                + attribute.display()
+                + " for the current vertex, but got the end of the vertex"
+            );
+        }
+        this->current_attrib = 0;
+        u16 vertex = this->vertices;
+        this->vertices += 1;
+        this->modified = true;
+        return vertex;
+    }
+
 
     u16 Mesh::vertex_count() const {
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
-        return this->vertices.size() / this->vertex_size;
+        return this->vertices;
     }
 
     void Mesh::add_element(u16 a, u16 b, u16 c) {
@@ -121,9 +288,10 @@ namespace houseofatmos::engine {
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
-        this->vertices.clear();
+        this->vertex_data.clear();
+        this->vertices = 0;
+        this->current_attrib = 0;
         this->elements.clear();
-        this->buff_index_count = 0;
         this->modified = true;
     }
 
@@ -138,22 +306,29 @@ namespace houseofatmos::engine {
     }
 
     void Mesh::bind_properties() const {
-        u64 vertex_size_b = this->vertex_size * sizeof(f32);
         u64 offset = 0;
-        for(u64 attr = 0; attr < this->attrib_sizes.size(); attr += 1) {
-            u8 attr_size = this->attrib_sizes[attr];
-            glEnableVertexAttribArray(attr);
-            glVertexAttribPointer(
-                attr, attr_size, 
-                GL_FLOAT, GL_FALSE, 
-                vertex_size_b, (void*) offset
-            );
-            offset += attr_size * sizeof(f32);
+        for(u64 attr_i = 0; attr_i < this->attributes.size(); attr_i += 1) {
+            const Attrib& attribute = this->attributes[attr_i];
+            glEnableVertexAttribArray(attr_i);
+            if(attribute.type == AttribType::F32) {
+                glVertexAttribPointer(
+                    attr_i, attribute.count, 
+                    GL_FLOAT, GL_FALSE, 
+                    this->vertex_size, (void*) offset
+                );
+            } else {
+                glVertexAttribIPointer(
+                    attr_i, attribute.count, 
+                    attribute.gl_type_constant(), 
+                    this->vertex_size, (void*) offset
+                );                
+            }
+            offset += attribute.size_bytes();
         }
     }
 
     void Mesh::unbind_properties() const {
-        for(u64 attr = 0; attr < this->attrib_sizes.size(); attr += 1) {
+        for(u64 attr = 0; attr < this->attributes.size(); attr += 1) {
             glDisableVertexAttribArray(attr);
         }
     }
@@ -170,16 +345,15 @@ namespace houseofatmos::engine {
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
-        if(this->vertices.size() == 0 || this->elements.size() == 0) {
-            return;
-        }
         glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
-        glBufferData(
-            GL_ARRAY_BUFFER,
-            this->vertices.size() * sizeof(f32),
-            this->vertices.data(),
-            GL_STATIC_DRAW
-        );
+        if(this->vertices > 0) {
+            glBufferData(
+                GL_ARRAY_BUFFER,
+                this->vertex_data.size(),
+                this->vertex_data.data(),
+                GL_STATIC_DRAW
+            );
+        }
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
         glBufferData(

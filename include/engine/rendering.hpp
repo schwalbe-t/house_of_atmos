@@ -30,10 +30,9 @@ namespace houseofatmos::engine {
         u64 dbo_id;
         bool moved;
 
-        Texture(i64 width, i64 height, const void* data);
-
 
         public:
+        Texture(i64 width, i64 height, const u8* data);
         Texture(i64 width, i64 height);
         static Texture from_resource(const LoadArgs& arg);
         Texture(const Texture& other) = delete;
@@ -160,10 +159,29 @@ namespace houseofatmos::engine {
 
     struct Mesh {
 
+        enum AttribType {
+            F32,
+            I8, I16, I32,
+            U8, U16, U32
+        };
+
+        struct Attrib {
+            AttribType type;
+            size_t count;
+
+            size_t type_size_bytes() const;
+            size_t size_bytes() const;
+            size_t gl_type_constant() const;
+            std::string display_type() const;
+            std::string display() const;
+        };
+
         private:
-        std::vector<u8> attrib_sizes;
-        u16 vertex_size;
-        std::vector<f32> vertices;
+        std::vector<Attrib> attributes;
+        size_t vertex_size;
+        std::vector<u8> vertex_data;
+        size_t vertices;
+        size_t current_attrib;
         std::vector<u16> elements;
         
         u64 vbo_id;
@@ -179,15 +197,33 @@ namespace houseofatmos::engine {
 
 
         public:
-        Mesh(std::initializer_list<u8> attrib_sizes);
+        Mesh(std::span<const Attrib> attributes);
+        Mesh(std::initializer_list<Attrib> attributes);
         Mesh(const Mesh& other) = delete;
         Mesh(Mesh&& other) noexcept;
         Mesh& operator=(const Mesh& other) = delete;
         Mesh& operator=(Mesh&& other) noexcept;
         ~Mesh();
 
-        u16 add_vertex(std::span<f32> data);
-        u16 add_vertex(std::initializer_list<f32> data);
+        void start_vertex();
+        void put_f32(std::span<const f32> values);
+        void put_f32(std::initializer_list<f32> values);
+        void put_i8(std::span<const i8> values);
+        void put_i8(std::initializer_list<i8> values);
+        void put_i16(std::span<const i16> values);
+        void put_i16(std::initializer_list<i16> values);
+        void put_i32(std::span<const i32> values);
+        void put_i32(std::initializer_list<i32> values);
+        void put_u8(std::span<const u8> values);
+        void put_u8(std::initializer_list<u8> values);
+        void put_u16(std::span<const u16> values);
+        void put_u16(std::initializer_list<u16> values);
+        void put_u32(std::span<const u32> values);
+        void put_u32(std::initializer_list<u32> values);
+        void unsafe_put_raw(std::span<const u8> data);
+        void unsafe_next_attr();
+        u16 complete_vertex();
+
         u16 vertex_count() const;
         void add_element(u16 a, u16 b, u16 c);
         u32 element_count() const;
@@ -207,46 +243,47 @@ namespace houseofatmos::engine {
     };
 
 
-    struct Property {
-        enum Type {
+    struct Model {
+
+        enum Attrib {
             Position,
             UvMapping,
-            Normal
+            Normal,
+            Weights,
+            Joints
         };
-        Type type;
 
-        u8 size() {
-            switch(this->type) {
-                case Property::Position: return 3;
-                case Property::UvMapping: return 2;
-                case Property::Normal: return 3;
-                default: return 0;
-            }
-        }
-    };
-
-    struct Model {
         struct LoadArgs {
             std::string path;
-            std::vector<Property> properties;
+            std::vector<std::pair<Attrib, Mesh::Attrib>> vertex_attributes;
 
             std::string identifier() const { return path; }
             std::string pretty_identifier() const { 
                 return "Model@'" + path + "'"; 
             }
         };
-        using Loder = Resource<Model, LoadArgs>;
+
+        using Loader = Resource<Model, LoadArgs>;
+
 
         private:
-        // ... properties here ...
+        std::vector<Texture> textures;
+        std::vector<std::pair<Mesh, size_t>> meshes;
 
-        Model(/* ... property values here ... */);
+        Model();
 
         public:
-        Model(const std::string& path);
         static Model from_resource(const LoadArgs& args);
         Model(const Model& other) = delete;
+        Model(Model&& other) = default;
         Model& operator=(const Model& other) = delete;
+        Model& operator=(Model&& other) = default;
+        ~Model() = default;
+        
+        void render(
+            Shader& shader, const Texture& dest,
+            std::string_view texture_uniform
+        );
 
     };
 

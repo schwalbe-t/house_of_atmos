@@ -5,6 +5,9 @@
 #include <cmath>
 #include <iostream>
 #include <cstring>
+#include <span>
+#include <vector>
+#include <cassert>
 #include "nums.hpp"
 
 
@@ -13,13 +16,13 @@ namespace houseofatmos::engine {
     const f64 pi = 3.141592653589793238463;
 
 
-    template<int N, typename T = f64>
+    template<size_t N, typename T = f64>
     struct Vec {
         T elements[N];
 
         Vec() {
             static_assert(N >= 1, "Must at least have one element!");
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 this->elements[i] = 0.0;
             }
         }
@@ -31,15 +34,22 @@ namespace houseofatmos::engine {
         Vec(Args... values) {
             static_assert(N >= 1, "Must at least have one element!");
             T args[] = { static_cast<T>(values)... };
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 this->elements[i] = args[i];
             }
         }
 
-        T& operator[](int index) {
+        Vec(std::span<const T> values) {
+            assert(values.size() == N);
+            for(size_t i = 0; i < N; i += 1) {
+                this->elements[i] = values[i];
+            }
+        }
+
+        T& operator[](size_t index) {
             return this->elements[index];
         }
-        const T& operator[](int index) const {
+        const T& operator[](size_t index) const {
             return this->elements[index];
         }
 
@@ -105,12 +115,12 @@ namespace houseofatmos::engine {
             return this->elements[3]; 
         }
 
-        template<int L>
+        template<size_t L>
         Vec<L> swizzle(const char elements[L + 1]) {
             static_assert(L >= 1, "Must at least have one element!");
             Vec<L> result = Vec<L>();
-            for(int i = 0; i < L; i += 1) {
-                int index;
+            for(size_t i = 0; i < L; i += 1) {
+                size_t index;
                 switch(elements[i]) {
                     case 'x': index = 0; break;
                     case 'y': index = 1; break;
@@ -140,7 +150,7 @@ namespace houseofatmos::engine {
 
         T min() const {
             T min = INFINITY;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 T element = this->elements[i];
                 if(element < min) {
                     min = element;
@@ -151,7 +161,7 @@ namespace houseofatmos::engine {
 
         T max() const {
             T max = -INFINITY;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 T element = this->elements[i];
                 if(element > max) {
                     max = element;
@@ -162,7 +172,7 @@ namespace houseofatmos::engine {
 
         T sum() const {
             T sum = 0.0;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 sum += this->elements[i];
             }
             return sum;
@@ -170,7 +180,7 @@ namespace houseofatmos::engine {
 
         Vec<N> operator+(const Vec<N>& other) const {
             Vec<N> sum = *this;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 sum.elements[i] += other.elements[i];
             }
             return sum;
@@ -178,7 +188,7 @@ namespace houseofatmos::engine {
 
         Vec<N> operator-(const Vec<N>& other) const {
             Vec<N> difference = *this;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 difference.elements[i] -= other.elements[i];
             }
             return difference;
@@ -186,7 +196,7 @@ namespace houseofatmos::engine {
 
         Vec<N> operator*(const Vec<N>& other) const {
             Vec<N> product = *this;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 product.elements[i] *= other.elements[i];
             }
             return product;
@@ -194,7 +204,7 @@ namespace houseofatmos::engine {
 
         Vec<N> operator*(const T scalar) const {
             Vec<N> scaled = *this;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 scaled.elements[i] *= scalar;
             }
             return scaled;
@@ -202,7 +212,7 @@ namespace houseofatmos::engine {
 
         Vec<N> operator/(const Vec<N>& other) const {
             Vec<N> quotient = *this;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 quotient.elements[i] /= other.elements[i];
             }
             return quotient;
@@ -210,7 +220,7 @@ namespace houseofatmos::engine {
 
         Vec<N> operator/(const T scalar) const {
             Vec<N> scaled = *this;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 scaled.elements[i] /= scalar;
             }
             return scaled;
@@ -253,7 +263,7 @@ namespace houseofatmos::engine {
 
         Vec<N> abs() const {
             Vec<N> absolute = *this;
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 if(absolute.elements[i] >= 0.0) { continue; }
                 absolute.elements[i] *= -1.0;
             }
@@ -285,18 +295,18 @@ namespace houseofatmos::engine {
 
     };
 
-    template<int N>
+    template<size_t N>
     using IVec = Vec<N, i64>;
 
-    template<int N>
+    template<size_t N>
     using UVec = Vec<N, u64>;
 
     
 
-    template<int N>
+    template<size_t N>
     std::ostream& operator<<(std::ostream& outs, const Vec<N>& v) {
         outs << "[";
-        for(int i = 0; i < N; i += 1) {
+        for(size_t i = 0; i < N; i += 1) {
             if(i > 0) { outs << ", "; }
             outs << v[i];
         }
@@ -305,14 +315,14 @@ namespace houseofatmos::engine {
     }
 
 
-    template<int R, int C = R>
+    template<size_t R, size_t C = R>
     struct Mat {
         Vec<R> columns[C];
 
         Mat() {
             static_assert(R >= 1, "Matrix must have at least 1 row!");
             static_assert(C >= 1, "Matrix must have at least 1 column!");
-            for(int i = 0; i < R && i < C; i += 1) {
+            for(size_t i = 0; i < R && i < C; i += 1) {
                 this->element(i, i) = 1.0;
             }
         }
@@ -325,12 +335,62 @@ namespace houseofatmos::engine {
             static_assert(R >= 1, "Matrix must have at least 1 row!");
             static_assert(C >= 1, "Matrix must have at least 1 column!");
             f64 args[] = { static_cast<f64>(values)... };
-            for(int row_i = 0; row_i < R; row_i += 1) {
-                for(int column_i = 0; column_i < C; column_i += 1) {
-                    int args_i = row_i * C + column_i;
+            for(size_t row_i = 0; row_i < R; row_i += 1) {
+                for(size_t column_i = 0; column_i < C; column_i += 1) {
+                    size_t args_i = row_i * C + column_i;
                     this->element(row_i, column_i) = args[args_i];
                 }
             }
+        }
+
+        template<typename T>
+        static Mat<R, C> from_column_major(std::span<const T> values) {
+            assert(values.size() == R * C);
+            Mat<R, C> result;
+            for(size_t column_i = 0; column_i < C; column_i += 1) {
+                for(size_t row_i = 0; row_i < R; row_i += 1) {
+                    result.element(row_i, column_i)
+                        = values[column_i * R + row_i];
+                }
+            }
+            return result;
+        }
+
+        template<typename T>
+        static Mat<R, C> from_row_major(std::span<const T> values) {
+            assert(values.size() == R * C);
+            Mat<R, C> result;
+            for(size_t row_i = 0; row_i < R; row_i += 1) {
+                for(size_t column_i = 0; column_i < C; column_i += 1) {
+                    result.element(row_i, column_i)
+                        = values[row_i * C + column_i];
+                }
+            }
+            return result;
+        }
+
+        template<typename T>
+        std::vector<T> as_column_major() const {
+            std::vector<T> result;
+            result.reserve(R * C);
+            for(size_t column_i = 0; column_i < C; column_i += 1) {
+                for(size_t row_i = 0; row_i < R; row_i += 1) {
+                    result.push_back(this->element(row_i, column_i));
+                }
+            }
+            return result;
+        }
+
+        template<typename T>
+        std::vector<T> as_row_major() const {
+            std::vector<T> result;
+            result.reserve(R * C);
+            for(size_t row_i = 0; row_i < R; row_i += 1) {
+                for(size_t column_i = 0; column_i < C; column_i += 1) {
+                    result.push_back(this->element(row_i, column_i));
+                }
+            }
+            return result;
         }
 
         static Mat<R> rotate_x(f64 angle_rad) {
@@ -366,7 +426,7 @@ namespace houseofatmos::engine {
             return result;
         }
 
-        static Mat<R> quaternion(f64 x, f64 y, f64 z, f64 w) {
+        static Mat<R> quaternion_xyzw(f64 x, f64 y, f64 z, f64 w) {
             static_assert(R >= 3, "Matrix size must at least be 3!");
             Mat<R> result = Mat<R>();
             result.element(0, 0) = 1 - 2 * (y * y + z * z);
@@ -381,29 +441,29 @@ namespace houseofatmos::engine {
             return result;
         }
 
-        static Mat<R> quaternion(const Vec<4>& q) {
+        static Mat<R> quaternion_xyzw(const Vec<4>& q) {
             static_assert(R >= 3, "Matrix size must at least be 3!");
-            return Mat<R>::quaternion(q.x(), q.y(), q.z(), q.w());
+            return Mat<R>::quaternion_xyzw(q.x(), q.y(), q.z(), q.w());
         }
 
-        template<int N>
+        template<size_t N>
         static Mat<R> scale(const Vec<N>& scalars) {
             static_assert(R == C, "Must be a square matrix!");
             static_assert(R >= 1, "Matrix size must at least be 1!");
             static_assert(N <= R, "Scalars must fit inside the Matrix!");
             Mat<R> result = Mat<R>();
-            for(int i = 0; i < N; i += 1) {
+            for(size_t i = 0; i < N; i += 1) {
                 result.element(i, i) = scalars[i];
             }
             return result;
         }
 
-        template<int N>
+        template<size_t N>
         static Mat<R> translate(const Vec<N>& offsets) {
             static_assert(R >= 1, "Matrix size must at least be 1!");
             static_assert(N <= R, "Offsets must fit inside the Matrix!");
             Mat<R> result = Mat<R>();
-            for(int row_i = 0; row_i < N; row_i += 1) {
+            for(size_t row_i = 0; row_i < N; row_i += 1) {
                 result.element(row_i, C - 1) = offsets[row_i];
             }
             return result;
@@ -442,7 +502,7 @@ namespace houseofatmos::engine {
         }
 
         static Mat<4> perspective(
-            f64 fov, int width, int height, f64 near, f64 far
+            f64 fov, i64 width, i64 height, f64 near, f64 far
         ) {
             f64 aspect_ratio = (f64) width / height;
             f64 focal_length = 1.0 / tan(fov / 2.0);
@@ -458,35 +518,35 @@ namespace houseofatmos::engine {
             );
         }
 
-        Vec<C> operator[](int index) const {
+        Vec<C> operator[](size_t index) const {
             Vec<C> row = Vec<C>();
-            for(int column_i = 0; column_i < C; column_i += 1) {
+            for(size_t column_i = 0; column_i < C; column_i += 1) {
                 row[column_i] = this->columns[column_i][index];
             }
             return row;
         }
 
-        f64& element(int row, int column) {
+        f64& element(size_t row, size_t column) {
             return this->columns[column][row];
         }
-        const f64& element(int row, int column) const {
+        const f64& element(size_t row, size_t column) const {
             return this->columns[column][row];
         }
 
 
         Vec<R> operator*(const Vec<C>& rhs) const {
             Vec<R> transformed = Vec<R>();
-            for(int column_i = 0; column_i < C; column_i += 1) {
+            for(size_t column_i = 0; column_i < C; column_i += 1) {
                 transformed += this->columns[column_i] * rhs[column_i];
             }
             return transformed;
         }
 
-        template<int N>
+        template<size_t N>
         Mat<R, N> operator*(const Mat<C, N>& rhs) const {
             Mat<R, N> composition = Mat<R, N>();
-            for(int row_i = 0; row_i < R; row_i += 1) {
-                for(int column_i = 0; column_i < N; column_i += 1) {
+            for(size_t row_i = 0; row_i < R; row_i += 1) {
+                for(size_t column_i = 0; column_i < N; column_i += 1) {
                     composition.element(row_i, column_i)
                         = (*this)[row_i].dot(rhs.columns[column_i]);
                 }
@@ -496,8 +556,8 @@ namespace houseofatmos::engine {
         
         Mat<R, C> operator*(const f64& rhs) const {
             Mat<R, C> scaled = Mat<R, C>();
-            for(int row_i = 0; row_i < R; row_i += 1) {
-                for(int column_i = 0; column_i < C; column_i += 1) {
+            for(size_t row_i = 0; row_i < R; row_i += 1) {
+                for(size_t column_i = 0; column_i < C; column_i += 1) {
                     scaled.element(row_i, column_i) 
                         = this->element(row_i, column_i) * rhs;
                 }
@@ -507,8 +567,8 @@ namespace houseofatmos::engine {
 
         Mat<R, C> operator+(const Mat<R, C>& rhs) const {
             Mat<R, C> sum = Mat<R, C>();
-            for(int row_i = 0; row_i < R; row_i += 1) {
-                for(int column_i = 0; column_i < C; column_i += 1) {
+            for(size_t row_i = 0; row_i < R; row_i += 1) {
+                for(size_t column_i = 0; column_i < C; column_i += 1) {
                     sum.element(row_i, column_i) = this->element(row_i, column_i)
                         + rhs.element(row_i, column_i);
                 }
@@ -516,19 +576,17 @@ namespace houseofatmos::engine {
             return sum;
         }
 
-    };
+        Mat<C, R> transposed() const {
+            Mat<C, R> result;
+            for(size_t row_i = 0; row_i < R; row_i += 1) {
+                for(size_t column_i = 0; column_i < C; column_i += 1) {
+                    result.element(column_i, row_i)
+                        = this->element(row_i, column_i);
+                }
+            }
+            return result;
+        }
 
-
-    f64 perlin_noise(uint32_t seed, const Vec<2>& pos);
-
-
-    struct StatefulRNG {
-        uint64_t state;
-
-        StatefulRNG(uint64_t seed);
-
-        f64 next_float();
-        uint64_t next_int();
     };
 
 }

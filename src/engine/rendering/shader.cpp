@@ -376,14 +376,11 @@ namespace houseofatmos::engine {
         const Mat<R, C>* values, size_t count
     ) {
         auto result = std::vector<GLfloat>();
-        result.reserve(R * C);
+        result.reserve(R * C * count);
         for(size_t m_i = 0; m_i < count; m_i += 1) {
-            for(size_t r_i = 0; r_i < R; r_i += 1) {
-                for(size_t c_i = 0; c_i < C; c_i += 1) {
-                    f64 elem = values[m_i].element(r_i, c_i);
-                    result.push_back(static_cast<GLfloat>(elem));
-                }
-            }
+            const Mat<R, C>& matrix = values[m_i];
+            std::vector<GLfloat> flat = matrix.template as_column_major<GLfloat>();
+            result.insert(result.end(), flat.begin(), flat.end());
         }
         return result;
     }

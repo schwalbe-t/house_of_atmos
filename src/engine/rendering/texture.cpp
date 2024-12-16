@@ -39,7 +39,7 @@ namespace houseofatmos::engine {
         return dbo_id;
     }
 
-    Texture::Texture(i64 width, i64 height, const void* data) {
+    Texture::Texture(i64 width, i64 height, const u8* data) {
         if(width <= 0 || height <= 0) {
             error("Texture width and height must both be larger than 0"
                 " (given was " + std::to_string(width)
@@ -49,7 +49,7 @@ namespace houseofatmos::engine {
         this->width_px = width;
         this->height_px = height;
         this->fbo_id = init_fbo();
-        this->tex_id = init_tex(width, height, data);
+        this->tex_id = init_tex(width, height, (void*) data);
         this->dbo_id = init_dbo(width, height);
         glFramebufferRenderbuffer(
             GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, this->dbo_id
@@ -66,7 +66,6 @@ namespace houseofatmos::engine {
             glDeleteTextures(1, &tex_id);
             GLuint dbo_id = this->dbo_id;
             glDeleteRenderbuffers(1, &dbo_id);
-            debug(std::to_string(width) + "x" + std::to_string(height));
             error(std::string("Unable to initialize a texture.")
                 + " GPU capabilities may be insufficient."
             );
@@ -91,7 +90,7 @@ namespace houseofatmos::engine {
         if(data == nullptr) {
             error("The file '" + args.path + "' contains invalid image data!");
         }
-        auto instance = Texture(width, height, (void*) data);
+        auto instance = Texture(width, height, (u8*) data);
         stbi_image_free((void*) data);
         return instance;
     }
@@ -214,14 +213,13 @@ namespace houseofatmos::engine {
     static void init_blit_resources() {
         blit_shader = Shader(
             "#version 130 \n"
-            "in vec2 v_pos; \n"
-            "in vec2 v_uv; \n"
+            "in vec2 v_pos_uv; \n"
             "out vec2 f_uv; \n"
             "uniform vec2 u_scale; \n"
             "uniform vec2 u_offset; \n"
             "void main() { \n"
-            "    gl_Position = vec4(v_pos * u_scale + u_offset, 0.0, 1.0); \n"
-            "    f_uv = v_uv; \n"
+            "    gl_Position = vec4(v_pos_uv * u_scale + u_offset, 0.0, 1.0); \n"
+            "    f_uv = v_pos_uv; \n"
             "}",
             "#version 130 \n"
             "in vec2 f_uv; \n"
@@ -230,13 +228,21 @@ namespace houseofatmos::engine {
             "    gl_FragColor = texture2D(u_texture, f_uv); \n"
             "}"
         );
-        Mesh quad = Mesh { 2, 2 };
-        quad.add_vertex({ 0, 1,   0, 1 });
-        quad.add_vertex({ 1, 1,   1, 1 });
-        quad.add_vertex({ 0, 0,   0, 0 });
-        quad.add_vertex({ 1, 0,   1, 0 });
-        quad.add_element(0, 2, 3);
-        quad.add_element(3, 1, 0);
+        Mesh quad = Mesh { { Mesh::F32, 2 } };
+        quad.start_vertex();
+            quad.put_f32({ 0, 1 });
+        u16 tl = quad.complete_vertex();
+        quad.start_vertex();
+            quad.put_f32({ 1, 1 });
+        u16 tr = quad.complete_vertex();
+        quad.start_vertex();
+            quad.put_f32({ 0, 0 });
+        u16 bl = quad.complete_vertex();
+        quad.start_vertex();
+            quad.put_f32({ 1, 0 });
+        u16 br = quad.complete_vertex();
+        quad.add_element(tl, bl, br);
+        quad.add_element(br, tr, tl);
         quad.submit();
         blit_quad = std::move(quad);
     }

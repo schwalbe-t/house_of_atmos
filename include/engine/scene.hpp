@@ -13,7 +13,7 @@ namespace houseofatmos::engine {
     struct GenericResource {
 
         protected:
-        bool has_value;
+        bool has_value = false;
 
 
         public:
