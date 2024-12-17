@@ -11,25 +11,19 @@ struct TestScene: Scene {
     static inline Model::LoadArgs PLAYER_MODEL = {
         "res/player.gltf", {
             { Model::Position, { Mesh::F32, 3 } }, 
-            { Model::UvMapping, { Mesh::F32, 2 } }, 
-            { Model::Normal, { Mesh::F32, 3 } },
-            { Model::Weights, { Mesh::F32, 4 } },
-            { Model::Joints, { Mesh::U8, 4 } }
+            // { Model::UvMapping, { Mesh::F32, 2 } }, 
+            // { Model::Normal, { Mesh::F32, 3 } }
         } 
     };
 
-    static inline Texture::LoadArgs PLAYER_TEXTURE = { "res/player.png" };
     static inline Shader::LoadArgs MODEL_SHADER = {
         "res/model_vert.glsl", "res/model_frag.glsl"
     };
 
     Texture target = Texture(100, 100);
 
-    Mesh triangle = Mesh { { Mesh::F32, 2 }, { Mesh::U8, 3 } };
-
     TestScene() {
         this->load(Model::Loader(PLAYER_MODEL));
-        this->load(Texture::Loader(PLAYER_TEXTURE));
         this->load(Shader::Loader(MODEL_SHADER));
     }
 
@@ -37,21 +31,22 @@ struct TestScene: Scene {
     
     void render(const Window& window) override {
         Shader& model_shader = this->get<Shader>(MODEL_SHADER);
-        Texture& player_texture = this->get<Texture>(PLAYER_TEXTURE);
         Model& player_model = this->get<Model>(PLAYER_MODEL);
         Texture& target = this->target;
         target.resize_fast(window.width(), window.height());
-        target.clear_color(Vec<4>(0.0, 0.0, 0.0, 1.0));
-        target.clear_depth(INFINITY);
+        target.clear_color(Vec<4>(0.5, 0.5, 0.5, 1.0));
+        target.clear_depth(1.0);
         model_shader.set_uniform("u_model", Mat<4>());
-        model_shader.set_uniform("u_view", Mat<4>::look_at(
-            Vec<3>(0, 0, 10), // camera position
-            Vec<3>(0, 0, 0 ), // look at the origin
-            Vec<3>(0, 1, 0 ) // up is along the positive Y axis
-        ));
-        model_shader.set_uniform("u_projection", Mat<4>::perspective(
-            pi / 2.0, window.width(), window.height(), 0.1, 1000.0
-        ));
+        model_shader.set_uniform("u_view", Mat<4>());
+        model_shader.set_uniform("u_projection", Mat<4>());
+        // model_shader.set_uniform("u_view", Mat<4>::look_at(
+        //     Vec<3>(0, 0, 10), // camera position
+        //     Vec<3>(0, 0, 0 ), // look at the origin
+        //     Vec<3>(0, 1, 0 ) // up is along the positive Y axis
+        // ));
+        // model_shader.set_uniform("u_projection", Mat<4>::perspective(
+        //     pi / 2.0, window.width(), window.height(), 0.1, 1000.0
+        // ));
         player_model.render(model_shader, target, "u_texture");
         window.show_texture(target);
     }

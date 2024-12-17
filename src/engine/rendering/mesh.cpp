@@ -345,24 +345,27 @@ namespace houseofatmos::engine {
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
-        glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
+        if(!this->modified) { return; }
         if(this->vertices > 0) {
+            glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
             glBufferData(
                 GL_ARRAY_BUFFER,
                 this->vertex_data.size(),
                 this->vertex_data.data(),
                 GL_STATIC_DRAW
             );
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
-        glBufferData(
-            GL_ELEMENT_ARRAY_BUFFER,
-            this->elements.size() * sizeof(u16),
-            this->elements.data(),
-            GL_STATIC_DRAW
-        );
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        if(this->elements.size() > 0) {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
+            glBufferData(
+                GL_ELEMENT_ARRAY_BUFFER,
+                this->elements.size() * sizeof(u16),
+                this->elements.data(),
+                GL_STATIC_DRAW
+            );
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        }
         this->buff_index_count = this->elements.size();
         this->modified = false;
     }

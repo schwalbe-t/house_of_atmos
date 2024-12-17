@@ -166,24 +166,24 @@ namespace houseofatmos::engine {
                     + vert_i * attrib_data.stride;
                 size_t attrib_length = mesh_attrib.type_size_bytes()
                     * mesh_attrib.count;
-                if(model_attrib == Model::Position && mesh_attrib.type == Mesh::F32) {
-                    size_t transf_len = sizeof(f32) * std::min(mesh_attrib.count, (size_t) 3);
-                    Vec<4> data_vec = {0, 0, 0, 1};
-                    std::memcpy((void*) data_vec.elements, (void*) data, transf_len);
-                    Vec<4> transformed = transform * data_vec;
-                    mesh.unsafe_put_raw(std::span((u8*) transformed.elements, transf_len));
-                    data += transf_len;
-                    attrib_length -= transf_len;
-                }
-                if(model_attrib == Model::Normal && mesh_attrib.type == Mesh::F32) {
-                    size_t transf_len = sizeof(f32) * std::min(mesh_attrib.count, (size_t) 3);
-                    Vec<4> data_vec = {0, 0, 0, 1};
-                    std::memcpy((void*) data_vec.elements, (void*) data, transf_len);
-                    Vec<4> transformed = rotation * data_vec;
-                    mesh.unsafe_put_raw(std::span((u8*) transformed.elements, transf_len));
-                    data += transf_len;
-                    attrib_length -= transf_len;
-                }
+                // if(model_attrib == Model::Position && mesh_attrib.type == Mesh::F32) {
+                //     size_t transf_len = sizeof(f32) * std::min(mesh_attrib.count, (size_t) 3);
+                //     Vec<4> data_vec = {0, 0, 0, 1};
+                //     std::memcpy((void*) data_vec.elements, (void*) data, transf_len);
+                //     Vec<4> transformed = transform * data_vec;
+                //     mesh.unsafe_put_raw(std::span((u8*) transformed.elements, transf_len));
+                //     data += transf_len;
+                //     attrib_length -= transf_len;
+                // }
+                // if(model_attrib == Model::Normal && mesh_attrib.type == Mesh::F32) {
+                //     size_t transf_len = sizeof(f32) * std::min(mesh_attrib.count, (size_t) 3);
+                //     Vec<4> data_vec = {0, 0, 0, 1};
+                //     std::memcpy((void*) data_vec.elements, (void*) data, transf_len);
+                //     Vec<4> transformed = rotation * data_vec;
+                //     mesh.unsafe_put_raw(std::span((u8*) transformed.elements, transf_len));
+                //     data += transf_len;
+                //     attrib_length -= transf_len;
+                // }
                 mesh.unsafe_put_raw(std::span(data, attrib_length));
                 mesh.unsafe_next_attr();
             }
@@ -197,6 +197,7 @@ namespace houseofatmos::engine {
                 *((u16*) (start + 2 * indices.stride))
             );
         }
+        mesh.submit();
         return mesh;
     }
 
