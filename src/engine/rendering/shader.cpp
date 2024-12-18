@@ -210,7 +210,7 @@ namespace houseofatmos::engine {
 
 
     template<typename T, typename D>
-    static std::vector<D> cast_array(std::span<T> v) {
+    static std::vector<D> cast_array(std::span<const T> v) {
         auto result = std::vector<D>();
         result.reserve(v.size());
         for(size_t v_i = 0; v_i < v.size(); v_i += 1) {
@@ -220,7 +220,7 @@ namespace houseofatmos::engine {
     }
 
     template<int N, typename T, typename D>
-    static std::vector<D> flatten_array(std::span<Vec<N, T>> v) {
+    static std::vector<D> flatten_array(std::span<const Vec<N, T>> v) {
         auto result = std::vector<D>();
         result.reserve(v.size() * N);
         for(size_t v_i = 0; v_i < v.size(); v_i += 1) {
@@ -253,25 +253,25 @@ namespace houseofatmos::engine {
             v.x(), v.y(), v.z(), v.w()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<f64> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const f64> value) {
         glUniform1fv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             cast_array<f64, GLfloat>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Vec<2>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Vec<2>> value) {
         glUniform2fv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<2, f64, GLfloat>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Vec<3>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Vec<3>> value) {
         glUniform3fv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<3, f64, GLfloat>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Vec<4>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Vec<4>> value) {
         glUniform4fv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<4, f64, GLfloat>(value).data()
@@ -299,25 +299,25 @@ namespace houseofatmos::engine {
             v.x(), v.y(), v.z(), v.w()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<i64> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const i64> value) {
         glUniform1iv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             cast_array<i64, GLint>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<IVec<2>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const IVec<2>> value) {
         glUniform2iv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<2, i64, GLint>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<IVec<3>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const IVec<3>> value) {
         glUniform3iv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<3, i64, GLint>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<IVec<4>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const IVec<4>> value) {
         glUniform4iv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<4, i64, GLint>(value).data()
@@ -345,25 +345,25 @@ namespace houseofatmos::engine {
             v.x(), v.y(), v.z(), v.w()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<u64> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const u64> value) {
         glUniform1uiv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             cast_array<u64, GLuint>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<UVec<2>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const UVec<2>> value) {
         glUniform2uiv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<2, u64, GLuint>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<UVec<3>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const UVec<3>> value) {
         glUniform3uiv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<3, u64, GLuint>(value).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<UVec<4>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const UVec<4>> value) {
         glUniform4uiv(
             binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
             flatten_array<4, u64, GLuint>(value).data()
@@ -440,63 +440,63 @@ namespace houseofatmos::engine {
         );
     }
 
-    void Shader::set_uniform(std::string_view name, std::span<Mat<2>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<2>> value) {
         glUniformMatrix2fv(
             binded_uniform_loc(this->moved, this->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<2, 2>(value.data(), value.size()).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Mat<3>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<3>> value) {
         glUniformMatrix3fv(
             binded_uniform_loc(this->moved, this->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<3, 3>(value.data(), value.size()).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Mat<4>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<4>> value) {
         glUniformMatrix4fv(
             binded_uniform_loc(this->moved, this->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<4, 4>(value.data(), value.size()).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Mat<2, 3>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<2, 3>> value) {
         glUniformMatrix3x2fv(
             binded_uniform_loc(this->moved, this->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<2, 3>(value.data(), value.size()).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Mat<3, 2>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<3, 2>> value) {
         glUniformMatrix2x3fv(
             binded_uniform_loc(this->moved, this->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<3, 2>(value.data(), value.size()).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Mat<2, 4>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<2, 4>> value) {
         glUniformMatrix4x2fv(
             binded_uniform_loc(this->moved, this->prog_id, name),
             value.size(), GL_FALSE,
             flatten_matrices<2, 4>(value.data(), value.size()).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Mat<4, 2>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<4, 2>> value) {
         glUniformMatrix2x4fv(
             binded_uniform_loc(this->moved, this->prog_id, name),
             value.size(), GL_FALSE,
             flatten_matrices<4, 2>(value.data(), value.size()).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Mat<3, 4>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<3, 4>> value) {
         glUniformMatrix4x3fv(
             binded_uniform_loc(this->moved, this->prog_id, name),
             value.size(), GL_FALSE,
             flatten_matrices<3, 4>(value.data(), value.size()).data()
         );
     }
-    void Shader::set_uniform(std::string_view name, std::span<Mat<4, 3>> value) {
+    void Shader::set_uniform(std::string_view name, std::span<const Mat<4, 3>> value) {
         glUniformMatrix3x4fv(
             binded_uniform_loc(this->moved, this->prog_id, name),
             value.size(), GL_FALSE,

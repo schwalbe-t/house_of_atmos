@@ -56,7 +56,6 @@ namespace houseofatmos::engine {
         glfwMakeContextCurrent((GLFWwindow*) this->ptr);
         gladLoadGL(&glfwGetProcAddress);
         glfwSwapInterval(0);
-        glEnable(GL_DEPTH_TEST);
         existing_windows += 1;
     }
 

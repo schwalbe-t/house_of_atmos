@@ -100,7 +100,10 @@ namespace houseofatmos::engine {
         const tinygltf::BufferView& bv = model.bufferViews[acc.bufferView];
         tinygltf::Buffer& buffer = model.buffers[bv.buffer];
         u8* ptr = buffer.data.data() + acc.byteOffset + bv.byteOffset;
-        return { ptr, bv.byteStride, acc.count };
+        size_t stride = bv.byteStride == 0
+            ? sizeof(u16)
+            : bv.byteStride;
+        return { ptr, stride, acc.count };
     }
 
     static GltfBufferView gltf_parse_mesh_attrib(
@@ -137,7 +140,10 @@ namespace houseofatmos::engine {
         const tinygltf::BufferView& bv = model.bufferViews[acc.bufferView];
         tinygltf::Buffer& buffer = model.buffers[bv.buffer];
         u8* ptr = buffer.data.data() + acc.byteOffset + bv.byteOffset;
-        return { ptr, bv.byteStride, acc.count };
+        size_t stride = bv.byteStride == 0
+            ? attrib.second.size_bytes()
+            : bv.byteStride;
+        return { ptr, stride, acc.count };
     }
 
     static Mesh gltf_assemble_mesh(
@@ -166,23 +172,26 @@ namespace houseofatmos::engine {
                     + vert_i * attrib_data.stride;
                 size_t attrib_length = mesh_attrib.type_size_bytes()
                     * mesh_attrib.count;
+                // // From testing it seems as though the models exported
+                // // by Blender don't actually use the node transforms on the
+                // // meshes, but only for bones
                 // if(model_attrib == Model::Position && mesh_attrib.type == Mesh::F32) {
-                //     size_t transf_len = sizeof(f32) * std::min(mesh_attrib.count, (size_t) 3);
-                //     Vec<4> data_vec = {0, 0, 0, 1};
-                //     std::memcpy((void*) data_vec.elements, (void*) data, transf_len);
-                //     Vec<4> transformed = transform * data_vec;
-                //     mesh.unsafe_put_raw(std::span((u8*) transformed.elements, transf_len));
-                //     data += transf_len;
-                //     attrib_length -= transf_len;
+                //     size_t transf_len_bytes = sizeof(f32) * std::min(mesh_attrib.count, (size_t) 3);
+                //     Vec<4, f32> transf = { 0, 0, 0, 1 };
+                //     std::memcpy((void*) transf.elements, (void*) data, transf_len_bytes);
+                //     transf = transform * transf;
+                //     mesh.unsafe_put_raw(std::span((u8*) transf.elements, transf_len_bytes));
+                //     data += transf_len_bytes;
+                //     attrib_length -= transf_len_bytes;
                 // }
                 // if(model_attrib == Model::Normal && mesh_attrib.type == Mesh::F32) {
-                //     size_t transf_len = sizeof(f32) * std::min(mesh_attrib.count, (size_t) 3);
-                //     Vec<4> data_vec = {0, 0, 0, 1};
-                //     std::memcpy((void*) data_vec.elements, (void*) data, transf_len);
-                //     Vec<4> transformed = rotation * data_vec;
-                //     mesh.unsafe_put_raw(std::span((u8*) transformed.elements, transf_len));
-                //     data += transf_len;
-                //     attrib_length -= transf_len;
+                //     size_t transf_len_bytes = sizeof(f32) * std::min(mesh_attrib.count, (size_t) 3);
+                //     Vec<4, f32> transf = { 0, 0, 0, 1 };
+                //     std::memcpy((void*) transf.elements, (void*) data, transf_len_bytes);
+                //     transf = rotation * transf;
+                //     mesh.unsafe_put_raw(std::span((u8*) transf.elements, transf_len_bytes));
+                //     data += transf_len_bytes;
+                //     attrib_length -= transf_len_bytes;
                 // }
                 mesh.unsafe_put_raw(std::span(data, attrib_length));
                 mesh.unsafe_next_attr();
@@ -190,7 +199,7 @@ namespace houseofatmos::engine {
             u16 vert_id = mesh.complete_vertex();
         }
         for(size_t elem_i = 0; elem_i < indices.count / 3; elem_i += 1) {
-            const u8* start = indices.buffer + elem_i * indices.stride;
+            const u8* start = indices.buffer + elem_i * 3 * indices.stride;
             mesh.add_element(
                 *((u16*) (start + 0 * indices.stride)),
                 *((u16*) (start + 1 * indices.stride)),
@@ -251,7 +260,7 @@ namespace houseofatmos::engine {
         const std::vector<double>& values, Vec<N> dflt
     ) {
         if(values.size() == 0) { return dflt; }
-        return Vec<N>(values);
+        return Vec<N>(std::span(values));
     }
 
     static Mat<4> gltf_node_rotation(const tinygltf::Node& node) {
@@ -335,11 +344,12 @@ namespace houseofatmos::engine {
 
 
     void Model::render(
-        Shader& shader, const Texture& dest, std::string_view tex_uniform
+        Shader& shader, const Texture& dest, std::string_view tex_uniform,
+        bool depth_test
     ) {
         for(auto& [mesh, tex_id]: this->meshes) {
             shader.set_uniform(tex_uniform, this->textures[tex_id]);
-            mesh.render(shader, dest);
+            mesh.render(shader, dest, depth_test);
         }
     }
 

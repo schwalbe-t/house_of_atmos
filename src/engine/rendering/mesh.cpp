@@ -271,6 +271,9 @@ namespace houseofatmos::engine {
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
+        if(a >= this->vertices || b >= this->vertices || c >= this->vertices) {
+            error("we fucked up big time");
+        }
         this->elements.push_back(a);
         this->elements.push_back(b);
         this->elements.push_back(c);
@@ -370,20 +373,21 @@ namespace houseofatmos::engine {
         this->modified = false;
     }
 
-    void Mesh::render(const Shader& shader, const Texture& dest) {
+    void Mesh::render(const Shader& shader, const Texture& dest, bool depth_test) {
         this->internal_render(
-            shader, dest.internal_fbo_id(), dest.width(), dest.height()
+            shader, dest.internal_fbo_id(), dest.width(), dest.height(), depth_test
         );
     }
 
     void Mesh::internal_render(
         const Shader& shader, u64 dest_fbo_id, 
-        i32 dest_width, i32 dest_height
+        i32 dest_width, i32 dest_height, bool depth_test
     ) {
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
         if(this->modified) { this->submit(); }
+        if(depth_test) { glEnable(GL_DEPTH_TEST); }
         glBindFramebuffer(GL_FRAMEBUFFER, dest_fbo_id);
         glViewport(0, 0, dest_width, dest_height);
         shader.internal_bind();
@@ -397,6 +401,7 @@ namespace houseofatmos::engine {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if(depth_test) { glDisable(GL_DEPTH_TEST); }
     }
 
 }

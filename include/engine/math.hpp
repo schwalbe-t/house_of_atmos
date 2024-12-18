@@ -39,10 +39,18 @@ namespace houseofatmos::engine {
             }
         }
 
-        Vec(std::span<const T> values) {
+        template<typename U>
+        Vec(std::span<const U> values) {
             assert(values.size() == N);
             for(size_t i = 0; i < N; i += 1) {
-                this->elements[i] = values[i];
+                this->elements[i] = static_cast<T>(values[i]);
+            }
+        }
+
+        template<typename U>
+        Vec(const Vec<N, U>& values) {
+            for(size_t i = 0; i < N; i += 1) {
+                this->elements[i] = static_cast<T>(values[i]);
             }
         }
 
@@ -534,12 +542,14 @@ namespace houseofatmos::engine {
         }
 
 
-        Vec<R> operator*(const Vec<C>& rhs) const {
-            Vec<R> transformed = Vec<R>();
+        template<typename T>
+        Vec<R, T> operator*(const Vec<C, T>& rhs) const {
+            Vec<C> rhs_f64 = Vec<C>(rhs);
+            auto transformed = Vec<R>();
             for(size_t column_i = 0; column_i < C; column_i += 1) {
-                transformed += this->columns[column_i] * rhs[column_i];
+                transformed += this->columns[column_i] * rhs_f64[column_i];
             }
-            return transformed;
+            return Vec<R, T>(transformed);
         }
 
         template<size_t N>

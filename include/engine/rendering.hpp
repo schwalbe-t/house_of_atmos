@@ -112,28 +112,28 @@ namespace houseofatmos::engine {
         void set_uniform(std::string_view name, Vec<2> value);
         void set_uniform(std::string_view name, Vec<3> value);
         void set_uniform(std::string_view name, Vec<4> value);
-        void set_uniform(std::string_view name, std::span<f64> value);
-        void set_uniform(std::string_view name, std::span<Vec<2>> value);
-        void set_uniform(std::string_view name, std::span<Vec<3>> value);
-        void set_uniform(std::string_view name, std::span<Vec<4>> value);
+        void set_uniform(std::string_view name, std::span<const f64> value);
+        void set_uniform(std::string_view name, std::span<const Vec<2>> value);
+        void set_uniform(std::string_view name, std::span<const Vec<3>> value);
+        void set_uniform(std::string_view name, std::span<const Vec<4>> value);
 
         void set_uniform(std::string_view name, i64 value);
         void set_uniform(std::string_view name, IVec<2> value);
         void set_uniform(std::string_view name, IVec<3> value);
         void set_uniform(std::string_view name, IVec<4> value);
-        void set_uniform(std::string_view name, std::span<i64> value);
-        void set_uniform(std::string_view name, std::span<IVec<2>> value);
-        void set_uniform(std::string_view name, std::span<IVec<3>> value);
-        void set_uniform(std::string_view name, std::span<IVec<4>> value);
+        void set_uniform(std::string_view name, std::span<const i64> value);
+        void set_uniform(std::string_view name, std::span<const IVec<2>> value);
+        void set_uniform(std::string_view name, std::span<const IVec<3>> value);
+        void set_uniform(std::string_view name, std::span<const IVec<4>> value);
 
         void set_uniform(std::string_view name, u64 value);
         void set_uniform(std::string_view name, UVec<2> value);
         void set_uniform(std::string_view name, UVec<3> value);
         void set_uniform(std::string_view name, UVec<4> value);
-        void set_uniform(std::string_view name, std::span<u64> value);
-        void set_uniform(std::string_view name, std::span<UVec<2>> value);
-        void set_uniform(std::string_view name, std::span<UVec<3>> value);
-        void set_uniform(std::string_view name, std::span<UVec<4>> value);
+        void set_uniform(std::string_view name, std::span<const u64> value);
+        void set_uniform(std::string_view name, std::span<const UVec<2>> value);
+        void set_uniform(std::string_view name, std::span<const UVec<3>> value);
+        void set_uniform(std::string_view name, std::span<const UVec<4>> value);
 
         void set_uniform(std::string_view name, const Mat<2>& value);
         void set_uniform(std::string_view name, const Mat<3>& value);
@@ -144,15 +144,15 @@ namespace houseofatmos::engine {
         void set_uniform(std::string_view name, const Mat<4, 2>& value);
         void set_uniform(std::string_view name, const Mat<3, 4>& value);
         void set_uniform(std::string_view name, const Mat<4, 3>& value);
-        void set_uniform(std::string_view name, std::span<Mat<2>> value);
-        void set_uniform(std::string_view name, std::span<Mat<3>> value);
-        void set_uniform(std::string_view name, std::span<Mat<4>> value);
-        void set_uniform(std::string_view name, std::span<Mat<2, 3>> value);
-        void set_uniform(std::string_view name, std::span<Mat<3, 2>> value);
-        void set_uniform(std::string_view name, std::span<Mat<2, 4>> value);
-        void set_uniform(std::string_view name, std::span<Mat<4, 2>> value);
-        void set_uniform(std::string_view name, std::span<Mat<3, 4>> value);
-        void set_uniform(std::string_view name, std::span<Mat<4, 3>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<2>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<3>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<4>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<2, 3>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<3, 2>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<2, 4>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<4, 2>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<3, 4>> value);
+        void set_uniform(std::string_view name, std::span<const Mat<4, 3>> value);
 
     };
 
@@ -230,10 +230,12 @@ namespace houseofatmos::engine {
         void clear();
 
         void submit();
-        void render(const Shader& shader, const Texture& dest);
+        void render(
+            const Shader& shader, const Texture& dest, bool depth_test = true
+        );
         void internal_render(
             const Shader& shader, u64 dest_fbo_id, 
-            i32 dest_width, i32 dest_height
+            i32 dest_width, i32 dest_height, bool depth_test
         );
 
         bool was_moved() {
@@ -282,7 +284,8 @@ namespace houseofatmos::engine {
         
         void render(
             Shader& shader, const Texture& dest,
-            std::string_view texture_uniform
+            std::string_view texture_uniform,
+            bool depth_test = true
         );
 
     };
