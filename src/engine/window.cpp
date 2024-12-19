@@ -6,7 +6,7 @@
 
 namespace houseofatmos::engine {
     
-    static u64 existing_windows = 0;
+    static std::unordered_map<GLFWwindow*, Window*> existing_windows;
 
     static void init_gltf() {
         glfwSetErrorCallback(&internal::glfw_error);
@@ -31,6 +31,55 @@ namespace houseofatmos::engine {
         glfwSetWindowPos(window, window_x, window_y);        
     }
 
+    void Window::glfw_key_callback(
+        void* glfw_window_raw, int key, int scancode, int action, int mods
+    ) {
+        (void) scancode;
+        (void) mods;
+        GLFWwindow* glfw_window = (GLFWwindow*) glfw_window_raw;
+        if(!existing_windows.contains(glfw_window)) { return; }
+        Window* window = existing_windows[glfw_window];
+        if(action == GLFW_PRESS) {
+            window->keys_down_curr[key] = true;
+        }   
+        if(action == GLFW_RELEASE) {
+            window->keys_down_curr[key] = false;
+        }
+    }
+
+    void Window::glfw_cursor_pos_callback(
+        void* glfw_window_raw, f64 x, f64 y
+    ) {
+        GLFWwindow* glfw_window = (GLFWwindow*) glfw_window_raw;
+        if(!existing_windows.contains(glfw_window)) { return; }
+        Window* window = existing_windows[glfw_window];
+        window->mouse_pos = { x, y };
+    }
+
+    void Window::glfw_mouse_button_callback(
+        void* glfw_window_raw, int button, int action, int mods
+    ) {
+        (void) mods;
+        GLFWwindow* glfw_window = (GLFWwindow*) glfw_window_raw;
+        if(!existing_windows.contains(glfw_window)) { return; }
+        Window* window = existing_windows[glfw_window];
+        window->buttons_down_curr[button] = action == GLFW_PRESS;
+    }
+
+    void Window::update_last_frame_input() {
+        std::memcpy(
+            (void*) this->keys_down_last.data(), 
+            (void*) this->keys_down_curr.data(), 
+            sizeof(bool) * key_array_length
+        );
+        std::memcpy(
+            (void*) this->buttons_down_last.data(),
+            (void*) this->buttons_down_curr.data(), 
+            sizeof(bool) * button_array_length
+        );
+    }
+
+
     Window::Window(i32 width, i32 height, const char* name) {
         if(width <= 0 || height <= 0) {
             error("Window width and height must both be larger than 0"
@@ -38,7 +87,7 @@ namespace houseofatmos::engine {
                 + "x" + std::to_string(height) + ")"
             );
         }
-        if(existing_windows == 0) { init_gltf(); }
+        if(existing_windows.size() == 0) { init_gltf(); }
         this->ptr = (GLFWwindow*) glfwCreateWindow(
             width, height, name, NULL, NULL
         );
@@ -56,13 +105,25 @@ namespace houseofatmos::engine {
         glfwMakeContextCurrent((GLFWwindow*) this->ptr);
         gladLoadGL(&glfwGetProcAddress);
         glfwSwapInterval(0);
-        existing_windows += 1;
+        glfwSetKeyCallback(
+            (GLFWwindow*) this->ptr, 
+            (GLFWkeyfun) &Window::glfw_key_callback
+        );
+        glfwSetCursorPosCallback(
+            (GLFWwindow*) this->ptr, 
+            (GLFWcursorposfun) &Window::glfw_cursor_pos_callback
+        );
+        glfwSetMouseButtonCallback(
+            (GLFWwindow*) this->ptr, 
+            (GLFWmousebuttonfun) &Window::glfw_mouse_button_callback
+        );
+        existing_windows[(GLFWwindow*) this->ptr] = this;
     }
 
     Window::~Window() {
         glfwDestroyWindow((GLFWwindow*) this->ptr);
-        existing_windows -= 1;
-        if(existing_windows == 0) {
+        existing_windows.erase((GLFWwindow*) this->ptr);
+        if(existing_windows.size() == 0) {
             glfwTerminate();
         }
     }
@@ -71,6 +132,17 @@ namespace houseofatmos::engine {
     i32 Window::width() const { return this->last_width; }
     i32 Window::height() const { return this->last_height; }
     f64 Window::delta_time() const { return this->frame_delta; }
+
+
+    void Window::show_cursor() const {
+        GLFWwindow* window = (GLFWwindow*) this->ptr;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+
+    void Window::hide_cursor() const {
+        GLFWwindow* window = (GLFWwindow*) this->ptr;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
 
 
     void Window::set_scene(std::shared_ptr<Scene> scene) {
@@ -83,6 +155,7 @@ namespace houseofatmos::engine {
 
     void Window::start() {
         while(!glfwWindowShouldClose((GLFWwindow*) this->ptr)) {
+            this->update_last_frame_input();
             glfwPollEvents();
             glfwGetFramebufferSize(
                 (GLFWwindow*) this->ptr, &this->last_width, &this->last_height

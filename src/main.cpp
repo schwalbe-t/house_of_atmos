@@ -37,7 +37,9 @@ struct TestScene: Scene {
         target.resize_fast(window.width() / 2, window.height() / 2);
         target.clear_color(Vec<4>(0, 0, 0, 1.0));
         target.clear_depth(INFINITY);
-        this->alpha += window.delta_time();
+        if(window.is_down(Key::A)) { alpha += window.delta_time() * 2; }
+        if(window.is_down(Key::D)) { alpha -= window.delta_time() * 2; }
+        if(window.was_pressed(Button::Left)) { alpha = 0; }
         model_shader.set_uniform("u_model", Mat<4>::rotate_y(this->alpha));
         model_shader.set_uniform("u_view", Mat<4>::look_at(
             Vec<3>(0, 10, 10), // camera position
