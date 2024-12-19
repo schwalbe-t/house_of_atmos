@@ -51,10 +51,11 @@ namespace houseofatmos::engine {
         switch(next_kf.interpolation) {
             case Animation::Step: return last_kf.value;
             case Animation::Linear: return spherical
-                ? slerp(last_kf.value, next_kf.value, t)
-                : lerp(last_kf.value, next_kf.value, t);
+                ? Animation::slerp(last_kf.value, next_kf.value, t)
+                : Animation::lerp(last_kf.value, next_kf.value, t);
         }
         error("Unhandled interpolation type in 'compute_property_value'");
+        return Vec<N>();
     }
 
     Animation::BoneState Animation::compute_state(u16 bone_idx, f64 timestamp) const {
