@@ -1,5 +1,5 @@
 
-#include <engine/rendering.hpp>
+#include <engine/model.hpp>
 #include <engine/logging.hpp>
 #include <nlohmann/json.hpp>
 #define TINYGLTF_NO_INCLUDE_JSON
@@ -34,6 +34,49 @@ namespace houseofatmos::engine {
             textures.push_back(
                 Texture(image.width, image.height, image.image.data())
             );
+        }
+    }
+
+
+    static void gltf_build_node_to_joint(
+        const tinygltf::Skin& skin,
+        std::unordered_map<size_t, u16>& node_to_joint
+    ) {
+        for(size_t joint_i = 0; joint_i < skin.joints.size(); joint_i += 1) {
+            node_to_joint[skin.joints[joint_i]] = joint_i;
+        }
+    }
+
+    static void gltf_collect_bones(
+        const tinygltf::Model& model, Animation::Skeleton& bones,
+        std::unordered_map<size_t, u16>& node_to_joint,
+        std::vector<bool>& bone_is_child,
+        const std::string& path
+    ) {
+        if(model.skins.size() == 0) { return; }
+        if(model.skins.size() > 1) {
+            error("Currently only one skin (skeleton) per model is supported."
+                " '" + path + "' does not meet this condition."
+            );
+        }
+        const tinygltf::Skin& skin = model.skins[0];
+        gltf_build_node_to_joint(skin, node_to_joint);
+        // root will be figured out during actual tree pass
+        bones.bones.resize(skin.joints.size());
+        bone_is_child.resize(skin.joints.size());
+        for(size_t joint_i = 0; joint_i < skin.joints.size(); joint_i += 1) {
+            size_t joint_node_idx = skin.joints[joint_i];
+            const tinygltf::Node& joint_node = model.nodes[joint_node_idx];
+            auto children = std::vector<u16>();
+            size_t child_node_c = joint_node.children.size();
+            for(size_t child_i = 0; child_i < child_node_c; child_i += 1) {
+                size_t child_node_idx = joint_node.children[child_i];
+                if(!node_to_joint.contains(child_node_idx)) { continue; }
+                size_t child_joint_i = node_to_joint[child_node_idx];
+                bone_is_child[child_joint_i] = true;
+                children.push_back(child_joint_i);                
+            }
+            bones.bones[joint_i] = std::move(children);
         }
     }
 
@@ -211,9 +254,9 @@ namespace houseofatmos::engine {
     }
 
     static void gltf_collect_meshes(
-        tinygltf::Model& model, size_t mesh_id, 
+        tinygltf::Model& model, size_t mesh_id, const std::string& name,
         const Mat<4>& rotation, const Mat<4>& transform,
-        std::vector<std::pair<Mesh, size_t>>& meshes,
+        std::unordered_map<std::string, std::pair<std::unique_ptr<Mesh>, size_t>>& meshes,
         const std::vector<std::pair<Model::Attrib, Mesh::Attrib>>& attribs, 
         const std::string& path
     ) {
@@ -244,14 +287,29 @@ namespace houseofatmos::engine {
                 ));
             }
             GltfBufferView indices = gltf_parse_indices(model, primitive, path);
-            std::pair<Mesh, size_t> assembled = {
-                gltf_assemble_mesh(
+            const tinygltf::Material& material = model.materials[primitive.material];
+            std::pair<std::unique_ptr<Mesh>, size_t> assembled = {
+                std::make_unique<Mesh>(gltf_assemble_mesh(
                     rotation, transform, attribs, attrib_data, indices, path
-                ),
-                primitive.material  
+                )),
+                material.emissiveTexture.index
             };
-            meshes.push_back(std::move(assembled));
+            meshes[name] = std::move(assembled);
         }
+    }
+
+
+    static void gltf_find_root_bone(
+        size_t node_idx, const Mat<4>& parent_transform,
+        const std::unordered_map<size_t, u16>& node_to_joint, 
+        std::vector<bool>& bone_is_child, Animation::Skeleton& skeleton
+    ) {
+        if(!node_to_joint.contains(node_idx)) { return; }
+        size_t joint_i = node_to_joint.at(node_idx);
+        if(bone_is_child[joint_i]) { return; }
+        // this node is the root!
+        skeleton.root_bone_idx = joint_i;
+        skeleton.root_transform = parent_transform;
     }
 
 
@@ -281,24 +339,32 @@ namespace houseofatmos::engine {
     static void gltf_collect_nodes(
         tinygltf::Model& model, const std::vector<int>& nodes,
         const Mat<4>& parent_rotation, const Mat<4>& parent_transform,
-        std::vector<std::pair<Mesh, size_t>>& collected_meshes,
+        std::unordered_map<std::string, std::pair<std::unique_ptr<Mesh>, size_t>>& collected_meshes,
+        const std::unordered_map<size_t, u16>& node_to_joint, 
+        std::vector<bool>& bone_is_child, Animation::Skeleton& skeleton,
         const std::vector<std::pair<Model::Attrib, Mesh::Attrib>>& attribs, 
         const std::string& path
     ) {
         for(size_t node_i = 0; node_i < nodes.size(); node_i += 1) {
-            const tinygltf::Node& node = model.nodes[nodes[node_i]];
+            size_t node_idx = nodes[node_i];
+            const tinygltf::Node& node = model.nodes[node_idx];
             Mat<4> rotation = gltf_node_rotation(node) * parent_rotation;
             Mat<4> transform = gltf_node_transform(node, path) * parent_transform;
             if(node.mesh != -1) {
                 gltf_collect_meshes(
-                    model, node.mesh, rotation, transform, 
+                    model, node.mesh, node.name,
+                    rotation, transform, 
                     collected_meshes, attribs, path
                 );
             }
+            gltf_find_root_bone(
+                node_idx, parent_transform, 
+                node_to_joint, bone_is_child, skeleton
+            );
             gltf_collect_nodes(
                 model, node.children, 
                 rotation, transform, 
-                collected_meshes, 
+                collected_meshes, node_to_joint, bone_is_child, skeleton,
                 attribs, path
             );
         }
@@ -332,24 +398,42 @@ namespace houseofatmos::engine {
         }
         Model result;
         gltf_collect_textures(model, result.textures, path);
+        std::unordered_map<size_t, u16> node_to_joint;
+        std::vector<bool> bone_is_child;
+        gltf_collect_bones(
+            model, result.bones, node_to_joint, bone_is_child, path
+        );
         tinygltf::Scene& scene = model.scenes[model.defaultScene];
         gltf_collect_nodes(
             model, scene.nodes, Mat<4>(), Mat<4>(), 
-            result.meshes, 
+            result.meshes, node_to_joint, bone_is_child, result.bones,
             attribs, path
         );
         return result;
     }
 
 
+    std::tuple<Mesh&, const Texture&> Model::primitive(
+        const std::string& primitive_name
+    ) {
+        auto element = this->meshes.find(primitive_name);
+        if(element == this->meshes.end()) {
+           error("Model does not have primitive '" + primitive_name + "'");
+        }
+        Mesh& mesh = *element->second.first;
+        const Texture& texture = this->textures.at(element->second.second);
+        return { mesh, texture };
+    }
 
-    void Model::render(
+
+    void Model::render_all(
         Shader& shader, const Texture& dest, std::string_view tex_uniform,
         bool depth_test
     ) {
-        for(auto& [mesh, tex_id]: this->meshes) {
-            shader.set_uniform(tex_uniform, this->textures[tex_id]);
-            mesh.render(shader, dest, depth_test);
+        for(auto& [name, mesh]: this->meshes) {
+            (void) name;
+            shader.set_uniform(tex_uniform, this->textures[mesh.second]);
+            mesh.first->render(shader, dest, depth_test);
         }
     }
 
