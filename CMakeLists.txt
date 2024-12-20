@@ -14,6 +14,7 @@ project(
 
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
+find_package(OpenAL REQUIRED)
 
 file(GLOB_RECURSE LIB_SOURCES "libsrc/*.cpp")
 file(GLOB_RECURSE SOURCES "src/*.cpp")
@@ -31,6 +32,7 @@ target_link_libraries(
     OpenGL::GL
     OpenGL::GLU
     glfw
+    OpenAL::OpenAL
 )
 
 target_compile_features(house_of_atmos PRIVATE cxx_std_20)

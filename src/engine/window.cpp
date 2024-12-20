@@ -3,6 +3,7 @@
 #include <engine/logging.hpp>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <AL/alc.h>
 
 namespace houseofatmos::engine {
     
@@ -12,6 +13,31 @@ namespace houseofatmos::engine {
         glfwSetErrorCallback(&internal::glfw_error);
         if(!glfwInit()) {
             error("Unable to initialize the window!");
+        }
+    }
+    static void free_gltf() {
+        glfwTerminate();
+    }
+
+    static ALCdevice* audio_device = nullptr;
+    static ALCcontext* audio_context = nullptr;
+
+    static void init_openal() {
+        audio_device = alcOpenDevice(nullptr);
+        if(audio_device == nullptr) {
+            error("Unable to open audio device");
+        }
+        audio_context = alcCreateContext(audio_device, nullptr);
+        if(!alcMakeContextCurrent(audio_context)) {
+            error("Failed to make the OpenAL context the current");
+        }
+    }
+    static void free_openal() {
+        if(audio_device != nullptr) {
+            alcCloseDevice(audio_device);
+        }
+        if(audio_context != nullptr) {
+            alcDestroyContext(audio_context);
         }
     }
 
@@ -87,7 +113,10 @@ namespace houseofatmos::engine {
                 + "x" + std::to_string(height) + ")"
             );
         }
-        if(existing_windows.size() == 0) { init_gltf(); }
+        if(existing_windows.size() == 0) {
+            init_gltf();
+            init_openal();
+        }
         this->ptr = (GLFWwindow*) glfwCreateWindow(
             width, height, name, NULL, NULL
         );
@@ -124,7 +153,8 @@ namespace houseofatmos::engine {
         glfwDestroyWindow((GLFWwindow*) this->ptr);
         existing_windows.erase((GLFWwindow*) this->ptr);
         if(existing_windows.size() == 0) {
-            glfwTerminate();
+            free_gltf();
+            free_openal();
         }
     }
 
