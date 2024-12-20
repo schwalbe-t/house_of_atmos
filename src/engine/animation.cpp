@@ -75,8 +75,8 @@ namespace houseofatmos::engine {
         Mat<4>& transform = transforms[bone_idx];
         transform = transform * parent_transform;
         const Animation::Bone& bone = skeleton.bones[bone_idx];
-        for(size_t child_i = 0; child_i < bone.size(); child_i += 1) {
-            u16 child_bone_idx = bone[child_i];
+        for(size_t child_i = 0; child_i < bone.child_indices.size(); child_i += 1) {
+            u16 child_bone_idx = bone.child_indices[child_i];
             propagate_transforms(skeleton, transform, child_bone_idx, transforms);
         }
     }
@@ -93,6 +93,10 @@ namespace houseofatmos::engine {
         propagate_transforms(
             skeleton, skeleton.root_transform, skeleton.root_bone_idx, result
         );
+        for(size_t bone_idx = 0; bone_idx < skeleton.bones.size(); bone_idx += 1) {
+            const Mat<4>& inv_bind = skeleton.bones[bone_idx].inverse_bind;
+            result[bone_idx] = result[bone_idx] * inv_bind;
+        }
         return result;
     }
 

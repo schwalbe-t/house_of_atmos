@@ -3,6 +3,8 @@
 
 #include "rendering.hpp"
 #include "animation.hpp"
+#include <tuple>
+#include <optional>
 
 namespace houseofatmos::engine {
 
@@ -31,9 +33,9 @@ namespace houseofatmos::engine {
 
         private:
         std::vector<Texture> textures;
-        std::unordered_map<std::string, std::pair<std::unique_ptr<Mesh>, size_t>> meshes;
-        std::vector<Mat<4>> inverse_bind;
-        Animation::Skeleton bones;
+        std::vector<Mesh> primitives;
+        std::vector<Animation::Skeleton> skeletons;
+        std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>> meshes;
         std::unordered_map<std::string, Animation> animations;
 
         Model();
@@ -47,17 +49,16 @@ namespace houseofatmos::engine {
         ~Model() = default;
 
 
-        std::tuple<Mesh&, const Texture&> primitive(
+        std::tuple<Mesh&, const Texture&, const Animation::Skeleton*> primitive(
             const std::string& primitive_name
         );
         const Animation& animation(const std::string& animation_name) const {
             return this->animations.at(animation_name);
         }
-        const Animation::Skeleton& skeleton() const { return this->bones; }
         
         void render_all(
             Shader& shader, const Texture& dest,
-            std::string_view texture_uniform,
+            std::optional<std::string_view> texture_uniform = std::nullopt,
             bool depth_test = true
         );
 

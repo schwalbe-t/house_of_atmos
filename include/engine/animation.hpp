@@ -57,7 +57,10 @@ namespace houseofatmos::engine {
             Mat<4> as_transform() const;
         };
 
-        using Bone = std::vector<u16>;
+        struct Bone {
+            Mat<4> inverse_bind;
+            std::vector<u16> child_indices;
+        };
 
         struct Skeleton {
             std::vector<Bone> bones;

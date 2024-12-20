@@ -49,7 +49,7 @@ struct TestScene: Scene {
         model_shader.set_uniform("u_projection", Mat<4>::perspective(
             pi / 2.0, target.width(), target.height(), 0.1, 1000.0
         ));
-        auto [mesh, texture] = player_model.primitive("player");
+        auto [mesh, texture, skeleton] = player_model.primitive("player");
         model_shader.set_uniform("u_texture", texture);
         mesh.render(model_shader, target);
         window.show_texture(target);
