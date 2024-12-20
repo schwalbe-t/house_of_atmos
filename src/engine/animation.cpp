@@ -86,17 +86,17 @@ namespace houseofatmos::engine {
     ) const {
         assert(skeleton.bones.size() == this->channels.size());
         auto result = std::vector<Mat<4>>(skeleton.bones.size());
-        for(size_t bone_idx = 0; bone_idx < skeleton.bones.size(); bone_idx += 1) {
-            BoneState state = this->compute_state(bone_idx, timestamp);
-            result[bone_idx] = state.as_transform();
-        }
-        propagate_transforms(
-            skeleton, skeleton.root_transform, skeleton.root_bone_idx, result
-        );
-        for(size_t bone_idx = 0; bone_idx < skeleton.bones.size(); bone_idx += 1) {
-            const Mat<4>& inv_bind = skeleton.bones[bone_idx].inverse_bind;
-            result[bone_idx] = result[bone_idx] * inv_bind;
-        }
+        // for(size_t bone_idx = 0; bone_idx < skeleton.bones.size(); bone_idx += 1) {
+        //     BoneState state = this->compute_state(bone_idx, timestamp);
+        //     result[bone_idx] = state.as_transform();
+        // }
+        // propagate_transforms(
+        //     skeleton, skeleton.root_transform, skeleton.root_bone_idx, result
+        // );
+        // for(size_t bone_idx = 0; bone_idx < skeleton.bones.size(); bone_idx += 1) {
+        //     const Mat<4>& inv_bind = skeleton.bones[bone_idx].inverse_bind;
+        //     result[bone_idx] = result[bone_idx] * inv_bind;
+        // }
         return result;
     }
 

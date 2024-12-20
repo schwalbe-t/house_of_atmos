@@ -169,9 +169,7 @@ namespace houseofatmos::engine {
                 GltfBufferView attrib_data = attribs_data[attr_i];
                 const u8* data = attrib_data.buffer
                     + vert_i * attrib_data.stride;
-                size_t attrib_length = mesh_attrib.type_size_bytes()
-                    * mesh_attrib.count;
-                mesh.unsafe_put_raw(std::span(data, attrib_length));
+                mesh.unsafe_put_raw(std::span(data, mesh_attrib.size_bytes()));
                 mesh.unsafe_next_attr();
             }
             u16 vert_id = mesh.complete_vertex();
@@ -235,6 +233,7 @@ namespace houseofatmos::engine {
             }
         }
     }
+
 
 
     static void gltf_build_node_to_joint(
@@ -346,6 +345,144 @@ namespace houseofatmos::engine {
     }
 
 
+
+    static size_t gltf_find_anim_target_skeleton(
+        size_t node_i,
+        const std::vector<std::unordered_map<size_t, u16>>& node_to_joint,
+        const std::string& anim_name, const std::string& path
+    ) {
+        for(size_t skin_i = 0; skin_i < node_to_joint.size(); skin_i += 1) {
+            const std::unordered_map<size_t, u16>& nodes = node_to_joint[skin_i];
+            if(!nodes.contains(node_i)) { continue; }
+            return skin_i;
+        }
+        error("The animation '" + anim_name + "' in '" + path + "' refers to a"
+            " node that is not part of any skeleton"
+        );
+        return 0;
+    }
+
+    static Animation::Interpolation gltf_parse_interp_type(
+        const std::string& type, 
+        const std::string& anim_name, const std::string& path
+    ) {
+        if(type == "STEP") { return Animation::Step; }
+        if(type == "LINEAR") { return Animation::Linear; }
+        error("Currently, only the animation interpolation types 'STEP'"
+            " and 'LINEAR' are supported. The animation '" + anim_name + "'"
+            " in '" + path + "' does not meet this condition"
+        );
+        return Animation::Step;
+    }
+
+    template<size_t N>
+    static std::vector<Animation::KeyFrame<N>> gltf_read_keyframes(
+        const tinygltf::Model& model, const tinygltf::AnimationSampler& sampler,
+        size_t sampler_i,
+        const std::string& anim_name, const std::string& path
+    ) {
+        Animation::Interpolation interp_type
+            = gltf_parse_interp_type(sampler.interpolation, anim_name, path);
+        std::vector<Animation::KeyFrame<N>> frames;
+        { // timestamps
+            size_t acc_i = sampler.input;
+            const tinygltf::Accessor& acc = model.accessors[acc_i];
+            bool acc_valid = acc.type == TINYGLTF_TYPE_SCALAR
+                && acc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT;
+            if(!acc_valid) {
+                error("Animation channel input accessors must use type 'SCALAR'"
+                    " and component type "
+                    + std::to_string(TINYGLTF_COMPONENT_TYPE_FLOAT)
+                    + "(GL integer constant), but the sampler with ID" 
+                    + std::to_string(sampler_i) + "' in the animation '" + anim_name
+                    + "' does not meet this condition"
+                );
+            }
+            const tinygltf::BufferView& bv = model.bufferViews[acc.bufferView];
+            size_t stride = bv.byteStride == 0
+                ? sizeof(f32) : bv.byteStride;
+            const tinygltf::Buffer& buff = model.buffers[bv.buffer];
+            const u8* data = buff.data.data() + acc.byteOffset + bv.byteOffset;
+            frames.resize(acc.count);
+            for(size_t kf_i = 0; kf_i < frames.size(); kf_i += 1) {
+                const f32* timestamp = (const f32*) (data + kf_i * stride);
+                frames[kf_i] = { *timestamp, Vec<N>(), interp_type };
+            }
+        }
+        { // values
+            size_t acc_i = sampler.output;
+            const tinygltf::Accessor& acc = model.accessors[acc_i];
+            bool acc_valid = acc.type == (TINYGLTF_TYPE_VEC2 - 2 + N) 
+                && acc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT
+                && acc.count == frames.size();
+            if(!acc_valid) {
+                error("Animation channel output accessor was expected to use"
+                    " type 'VEC" + std::to_string(N) + "', use"
+                    " component type " + std::to_string(TINYGLTF_COMPONENT_TYPE_FLOAT)
+                    + " (GL integer constant) and provide "
+                    + std::to_string(frames.size()) + " values,"
+                    " but the sampler with ID"
+                    + std::to_string(sampler_i) + " in the animation '"
+                    + anim_name + "' does not meet this condition"
+                );
+            }
+            const tinygltf::BufferView& bv = model.bufferViews[acc.bufferView];
+            size_t stride = bv.byteStride == 0
+                ? sizeof(f32) * N : bv.byteStride;
+            const tinygltf::Buffer& buff = model.buffers[bv.buffer];
+            const u8* data = buff.data.data() + acc.byteOffset + bv.byteOffset;
+            for(size_t kf_i = 0; kf_i < frames.size(); kf_i += 1) {
+                const f32* values = (const f32*) (data + kf_i * stride);
+                frames[kf_i].value = Vec<N>(std::span(values, N));
+            }
+        }
+        return frames;
+    }
+
+    static void gltf_collect_animations(
+        tinygltf::Model& model,
+        std::unordered_map<std::string, Animation>& animations,
+        const std::vector<std::unordered_map<size_t, u16>>& node_to_joint,
+        const std::string& path
+    ) {
+        for(size_t anim_i = 0; anim_i < model.animations.size(); anim_i += 1) {
+            tinygltf::Animation& animation = model.animations[anim_i];
+            std::vector<Animation::Channel> r_channels;
+            if(animation.channels.size() == 0) { continue; }
+            size_t skin_i = gltf_find_anim_target_skeleton(
+                animation.channels[0].target_node, node_to_joint, 
+                animation.name, path
+            );
+            r_channels.resize(node_to_joint.at(skin_i).size());
+            for(size_t ch_i = 0; ch_i < animation.channels.size(); ch_i += 1) {
+                const tinygltf::AnimationChannel& channel = animation.channels[ch_i];
+                size_t joint_i = node_to_joint.at(skin_i).at(channel.target_node);
+                const tinygltf::AnimationSampler& sampler
+                    = animation.samplers[channel.sampler];
+                if(channel.target_path == "translation") {
+                    r_channels[joint_i].translation = gltf_read_keyframes<3>(
+                        model, sampler, channel.sampler, animation.name, path
+                    );
+                } else if(channel.target_path == "rotation") {
+                    r_channels[joint_i].rotation = gltf_read_keyframes<4>(
+                        model, sampler, channel.sampler, animation.name, path
+                    );
+                } else if(channel.target_path == "scale") {
+                    r_channels[joint_i].scale = gltf_read_keyframes<3>(
+                        model, sampler, channel.sampler, animation.name, path
+                    );
+                } else {
+                    error("'" + channel.target_path + "' is not a supported"
+                        " channel path, but '" + path + "' uses it"
+                    );
+                }
+            }
+            animations[animation.name] = Animation(std::move(r_channels));
+        }
+    }
+
+
+
     static void gltf_collect_meshes(
         tinygltf::Model& model, size_t mesh_i, i64 skin_i,
         const std::string& name,
@@ -365,7 +502,6 @@ namespace houseofatmos::engine {
         }
     }
 
-
     static void gltf_find_root_bone(
         size_t node_idx, const Mat<4>& parent_transform,
         const std::vector<std::unordered_map<size_t, u16>>& node_to_joint, 
@@ -383,7 +519,6 @@ namespace houseofatmos::engine {
             skeletons.at(skin_i).root_transform = parent_transform;
         }
     }
-
 
     template<size_t N>
     static Vec<N> vec_from_vals_or(
@@ -410,7 +545,7 @@ namespace houseofatmos::engine {
 
     static void gltf_collect_nodes(
         tinygltf::Model& model, const std::vector<int>& nodes,
-        const Mat<4>& parent_rotation, const Mat<4>& parent_transform,
+        const Mat<4>& parent_transform,
         std::unordered_map<u64, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& collected_meshes,
         const std::vector<std::unordered_map<size_t, u16>>& node_to_joint, 
@@ -421,7 +556,6 @@ namespace houseofatmos::engine {
         for(size_t node_i = 0; node_i < nodes.size(); node_i += 1) {
             size_t node_idx = nodes[node_i];
             const tinygltf::Node& node = model.nodes[node_idx];
-            Mat<4> rotation = gltf_node_rotation(node) * parent_rotation;
             Mat<4> transform = gltf_node_transform(node, path) * parent_transform;
             if(node.mesh != -1) {
                 gltf_collect_meshes(
@@ -435,13 +569,14 @@ namespace houseofatmos::engine {
             );
             gltf_collect_nodes(
                 model, node.children, 
-                rotation, transform, 
+                transform, 
                 primitive_indices, collected_meshes, 
                 node_to_joint, bone_is_child, skeletons,
                 path
             );
         }
     }
+
 
 
     Model Model::from_resource(const Model::LoadArgs& args) {
@@ -478,9 +613,10 @@ namespace houseofatmos::engine {
         gltf_collect_skeletons(
             model, result.skeletons, node_to_joint, bone_is_child, path
         );
+        gltf_collect_animations(model, result.animations, node_to_joint, path);
         tinygltf::Scene& scene = model.scenes[model.defaultScene];
         gltf_collect_nodes(
-            model, scene.nodes, Mat<4>(), Mat<4>(), 
+            model, scene.nodes, Mat<4>(), 
             primitive_indices, result.meshes, 
             node_to_joint, bone_is_child, result.skeletons,
             path
