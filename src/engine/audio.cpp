@@ -124,10 +124,6 @@ namespace houseofatmos::engine {
     bool Audio::is_playing() const {
         ALint state;
         alGetSourcei(this->source_id, AL_SOURCE_STATE, &state);
-        ALenum error = alGetError();
-        if(error != AL_NO_ERROR) {
-            warning("OpenAL error: " + std::to_string(error));
-        }
         return state == AL_PLAYING;
     }
 
