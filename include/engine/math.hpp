@@ -358,7 +358,7 @@ namespace houseofatmos::engine {
             for(size_t column_i = 0; column_i < C; column_i += 1) {
                 for(size_t row_i = 0; row_i < R; row_i += 1) {
                     result.element(row_i, column_i)
-                        = values[column_i * R + row_i];
+                        = static_cast<f64>(values[column_i * R + row_i]);
                 }
             }
             return result;
@@ -371,7 +371,7 @@ namespace houseofatmos::engine {
             for(size_t row_i = 0; row_i < R; row_i += 1) {
                 for(size_t column_i = 0; column_i < C; column_i += 1) {
                     result.element(row_i, column_i)
-                        = values[row_i * C + column_i];
+                        = static_cast<f64>(values[row_i * C + column_i]);
                 }
             }
             return result;

@@ -246,6 +246,51 @@ namespace houseofatmos::engine {
         }
     }
 
+    static void gltf_read_inverse_bind_matrices(
+        const tinygltf::Model& model, const tinygltf::Skin& skin, size_t skin_i,
+        Animation::Skeleton& skeleton,
+        const std::string& path
+    ) {
+        if(skin.inverseBindMatrices == -1) {
+            error("Skinned models must provide inverse bind matrices, "
+                "which the skin with ID " + std::to_string(skin_i) 
+                + " in '" + path + "' does not meet this condition"
+            );
+        }
+        size_t acc_i = skin.inverseBindMatrices;
+        const tinygltf::Accessor& acc = model.accessors[acc_i];
+        bool valid_acc = acc.type == TINYGLTF_TYPE_MAT4
+            && acc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT;
+        if(!valid_acc) {
+            error("Inverse bind matrix accessors must be of type 'MAT4'"
+                " and component type " 
+                + std::to_string(TINYGLTF_COMPONENT_TYPE_FLOAT)
+                + ", but the accessor with ID " + std::to_string(acc_i)
+                + " for the skin with ID " + std::to_string(skin_i)
+                + " in '" + path + "' does not meet this condition"
+            );
+        }
+        if(acc.count != skeleton.bones.size()) {
+            error("Expected the accessor to provide values for "
+                + std::to_string(skeleton.bones.size()) + " bone(s)"
+                + ", but the accessor with ID " + std::to_string(acc_i)
+                + " for the skin with ID " + std::to_string(skin_i)
+                + " in '" + path + "' provides " + std::to_string(acc.count)
+            );
+        }
+        const tinygltf::BufferView& bv = model.bufferViews[acc.bufferView];
+        size_t stride = bv.byteStride == 0
+            ? sizeof(sizeof(f32) * 4 * 4)
+            : bv.byteStride;
+        const tinygltf::Buffer& buff = model.buffers[bv.buffer];
+        const u8* data = buff.data.data() + bv.byteOffset + acc.byteOffset;
+        for(size_t bone_i = 0; bone_i < skeleton.bones.size(); bone_i += 1) {
+            const f32* values = (f32*) (data + stride * bone_i);
+            skeleton.bones[bone_i].inverse_bind 
+                = Mat<4>::from_column_major(std::span(values, 4 * 4));
+        }
+    }
+
     static void gltf_collect_skeleton(
         const tinygltf::Model& model, const tinygltf::Skin& skin, size_t skin_i,
         std::vector<Animation::Skeleton>& skeletons,
@@ -277,6 +322,7 @@ namespace houseofatmos::engine {
                 std::vector(std::move(children))
             };
         }
+        gltf_read_inverse_bind_matrices(model, skin, skin_i, skeleton, path);
     }
 
     static void gltf_collect_skeletons(
