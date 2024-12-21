@@ -279,31 +279,25 @@ namespace houseofatmos::engine {
         }
         const tinygltf::BufferView& bv = model.bufferViews[acc.bufferView];
         size_t stride = bv.byteStride == 0
-            ? sizeof(sizeof(f32) * 4 * 4)
+            ? sizeof(f32) * 4 * 4
             : bv.byteStride;
         const tinygltf::Buffer& buff = model.buffers[bv.buffer];
         const u8* data = buff.data.data() + bv.byteOffset + acc.byteOffset;
         for(size_t bone_i = 0; bone_i < skeleton.bones.size(); bone_i += 1) {
             const f32* values = (f32*) (data + stride * bone_i);
             skeleton.bones[bone_i].inverse_bind 
-                = Mat<4>::from_column_major(std::span(values, 4 * 4));
+                = Mat<4>::from_column_major<f32>(std::span(values, 4 * 4));
         }
     }
 
     static void gltf_collect_skeleton(
         const tinygltf::Model& model, const tinygltf::Skin& skin, size_t skin_i,
-        std::vector<Animation::Skeleton>& skeletons,
-        std::vector<std::unordered_map<size_t, u16>>& all_node_to_joint,
-        std::vector<std::vector<bool>>& all_bone_is_child,
+        Animation::Skeleton& skeleton,
+        std::unordered_map<size_t, u16>& node_to_joint,
         const std::string& path
     ) {
-        Animation::Skeleton& skeleton = skeletons.at(skin_i);
-        std::unordered_map<size_t, u16>& node_to_joint = all_node_to_joint.at(skin_i);
-        std::vector<bool>& bone_is_child = all_bone_is_child.at(skin_i);
         gltf_build_node_to_joint(skin, node_to_joint);
-        // root will be figured out during actual tree pass
         skeleton.bones.resize(skin.joints.size());
-        bone_is_child.resize(skin.joints.size());
         for(size_t joint_i = 0; joint_i < skin.joints.size(); joint_i += 1) {
             size_t joint_node_idx = skin.joints[joint_i];
             const tinygltf::Node& joint_node = model.nodes[joint_node_idx];
@@ -313,7 +307,6 @@ namespace houseofatmos::engine {
                 size_t child_node_idx = joint_node.children[child_i];
                 if(!node_to_joint.contains(child_node_idx)) { continue; }
                 size_t child_joint_i = node_to_joint[child_node_idx];
-                bone_is_child[child_joint_i] = true;
                 children.push_back(child_joint_i);                
             }
             skeleton.bones[joint_i] = {
@@ -322,23 +315,24 @@ namespace houseofatmos::engine {
             };
         }
         gltf_read_inverse_bind_matrices(model, skin, skin_i, skeleton, path);
+        // root node and transform will be figured out during actual tree pass
+        skeleton.root_bone_idx = skeleton.bones.size();
+        skeleton.bones.push_back({ Mat<4>(), std::vector<u16>() });
     }
 
     static void gltf_collect_skeletons(
         const tinygltf::Model& model, 
         std::vector<Animation::Skeleton>& skeletons,
         std::vector<std::unordered_map<size_t, u16>>& node_to_joint,
-        std::vector<std::vector<bool>>& bone_is_child,
         const std::string& path
     ) {
         skeletons.resize(model.skins.size());
         node_to_joint.resize(model.skins.size());
-        bone_is_child.resize(model.skins.size());
         for(size_t skin_i = 0; skin_i < model.skins.size(); skin_i += 1) {
             const tinygltf::Skin& skin = model.skins[skin_i];
             gltf_collect_skeleton(
                 model, skin, skin_i, 
-                skeletons, node_to_joint, bone_is_child, 
+                skeletons.at(skin_i), node_to_joint.at(skin_i), 
                 path
             );
         }
@@ -378,7 +372,7 @@ namespace houseofatmos::engine {
     template<size_t N>
     static std::vector<Animation::KeyFrame<N>> gltf_read_keyframes(
         const tinygltf::Model& model, const tinygltf::AnimationSampler& sampler,
-        size_t sampler_i,
+        size_t sampler_i, f64& last_timestamp,
         const std::string& anim_name, const std::string& path
     ) {
         Animation::Interpolation interp_type
@@ -406,6 +400,7 @@ namespace houseofatmos::engine {
             frames.resize(acc.count);
             for(size_t kf_i = 0; kf_i < frames.size(); kf_i += 1) {
                 const f32* timestamp = (const f32*) (data + kf_i * stride);
+                last_timestamp = std::max(last_timestamp, (f64) *timestamp);
                 frames[kf_i] = { *timestamp, Vec<N>(), interp_type };
             }
         }
@@ -448,6 +443,7 @@ namespace houseofatmos::engine {
         for(size_t anim_i = 0; anim_i < model.animations.size(); anim_i += 1) {
             tinygltf::Animation& animation = model.animations[anim_i];
             std::vector<Animation::Channel> r_channels;
+            f64 last_timestamp = 0;
             if(animation.channels.size() == 0) { continue; }
             size_t skin_i = gltf_find_anim_target_skeleton(
                 animation.channels[0].target_node, node_to_joint, 
@@ -461,15 +457,18 @@ namespace houseofatmos::engine {
                     = animation.samplers[channel.sampler];
                 if(channel.target_path == "translation") {
                     r_channels[joint_i].translation = gltf_read_keyframes<3>(
-                        model, sampler, channel.sampler, animation.name, path
+                        model, sampler, channel.sampler, last_timestamp, 
+                        animation.name, path
                     );
                 } else if(channel.target_path == "rotation") {
                     r_channels[joint_i].rotation = gltf_read_keyframes<4>(
-                        model, sampler, channel.sampler, animation.name, path
+                        model, sampler, channel.sampler, last_timestamp, 
+                        animation.name, path
                     );
                 } else if(channel.target_path == "scale") {
                     r_channels[joint_i].scale = gltf_read_keyframes<3>(
-                        model, sampler, channel.sampler, animation.name, path
+                        model, sampler, channel.sampler, last_timestamp,
+                        animation.name, path
                     );
                 } else {
                     error("'" + channel.target_path + "' is not a supported"
@@ -477,7 +476,8 @@ namespace houseofatmos::engine {
                     );
                 }
             }
-            animations[animation.name] = Animation(std::move(r_channels));
+            animations[animation.name]
+                = Animation(std::move(r_channels), last_timestamp);
         }
     }
 
@@ -503,20 +503,26 @@ namespace houseofatmos::engine {
     }
 
     static void gltf_find_root_bone(
-        size_t node_idx, const Mat<4>& parent_transform,
-        const std::vector<std::unordered_map<size_t, u16>>& node_to_joint, 
-        const std::vector<std::vector<bool>>& bone_is_child, 
+        tinygltf::Model& model, size_t node_idx, const Mat<4>& transform,
+        std::vector<std::unordered_map<size_t, u16>>& nodes_to_joints, 
         std::vector<Animation::Skeleton>& skeletons
     ) {
-        assert(node_to_joint.size() == bone_is_child.size());
-        assert(bone_is_child.size() == skeletons.size());
+        assert(nodes_to_joints.size() == skeletons.size());
         for(size_t skin_i = 0; skin_i < skeletons.size(); skin_i += 1) {
-            if(!node_to_joint.at(skin_i).contains(node_idx)) { return; }
-            size_t joint_i = node_to_joint.at(skin_i).at(node_idx);
-            if(bone_is_child.at(skin_i).at(joint_i)) { return; }
-            // this node is the root!
-            skeletons.at(skin_i).root_bone_idx = joint_i;
-            skeletons.at(skin_i).root_transform = parent_transform;
+            auto& node_to_joint = nodes_to_joints.at(skin_i);
+            auto& skeleton = skeletons.at(skin_i);
+            auto& root_bone = skeleton.bones.at(skeleton.root_bone_idx);
+            if(root_bone.child_indices.size() > 0) { continue; }
+            if(node_to_joint.contains(node_idx)) { continue; }
+            const tinygltf::Node& node = model.nodes[node_idx];
+            for(auto child_node_idx: node.children) {
+                if(!node_to_joint.contains(child_node_idx)) { continue; }
+                u16 child_joint_i = node_to_joint.at(child_node_idx);
+                root_bone.child_indices.push_back(child_joint_i);
+            }
+            if(root_bone.child_indices.size() == 0) { continue; }
+            skeleton.root_transform = transform;
+            node_to_joint[node_idx] = skeleton.root_bone_idx;
         }
     }
 
@@ -548,8 +554,7 @@ namespace houseofatmos::engine {
         const Mat<4>& parent_transform,
         std::unordered_map<u64, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& collected_meshes,
-        const std::vector<std::unordered_map<size_t, u16>>& node_to_joint, 
-        const std::vector<std::vector<bool>>& bone_is_child, 
+        std::vector<std::unordered_map<size_t, u16>>& node_to_joint, 
         std::vector<Animation::Skeleton>& skeletons,
         const std::string& path
     ) {
@@ -564,14 +569,14 @@ namespace houseofatmos::engine {
                 );
             }
             gltf_find_root_bone(
-                node_idx, parent_transform, 
-                node_to_joint, bone_is_child, skeletons
+                model, node_idx, transform, 
+                node_to_joint, skeletons
             );
             gltf_collect_nodes(
                 model, node.children, 
                 transform, 
                 primitive_indices, collected_meshes, 
-                node_to_joint, bone_is_child, skeletons,
+                node_to_joint, skeletons,
                 path
             );
         }
@@ -609,18 +614,15 @@ namespace houseofatmos::engine {
         std::unordered_map<size_t, size_t> primitive_indices;
         gltf_collect_primitives(model, result.primitives, primitive_indices, attribs, path);
         std::vector<std::unordered_map<size_t, u16>> node_to_joint;
-        std::vector<std::vector<bool>> bone_is_child;
-        gltf_collect_skeletons(
-            model, result.skeletons, node_to_joint, bone_is_child, path
-        );
-        gltf_collect_animations(model, result.animations, node_to_joint, path);
+        gltf_collect_skeletons(model, result.skeletons, node_to_joint, path);
         tinygltf::Scene& scene = model.scenes[model.defaultScene];
         gltf_collect_nodes(
             model, scene.nodes, Mat<4>(), 
             primitive_indices, result.meshes, 
-            node_to_joint, bone_is_child, result.skeletons,
+            node_to_joint, result.skeletons,
             path
         );
+        gltf_collect_animations(model, result.animations, node_to_joint, path);
         return result;
     }
 

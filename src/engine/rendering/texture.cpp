@@ -212,8 +212,8 @@ namespace houseofatmos::engine {
 
     static void init_blit_resources() {
         blit_shader = Shader(
-            "#version 130 \n"
-            "in vec2 v_pos_uv; \n"
+            "#version 330 \n"
+            "layout(location = 0) in vec2 v_pos_uv; \n"
             "out vec2 f_uv; \n"
             "uniform vec2 u_scale; \n"
             "uniform vec2 u_offset; \n"

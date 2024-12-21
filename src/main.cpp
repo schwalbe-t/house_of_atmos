@@ -1,93 +1,67 @@
 
-// #include <engine/window.hpp>
-// #include <engine/model.hpp>
-
-// using namespace houseofatmos::engine;
-
-// static const f64 resolution = 100;
-
-// struct TestScene: Scene {
-
-//     static inline Model::LoadArgs PLAYER_MODEL = {
-//         "res/player.gltf", {
-//             { Model::Position, { Mesh::F32, 3 } }, 
-//             { Model::UvMapping, { Mesh::F32, 2 } }, 
-//             { Model::Normal, { Mesh::F32, 3 } },
-//             //{ Model::Joints, { Mesh::U8, 4 } },
-//             { Model::Weights, { Mesh::F32, 4 } }
-//         } 
-//     };
-
-//     static inline Shader::LoadArgs MODEL_SHADER = {
-//         "res/model_vert.glsl", "res/model_frag.glsl"
-//     };
-
-//     Texture target = Texture(100, 100);
-//     f64 time = 0;
-
-//     TestScene() {
-//         this->load(Model::Loader(PLAYER_MODEL));
-//         this->load(Shader::Loader(MODEL_SHADER));
-//     }
-
-//     void update(const Window& window) override {}
-    
-//     void render(const Window& window) override {
-//         this->time += window.delta_time();
-        
-//         Model& player_model = this->get<Model>(PLAYER_MODEL);
-//         auto [mesh, texture, skeleton] = player_model.primitive("player");
-//         const Animation& animation = player_model.animation("floss");
-        
-//         Shader& model_shader = this->get<Shader>(MODEL_SHADER);
-//         model_shader.set_uniform("u_model", Mat<4>::rotate_y(this->time));
-//         model_shader.set_uniform("u_view", Mat<4>::look_at(
-//             Vec<3>(0, 10, 10), // camera position
-//             Vec<3>(0, 0, 0), // look at the origin
-//             Vec<3>(0, 1, 0) // up is along the positive Y axis
-//         ));
-//         model_shader.set_uniform("u_projection", Mat<4>::perspective(
-//             pi / 2.0, target.width(), target.height(), 0.1, 1000.0
-//         ));
-//         // model_shader.set_uniform(
-//         //     "u_joint_transf", 
-//         //     animation.compute_transforms(*skeleton, this->time)
-//         // );
-//         model_shader.set_uniform("u_texture", texture);
-
-//         Texture& target = this->target;
-//         target.resize_fast(window.width() /*/ 2*/, window.height() /*/ 2*/);
-//         target.clear_color(Vec<4>(0, 0, 0, 1.0));
-//         target.clear_depth(INFINITY);
-//         mesh.render(model_shader, target);
-//         window.show_texture(target);
-//     }
-
-// };
-
 #include <engine/window.hpp>
+#include <engine/model.hpp>
 #include <engine/audio.hpp>
 
 using namespace houseofatmos::engine;
 
+static const f64 resolution = 100;
+
 struct TestScene: Scene {
 
-    Audio::LoadArgs TEST = {
-        "/home/typesafeschwalbe/Downloads/CATALYST.ogg"
+    static inline Model::LoadArgs PLAYER_MODEL = {
+        "res/player.gltf", {
+            { Model::Position, { Mesh::F32, 3 } }, 
+            { Model::UvMapping, { Mesh::F32, 2 } }, 
+            { Model::Normal, { Mesh::F32, 3 } },
+            { Model::Joints, { Mesh::U8, 4 } },
+            { Model::Weights, { Mesh::F32, 4 } }
+        } 
     };
 
+    static inline Shader::LoadArgs MODEL_SHADER = {
+        "res/model_vert.glsl", "res/model_frag.glsl"
+    };
+
+    Texture target = Texture(100, 100);
+    f64 time = 0;
+
     TestScene() {
-        this->load(Audio::Loader(TEST));
+        this->load(Model::Loader(PLAYER_MODEL));
+        this->load(Shader::Loader(MODEL_SHADER));
     }
 
-    void update(const Window& window) override {
-        const Audio& test = this->get<Audio>(TEST);
-        if(window.was_pressed(Key::S)) {
-            test.play();
-        }
-    }
+    void update(const Window& window) override {}
+    
+    void render(const Window& window) override {
+        this->time += window.delta_time();
+        
+        Model& player_model = this->get<Model>(PLAYER_MODEL);
+        auto [mesh, texture, skeleton] = player_model.primitive("player");
+        const Animation& animation = player_model.animation("floss");
+        
+        Shader& model_shader = this->get<Shader>(MODEL_SHADER);
+        model_shader.set_uniform("u_model", Mat<4>());
+        model_shader.set_uniform("u_view", Mat<4>::look_at(
+            Vec<3>(0, 10, 10), // camera position
+            Vec<3>(0, 0, 0), // look at the origin
+            Vec<3>(0, 1, 0) // up is along the positive Y axis
+        ));
+        model_shader.set_uniform("u_projection", Mat<4>::perspective(
+            pi / 2.0, target.width(), target.height(), 0.1, 1000.0
+        ));
+        model_shader.set_uniform("u_joint_transf", animation.compute_transforms(
+            *skeleton, fmod(this->time, animation.length())
+        ));
+        model_shader.set_uniform("u_texture", texture);
 
-    void render(const Window& window) override {}
+        Texture& target = this->target;
+        target.resize_fast(window.width() / 2, window.height() / 2);
+        target.clear_color(Vec<4>(0, 0, 0, 1.0));
+        target.clear_depth(INFINITY);
+        mesh.render(model_shader, target);
+        window.show_texture(target);
+    }
 
 };
 

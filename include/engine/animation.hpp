@@ -71,11 +71,14 @@ namespace houseofatmos::engine {
 
         private:
         std::vector<Channel> channels;
+        f64 last_timestamp;
 
 
         public:
         Animation() = default;
-        Animation(std::vector<Channel>&& channels);
+        Animation(std::vector<Channel>&& channels, f64 last_timestamp);
+
+        f64 length() const { return this->last_timestamp; }
 
         BoneState compute_state(u16 bone_idx, f64 timestamp) const;
         std::vector<Mat<4>> compute_transforms(
