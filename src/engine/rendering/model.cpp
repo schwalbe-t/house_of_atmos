@@ -627,7 +627,7 @@ namespace houseofatmos::engine {
     }
 
 
-    std::tuple<Mesh&, const Texture&, const Animation::Skeleton*> Model::primitive(
+    std::tuple<Mesh&, const Texture&, const Animation::Skeleton*> Model::mesh(
         const std::string& mesh_name
     ) {
         auto element = this->meshes.find(mesh_name);

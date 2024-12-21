@@ -9,8 +9,8 @@ static const i64 resolution = 360;
 
 struct TestScene: Scene {
 
-    static inline Model::LoadArgs PLAYER_MODEL = {
-        "res/player.gltf", {
+    static inline Model::LoadArgs HOUSE_MODEL = {
+        "res/house.gltf", {
             { Model::Position, { Mesh::F32, 3 } }, 
             { Model::UvMapping, { Mesh::F32, 2 } }, 
             { Model::Normal, { Mesh::F32, 3 } },
@@ -27,7 +27,7 @@ struct TestScene: Scene {
     f64 time = 0;
 
     TestScene() {
-        this->load(Model::Loader(PLAYER_MODEL));
+        this->load(Model::Loader(HOUSE_MODEL));
         this->load(Shader::Loader(MODEL_SHADER));
     }
 
@@ -36,14 +36,14 @@ struct TestScene: Scene {
     void render(const Window& window) override {
         this->time += window.delta_time();
         
-        Model& player_model = this->get<Model>(PLAYER_MODEL);
-        auto [mesh, texture, skeleton] = player_model.primitive("player");
-        const Animation& animation = player_model.animation("floss");
-        
+        Model& house_model = this->get<Model>(HOUSE_MODEL);
+        auto [house_mesh, house_texture, house_skeleton] = house_model.mesh("house");
+        const Animation& animation = house_model.animation("door");
+    
         Shader& model_shader = this->get<Shader>(MODEL_SHADER);
         model_shader.set_uniform("u_model", Mat<4>());
         model_shader.set_uniform("u_view", Mat<4>::look_at(
-            Vec<3>(0, 10, 10), // camera position
+            Vec<3>(-10, 10, 10), // camera position
             Vec<3>(0, 0, 0), // look at the origin
             Vec<3>(0, 1, 0) // up is along the positive Y axis
         ));
@@ -51,9 +51,9 @@ struct TestScene: Scene {
             pi / 2.0, target.width(), target.height(), 0.1, 1000.0
         ));
         model_shader.set_uniform("u_joint_transf", animation.compute_transforms(
-            *skeleton, fmod(this->time, animation.length())
+            *house_skeleton, animation.length()
         ));
-        model_shader.set_uniform("u_texture", texture);
+        model_shader.set_uniform("u_texture", house_texture);
 
         Texture& target = this->target;
         if(window.height() < resolution) {
@@ -65,7 +65,7 @@ struct TestScene: Scene {
         }
         target.clear_color(Vec<4>(0.1, 0.1, 0.1, 1.0));
         target.clear_depth(INFINITY);
-        mesh.render(model_shader, target);
+        house_mesh.render(model_shader, target);
         window.show_texture(target);
     }
 

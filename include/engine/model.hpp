@@ -49,7 +49,7 @@ namespace houseofatmos::engine {
         ~Model() = default;
 
 
-        std::tuple<Mesh&, const Texture&, const Animation::Skeleton*> primitive(
+        std::tuple<Mesh&, const Texture&, const Animation::Skeleton*> mesh(
             const std::string& primitive_name
         );
         const Animation& animation(const std::string& animation_name) const {
