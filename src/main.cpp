@@ -5,7 +5,7 @@
 
 using namespace houseofatmos::engine;
 
-static const f64 resolution = 100;
+static const i64 resolution = 360;
 
 struct TestScene: Scene {
 
@@ -56,8 +56,14 @@ struct TestScene: Scene {
         model_shader.set_uniform("u_texture", texture);
 
         Texture& target = this->target;
-        target.resize_fast(window.width() / 2, window.height() / 2);
-        target.clear_color(Vec<4>(0, 0, 0, 1.0));
+        if(window.height() < resolution) {
+            target.resize_fast(window.width(), window.height());
+        } else {
+            f64 ratio = (f64) resolution / window.height();
+            i64 width = ceil(window.width() * ratio);
+            target.resize_fast(width, resolution);
+        }
+        target.clear_color(Vec<4>(0.1, 0.1, 0.1, 1.0));
         target.clear_depth(INFINITY);
         mesh.render(model_shader, target);
         window.show_texture(target);
