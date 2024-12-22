@@ -480,14 +480,14 @@ namespace houseofatmos::engine {
         static Mat<4> look_at(
             const Vec<3>& eye, const Vec<3>& at, const Vec<3>& up
         ) {
-            Vec<3> forward = (at - eye).normalized();
+            Vec<3> forward = (eye - at).normalized();
             Vec<3> right = up.cross(forward).normalized();
             Vec<3> c_up = forward.cross(right).normalized();
             return Mat<4>(
-                   right.x(),    right.y(),    right.z(),   -right.dot(eye),
-                    c_up.x(),     c_up.y(),     c_up.z(),    -c_up.dot(eye),
-                -forward.x(), -forward.y(), -forward.z(),  forward.dot(eye),
-                         0.0,          0.0,          0.0,               1.0        
+                  right.x(),   right.y(),   right.z(),   -right.dot(eye),
+                   c_up.x(),    c_up.y(),    c_up.z(),    -c_up.dot(eye),
+                forward.x(), forward.y(), forward.z(), -forward.dot(eye),
+                        0.0,         0.0,         0.0,               1.0        
             );
         }
 
