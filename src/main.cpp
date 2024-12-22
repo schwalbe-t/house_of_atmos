@@ -43,7 +43,7 @@ struct TestScene: Scene {
         Shader& model_shader = this->get<Shader>(MODEL_SHADER);
         model_shader.set_uniform("u_model", Mat<4>());
         model_shader.set_uniform("u_view", Mat<4>::look_at(
-            Vec<3>(-10, 10, 10), // camera position
+            Vec<3>(5, 5, 5), // camera position
             Vec<3>(0, 0, 0), // look at the origin
             Vec<3>(0, 1, 0) // up is along the positive Y axis
         ));
@@ -51,7 +51,7 @@ struct TestScene: Scene {
             pi / 2.0, target.width(), target.height(), 0.1, 1000.0
         ));
         model_shader.set_uniform("u_joint_transf", animation.compute_transforms(
-            *house_skeleton, animation.length()
+            *house_skeleton, fabs(sin(this->time)) * animation.length()
         ));
         model_shader.set_uniform("u_texture", house_texture);
 
