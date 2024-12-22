@@ -81,7 +81,10 @@ namespace houseofatmos::engine {
         f64 length() const { return this->last_timestamp; }
 
         BoneState compute_state(u16 bone_idx, f64 timestamp) const;
-        std::vector<Mat<4>> compute_transforms(
+        std::vector<Mat<4>> compute_transformations(
+            const Skeleton& skeleton, f64 timestamp
+        ) const;
+        std::vector<Mat<4>> compute_rotations(
             const Skeleton& skeleton, f64 timestamp
         ) const;
 

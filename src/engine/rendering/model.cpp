@@ -106,19 +106,52 @@ namespace houseofatmos::engine {
         return { ptr, stride, acc.count };
     }
 
+    static u8 gltf_default_joints_u8[4] = { 0, 0, 0, 0 };
+    static u16 gltf_default_joints_u16[4] = { 0, 0, 0, 0 };
+    static f64 gltf_default_weights_f32[4] = { 1.0, 0.0, 0.0, 0.0 };
+
+    static GltfBufferView gltf_get_default_mesh_attrib(
+        size_t mesh_id, size_t pmt_i,
+        std::pair<Model::Attrib, Mesh::Attrib> attrib,
+        const std::string& attrib_name, const std::string& path
+    ) {
+        switch(attrib.first) {
+            case Model::Joints: {
+                if(attrib.second.count != 4) { break; }
+                switch(attrib.second.type) {
+                    case Mesh::U8: return {
+                        (u8*) gltf_default_joints_u8, 0, SIZE_MAX
+                    };
+                    case Mesh::U16: return {
+                        (u8*) gltf_default_joints_u16, 0, SIZE_MAX
+                    };
+                }
+            }
+            case Model::Weights: {
+                if(attrib.second.count != 4) { break; }
+                if(attrib.second.type != Mesh::F32) { break; }
+                return { (u8*) gltf_default_weights_f32, 0, SIZE_MAX };
+            }
+        }
+        error("Given model attributes expected an attribute '"
+            + attrib_name + "' on the primitive with ID "
+            + std::to_string(pmt_i) + " in the mesh with ID "
+            + std::to_string(mesh_id) + " in '" + path + "'"
+            ", but it does not exist and no matching default could be created"
+        );
+        return { 0 };
+    }
+
     static GltfBufferView gltf_parse_mesh_attrib(
-        tinygltf::Model& model, size_t mesh_id, 
+        tinygltf::Model& model, size_t mesh_i, 
         size_t pmt_i, const tinygltf::Primitive& primitive, 
         std::pair<Model::Attrib, Mesh::Attrib> attrib,
         const std::string& path
     ) {
         std::string attrib_name = gltf_attrib_name(attrib.first);
         if(!primitive.attributes.contains(attrib_name)) {
-            error("Given model attributes expected an attribute '"
-                + attrib_name + "' on the primitive with ID "
-                + std::to_string(pmt_i) + " in the mesh with ID "
-                + std::to_string(mesh_id) + " in '" + path + "'"
-                ", but it does not exist"
+            return gltf_get_default_mesh_attrib(
+                mesh_i, pmt_i, attrib, attrib_name, path
             );
         }
         size_t acc_id = primitive.attributes.at(attrib_name);
@@ -126,7 +159,7 @@ namespace houseofatmos::engine {
         if(acc.componentType != attrib.second.gl_type_constant()) {
             error("Attribute '" + attrib_name + "' of primitive with ID "
                 + std::to_string(pmt_i) + " in the mesh with ID "
-                + std::to_string(mesh_id) + " in '" + path + "'"
+                + std::to_string(mesh_i) + " in '" + path + "'"
                 + " was expected to use type '"
                 + attrib.second.display_type() 
                 + "', but "
@@ -147,21 +180,36 @@ namespace houseofatmos::engine {
     }
 
     static Mesh gltf_assemble_mesh(
+        size_t mesh_i,
         const std::vector<std::pair<Model::Attrib, Mesh::Attrib>>& attribs,
         const std::vector<GltfBufferView>& attribs_data,
         GltfBufferView indices,
         const std::string& path
     ) {
         assert(attribs.size() == attribs_data.size());
-        size_t vertices = attribs_data.size() > 0
-            ? attribs_data[0].count
-            : 0;
+        size_t vertex_count = SIZE_MAX;
+        for(const GltfBufferView& attrib_data: attribs_data) {
+            if(attrib_data.count == SIZE_MAX) { continue; }
+            if(vertex_count == SIZE_MAX) { vertex_count = attrib_data.count; }
+            else if(vertex_count != attrib_data.count) {
+                error("Inconsistent vertex counts for mesh ID '"
+                    + std::to_string(mesh_i) + "'"
+                );
+            }
+        }
+        if(vertex_count == SIZE_MAX) {
+            error("Mesh with ID '"
+                + std::to_string(mesh_i) + "' could not be read"
+                " because all vertex attribute values are provided by default"
+                " values (meaning there is no defined vertex count)"
+            );
+        }
         std::vector<Mesh::Attrib> mesh_attribs;
         for(const auto& attrib: attribs) {
             mesh_attribs.push_back(attrib.second);
         }
         auto mesh = Mesh(mesh_attribs);
-        for(size_t vert_i = 0; vert_i < vertices; vert_i += 1) {
+        for(size_t vert_i = 0; vert_i < vertex_count; vert_i += 1) {
             mesh.start_vertex();
             for(size_t attr_i = 0; attr_i < attribs.size(); attr_i += 1) {
                 Model::Attrib model_attrib = attribs[attr_i].first;
@@ -191,7 +239,7 @@ namespace houseofatmos::engine {
     }
 
     static void gltf_collect_primitives(
-        tinygltf::Model& model, std::vector<Mesh>& primitives,
+        tinygltf::Model& model, std::vector<Model::Primitive>& primitives,
         std::unordered_map<u64, size_t>& primitive_indices,
         const std::vector<std::pair<Model::Attrib, Mesh::Attrib>>& attribs,
         const std::string& path
@@ -227,9 +275,12 @@ namespace houseofatmos::engine {
                 const tinygltf::Material& material = model.materials[primitive.material];
                 primitive_indices[primitive_key(mesh_i, pmt_i)]
                     = primitives.size();
-                primitives.push_back(gltf_assemble_mesh(
-                    attribs, attrib_data, indices, path
-                ));
+                primitives.push_back({
+                    gltf_assemble_mesh(
+                        mesh_i, attribs, attrib_data, indices, path
+                    ),
+                    Mat<4>(), Mat<4>()
+                });
             }
         }
     }
@@ -486,6 +537,8 @@ namespace houseofatmos::engine {
     static void gltf_collect_meshes(
         tinygltf::Model& model, size_t mesh_i, i64 skin_i,
         const std::string& name,
+        const Mat<4>& transform, const Mat<4>& rotation,
+        std::vector<Model::Primitive>& primitives,
         std::unordered_map<u64, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& meshes
     ) {
@@ -495,10 +548,18 @@ namespace houseofatmos::engine {
             const tinygltf::Material& material = model.materials[primitive.material];
             size_t texture_i = material.emissiveTexture.index;
             size_t mesh_abs_i = primitive_indices[primitive_key(mesh_i, pmt_i)];
-            std::optional<size_t> skeleton_i = skin_i == -1
+            std::optional<size_t> skeleton_i = skin_i != -1
                 ? std::optional(skin_i)
                 : std::nullopt;
-            meshes[name] = { mesh_abs_i, texture_i, mesh_abs_i };
+            meshes[name] = { mesh_abs_i, texture_i, skeleton_i };
+            if(skin_i == -1) {
+                // the mesh has no skinning applied to it, meaning it needs to have
+                // a local transform specified explicitly
+                // (otherwise the skinning will take care of the local transform)
+                Model::Primitive& pmt = primitives[mesh_abs_i];
+                pmt.local_transform = transform;
+                pmt.local_rotation = rotation;
+            }
         }
     }
 
@@ -551,7 +612,8 @@ namespace houseofatmos::engine {
 
     static void gltf_collect_nodes(
         tinygltf::Model& model, const std::vector<int>& nodes,
-        const Mat<4>& parent_transform,
+        const Mat<4>& parent_transform, const Mat<4>& parent_rotation,
+        std::vector<Model::Primitive>& primitives,
         std::unordered_map<u64, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& collected_meshes,
         std::vector<std::unordered_map<size_t, u16>>& node_to_joint, 
@@ -562,10 +624,12 @@ namespace houseofatmos::engine {
             size_t node_idx = nodes[node_i];
             const tinygltf::Node& node = model.nodes[node_idx];
             Mat<4> transform = gltf_node_transform(node, path) * parent_transform;
+            Mat<4> rotation = gltf_node_rotation(node) * parent_rotation;
             if(node.mesh != -1) {
                 gltf_collect_meshes(
                     model, node.mesh, node.skin, node.name, 
-                    primitive_indices, collected_meshes
+                    transform, rotation,
+                    primitives, primitive_indices, collected_meshes
                 );
             }
             gltf_find_root_bone(
@@ -574,8 +638,8 @@ namespace houseofatmos::engine {
             );
             gltf_collect_nodes(
                 model, node.children, 
-                transform, 
-                primitive_indices, collected_meshes, 
+                transform, rotation,
+                primitives, primitive_indices, collected_meshes, 
                 node_to_joint, skeletons,
                 path
             );
@@ -617,8 +681,8 @@ namespace houseofatmos::engine {
         gltf_collect_skeletons(model, result.skeletons, node_to_joint, path);
         tinygltf::Scene& scene = model.scenes[model.defaultScene];
         gltf_collect_nodes(
-            model, scene.nodes, Mat<4>(), 
-            primitive_indices, result.meshes, 
+            model, scene.nodes, Mat<4>(), Mat<4>(),
+            result.primitives, primitive_indices, result.meshes, 
             node_to_joint, result.skeletons,
             path
         );
@@ -627,18 +691,18 @@ namespace houseofatmos::engine {
     }
 
 
-    std::tuple<Mesh&, const Texture&, const Animation::Skeleton*> Model::mesh(
+    std::tuple<Model::Primitive&, const Texture&, const Animation::Skeleton*> Model::mesh(
         const std::string& mesh_name
     ) {
         auto element = this->meshes.find(mesh_name);
         if(element == this->meshes.end()) {
            error("Model does not have mesh '" + mesh_name + "'");
         }
-        Mesh& mesh = this->primitives.at(std::get<0>(element->second));
+        Primitive& primitive = this->primitives.at(std::get<0>(element->second));
         const Texture& texture = this->textures.at(std::get<1>(element->second));
         std::optional<size_t> skeleton_id = std::get<2>(element->second);
         return {
-            mesh, texture, 
+            primitive, texture, 
             skeleton_id.has_value()
                 ? &this->skeletons.at(*skeleton_id)
                 : nullptr
@@ -648,17 +712,82 @@ namespace houseofatmos::engine {
 
     void Model::render_all(
         Shader& shader, const Texture& dest,
+        std::optional<std::string_view> l_transform_uniform,
+        std::optional<std::string_view> l_rotation_uniform,
+        std::optional<std::string_view> texture_uniform,
+        std::optional<std::string_view> joint_transform_uniform,
+        std::optional<std::string_view> joint_rotation_uniform,
+        bool depth_test
+    ) {
+        for(auto& [name, mesh]: this->meshes) {
+            (void) name;
+            std::optional<size_t> skeleton_id = std::get<2>(mesh);
+            if(skeleton_id.has_value()) {
+                error("'Model::render_all' may only be used to render"
+                    " unskinned models! Models with skinning need to be"
+                    " rendered using 'Model::render_all_animated'"
+                );
+            }
+            Primitive& primitive = this->primitives.at(std::get<0>(mesh));
+            if(l_transform_uniform.has_value()) {
+                shader.set_uniform(*l_transform_uniform, primitive.local_transform);
+            }
+            if(texture_uniform.has_value()) {
+                const Texture& texture = this->textures.at(std::get<1>(mesh));
+                shader.set_uniform(*texture_uniform, texture);
+            }
+            if(l_rotation_uniform.has_value()) {
+                shader.set_uniform(*l_rotation_uniform, primitive.local_rotation);
+            }
+            if(joint_transform_uniform.has_value()) {
+                shader.set_uniform(*joint_transform_uniform, std::vector { Mat<4>() });
+            }
+            if(joint_rotation_uniform.has_value()) {
+                shader.set_uniform(*joint_rotation_uniform, std::vector { Mat<4>() });
+            }
+            primitive.geometry.render(shader, dest, depth_test);
+        }
+    }
+
+    void Model::render_all_animated(
+        Shader& shader, const Texture& dest,
+        const Animation& animation, f64 timestamp,
+        std::string_view joint_transform_uniform,
+        std::optional<std::string_view> joint_rotation_uniform,
+        std::optional<std::string_view> l_transform_uniform,
+        std::optional<std::string_view> l_rotation_uniform,
         std::optional<std::string_view> texture_uniform,
         bool depth_test
     ) {
         for(auto& [name, mesh]: this->meshes) {
             (void) name;
+            std::optional<size_t> skeleton_id = std::get<2>(mesh);
+            if(skeleton_id.has_value()) {
+                const Animation::Skeleton& skeleton
+                    = this->skeletons.at(*skeleton_id);
+                shader.set_uniform(
+                    joint_transform_uniform, 
+                    animation.compute_transformations(skeleton, timestamp)
+                );
+                if(joint_rotation_uniform.has_value()) {
+                    shader.set_uniform(
+                        *joint_rotation_uniform, 
+                        animation.compute_rotations(skeleton, timestamp)
+                    ); 
+                }
+            }
+            Primitive& primitive = this->primitives.at(std::get<0>(mesh));
+            if(l_transform_uniform.has_value()) {
+                shader.set_uniform(*l_transform_uniform, primitive.local_transform);
+            }
             if(texture_uniform.has_value()) {
                 const Texture& texture = this->textures.at(std::get<1>(mesh));
                 shader.set_uniform(*texture_uniform, texture);
             }
-            Mesh& primitive = this->primitives.at(std::get<0>(mesh));
-            primitive.render(shader, dest, depth_test);
+            if(l_rotation_uniform.has_value()) {
+                shader.set_uniform(*l_rotation_uniform, primitive.local_rotation);
+            }
+            primitive.geometry.render(shader, dest, depth_test);
         }
     }
 

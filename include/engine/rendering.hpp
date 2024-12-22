@@ -187,7 +187,6 @@ namespace houseofatmos::engine {
         
         u64 vbo_id;
         u64 ebo_id;
-        u64 buff_index_count;
         bool modified;
         bool moved;
 

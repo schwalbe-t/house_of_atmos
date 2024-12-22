@@ -9,6 +9,15 @@ static const i64 resolution = 360;
 
 struct TestScene: Scene {
 
+    static inline Model::LoadArgs FACTORY_MODEL = {
+        "res/factory.gltf", {
+            { Model::Position, { Mesh::F32, 3 } }, 
+            { Model::UvMapping, { Mesh::F32, 2 } }, 
+            { Model::Normal, { Mesh::F32, 3 } },
+            { Model::Joints, { Mesh::U8, 4 } },
+            { Model::Weights, { Mesh::F32, 4 } }
+        } 
+    };
     static inline Model::LoadArgs HOUSE_MODEL = {
         "res/house.gltf", {
             { Model::Position, { Mesh::F32, 3 } }, 
@@ -27,6 +36,7 @@ struct TestScene: Scene {
     f64 time = 0;
 
     TestScene() {
+        this->load(Model::Loader(FACTORY_MODEL));
         this->load(Model::Loader(HOUSE_MODEL));
         this->load(Shader::Loader(MODEL_SHADER));
     }
@@ -36,24 +46,20 @@ struct TestScene: Scene {
     void render(const Window& window) override {
         this->time += window.delta_time();
         
-        Model& house_model = this->get<Model>(HOUSE_MODEL);
-        auto [house_mesh, house_texture, house_skeleton] = house_model.mesh("house");
-        const Animation& animation = house_model.animation("door");
+        Model& factory = this->get<Model>(FACTORY_MODEL);
+        Model& house = this->get<Model>(HOUSE_MODEL);
     
-        Shader& model_shader = this->get<Shader>(MODEL_SHADER);
-        model_shader.set_uniform("u_model", Mat<4>());
-        model_shader.set_uniform("u_view", Mat<4>::look_at(
-            Vec<3>(5, 5, 5), // camera position
+        Shader& shader = this->get<Shader>(MODEL_SHADER);
+        shader.set_uniform("u_view", Mat<4>::look_at(
+            Vec<3>(0, 7.5, 15), // camera position
             Vec<3>(0, 0, 0), // look at the origin
             Vec<3>(0, 1, 0) // up is along the positive Y axis
         ));
-        model_shader.set_uniform("u_projection", Mat<4>::perspective(
-            pi / 2.0, target.width(), target.height(), 0.1, 1000.0
+        shader.set_uniform("u_projection", Mat<4>::perspective(
+            pi / 2.0, // 90 deg FOV
+            target.width(), target.height(), // aspect ratio
+            0.1, 1000.0 // include if between 0.1 and 1000 units away
         ));
-        model_shader.set_uniform("u_joint_transf", animation.compute_transforms(
-            *house_skeleton, fabs(sin(this->time)) * animation.length()
-        ));
-        model_shader.set_uniform("u_texture", house_texture);
 
         Texture& target = this->target;
         if(window.height() < resolution) {
@@ -65,7 +71,35 @@ struct TestScene: Scene {
         }
         target.clear_color(Vec<4>(0.1, 0.1, 0.1, 1.0));
         target.clear_depth(INFINITY);
-        house_mesh.render(model_shader, target);
+        
+        shader.set_uniform(
+            "u_model", 
+            Mat<4>::translate(Vec<3>(-5, 0, 0)) 
+                * Mat<4>::rotate_y(this->time) // rotate once every 6.28 seconds
+        );
+        factory.render_all(
+            shader, target, 
+            "u_local", // shader uniform for local transformation
+            std::nullopt, // shader uniform for local rotation
+            "u_texture", // shader uniform for mesh texture
+            "u_joint_transf" // shader uniform for joint transforms (identity)
+        );
+
+        shader.set_uniform(
+            "u_model", 
+            Mat<4>::translate(Vec<3>(5, 0, 0)) 
+                * Mat<4>::rotate_y(this->time) // rotate once every 6.28 seconds
+        );
+        house.render_all_animated(
+            shader, target, 
+            house.animation("door"), 0, // animation state
+            "u_joint_transf", // shader uniform for joint transforms
+            std::nullopt, // shader uniform for joint rotations
+            "u_local", // shader uniform for local transformation
+            std::nullopt, // shader uniform for local rotation
+            "u_texture" // shader uniform for mesh texture
+        );
+
         window.show_texture(target);
     }
 

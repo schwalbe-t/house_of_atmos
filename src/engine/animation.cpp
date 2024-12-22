@@ -90,7 +90,7 @@ namespace houseofatmos::engine {
         }
     }
 
-    std::vector<Mat<4>> Animation::compute_transforms(
+    std::vector<Mat<4>> Animation::compute_transformations(
         const Skeleton& skeleton, f64 timestamp
     ) const {
         assert(skeleton.bones.size() == this->channels.size());
@@ -107,6 +107,12 @@ namespace houseofatmos::engine {
             result[bone_idx] = result[bone_idx] * inv_bind;
         }
         return result;
+    }
+
+    std::vector<Mat<4>> Animation::compute_rotations(
+        const Skeleton& skeleton, f64 timestamp
+    ) const {
+        error("not yet implemented"); // TODO!
     }
 
 }

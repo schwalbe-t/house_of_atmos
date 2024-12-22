@@ -31,9 +31,15 @@ namespace houseofatmos::engine {
         using Loader = Resource<Model, LoadArgs>;
 
 
+        struct Primitive {
+            Mesh geometry;
+            Mat<4> local_transform;
+            Mat<4> local_rotation;  
+        };
+
         private:
         std::vector<Texture> textures;
-        std::vector<Mesh> primitives;
+        std::vector<Primitive> primitives;
         std::vector<Animation::Skeleton> skeletons;
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>> meshes;
         std::unordered_map<std::string, Animation> animations;
@@ -49,15 +55,31 @@ namespace houseofatmos::engine {
         ~Model() = default;
 
 
-        std::tuple<Mesh&, const Texture&, const Animation::Skeleton*> mesh(
+        std::tuple<Primitive&, const Texture&, const Animation::Skeleton*> mesh(
             const std::string& primitive_name
         );
+
         const Animation& animation(const std::string& animation_name) const {
             return this->animations.at(animation_name);
         }
         
         void render_all(
             Shader& shader, const Texture& dest,
+            std::optional<std::string_view> l_transform_uniform = std::nullopt,
+            std::optional<std::string_view> l_rotation_uniform = std::nullopt,
+            std::optional<std::string_view> texture_uniform = std::nullopt,
+            std::optional<std::string_view> joint_transform_uniform = std::nullopt,
+            std::optional<std::string_view> joint_rotation_uniform = std::nullopt,
+            bool depth_test = true
+        );
+
+        void render_all_animated(
+            Shader& shader, const Texture& dest,
+            const Animation& animation, f64 timestamp,
+            std::string_view joint_transform_uniform,
+            std::optional<std::string_view> joint_rotation_uniform = std::nullopt,
+            std::optional<std::string_view> l_transform_uniform = std::nullopt,
+            std::optional<std::string_view> l_rotation_uniform = std::nullopt,
             std::optional<std::string_view> texture_uniform = std::nullopt,
             bool depth_test = true
         );

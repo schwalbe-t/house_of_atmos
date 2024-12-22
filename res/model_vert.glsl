@@ -10,6 +10,7 @@ layout(location = 4) in vec4 v_weights;
 uniform mat4 u_projection;
 uniform mat4 u_view;
 uniform mat4 u_model;
+uniform mat4 u_local;
 uniform mat4 u_joint_transf[64];
 
 out vec2 f_uv;
@@ -20,6 +21,6 @@ void main() {
         + (u_joint_transf[v_joints.y] * h_pos) * v_weights.y
         + (u_joint_transf[v_joints.z] * h_pos) * v_weights.z
         + (u_joint_transf[v_joints.w] * h_pos) * v_weights.w;
-    gl_Position = u_projection * u_view * u_model * s_pos;
+    gl_Position = u_projection * u_view * u_model * u_local * s_pos;
     f_uv = v_uv;
 }

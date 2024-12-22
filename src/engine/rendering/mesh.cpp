@@ -91,7 +91,6 @@ namespace houseofatmos::engine {
         this->elements = std::move(other.elements);
         this->vbo_id = other.vbo_id;
         this->ebo_id = other.ebo_id;
-        this->buff_index_count = other.buff_index_count;
         this->modified = other.modified;
         this->moved = false;
         other.moved = true;
@@ -113,7 +112,6 @@ namespace houseofatmos::engine {
         this->elements = std::move(other.elements);
         this->vbo_id = other.vbo_id;
         this->ebo_id = other.ebo_id;
-        this->buff_index_count = other.buff_index_count;
         this->modified = other.modified;
         this->moved = false;
         other.moved = true;
@@ -369,7 +367,6 @@ namespace houseofatmos::engine {
             );
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
-        this->buff_index_count = this->elements.size();
         this->modified = false;
     }
 
@@ -395,7 +392,7 @@ namespace houseofatmos::engine {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
         this->bind_properties();
         glDrawElements(
-            GL_TRIANGLES, this->buff_index_count, GL_UNSIGNED_SHORT, nullptr
+            GL_TRIANGLES, this->elements.size(), GL_UNSIGNED_SHORT, nullptr
         );
         this->unbind_properties();
         glBindBuffer(GL_ARRAY_BUFFER, 0);
