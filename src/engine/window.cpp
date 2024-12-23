@@ -41,6 +41,12 @@ namespace houseofatmos::engine {
         }
     }
 
+    static void init_opengl() {
+        gladLoadGL(&glfwGetProcAddress);
+        // glEnable(GL_BLEND);
+        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
     static void center_window(GLFWwindow* window, i32 width, i32 height) {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         if(monitor == NULL) {
@@ -132,8 +138,8 @@ namespace houseofatmos::engine {
         this->next_scene = nullptr;
         center_window((GLFWwindow*) this->ptr, width, height);
         glfwMakeContextCurrent((GLFWwindow*) this->ptr);
-        gladLoadGL(&glfwGetProcAddress);
         glfwSwapInterval(0);
+        init_opengl();
         glfwSetKeyCallback(
             (GLFWwindow*) this->ptr, 
             (GLFWkeyfun) &Window::glfw_key_callback
