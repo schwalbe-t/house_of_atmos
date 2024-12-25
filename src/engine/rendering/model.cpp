@@ -279,7 +279,7 @@ namespace houseofatmos::engine {
                     gltf_assemble_mesh(
                         mesh_i, attribs, attrib_data, indices, path
                     ),
-                    Mat<4>(), Mat<4>()
+                    Mat<4>()
                 });
             }
         }
@@ -537,7 +537,7 @@ namespace houseofatmos::engine {
     static void gltf_collect_meshes(
         tinygltf::Model& model, size_t mesh_i, i64 skin_i,
         const std::string& name,
-        const Mat<4>& transform, const Mat<4>& rotation,
+        const Mat<4>& transform,
         std::vector<Model::Primitive>& primitives,
         std::unordered_map<u64, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& meshes
@@ -558,7 +558,6 @@ namespace houseofatmos::engine {
                 // (otherwise the skinning will take care of the local transform)
                 Model::Primitive& pmt = primitives[mesh_abs_i];
                 pmt.local_transform = transform;
-                pmt.local_rotation = rotation;
             }
         }
     }
@@ -612,7 +611,7 @@ namespace houseofatmos::engine {
 
     static void gltf_collect_nodes(
         tinygltf::Model& model, const std::vector<int>& nodes,
-        const Mat<4>& parent_transform, const Mat<4>& parent_rotation,
+        const Mat<4>& parent_transform,
         std::vector<Model::Primitive>& primitives,
         std::unordered_map<u64, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& collected_meshes,
@@ -624,11 +623,10 @@ namespace houseofatmos::engine {
             size_t node_idx = nodes[node_i];
             const tinygltf::Node& node = model.nodes[node_idx];
             Mat<4> transform = gltf_node_transform(node, path) * parent_transform;
-            Mat<4> rotation = gltf_node_rotation(node) * parent_rotation;
             if(node.mesh != -1) {
                 gltf_collect_meshes(
                     model, node.mesh, node.skin, node.name, 
-                    transform, rotation,
+                    transform,
                     primitives, primitive_indices, collected_meshes
                 );
             }
@@ -638,7 +636,7 @@ namespace houseofatmos::engine {
             );
             gltf_collect_nodes(
                 model, node.children, 
-                transform, rotation,
+                transform,
                 primitives, primitive_indices, collected_meshes, 
                 node_to_joint, skeletons,
                 path
@@ -681,7 +679,7 @@ namespace houseofatmos::engine {
         gltf_collect_skeletons(model, result.skeletons, node_to_joint, path);
         tinygltf::Scene& scene = model.scenes[model.defaultScene];
         gltf_collect_nodes(
-            model, scene.nodes, Mat<4>(), Mat<4>(),
+            model, scene.nodes, Mat<4>(),
             result.primitives, primitive_indices, result.meshes, 
             node_to_joint, result.skeletons,
             path
@@ -712,11 +710,9 @@ namespace houseofatmos::engine {
 
     void Model::render_all(
         Shader& shader, const Texture& dest,
-        std::optional<std::string_view> l_transform_uniform,
-        std::optional<std::string_view> l_rotation_uniform,
+        std::optional<std::string_view> local_transform_uniform,
         std::optional<std::string_view> texture_uniform,
         std::optional<std::string_view> joint_transform_uniform,
-        std::optional<std::string_view> joint_rotation_uniform,
         bool depth_test
     ) {
         for(auto& [name, mesh]: this->meshes) {
@@ -729,21 +725,15 @@ namespace houseofatmos::engine {
                 );
             }
             Primitive& primitive = this->primitives.at(std::get<0>(mesh));
-            if(l_transform_uniform.has_value()) {
-                shader.set_uniform(*l_transform_uniform, primitive.local_transform);
+            if(local_transform_uniform.has_value()) {
+                shader.set_uniform(*local_transform_uniform, primitive.local_transform);
             }
             if(texture_uniform.has_value()) {
                 const Texture& texture = this->textures.at(std::get<1>(mesh));
                 shader.set_uniform(*texture_uniform, texture);
             }
-            if(l_rotation_uniform.has_value()) {
-                shader.set_uniform(*l_rotation_uniform, primitive.local_rotation);
-            }
             if(joint_transform_uniform.has_value()) {
                 shader.set_uniform(*joint_transform_uniform, std::vector { Mat<4>() });
-            }
-            if(joint_rotation_uniform.has_value()) {
-                shader.set_uniform(*joint_rotation_uniform, std::vector { Mat<4>() });
             }
             primitive.geometry.render(shader, dest, depth_test);
         }
@@ -753,9 +743,7 @@ namespace houseofatmos::engine {
         Shader& shader, const Texture& dest,
         const Animation& animation, f64 timestamp,
         std::string_view joint_transform_uniform,
-        std::optional<std::string_view> joint_rotation_uniform,
-        std::optional<std::string_view> l_transform_uniform,
-        std::optional<std::string_view> l_rotation_uniform,
+        std::optional<std::string_view> local_transform_uniform,
         std::optional<std::string_view> texture_uniform,
         bool depth_test
     ) {
@@ -769,23 +757,14 @@ namespace houseofatmos::engine {
                     joint_transform_uniform, 
                     animation.compute_transformations(skeleton, timestamp)
                 );
-                if(joint_rotation_uniform.has_value()) {
-                    shader.set_uniform(
-                        *joint_rotation_uniform, 
-                        animation.compute_rotations(skeleton, timestamp)
-                    ); 
-                }
             }
             Primitive& primitive = this->primitives.at(std::get<0>(mesh));
-            if(l_transform_uniform.has_value()) {
-                shader.set_uniform(*l_transform_uniform, primitive.local_transform);
+            if(local_transform_uniform.has_value()) {
+                shader.set_uniform(*local_transform_uniform, primitive.local_transform);
             }
             if(texture_uniform.has_value()) {
                 const Texture& texture = this->textures.at(std::get<1>(mesh));
                 shader.set_uniform(*texture_uniform, texture);
-            }
-            if(l_rotation_uniform.has_value()) {
-                shader.set_uniform(*l_rotation_uniform, primitive.local_rotation);
             }
             primitive.geometry.render(shader, dest, depth_test);
         }

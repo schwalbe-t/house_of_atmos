@@ -84,9 +84,6 @@ namespace houseofatmos::engine {
         std::vector<Mat<4>> compute_transformations(
             const Skeleton& skeleton, f64 timestamp
         ) const;
-        std::vector<Mat<4>> compute_rotations(
-            const Skeleton& skeleton, f64 timestamp
-        ) const;
 
     };
 

@@ -34,7 +34,6 @@ namespace houseofatmos::engine {
         struct Primitive {
             Mesh geometry;
             Mat<4> local_transform;
-            Mat<4> local_rotation;  
         };
 
         private:
@@ -65,11 +64,9 @@ namespace houseofatmos::engine {
         
         void render_all(
             Shader& shader, const Texture& dest,
-            std::optional<std::string_view> l_transform_uniform = std::nullopt,
-            std::optional<std::string_view> l_rotation_uniform = std::nullopt,
+            std::optional<std::string_view> local_transform_uniform = std::nullopt,
             std::optional<std::string_view> texture_uniform = std::nullopt,
             std::optional<std::string_view> joint_transform_uniform = std::nullopt,
-            std::optional<std::string_view> joint_rotation_uniform = std::nullopt,
             bool depth_test = true
         );
 
@@ -77,9 +74,7 @@ namespace houseofatmos::engine {
             Shader& shader, const Texture& dest,
             const Animation& animation, f64 timestamp,
             std::string_view joint_transform_uniform,
-            std::optional<std::string_view> joint_rotation_uniform = std::nullopt,
-            std::optional<std::string_view> l_transform_uniform = std::nullopt,
-            std::optional<std::string_view> l_rotation_uniform = std::nullopt,
+            std::optional<std::string_view> local_transform_uniform = std::nullopt,
             std::optional<std::string_view> texture_uniform = std::nullopt,
             bool depth_test = true
         );
