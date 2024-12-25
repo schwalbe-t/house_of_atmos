@@ -6,6 +6,9 @@
 
 namespace houseofatmos::engine {
 
+    using namespace math;
+
+
     struct Animation {
 
         template<typename T>

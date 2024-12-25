@@ -11,6 +11,9 @@
 
 namespace houseofatmos::engine {
 
+    using namespace math;
+
+
     struct Texture {
         struct LoadArgs {
             std::string path;
@@ -104,6 +107,7 @@ namespace houseofatmos::engine {
         ~Shader();
 
         void internal_bind() const;
+        void internal_unbind() const;
  
         static u64 max_textures();
 

@@ -397,8 +397,10 @@ namespace houseofatmos::engine {
         this->unbind_properties();
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        shader.internal_unbind();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         if(depth_test) { glDisable(GL_DEPTH_TEST); }
+        glFinish();
     }
 
 }

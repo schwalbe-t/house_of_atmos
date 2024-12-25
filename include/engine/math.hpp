@@ -11,7 +11,7 @@
 #include "nums.hpp"
 
 
-namespace houseofatmos::engine {
+namespace houseofatmos::engine::math {
 
     const f64 pi = 3.141592653589793238463;
 

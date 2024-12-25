@@ -125,6 +125,17 @@ namespace houseofatmos::engine {
         }
     }
 
+    void Shader::internal_unbind() const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Shader'");
+        }
+        for(const auto& [tex_id, slot]: this->texture_slots) {
+            glActiveTexture(GL_TEXTURE0 + slot);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        glUseProgram(0);
+    }
+
 
     u64 Shader::max_textures() {
         GLint max_units;

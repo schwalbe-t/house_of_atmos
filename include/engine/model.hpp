@@ -8,6 +8,9 @@
 
 namespace houseofatmos::engine {
 
+    using namespace math;
+
+
     struct Model {
 
         enum Attrib {

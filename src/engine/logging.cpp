@@ -1,5 +1,6 @@
 
 #include <engine/logging.hpp>
+#include <glad/gl.h>
 #include <iostream>
 
 namespace houseofatmos::engine {
@@ -24,7 +25,8 @@ namespace houseofatmos::engine {
     namespace internal {
         
         void glfw_error(int error, const char* description) {
-            std::cout << "!!! [ERROR] " << std::string(description)
+            std::cout << "!!! [ERROR] (GLFW) " 
+                << std::string(description)
                 << std::endl;
         }
 
