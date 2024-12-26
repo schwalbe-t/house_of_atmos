@@ -12,7 +12,7 @@ make
 This requires the following dependencies to be installed when building from source:
 - `glfw` (version 3.3 or above)
 - `OpenGL`
-- `OpenAL`
+- `OpenAL` (I use `kcat/openal-soft`)
 
 Additionally, this project uses these dependencies directly (install not needed):
 - `glad`

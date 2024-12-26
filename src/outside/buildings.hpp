@@ -9,29 +9,37 @@ namespace houseofatmos::outside {
 
     struct Building {
 
-        struct Type {
+        struct TypeInfo {
             engine::Model::LoadArgs model;
-            u64 width;
-            u64 height;
+            u8 width, height; // in tiles
         };
 
-        const Type* type;
-        u64 x, y;
+        static inline const std::vector<TypeInfo> types = {
+            /* Farmland */ {
+                { "res/buildings/farmland.gltf", Renderer::model_attribs },
+                10, 10
+            }
+        };
+
+        static void load_models(engine::Scene& scene) {
+            for(const TypeInfo& type: Building::types) {
+                scene.load(engine::Model::Loader(type.model));
+            }
+        }
+
+
+        enum Type {
+            Farmland = 0
+        };
+
+        Type type;
+        u8 x, z; // in tiles relative to chunk origin
+
+
+        const TypeInfo& get_type_info() const {
+            return Building::types.at((size_t) this->type);
+        }
 
     };
-
-}
-
-namespace houseofatmos::outside::buildings {
-
-    inline const Building::Type farmland = {
-        { "res/buildings/farmland.gltf", Renderer::model_attribs },
-        10, 10
-    };
-
-
-    inline void load_models(engine::Scene& scene) {
-        scene.load(engine::Model::Loader(farmland.model));
-    }
 
 }

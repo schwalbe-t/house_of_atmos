@@ -54,7 +54,7 @@ namespace houseofatmos {
         engine::Mesh& mesh, 
         const engine::Texture& texture,
         const Mat<4>& local_model_transform
-    ) {
+    ) const {
         this->shader->set_uniform("u_local_transf", local_model_transform);
         this->shader->set_uniform("u_model_transf", Mat<4>());
         this->shader->set_uniform("u_joint_transf", std::vector { Mat<4>() });
@@ -65,7 +65,7 @@ namespace houseofatmos {
     void Renderer::render(
         engine::Model& model,
         const Mat<4>& model_transform
-    ) {
+    ) const {
         this->shader->set_uniform("u_model_transf", model_transform);
         model.render_all(
             *this->shader, this->target, 

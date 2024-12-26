@@ -63,13 +63,13 @@ namespace houseofatmos {
             engine::Mesh& mesh, 
             const engine::Texture& texture,
             const Mat<4>& local_model_transform = Mat<4>()
-        );
+        ) const;
         void render(
             engine::Model& model,
             const Mat<4>& model_transform = Mat<4>()
-        );
+        ) const;
 
-        const engine::Texture& output() { return this->target; }
+        const engine::Texture& output() const { return this->target; }
 
     };
 
