@@ -7,18 +7,15 @@ namespace houseofatmos::outside {
 
     void Outside::update(const engine::Window& window) {
         this->time += window.delta_time();
-        this->renderer.camera.position += Vec<3>(10, 0, 10) * window.delta_time();
+        this->renderer.camera.position += Vec<3>(80, 0, 80) * window.delta_time();
         this->renderer.camera.look_at = this->renderer.camera.position
-            + Vec<3>(10, -10, 10);
+            + Vec<3>(0, -10, -1);
     }
 
     void Outside::render(const engine::Window& window) {
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(this->renderer.camera.position);
-        this->terrain.render_loaded_chunks(
-            *this, this->renderer, 
-            this->get<engine::Texture>(Outside::terrain_texture)
-        );
+        this->terrain.render_loaded_chunks(*this, this->renderer);
         window.show_texture(this->renderer.output());
     }
 

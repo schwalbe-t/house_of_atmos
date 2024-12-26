@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <engine/rng.hpp>
 #include "buildings.hpp"
 #include "foliage.hpp"
 
@@ -11,6 +12,11 @@ namespace houseofatmos::outside {
 
 
     struct Terrain {
+
+        static inline engine::Texture::LoadArgs ground_texture = {
+            "res/terrain.png"
+        };
+
 
         struct LoadedChunk {
             u64 x, z; // in chunks relative to origin
@@ -49,9 +55,13 @@ namespace houseofatmos::outside {
         std::vector<ChunkData> chunks; 
 
 
+        static void load_ground_texture(engine::Scene& scene) {
+            scene.load(engine::Texture::Loader(Terrain::ground_texture));
+        }
+
         Terrain(
-            u64 width, u64 height, u64 tile_size = 10, u64 chunk_tiles = 8,
-            i64 draw_distance = 2
+            u64 width, u64 height, u64 tile_size = 10, u64 chunk_tiles = 4,
+            i64 draw_distance = 1
         ) {
             if(tile_size * chunk_tiles > UINT8_MAX + 1) {
                 engine::warning("The product of tile_size and chunk_tiles must "
@@ -81,16 +91,15 @@ namespace houseofatmos::outside {
             return this->chunks.at(chunk_x + this->width_chunks * chunk_z);
         }
 
-        void generate_elevation(u32 seed);
-        void generate_foliage(u32 seed);
+        void generate_elevation(u32 seed = random_init());
+        void generate_foliage(u32 seed = random_init());
 
         bool chunk_in_draw_distance(u64 chunk_x, u64 chunk_z) const;
         bool chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const;
         void load_chunks_around(const Vec<3>& position);
 
         void render_loaded_chunks(
-            engine::Scene& scene, const Renderer& renderer,
-            const engine::Texture& texture
+            engine::Scene& scene, const Renderer& renderer
         );
         void render_chunk_features(
             LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,

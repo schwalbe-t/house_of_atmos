@@ -20,3 +20,4 @@ Additionally, this project uses these dependencies directly (install not needed)
 - `stb_vorbis`
 - `nlohmann/json`
 - `syoyo/tinygltf`
+- `Reputeless/PerlinNoise`

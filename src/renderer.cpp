@@ -45,7 +45,7 @@ namespace houseofatmos {
         this->shader->set_uniform(
             "u_view_projection", compute_view_proj(this->camera, this->target)
         );
-        this->shader->set_uniform("u_light_pos", this->light_position);
+        this->shader->set_uniform("u_light_dir", this->light_direction.normalized());
         this->shader->set_uniform("u_ambient_light", this->ambient_light);
     }
 

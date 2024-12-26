@@ -15,9 +15,13 @@ namespace houseofatmos::outside {
         };
 
         static inline const std::vector<TypeInfo> types = {
-            /* Farmland */ {
+            /* Type::Farmland */ {
                 { "res/buildings/farmland.gltf", Renderer::model_attribs },
-                10, 10
+                1, 1
+            },
+            /* Type::Mineshaft */ {
+                { "res/buildings/mineshaft.gltf", Renderer::model_attribs },
+                1, 1
             }
         };
 
@@ -29,7 +33,8 @@ namespace houseofatmos::outside {
 
 
         enum Type {
-            Farmland = 0
+            Farmland = 0,
+            Mineshaft = 1
         };
 
         Type type;

@@ -9,13 +9,59 @@ namespace houseofatmos::outside {
 
 
     void Terrain::generate_elevation(u32 seed) {
-        engine::warning("'Terrain::generate_elevation': not yet implemented");
+        for(u64 x = 0; x <= this->width; x += 1) {
+            for(u64 z = 0; z <= this->height; z += 1) {
+                f64 height = 0.0;
+                height += perlin_noise(seed, Vec<2>(x * 2.0, z * 2.0));
+                height += perlin_noise(seed, Vec<2>((f64) x / 20.0, (f64) z / 20.0)) * 10
+                    * (perlin_noise(seed, Vec<2>(x / 64.0, z / 64.0)) * 5);
+                this->elevation_at(x, z) = floor(height * this->tile_size)
+                    / (f64) this->tile_size;
+            }
+        }
     }
 
     void Terrain::generate_foliage(u32 seed) {
         engine::warning("'Terrain::generate_foliage': not yet implemented");
     }
 
+
+    static Vec<3> compute_normal_ccw(
+        const Vec<3>& a, const Vec<3>& b, const Vec<3>& c
+    ) {
+        Vec<3> u = b - a;
+        Vec<3> v = c - a;
+        return u.cross(v).normalized();
+    }
+
+    static u16 put_terrain_vertex(
+        const Vec<3>& pos, const Vec<2>& uv, const Vec<3>& normal,
+        engine::Mesh& dest
+    ) {
+        dest.start_vertex();
+        dest.put_f32({ (f32) pos.x(), (f32) pos.y(), (f32) pos.z() });
+        dest.put_f32({ (f32) uv.x(), (f32) uv.y() });
+        dest.put_f32({ (f32) normal.x(), (f32) normal.y(), (f32) normal.z() });
+        dest.put_u8({ 0, 0, 0, 0 }); // joint indices
+        dest.put_f32({ 1, 0, 0, 0 }); // joint weights
+        return dest.complete_vertex();
+    }
+
+    static void put_terrain_element_ccw(
+        const Vec<3>& pos_a, const Vec<3>& pos_b, const Vec<3>& pos_c, 
+        const Vec<2>& uv_a, const Vec<2>& uv_b, const Vec<2>& uv_c,
+        engine::Mesh& dest
+    ) {
+        Vec<3> normal = compute_normal_ccw(pos_a, pos_b, pos_c);
+        dest.add_element(
+            put_terrain_vertex(pos_a, uv_a, normal, dest),
+            put_terrain_vertex(pos_b, uv_b, normal, dest),
+            put_terrain_vertex(pos_c, uv_c, normal, dest)
+        );
+    }
+
+    static f64 sand_max_height = 0.0;
+    static f64 stone_min_height_diff = 4;
 
     Terrain::LoadedChunk Terrain::load_chunk(u64 chunk_x, u64 chunk_z) {
         LoadedChunk chunk = {
@@ -31,55 +77,63 @@ namespace houseofatmos::outside {
                 u64 right = left + 1;
                 u64 top = z - start_z;
                 u64 bottom = top + 1;
-                chunk.terrain.start_vertex();
-                chunk.terrain.put_f32({ // position
+                Vec<3> pos_tl = {
                     (f32) left * this->tile_size, 
-                    (f32) this->elevation_at(left, top), 
+                    (f32) this->elevation_at(x, z), 
                     (f32) top * this->tile_size 
-                });
-                chunk.terrain.put_f32({ 0, 0 }); // uv
-                chunk.terrain.put_f32({ 0, 1, 0 }); // normal
-                chunk.terrain.put_u8({ 0, 0, 0, 0 }); // joint indices
-                chunk.terrain.put_f32({ 1, 0, 0, 0 }); // weights
-                u16 tl = chunk.terrain.complete_vertex();
-                chunk.terrain.start_vertex();
-                chunk.terrain.put_f32({ // position
+                };
+                Vec<3> pos_tr = {
                     (f32) right * this->tile_size, 
-                    (f32) this->elevation_at(right, top), 
+                    (f32) this->elevation_at(x + 1, z), 
                     (f32) top * this->tile_size
-                });
-                chunk.terrain.put_f32({ 0, 0 }); // uv
-                chunk.terrain.put_f32({ 0, 1, 0 }); // normal
-                chunk.terrain.put_u8({ 0, 0, 0, 0 }); // joint indices
-                chunk.terrain.put_f32({ 1, 0, 0, 0 }); // weights
-                u16 tr = chunk.terrain.complete_vertex();
-                chunk.terrain.start_vertex();
-                chunk.terrain.put_f32({ // position
+                };
+                Vec<3> pos_bl = {
                     (f32) left * this->tile_size, 
-                    (f32) this->elevation_at(left, bottom), 
+                    (f32) this->elevation_at(x, z + 1), 
                     (f32) bottom * this->tile_size
-                });
-                chunk.terrain.put_f32({ 0, 0 }); // uv
-                chunk.terrain.put_f32({ 0, 1, 0 }); // normal
-                chunk.terrain.put_u8({ 0, 0, 0, 0 }); // joint indices
-                chunk.terrain.put_f32({ 1, 0, 0, 0 }); // weights
-                u16 bl = chunk.terrain.complete_vertex();
-                chunk.terrain.start_vertex();
-                chunk.terrain.put_f32({ // position
+                };
+                Vec<3> pos_br = {
                     (f32) right * this->tile_size,
-                    (f32) this->elevation_at(right, bottom),
+                    (f32) this->elevation_at(x + 1, z + 1),
                     (f32) bottom * this->tile_size
-                });
-                chunk.terrain.put_f32({ 0, 0 }); // uv
-                chunk.terrain.put_f32({ 0, 1, 0 }); // normal
-                chunk.terrain.put_u8({ 0, 0, 0, 0 }); // joint indices
-                chunk.terrain.put_f32({ 1, 0, 0, 0 }); // weights
-                u16 br = chunk.terrain.complete_vertex();
-                // tl --- tr
-                //  |  \  |
-                // bl --- br
-                chunk.terrain.add_element(tl, bl, br);
-                chunk.terrain.add_element(tl, br, tr);
+                };
+                f64 tl_br_height_diff = fabs(pos_tl.y() - pos_br.y());
+                f64 tr_bl_height_diff = fabs(pos_tr.y() - pos_bl.y());
+                f64 height_diff = std::max(tl_br_height_diff, tr_bl_height_diff);
+                f64 min_height = Vec<4>(
+                    pos_tl.y(), pos_tr.y(), pos_bl.y(), pos_br.y()
+                ).min();
+                Vec<2> uv_bl = (min_height < sand_max_height
+                    ? Vec<2>(0, 0.5)
+                    : (height_diff > stone_min_height_diff
+                        ? Vec<2>(0.5, 0)
+                        : Vec<2>(0, 0)
+                    )
+                );
+                Vec<2> uv_br = uv_bl + Vec<2>(0.5, 0);
+                Vec<2> uv_tl = uv_bl + Vec<2>(0, 0.5);
+                Vec<2> uv_tr = uv_bl + Vec<2>(0.5, 0.5);
+                if(tr_bl_height_diff > tl_br_height_diff) {
+                    // tl --- tr
+                    //  |  \  |
+                    // bl --- br
+                    put_terrain_element_ccw(
+                        pos_tl, pos_bl, pos_br, uv_tl, uv_bl, uv_br, chunk.terrain
+                    );
+                    put_terrain_element_ccw(
+                        pos_tl, pos_br, pos_tr, uv_tl, uv_br, uv_tr, chunk.terrain
+                    );
+                } else {
+                    // tl --- tr
+                    //  |  /  |
+                    // bl --- br
+                    put_terrain_element_ccw(
+                        pos_tl, pos_bl, pos_tr, uv_tl, uv_bl, uv_tr, chunk.terrain
+                    );
+                    put_terrain_element_ccw(
+                        pos_tr, pos_bl, pos_br, uv_tr, uv_bl, uv_br, chunk.terrain
+                    );
+                }
             }
         }
         chunk.terrain.submit();
@@ -146,9 +200,10 @@ namespace houseofatmos::outside {
 
 
     void Terrain::render_loaded_chunks(
-        engine::Scene& scene, const Renderer& renderer,
-        const engine::Texture& ground_texture
+        engine::Scene& scene, const Renderer& renderer
     ) {
+        const engine::Texture& ground_texture
+            = scene.get<engine::Texture>(Terrain::ground_texture);
         for(LoadedChunk& chunk: this->loaded_chunks) {
             const ChunkData& data = this->chunk_at(chunk.x, chunk.z);
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
@@ -184,8 +239,13 @@ namespace houseofatmos::outside {
             renderer.render(model, model_transform);
         }
         for(const Building& building: data.buildings) {
+            const Building::TypeInfo& type = building.get_type_info();
             Vec<3> offset = chunk_offset 
-                + Vec<3>(building.x, 0, building.z) * this->tile_size;
+                + Vec<3>(building.x, 0, building.z) * this->tile_size
+                + Vec<3>(
+                    type.width * this->tile_size / 2, 0, 
+                    type.height * this->tile_size / 2
+                );
             offset.y() = this->elevation_at(
                 loaded_chunk.x * this->chunk_tiles + building.x,
                 loaded_chunk.z * this->chunk_tiles + building.z

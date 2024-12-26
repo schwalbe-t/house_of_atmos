@@ -14,7 +14,7 @@ namespace houseofatmos {
         Vec<3> position = { 0, 0, 0 };
         Vec<3> look_at = { 0, 0, 0 };
         Vec<3> up = { 0, 1, 0 };
-        f64 fov = pi / 2;
+        f64 fov = pi / 6; // 30
         f64 near = 0.1;
         f64 far = 1000;
     };
@@ -50,8 +50,8 @@ namespace houseofatmos {
         public:
         Camera camera;
         i64 resolution = 360;
-        Vec<3> light_position = { 100, 100, 100 };
-        f64 ambient_light = 0.6; 
+        Vec<3> light_direction = { -2, -5, -1 };
+        f64 ambient_light = 0.75; 
 
         static void load_shaders(engine::Scene& scene) {
             scene.load(engine::Shader::Loader(Renderer::shader_args));
