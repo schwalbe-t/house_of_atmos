@@ -3,8 +3,82 @@
 
 namespace houseofatmos::outside {
 
+    static f32 water_height = -0.5;
+    static f64 sand_max_height = 0.0;
+    static f64 stone_min_height_diff = 2.5;
+
+
+    static Vec<3> compute_barycentric(
+        const Vec<3>& a, const Vec<3>& b, const Vec<3>& c, const Vec<3>& p
+    ) {
+        Vec<3> v_0 = b - a;
+        Vec<3> v_1 = c - a;
+        Vec<3> v_2 = p - a;
+        f64 d_00 = v_0.dot(v_0);
+        f64 d_01 = v_0.dot(v_1);
+        f64 d_11 = v_1.dot(v_1);
+        f64 d_20 = v_2.dot(v_0);
+        f64 d_21 = v_2.dot(v_1);
+        f64 denom = (d_00 * d_11) - (d_01 * d_01);
+        f64 r_y = ((d_11 * d_20) - (d_01 * d_21)) / denom;
+        f64 r_z = ((d_00 * d_21) - (d_01 * d_20)) / denom;
+        return Vec<3>(1.0 - r_y - r_z, r_y, r_z);
+    }
+
+    static bool compute_elevation(
+        const Vec<3>& a, const Vec<3>& b, const Vec<3>& c, const Vec<3>& p,
+        f64& elevation
+    ) {
+        Vec<3> bc = compute_barycentric(a, b, c, p);
+        if(bc.x() < 0 || bc.y() < 0 || bc.z() < 0) { return false; }
+        elevation = bc.x() * a.y() + bc.y() * b.y() + bc.z() * c.y();
+        return true;
+    }
+
     f64 Terrain::elevation_at(const Vec<3>& pos) {
-        engine::error("'Terrain::elevation_at': not yet implemented");
+        if(pos.x() < 0 || pos.z() < 0) { return 0.0; }
+        u64 left = (u64) (pos.x() / this->tile_size);
+        u64 top = (u64) (pos.z() / this->tile_size);
+        u64 right = left + 1;
+        u64 bottom = top + 1;
+        if(left >= this->width || top >= this->height) { return 0.0; }
+        Vec<3> tl = {
+            left * this->tile_size, 
+            this->elevation_at(left, top), 
+            top * this->tile_size 
+        };
+        Vec<3> tr = {
+            right * this->tile_size, 
+            this->elevation_at(right, top), 
+            top * this->tile_size 
+        };
+        Vec<3> bl = { 
+            left * this->tile_size, 
+            this->elevation_at(left, bottom), 
+            bottom * this->tile_size 
+        };
+        Vec<3> br = { 
+            right * this->tile_size, 
+            this->elevation_at(right, bottom), 
+            bottom * this->tile_size 
+        };
+        f64 tl_br_height_diff = fabs(tl.y() - br.y());
+        f64 tr_bl_height_diff = fabs(tr.y() - bl.y());
+        f64 elev;
+        if(tr_bl_height_diff > tl_br_height_diff) {
+            // tl---tr
+            //  | \ |
+            // bl---br
+            if(compute_elevation(tl, bl, br, pos, elev)) { return elev; }
+            if(compute_elevation(tl, tr, br, pos, elev)) { return elev; }
+        } else {
+            // tl---tr
+            //  | / |
+            // bl---br
+            if(compute_elevation(tl, bl, tr, pos, elev)) { return elev; }
+            if(compute_elevation(bl, br, tr, pos, elev)) { return elev; }
+        }
+        return 0.0;
     }
 
 
@@ -21,18 +95,58 @@ namespace houseofatmos::outside {
     }
 
     void Terrain::generate_foliage(u32 seed) {
-        engine::warning("'Terrain::generate_foliage': not yet implemented");
+        auto rng = StatefulRNG(seed);
+        for(u64 tile_x = 0; tile_x < this->width; tile_x += 1) {
+            for(u64 tile_z = 0; tile_z < this->height; tile_z += 1) {
+                u64 chunk_x = tile_x / this->chunk_tiles;
+                u64 chunk_z = tile_z / this->chunk_tiles;
+                f64 elev_tl = this->elevation_at(tile_x,     tile_z    );
+                f64 elev_tr = this->elevation_at(tile_x + 1, tile_z    );
+                f64 elev_bl = this->elevation_at(tile_x,     tile_z + 1);
+                f64 elev_br = this->elevation_at(tile_x + 1, tile_z + 1);
+                f64 elev_min = std::min(
+                    std::min(elev_tl, elev_tr), std::min(elev_bl, elev_br)
+                );
+                f64 elev_max = std::max(
+                    std::max(elev_tl, elev_tr), std::max(elev_bl, elev_br)
+                );
+                if(elev_min < 0) { continue; }
+                f64 height_diff = elev_max - elev_min;
+                f64 slope_factor = 1 - (height_diff / stone_min_height_diff);
+                ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+                for(size_t type_i = 0; type_i < Foliage::types.size(); type_i += 1) {
+                    const Foliage::TypeInfo& type = Foliage::types.at(type_i);
+                    f64 chance = type.spawn_chance * slope_factor;
+                    for(u64 att_i = 0; att_i < type.attempt_count; att_i += 1) {
+                        if(rng.next_f64() >= chance) { continue; }
+                        u8 x = (u8) (
+                            rng.next_f64() * this->chunk_tiles * this->tile_size
+                        );
+                        u8 z = (u8) (
+                            rng.next_f64() * this->chunk_tiles * this->tile_size
+                        );
+                        u8 y = (u8) this->elevation_at(Vec<3>(
+                            x + chunk_x * this->chunk_tiles * this->tile_size,
+                            0,
+                            z + chunk_z * this->chunk_tiles * this->tile_size
+                        ));
+                        f32 angle = (f32) (rng.next_f64() * 2 * pi);
+                        chunk.foliage.push_back((Foliage) {
+                            (Foliage::Type) type_i, x, y, z, angle
+                        });
+                    }
+                }
+            }
+        }
     }
 
-
-    static f32 water_height = -0.5;
 
     void Terrain::build_water_plane() {
         engine::Mesh& p = this->water_plane;
         p.clear();
-        // tl --- tr
-        //  |  \  |
-        // bl --- br
+        // tl---tr
+        //  | \ |
+        // bl---br
         p.start_vertex();
             p.put_f32({ -0.5, water_height,  0.5 });
             p.put_f32({ 0, 1 });
@@ -76,19 +190,14 @@ namespace houseofatmos::outside {
         return dest.complete_vertex();
     }
 
-    static f64 sand_max_height = 0.0;
-    static f64 stone_min_height_diff = 2.5;
-
     static void put_terrain_element_ccw(
         const Vec<3>& pos_a, const Vec<3>& pos_b, const Vec<3>& pos_c, 
         const Vec<2>& uv_a, const Vec<2>& uv_b, const Vec<2>& uv_c,
         engine::Mesh& dest
     ) {
         f64 min_height = std::min(pos_a.y(), std::min(pos_b.y(), pos_c.y()));
-        f64 height_diff = std::max(
-            fabs(pos_a.y() - pos_b.y()),
-            std::max(fabs(pos_b.y() - pos_c.y()), fabs(pos_a.y() - pos_c.y()))
-        );
+        f64 max_height = std::max(pos_a.y(), std::max(pos_b.y(), pos_c.y()));
+        f64 height_diff = max_height - min_height;
         Vec<2> uv_offset = (min_height < sand_max_height
             ? Vec<2>(0, 0.5)
             : (height_diff > stone_min_height_diff
@@ -145,9 +254,9 @@ namespace houseofatmos::outside {
                 Vec<2> uv_tl = { 0.0, 0.5 };
                 Vec<2> uv_tr = { 0.5, 0.5 };
                 if(tr_bl_height_diff > tl_br_height_diff) {
-                    // tl --- tr
-                    //  |  \  |
-                    // bl --- br
+                    // tl---tr
+                    //  | \ |
+                    // bl---br
                     put_terrain_element_ccw(
                         pos_tl, pos_bl, pos_br, uv_tl, uv_bl, uv_br, chunk.terrain
                     );
@@ -155,9 +264,9 @@ namespace houseofatmos::outside {
                         pos_tl, pos_br, pos_tr, uv_tl, uv_br, uv_tr, chunk.terrain
                     );
                 } else {
-                    // tl --- tr
-                    //  |  /  |
-                    // bl --- br
+                    // tl---tr
+                    //  | / |
+                    // bl---br
                     put_terrain_element_ccw(
                         pos_tl, pos_bl, pos_tr, uv_tl, uv_bl, uv_tr, chunk.terrain
                     );
@@ -261,12 +370,11 @@ namespace houseofatmos::outside {
         const ChunkData& data = this->chunk_at(loaded_chunk.x, loaded_chunk.z);
         for(const Foliage& foliage: data.foliage) {
             Vec<3> offset = chunk_offset
-                + Vec<3>(foliage.x, 0, foliage.z);
-            offset.y() = this->elevation_at(offset);
+                + Vec<3>(foliage.x, foliage.y, foliage.z);
             Mat<4> model_transform = Mat<4>::translate(offset)
                 * Mat<4>::rotate_y(foliage.rotation);
             engine::Model& model = scene.get<engine::Model>(
-                foliage.get_type_model()
+                foliage.get_type_info().model
             );
             renderer.render(model, model_transform);
         }
@@ -293,9 +401,12 @@ namespace houseofatmos::outside {
 
     void Terrain::render_water(engine::Scene& scene, const Renderer& renderer) {
         engine::Shader& shader = scene.get<engine::Shader>(Terrain::water_shader);
-        Vec<3> offset = renderer.camera.position;
-        offset.y() = 0;
-        f64 scale_xz = 2 * this->draw_distance
+        Vec<3> offset = {
+            (this->view_chunk_x + 0.5) * this->chunk_tiles * this->tile_size,
+            0,
+            (this->view_chunk_z + 0.5) * this->chunk_tiles * this->tile_size
+        };
+        f64 scale_xz = 4 * this->draw_distance
             * this->chunk_tiles * this->tile_size;
         Mat<4> model_transf = Mat<4>::translate(offset)
             * Mat<4>::scale(Vec<3>(scale_xz, 1.0, scale_xz));

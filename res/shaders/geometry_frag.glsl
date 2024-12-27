@@ -11,6 +11,8 @@ out vec4 o_color;
 void main() {
     vec4 tex = texture2D(u_texture, f_uv);
     if(tex.w == 0) { discard; } // don't render the pixel if alpha = 0
-    o_color = tex * f_light;
+    o_color = vec4(
+        tex.r * f_light, tex.g * f_light, tex.b * f_light, tex.a
+    );
 }
 
