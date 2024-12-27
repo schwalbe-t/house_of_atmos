@@ -47,28 +47,37 @@ namespace houseofatmos {
         this->shader->set_uniform("u_ambient_light", this->ambient_light);
     }
 
-    
+
+    static size_t max_inst_c = 128;
+
     void Renderer::render(
         engine::Mesh& mesh, 
         const engine::Texture& texture,
-        const Mat<4>& local_model_transform
+        const Mat<4>& local_transform,
+        std::span<const Mat<4>> model_transforms
     ) const {
-        this->shader->set_uniform("u_local_transf", local_model_transform);
-        this->shader->set_uniform("u_model_transf", Mat<4>());
-        this->shader->set_uniform("u_joint_transf", std::vector { Mat<4>() });
+        if(model_transforms.size() > max_inst_c) {
+            engine::error("The renderer only supports 128 instances at a time!");
+        }
+        this->shader->set_uniform("u_local_transf", local_transform);
+        this->shader->set_uniform("u_model_transfs", model_transforms);
+        this->shader->set_uniform("u_joint_transfs", std::array { Mat<4>() });
         this->shader->set_uniform("u_texture", texture);
-        mesh.render(*this->shader, this->target, true);
+        mesh.render(*this->shader, this->target, model_transforms.size(), true);
     }
 
     void Renderer::render(
         engine::Model& model,
-        const Mat<4>& model_transform
+        std::span<const Mat<4>> model_transforms
     ) const {
-        this->shader->set_uniform("u_model_transf", model_transform);
+        if(model_transforms.size() > max_inst_c) {
+            engine::error("The renderer only supports 128 instances at a time!");
+        }
+        this->shader->set_uniform("u_model_transfs", model_transforms);
         model.render_all(
             *this->shader, this->target, 
-            "u_local_transf", "u_texture", "u_joint_transf",
-            true
+            "u_local_transf", "u_texture", "u_joint_transfs",
+            model_transforms.size(), true
         );
     }
 

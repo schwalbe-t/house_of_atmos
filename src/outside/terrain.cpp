@@ -359,7 +359,9 @@ namespace houseofatmos::outside {
         const engine::Texture& ground_texture, const Vec<3>& chunk_offset
     ) {
         renderer.render(
-            this->terrain, ground_texture, Mat<4>::translate(chunk_offset)
+            this->terrain, ground_texture, 
+            Mat<4>(),
+            std::array { Mat<4>::translate(chunk_offset) }
         );
     }
 
@@ -376,7 +378,7 @@ namespace houseofatmos::outside {
             engine::Model& model = scene.get<engine::Model>(
                 foliage.get_type_info().model
             );
-            renderer.render(model, model_transform);
+            renderer.render(model, std::array { model_transform });
         }
         for(const Building& building: data.buildings) {
             const Building::TypeInfo& type = building.get_type_info();
@@ -393,7 +395,7 @@ namespace houseofatmos::outside {
             engine::Model& model = scene.get<engine::Model>(
                 building.get_type_info().model
             );
-            renderer.render(model, Mat<4>::translate(offset));
+            renderer.render(model, std::array { Mat<4>::translate(offset) });
         }
     }
 
@@ -413,7 +415,7 @@ namespace houseofatmos::outside {
         shader.set_uniform("u_view_projection", renderer.compute_view_proj());
         shader.set_uniform("u_model_transf", model_transf);
         shader.set_uniform("u_base_color", water_base_color);
-        this->water_plane.render(shader, renderer.output());
+        this->water_plane.render(shader, renderer.output(), 1, true);
     }
 
 }

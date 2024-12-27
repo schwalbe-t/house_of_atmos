@@ -268,7 +268,7 @@ namespace houseofatmos::engine {
         blit_shader.value().set_uniform("u_offset", offset);
         blit_shader.value().set_uniform("u_texture", *this);
         blit_quad.value().internal_render(
-            blit_shader.value(), dest_fbo_id, dest_width, dest_height, false
+            blit_shader.value(), dest_fbo_id, dest_width, dest_height, 1, false
         );
     }
 

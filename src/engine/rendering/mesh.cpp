@@ -370,16 +370,21 @@ namespace houseofatmos::engine {
         this->modified = false;
     }
 
-    void Mesh::render(const Shader& shader, const Texture& dest, bool depth_test) {
+    void Mesh::render(
+        const Shader& shader, const Texture& dest, size_t count, bool depth_test
+    ) {
         this->internal_render(
-            shader, dest.internal_fbo_id(), dest.width(), dest.height(), depth_test
+            shader, dest.internal_fbo_id(), dest.width(), dest.height(),
+            count, depth_test
         );
     }
 
     void Mesh::internal_render(
         const Shader& shader, u64 dest_fbo_id, 
-        i32 dest_width, i32 dest_height, bool depth_test
+        i32 dest_width, i32 dest_height, 
+        size_t count, bool depth_test
     ) {
+        if(count == 0) { return; }
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
@@ -391,8 +396,8 @@ namespace houseofatmos::engine {
         glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
         this->bind_properties();
-        glDrawElements(
-            GL_TRIANGLES, this->elements.size(), GL_UNSIGNED_SHORT, nullptr
+        glDrawElementsInstanced(
+            GL_TRIANGLES, this->elements.size(), GL_UNSIGNED_SHORT, nullptr, count
         );
         this->unbind_properties();
         glBindBuffer(GL_ARRAY_BUFFER, 0);

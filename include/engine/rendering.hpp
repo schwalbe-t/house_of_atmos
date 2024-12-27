@@ -235,11 +235,13 @@ namespace houseofatmos::engine {
 
         void submit();
         void render(
-            const Shader& shader, const Texture& dest, bool depth_test = true
+            const Shader& shader, const Texture& dest,
+            size_t count = 1, bool depth_test = true
         );
         void internal_render(
             const Shader& shader, u64 dest_fbo_id, 
-            i32 dest_width, i32 dest_height, bool depth_test
+            i32 dest_width, i32 dest_height,
+            size_t count, bool depth_test
         );
 
         bool was_moved() {

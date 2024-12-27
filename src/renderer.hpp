@@ -63,11 +63,12 @@ namespace houseofatmos {
         void render(
             engine::Mesh& mesh, 
             const engine::Texture& texture,
-            const Mat<4>& local_model_transform = Mat<4>()
+            const Mat<4>& local_transform = Mat<4>(),
+            std::span<const Mat<4>> model_transforms = std::array<Mat<4>, 0> {}
         ) const;
         void render(
             engine::Model& model,
-            const Mat<4>& model_transform = Mat<4>()
+            std::span<const Mat<4>> model_transforms = std::array<Mat<4>, 0> {}
         ) const;
 
         const engine::Texture& output() const { return this->target; }
