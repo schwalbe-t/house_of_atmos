@@ -14,7 +14,15 @@ namespace houseofatmos::outside {
     struct Terrain {
 
         static inline engine::Texture::LoadArgs ground_texture = {
-            "res/terrain.png"
+            "res/terrain/ground.png"
+        };
+
+        static inline engine::Texture::LoadArgs water_texture = {
+            "res/terrain/water.png"
+        };
+
+        static inline engine::Shader::LoadArgs water_shader = {
+            "res/shaders/water_vert.glsl", "res/shaders/water_frag.glsl"
         };
 
 
@@ -42,7 +50,11 @@ namespace houseofatmos::outside {
         u64 width_chunks, height_chunks;
         i64 view_chunk_x, view_chunk_z;
         std::vector<LoadedChunk> loaded_chunks;
+        engine::Mesh water_plane = engine::Mesh {
+            { engine::Mesh::F32, 3 }, { engine::Mesh::F32, 2 }
+        };
 
+        void build_water_plane();
         Terrain::LoadedChunk load_chunk(u64 chunk_x, u64 chunk_y);
 
 
@@ -55,13 +67,15 @@ namespace houseofatmos::outside {
         std::vector<ChunkData> chunks; 
 
 
-        static void load_ground_texture(engine::Scene& scene) {
+        static void load_resources(engine::Scene& scene) {
             scene.load(engine::Texture::Loader(Terrain::ground_texture));
+            scene.load(engine::Texture::Loader(Terrain::water_texture));
+            scene.load(engine::Shader::Loader(Terrain::water_shader));
         }
 
         Terrain(
-            u64 width, u64 height, u64 tile_size = 10, u64 chunk_tiles = 4,
-            i64 draw_distance = 1
+            u64 width, u64 height, i64 draw_distance = 1,
+            u64 tile_size = 5, u64 chunk_tiles = 8
         ) {
             if(tile_size * chunk_tiles > UINT8_MAX + 1) {
                 engine::warning("The product of tile_size and chunk_tiles must "
@@ -81,6 +95,7 @@ namespace houseofatmos::outside {
             this->width_chunks = (u64) ceil((f64) width / chunk_tiles);
             this->height_chunks = (u64) ceil((f64) height / chunk_tiles);
             this->chunks.resize(width_chunks * height_chunks);
+            this->build_water_plane();
         }
 
         f64& elevation_at(u64 x, u64 z) {
@@ -101,10 +116,12 @@ namespace houseofatmos::outside {
         void render_loaded_chunks(
             engine::Scene& scene, const Renderer& renderer
         );
+        private:
         void render_chunk_features(
             LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,
             engine::Scene& scene, const Renderer& renderer
         );
+        void render_water(engine::Scene& scene, const Renderer& renderer);
 
     };
 

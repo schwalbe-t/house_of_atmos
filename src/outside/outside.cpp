@@ -7,7 +7,7 @@ namespace houseofatmos::outside {
 
     void Outside::update(const engine::Window& window) {
         this->time += window.delta_time();
-        this->renderer.camera.position += Vec<3>(80, 0, 80) * window.delta_time();
+        this->renderer.camera.position += Vec<3>(20, 0, 20) * window.delta_time();
         this->renderer.camera.look_at = this->renderer.camera.position
             + Vec<3>(0, -10, -1);
     }

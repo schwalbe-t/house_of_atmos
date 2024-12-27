@@ -35,8 +35,8 @@ void main() {
         (inverse(transpose(mat3(u_joint_transf[v_joints.z]))) * v_norm) * v_weights.z +
         (inverse(transpose(mat3(u_joint_transf[v_joints.w]))) * v_norm) * v_weights.w
     );
-    vec3 w_norm = inverse(transpose(mat3(u_local_transf)))
-        * inverse(transpose(mat3(u_model_transf)))
+    vec3 w_norm = inverse(transpose(mat3(u_model_transf)))
+        * inverse(transpose(mat3(u_local_transf)))
         * s_norm;
     // calculate diffuse lighting
     float diffuse = max(dot(w_norm, normalize(u_light_dir * -1)), 0.0);

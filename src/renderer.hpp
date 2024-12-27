@@ -57,6 +57,7 @@ namespace houseofatmos {
             scene.load(engine::Shader::Loader(Renderer::shader_args));
         }
 
+        Mat<4> compute_view_proj() const;
         void configure(const engine::Window& window, engine::Scene& scene);
 
         void render(

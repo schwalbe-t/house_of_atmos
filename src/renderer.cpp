@@ -22,16 +22,14 @@ namespace houseofatmos {
         output.clear_depth(INFINITY);
     }
 
-    static Mat<4> compute_view_proj(
-        const Camera& camera, engine::Texture& output
-    ) {
+    Mat<4> Renderer::compute_view_proj() const {
         Mat<4> view = Mat<4>::look_at(
-            camera.position, camera.look_at, camera.up
+            this->camera.position, this->camera.look_at, this->camera.up
         );
         Mat<4> projection = Mat<4>::perspective(
-            camera.fov, 
-            output.width(), output.height(), 
-            camera.near, camera.far 
+            this->camera.fov, 
+            this->target.width(), this->target.height(), 
+            this->camera.near, this->camera.far 
         );
         return projection * view;
     }
@@ -43,7 +41,7 @@ namespace houseofatmos {
         clear_output_texture(this->target);
         this->shader = &scene.get<engine::Shader>(Renderer::shader_args);
         this->shader->set_uniform(
-            "u_view_projection", compute_view_proj(this->camera, this->target)
+            "u_view_projection", this->compute_view_proj()
         );
         this->shader->set_uniform("u_light_dir", this->light_direction.normalized());
         this->shader->set_uniform("u_ambient_light", this->ambient_light);

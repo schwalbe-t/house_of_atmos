@@ -11,18 +11,18 @@ namespace houseofatmos::outside {
     struct Outside: engine::Scene {
 
         Renderer renderer;
-        Terrain terrain = Terrain(256, 256);
+        Terrain terrain = Terrain(256, 256, 3);
         f64 time = 0;
 
         Outside() {
-            Terrain::load_ground_texture(*this);
+            Terrain::load_resources(*this);
             Renderer::load_shaders(*this);
             Building::load_models(*this);
             //Foliage::load_models(*this);
             this->terrain.generate_elevation();
             this->terrain.generate_foliage();
 
-            this->renderer.camera.position = { 1, 160, 1 };
+            this->renderer.camera.position = { 1, 400, 1 };
         }
 
         void update(const engine::Window& window) override;

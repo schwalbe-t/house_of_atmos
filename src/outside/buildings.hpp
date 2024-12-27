@@ -17,11 +17,11 @@ namespace houseofatmos::outside {
         static inline const std::vector<TypeInfo> types = {
             /* Type::Farmland */ {
                 { "res/buildings/farmland.gltf", Renderer::model_attribs },
-                1, 1
+                2, 2
             },
             /* Type::Mineshaft */ {
                 { "res/buildings/mineshaft.gltf", Renderer::model_attribs },
-                1, 1
+                2, 2
             }
         };
 
