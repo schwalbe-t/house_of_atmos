@@ -6,10 +6,12 @@ layout(location = 1) in vec2 v_uv;
 
 uniform mat4 u_view_projection;
 uniform mat4 u_model_transf;
+uniform mat4 u_local_transf;
 
 out vec2 f_uv;
 
 void main() {
-    gl_Position = u_view_projection * u_model_transf * vec4(v_pos, 1.0);
+    gl_Position = u_view_projection * u_model_transf * u_local_transf
+        * vec4(v_pos, 1.0);
     f_uv = v_uv;
 }

@@ -109,7 +109,7 @@ namespace houseofatmos::engine {
         void internal_bind() const;
         void internal_unbind() const;
  
-        static u64 max_textures();
+        static size_t max_textures();
 
         void set_uniform(std::string_view name, const Texture& texture);
 
@@ -208,6 +208,8 @@ namespace houseofatmos::engine {
         Mesh& operator=(const Mesh& other) = delete;
         Mesh& operator=(Mesh&& other) noexcept;
         ~Mesh();
+
+        static size_t max_attributes();
 
         void start_vertex();
         void put_f32(std::span<const f32> values);

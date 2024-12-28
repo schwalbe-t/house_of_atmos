@@ -29,7 +29,8 @@ namespace houseofatmos::outside {
         struct LoadedChunk {
             u64 x, z; // in chunks relative to origin
             bool modified; // re-mesh in next render cycle
-            engine::Mesh terrain;
+            engine::Mesh terrain; // terrain geometry
+            std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage;
 
             void render_ground(
                 engine::Scene& scene, const Renderer& renderer,
@@ -55,7 +56,10 @@ namespace houseofatmos::outside {
         };
 
         void build_water_plane();
-        Terrain::LoadedChunk load_chunk(u64 chunk_x, u64 chunk_y);
+        engine::Mesh build_chunk_geometry(u64 chunk_x, u64 chunk_z);
+        std::unordered_map<Foliage::Type, std::vector<Mat<4>>>
+            collect_foliage_transforms(u64 chunk_x, u64 chunk_z);
+        Terrain::LoadedChunk load_chunk(u64 chunk_x, u64 chunk_z);
 
 
         public:

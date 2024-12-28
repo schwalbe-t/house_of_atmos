@@ -43,6 +43,8 @@ namespace houseofatmos {
             "res/shaders/geometry_vert.glsl", "res/shaders/geometry_frag.glsl"
         };
 
+        static const inline size_t max_inst_c = 128;
+
         private:
         engine::Texture target = engine::Texture(100, 100);
         engine::Shader* shader = nullptr;
@@ -64,11 +66,13 @@ namespace houseofatmos {
             engine::Mesh& mesh, 
             const engine::Texture& texture,
             const Mat<4>& local_transform = Mat<4>(),
-            std::span<const Mat<4>> model_transforms = std::array<Mat<4>, 0> {}
+            std::span<const Mat<4>> model_transforms
+                = std::array<Mat<4>, 1> { Mat<4>() }
         ) const;
         void render(
             engine::Model& model,
-            std::span<const Mat<4>> model_transforms = std::array<Mat<4>, 0> {}
+            std::span<const Mat<4>> model_transforms
+                = std::array<Mat<4>, 1> { Mat<4>() }
         ) const;
 
         const engine::Texture& output() const { return this->target; }

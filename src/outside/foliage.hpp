@@ -38,7 +38,8 @@ namespace houseofatmos::outside {
         };
 
         Type type;
-        u8 x, y, z; // position relative to chunk origin in game units
+        u8 x, z; // position relative to chunk origin in game units
+        f32 y; // position relative to chunk origin / world in game units
         f32 rotation;
 
 

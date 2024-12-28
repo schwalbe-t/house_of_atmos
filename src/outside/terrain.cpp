@@ -100,6 +100,8 @@ namespace houseofatmos::outside {
             for(u64 tile_z = 0; tile_z < this->height; tile_z += 1) {
                 u64 chunk_x = tile_x / this->chunk_tiles;
                 u64 chunk_z = tile_z / this->chunk_tiles;
+                u8 rel_tile_x = (u8) (tile_x % this->chunk_tiles);
+                u8 rel_tile_z = (u8) (tile_z % this->chunk_tiles);
                 f64 elev_tl = this->elevation_at(tile_x,     tile_z    );
                 f64 elev_tr = this->elevation_at(tile_x + 1, tile_z    );
                 f64 elev_bl = this->elevation_at(tile_x,     tile_z + 1);
@@ -119,20 +121,16 @@ namespace houseofatmos::outside {
                     f64 chance = type.spawn_chance * slope_factor;
                     for(u64 att_i = 0; att_i < type.attempt_count; att_i += 1) {
                         if(rng.next_f64() >= chance) { continue; }
-                        u8 x = (u8) (
-                            rng.next_f64() * this->chunk_tiles * this->tile_size
-                        );
-                        u8 z = (u8) (
-                            rng.next_f64() * this->chunk_tiles * this->tile_size
-                        );
-                        u8 y = (u8) this->elevation_at(Vec<3>(
+                        u8 x = (u8) ((rel_tile_x + rng.next_f64()) * this->tile_size);
+                        u8 z = (u8) ((rel_tile_z + rng.next_f64()) * this->tile_size);
+                        f32 y = (f32) this->elevation_at(Vec<3>(
                             x + chunk_x * this->chunk_tiles * this->tile_size,
                             0,
                             z + chunk_z * this->chunk_tiles * this->tile_size
                         ));
                         f32 angle = (f32) (rng.next_f64() * 2 * pi);
                         chunk.foliage.push_back((Foliage) {
-                            (Foliage::Type) type_i, x, y, z, angle
+                            (Foliage::Type) type_i, x, z, y, angle
                         });
                     }
                 }
@@ -213,10 +211,8 @@ namespace houseofatmos::outside {
         );
     }
 
-    Terrain::LoadedChunk Terrain::load_chunk(u64 chunk_x, u64 chunk_z) {
-        LoadedChunk chunk = {
-            chunk_x, chunk_z, false, engine::Mesh(Renderer::mesh_attribs) 
-        };
+    engine::Mesh Terrain::build_chunk_geometry(u64 chunk_x, u64 chunk_z) {
+        auto geometry = engine::Mesh(Renderer::mesh_attribs);
         u64 start_x = chunk_x * this->chunk_tiles;
         u64 end_x = std::min((chunk_x + 1) * this->chunk_tiles, this->width);
         u64 start_z = chunk_z * this->chunk_tiles;
@@ -258,26 +254,50 @@ namespace houseofatmos::outside {
                     //  | \ |
                     // bl---br
                     put_terrain_element_ccw(
-                        pos_tl, pos_bl, pos_br, uv_tl, uv_bl, uv_br, chunk.terrain
+                        pos_tl, pos_bl, pos_br, uv_tl, uv_bl, uv_br, geometry
                     );
                     put_terrain_element_ccw(
-                        pos_tl, pos_br, pos_tr, uv_tl, uv_br, uv_tr, chunk.terrain
+                        pos_tl, pos_br, pos_tr, uv_tl, uv_br, uv_tr, geometry
                     );
                 } else {
                     // tl---tr
                     //  | / |
                     // bl---br
                     put_terrain_element_ccw(
-                        pos_tl, pos_bl, pos_tr, uv_tl, uv_bl, uv_tr, chunk.terrain
+                        pos_tl, pos_bl, pos_tr, uv_tl, uv_bl, uv_tr, geometry
                     );
                     put_terrain_element_ccw(
-                        pos_tr, pos_bl, pos_br, uv_tr, uv_bl, uv_br, chunk.terrain
+                        pos_tr, pos_bl, pos_br, uv_tr, uv_bl, uv_br, geometry
                     );
                 }
             }
         }
-        chunk.terrain.submit();
-        return chunk;
+        geometry.submit();
+        return geometry;
+    }
+
+    std::unordered_map<Foliage::Type, std::vector<Mat<4>>>
+        Terrain::collect_foliage_transforms(u64 chunk_x, u64 chunk_z) {
+        std::unordered_map<Foliage::Type, std::vector<Mat<4>>> instances;
+        ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
+        Vec<3> chunk_offset = Vec<3>(chunk_x, 0, chunk_z)
+            * this->chunk_tiles * this->tile_size;
+        for(const Foliage& foliage: chunk_data.foliage) {
+            Vec<3> offset = chunk_offset
+                + Vec<3>(foliage.x, foliage.y, foliage.z);
+            Mat<4> instance = Mat<4>::translate(offset)
+                * Mat<4>::rotate_y(foliage.rotation);
+            instances[foliage.type].push_back(instance);
+        }
+        return instances;
+    }
+
+    Terrain::LoadedChunk Terrain::load_chunk(u64 chunk_x, u64 chunk_z) {
+        return {
+            chunk_x, chunk_z, false, 
+            build_chunk_geometry(chunk_x, chunk_z),
+            collect_foliage_transforms(chunk_x, chunk_z)
+        };
     }
 
     bool Terrain::chunk_in_draw_distance(u64 chunk_x, u64 chunk_z) const {
@@ -345,10 +365,13 @@ namespace houseofatmos::outside {
         const engine::Texture& ground_texture
             = scene.get<engine::Texture>(Terrain::ground_texture);
         for(LoadedChunk& chunk: this->loaded_chunks) {
-            const ChunkData& data = this->chunk_at(chunk.x, chunk.z);
+            if(chunk.modified) {
+                chunk = this->load_chunk(chunk.x, chunk.z);
+            }
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
             chunk.render_ground(scene, renderer, ground_texture, chunk_offset);
+            const ChunkData& data = this->chunk_at(chunk.x, chunk.z);
             this->render_chunk_features(chunk, chunk_offset, scene, renderer);
         }
         this->render_water(scene, renderer);
@@ -370,15 +393,11 @@ namespace houseofatmos::outside {
         engine::Scene& scene, const Renderer& renderer
     ) {
         const ChunkData& data = this->chunk_at(loaded_chunk.x, loaded_chunk.z);
-        for(const Foliage& foliage: data.foliage) {
-            Vec<3> offset = chunk_offset
-                + Vec<3>(foliage.x, foliage.y, foliage.z);
-            Mat<4> model_transform = Mat<4>::translate(offset)
-                * Mat<4>::rotate_y(foliage.rotation);
+        for(const auto& [foliage_type, instances]: loaded_chunk.foliage) {
             engine::Model& model = scene.get<engine::Model>(
-                foliage.get_type_info().model
+                Foliage::types.at((size_t) foliage_type).model
             );
-            renderer.render(model, std::array { model_transform });
+            renderer.render(model, instances);
         }
         for(const Building& building: data.buildings) {
             const Building::TypeInfo& type = building.get_type_info();
@@ -403,17 +422,15 @@ namespace houseofatmos::outside {
 
     void Terrain::render_water(engine::Scene& scene, const Renderer& renderer) {
         engine::Shader& shader = scene.get<engine::Shader>(Terrain::water_shader);
+        f64 scale_xz = 2 * (this->draw_distance + 1) * this->chunk_tiles * this->tile_size;
         Vec<3> offset = {
             (this->view_chunk_x + 0.5) * this->chunk_tiles * this->tile_size,
             0,
             (this->view_chunk_z + 0.5) * this->chunk_tiles * this->tile_size
         };
-        f64 scale_xz = 4 * this->draw_distance
-            * this->chunk_tiles * this->tile_size;
-        Mat<4> model_transf = Mat<4>::translate(offset)
-            * Mat<4>::scale(Vec<3>(scale_xz, 1.0, scale_xz));
         shader.set_uniform("u_view_projection", renderer.compute_view_proj());
-        shader.set_uniform("u_model_transf", model_transf);
+        shader.set_uniform("u_local_transf", Mat<4>::scale(Vec<3>(scale_xz, 1.0, scale_xz)));
+        shader.set_uniform("u_model_transf", Mat<4>::translate(offset));
         shader.set_uniform("u_base_color", water_base_color);
         this->water_plane.render(shader, renderer.output(), 1, true);
     }

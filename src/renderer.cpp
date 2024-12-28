@@ -11,9 +11,9 @@ namespace houseofatmos {
         if(window.height() < resolution) {
             output.resize_fast(window.width(), window.height());
         } else {
-            f64 ratio = (f64) resolution / window.height();
-            i64 width = ceil(window.width() * ratio);
-            output.resize_fast(width, resolution);
+           f64 ratio = (f64) resolution / window.height();
+           i64 width = ceil(window.width() * ratio);
+           output.resize_fast(width, resolution);
         }
     }
 
@@ -48,37 +48,45 @@ namespace houseofatmos {
     }
 
 
-    static size_t max_inst_c = 128;
-
     void Renderer::render(
         engine::Mesh& mesh, 
         const engine::Texture& texture,
         const Mat<4>& local_transform,
         std::span<const Mat<4>> model_transforms
     ) const {
-        if(model_transforms.size() > max_inst_c) {
-            engine::error("The renderer only supports 128 instances at a time!");
-        }
         this->shader->set_uniform("u_local_transf", local_transform);
-        this->shader->set_uniform("u_model_transfs", model_transforms);
         this->shader->set_uniform("u_joint_transfs", std::array { Mat<4>() });
         this->shader->set_uniform("u_texture", texture);
-        mesh.render(*this->shader, this->target, model_transforms.size(), true);
+        for(size_t offset = 0; offset < model_transforms.size();) {
+            size_t remaining = model_transforms.size() - offset;
+            size_t count = std::min(remaining, Renderer::max_inst_c);
+            this->shader->set_uniform(
+                "u_model_transfs", 
+                model_transforms.subspan(offset, count)
+            );
+            mesh.render(*this->shader, this->target, count, true);
+            offset += count;
+        }
     }
 
     void Renderer::render(
         engine::Model& model,
         std::span<const Mat<4>> model_transforms
     ) const {
-        if(model_transforms.size() > max_inst_c) {
-            engine::error("The renderer only supports 128 instances at a time!");
+        for(size_t completed = 0; completed < model_transforms.size();) {
+            size_t remaining = model_transforms.size() - completed;
+            size_t count = std::min(remaining, Renderer::max_inst_c);
+            this->shader->set_uniform(
+                "u_model_transfs", 
+                model_transforms.subspan(completed, count)
+            );
+            model.render_all(
+                *this->shader, this->target, 
+                "u_local_transf", "u_texture", "u_joint_transfs",
+                count, true
+            );
+            completed += count;
         }
-        this->shader->set_uniform("u_model_transfs", model_transforms);
-        model.render_all(
-            *this->shader, this->target, 
-            "u_local_transf", "u_texture", "u_joint_transfs",
-            model_transforms.size(), true
-        );
     }
 
 }

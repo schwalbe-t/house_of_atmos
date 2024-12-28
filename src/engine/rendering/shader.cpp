@@ -137,10 +137,10 @@ namespace houseofatmos::engine {
     }
 
 
-    u64 Shader::max_textures() {
+    size_t Shader::max_textures() {
         GLint max_units;
         glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_units);
-        return max_units;
+        return (size_t) max_units;
     }
 
 
@@ -200,10 +200,10 @@ namespace houseofatmos::engine {
         } else {
             // else use the next slot in order
             slot = this->next_slot;
-            if(this->next_slot > this->max_textures()) {
+            if(this->next_slot > Shader::max_textures()) {
                 error("Attempted to register more textures at the same time"
                     " than supported ("
-                    + std::to_string(this->max_textures())
+                    + std::to_string(Shader::max_textures())
                     + " for this implementation)"
                 );
             }

@@ -23,6 +23,7 @@ namespace houseofatmos::outside {
             Foliage::load_models(*this);
             this->terrain.generate_elevation();
             this->terrain.generate_foliage();
+            this->renderer.camera.fov = pi / 2;
         }
 
         void update(const engine::Window& window) override;

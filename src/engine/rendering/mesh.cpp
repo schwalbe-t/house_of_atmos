@@ -57,6 +57,13 @@ namespace houseofatmos::engine {
     }
 
 
+    size_t Mesh::max_attributes() {
+        GLint max_attribs;
+        glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &max_attribs);
+        return (size_t) max_attribs;
+    }
+
+
     static size_t compute_vertex_size(const std::vector<Mesh::Attrib>& attribs) {
         size_t sum = 0;
         for(const Mesh::Attrib& attrib: attribs) {
@@ -66,6 +73,13 @@ namespace houseofatmos::engine {
     }
 
     Mesh::Mesh(std::span<const Attrib> attrib_sizes) {
+        if(attrib_sizes.size() > Mesh::max_attributes()) {
+            error("Attempted to create a mesh with more attributes"
+                " than supported ("
+                + std::to_string(Mesh::max_attributes())
+                + " for this implementation)"
+            );
+        }
         this->attributes.assign(attrib_sizes.begin(), attrib_sizes.end());
         this->vertex_size = compute_vertex_size(this->attributes);
         this->vertices = 0;
@@ -396,9 +410,16 @@ namespace houseofatmos::engine {
         glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
         this->bind_properties();
-        glDrawElementsInstanced(
-            GL_TRIANGLES, this->elements.size(), GL_UNSIGNED_SHORT, nullptr, count
-        );
+        if(count == 1) {
+            glDrawElements(
+                GL_TRIANGLES, this->elements.size(), GL_UNSIGNED_SHORT, nullptr
+            );
+        } else {
+            glDrawElementsInstanced(
+                GL_TRIANGLES, this->elements.size(), GL_UNSIGNED_SHORT, nullptr, 
+                count
+            );
+        }
         this->unbind_properties();
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

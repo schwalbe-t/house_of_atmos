@@ -18,6 +18,7 @@ namespace houseofatmos::outside {
         this->terrain.load_chunks_around(this->target);
         this->terrain.render_loaded_chunks(*this, this->renderer);
         window.show_texture(this->renderer.output());
+        engine::debug("FPS: " + std::to_string(1.0 / window.delta_time()));
     }
 
 }

@@ -36,4 +36,4 @@ target_link_libraries(
 )
 
 target_compile_features(house_of_atmos PRIVATE cxx_std_20)
-target_compile_options(house_of_atmos PRIVATE -g)
+target_compile_options(house_of_atmos PRIVATE -g -O0)
