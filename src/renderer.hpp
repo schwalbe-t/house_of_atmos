@@ -14,7 +14,7 @@ namespace houseofatmos {
         Vec<3> position = { 0, 0, 0 };
         Vec<3> look_at = { 0, 0, 0 };
         Vec<3> up = { 0, 1, 0 };
-        f64 fov = pi / 6; // 30
+        f64 fov = pi / 6; // 30 degrees
         f64 near = 0.1;
         f64 far = 1000;
     };
@@ -73,6 +73,12 @@ namespace houseofatmos {
             engine::Model& model,
             std::span<const Mat<4>> model_transforms
                 = std::array<Mat<4>, 1> { Mat<4>() }
+        ) const;
+        void render(
+            engine::Model& model,
+            const Mat<4>& model_transform,
+            const engine::Animation& animation,
+            f64 timestamp
         ) const;
 
         const engine::Texture& output() const { return this->target; }

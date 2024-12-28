@@ -30,7 +30,9 @@ namespace houseofatmos::outside {
         f64& elevation
     ) {
         Vec<3> bc = compute_barycentric(a, b, c, p);
-        elevation = bc.x() * a.y() + bc.y() * b.y() + bc.z() * c.y();
+        elevation = std::max(bc.x(), 0.0) * a.y()
+            + std::max(bc.y(), 0.0) * b.y()
+            + std::max(bc.z(), 0.0) * c.y();
         return bc.x() >= 0 && bc.y() >= 0 && bc.z() >= 0;
     }
 
@@ -360,7 +362,8 @@ namespace houseofatmos::outside {
 
 
     void Terrain::render_loaded_chunks(
-        engine::Scene& scene, const Renderer& renderer
+        engine::Scene& scene, const Renderer& renderer,
+        const engine::Window& window
     ) {
         const engine::Texture& ground_texture
             = scene.get<engine::Texture>(Terrain::ground_texture);
@@ -374,7 +377,7 @@ namespace houseofatmos::outside {
             const ChunkData& data = this->chunk_at(chunk.x, chunk.z);
             this->render_chunk_features(chunk, chunk_offset, scene, renderer);
         }
-        this->render_water(scene, renderer);
+        this->render_water(scene, renderer, window);
     }
 
     void Terrain::LoadedChunk::render_ground(
@@ -418,9 +421,15 @@ namespace houseofatmos::outside {
         }
     }
 
-    static Vec<4> water_base_color = Vec<4>(126, 196, 193, 230) / 255;
+    static Vec<4> water_light_color = Vec<4>(245, 237, 186, 255) / 255;
+    static Vec<4> water_base_color = Vec<4>(126, 196, 193, 215) / 255;
+    static Vec<4> water_dark_color = Vec<4>(52, 133, 157, 180) / 255;
 
-    void Terrain::render_water(engine::Scene& scene, const Renderer& renderer) {
+    void Terrain::render_water(
+        engine::Scene& scene, const Renderer& renderer, 
+        const engine::Window& window
+    ) {
+        const engine::Texture& normal_map = scene.get<engine::Texture>(Terrain::water_texture);
         engine::Shader& shader = scene.get<engine::Shader>(Terrain::water_shader);
         f64 scale_xz = 2 * (this->draw_distance + 1) * this->chunk_tiles * this->tile_size;
         Vec<3> offset = {
@@ -431,7 +440,16 @@ namespace houseofatmos::outside {
         shader.set_uniform("u_view_projection", renderer.compute_view_proj());
         shader.set_uniform("u_local_transf", Mat<4>::scale(Vec<3>(scale_xz, 1.0, scale_xz)));
         shader.set_uniform("u_model_transf", Mat<4>::translate(offset));
+        shader.set_uniform("u_light_color", water_light_color);
         shader.set_uniform("u_base_color", water_base_color);
+        shader.set_uniform("u_dark_color", water_dark_color);
+        shader.set_uniform("u_nmap", normal_map);
+        f64 nmap_scale = scale_xz / normal_map.width() * 16; // 16 pixels per tile
+        Vec<2> nmap_offset = offset.swizzle<2>("xz") / scale_xz;
+        shader.set_uniform("u_nmap_scale", nmap_scale);
+        shader.set_uniform("u_nmap_offset", nmap_offset);
+        this->water_time += window.delta_time();
+        shader.set_uniform("u_time", this->water_time);
         this->water_plane.render(shader, renderer.output(), 1, true);
     }
 

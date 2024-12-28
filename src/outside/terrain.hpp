@@ -54,6 +54,7 @@ namespace houseofatmos::outside {
         engine::Mesh water_plane = engine::Mesh {
             { engine::Mesh::F32, 3 }, { engine::Mesh::F32, 2 }
         };
+        f64 water_time;
 
         void build_water_plane();
         engine::Mesh build_chunk_geometry(u64 chunk_x, u64 chunk_z);
@@ -118,14 +119,18 @@ namespace houseofatmos::outside {
         void load_chunks_around(const Vec<3>& position);
 
         void render_loaded_chunks(
-            engine::Scene& scene, const Renderer& renderer
+            engine::Scene& scene, const Renderer& renderer,
+            const engine::Window& window
         );
         private:
         void render_chunk_features(
             LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,
             engine::Scene& scene, const Renderer& renderer
         );
-        void render_water(engine::Scene& scene, const Renderer& renderer);
+        void render_water(
+            engine::Scene& scene, const Renderer& renderer,
+            const engine::Window& window
+        );
 
     };
 

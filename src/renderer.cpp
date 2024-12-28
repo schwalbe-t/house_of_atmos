@@ -89,4 +89,22 @@ namespace houseofatmos {
         }
     }
 
+    void Renderer::render(
+        engine::Model& model,
+        const Mat<4>& model_transform,
+        const engine::Animation& animation,
+        f64 timestamp
+    ) const {
+        this->shader->set_uniform(
+            "u_model_transfs", 
+            std::array { model_transform }
+        );
+        model.render_all_animated(
+            *this->shader, this->target,
+            animation, timestamp,
+            "u_joint_transfs", "u_local_transf", "u_texture", 
+            true
+        );
+    }
+
 }

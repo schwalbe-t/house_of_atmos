@@ -21,7 +21,7 @@ namespace houseofatmos::outside {
         static inline const std::vector<TypeInfo> types = {
             /* Grass */ {
                 { "res/foliage/grass.gltf", Renderer::model_attribs },
-                10,
+                5,
                 1
             },
             /* Tree */ {
