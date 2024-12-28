@@ -91,7 +91,7 @@ namespace houseofatmos::outside {
                 height += perlin_noise(seed, Vec<2>(x / 1.0, z / 1.0));
                 height += perlin_noise(seed, Vec<2>((f64) x / 40.0, (f64) z / 40.0)) * 10
                     * (perlin_noise(seed, Vec<2>(x / 128.0, z / 128.0)) * 5);
-                this->elevation_at(x, z) = floor(height);
+                this->elevation_at(x, z) = (i16) height;
             }
         }
     }

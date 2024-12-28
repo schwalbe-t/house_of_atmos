@@ -66,7 +66,7 @@ namespace houseofatmos::outside {
         public:
         // row-major 2D vector of each tile corner height
         // .size() = (width + 1) * (height + 1)
-        std::vector<f64> elevation;
+        std::vector<i16> elevation;
         // row-major 2D vector of chunks
         // .size() = width_chunks * height_chunks
         std::vector<ChunkData> chunks; 
@@ -103,7 +103,7 @@ namespace houseofatmos::outside {
             this->build_water_plane();
         }
 
-        f64& elevation_at(u64 x, u64 z) {
+        i16& elevation_at(u64 x, u64 z) {
             return this->elevation.at(x + (this->width + 1) * z);
         }
         f64 elevation_at(const Vec<3>& pos);
