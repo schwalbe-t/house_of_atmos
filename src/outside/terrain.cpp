@@ -30,9 +30,8 @@ namespace houseofatmos::outside {
         f64& elevation
     ) {
         Vec<3> bc = compute_barycentric(a, b, c, p);
-        if(bc.x() < 0 || bc.y() < 0 || bc.z() < 0) { return false; }
         elevation = bc.x() * a.y() + bc.y() * b.y() + bc.z() * c.y();
-        return true;
+        return bc.x() >= 0 && bc.y() >= 0 && bc.z() >= 0;
     }
 
     f64 Terrain::elevation_at(const Vec<3>& pos) {
@@ -70,15 +69,16 @@ namespace houseofatmos::outside {
             //  | \ |
             // bl---br
             if(compute_elevation(tl, bl, br, pos, elev)) { return elev; }
-            if(compute_elevation(tl, tr, br, pos, elev)) { return elev; }
+            if(compute_elevation(tl, br, tr, pos, elev)) { return elev; }
+            return elev; // on boundary between the two triangles, return either
         } else {
             // tl---tr
             //  | / |
             // bl---br
             if(compute_elevation(tl, bl, tr, pos, elev)) { return elev; }
-            if(compute_elevation(bl, br, tr, pos, elev)) { return elev; }
+            if(compute_elevation(tr, bl, br, pos, elev)) { return elev; }
+            return elev; // on boundary between the two triangles, return either
         }
-        return 0.0;
     }
 
 

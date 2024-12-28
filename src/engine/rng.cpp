@@ -44,7 +44,7 @@ namespace houseofatmos::engine::math {
     }
 
     f64 StatefulRNG::next_f64() {
-        return fabs((double) this->next_u64()) / (double) UINT64_MAX;
+        return (double) this->next_u64() / (double) UINT64_MAX;
     }
     
 }
