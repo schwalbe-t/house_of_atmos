@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <engine/arena.hpp>
 #include <engine/math.hpp>
 #include <engine/model.hpp>
 #include "renderer.hpp"
@@ -12,6 +13,12 @@ namespace houseofatmos {
 
     struct Player {
     
+        struct Serialized {
+            Vec<3> position;
+            f64 angle;
+        };
+
+
         static const inline engine::Model::LoadArgs player_model = {
             "res/player.gltf", Renderer::model_attribs
         };
@@ -38,12 +45,22 @@ namespace houseofatmos {
             this->set_anim_idle();
         }
 
+        Player(const Serialized& serialized, const engine::Arena& buffer) {
+            (void) buffer;
+            this->position = serialized.position;
+            this->angle = serialized.angle;
+            this->in_water = false;
+            this->set_anim_idle();
+        }
+
         static void load_model(engine::Scene& scene) {
             scene.load(engine::Model::Loader(Player::player_model));
         }
 
-        void update(const engine::Window& window);
+        void update(engine::Window& window);
         void render(engine::Scene& scene, const Renderer& renderer);
+
+        Serialized serialize(engine::Arena& buffer) const;
 
     };
 

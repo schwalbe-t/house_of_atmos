@@ -71,8 +71,10 @@ namespace houseofatmos::engine {
         
         const Vec<2>& cursor_pos_px() const { return this->mouse_pos; }
         const Vec<2> cursor_pos_ndc() const {
-            return (this->mouse_pos / Vec<2>(this->width(), -this->height()) * 2)
-                - Vec<2>(1, 1); 
+            Vec<2> normalized = this->mouse_pos
+                / Vec<2>(this->width(), this->height());
+            return Vec<2>(normalized.x(), 1 - normalized.y()) * 2
+                - Vec<2>(1.0, 1.0);
         }
         void show_cursor() const;
         void hide_cursor() const;

@@ -55,14 +55,34 @@ namespace houseofatmos::outside {
             ) {
                 Vec<3> pos = Vec<3>(tile_x, 0, tile_z) * terrain.units_per_tile();
                 pos.y() = terrain.elevation_at((u64) tile_x, (u64) tile_z);
-                Vec<2> pos_ndc = (view_proj * pos.with(1.0)).swizzle<2>("xy");
-                f64 dist = (pos_ndc - cursor_pos_ndc).len();
+                Vec<4> pos_ndc = view_proj * pos.with(1.0);
+                pos_ndc = pos_ndc / pos_ndc.w(); // perspective divide
+                f64 dist = (pos_ndc.swizzle<2>("xy") - cursor_pos_ndc).len();
                 if(dist > current_dist) { continue; }
                 current = { (u64) tile_x, (u64) tile_z };
                 current_dist = dist;
             }
         }
         return current;
+    }
+
+    static void remove_chunk_foliage_on_tile(
+        Terrain::ChunkData& chunk, u64 chunk_x, u64 chunk_z, 
+        u64 tile_x, u64 tile_z,
+        u64 tiles_per_chunk, u64 units_per_tile
+    ) {
+        for(size_t foliage_i = 0; foliage_i < chunk.foliage.size();) {
+            const Foliage& foliage = chunk.foliage.at(foliage_i);
+            u64 foliage_tile_x = chunk_x * tiles_per_chunk
+                + (u64) foliage.x / units_per_tile;
+            u64 foliage_tile_z = chunk_z * tiles_per_chunk
+                + (u64) foliage.z / units_per_tile;
+            if(foliage_tile_x != tile_x || foliage_tile_z != tile_z) {
+                foliage_i += 1;
+                continue;
+            }
+            chunk.foliage.erase(chunk.foliage.begin() + foliage_i);
+        }
     }
 
     void TerraformMode::update(const engine::Window& window, const Renderer& renderer) {
@@ -79,28 +99,28 @@ namespace houseofatmos::outside {
             if(window.was_pressed(engine::Button::Right)) {
                 elevation += 1;
             }
-            u64 chunk_x = tile_x / this->terrain.tiles_per_chunk();
-            u64 chunk_z = tile_z / this->terrain.tiles_per_chunk();
-            Terrain::ChunkData& chunk = this->terrain.chunk_at(chunk_x, chunk_z);
-            for(size_t foliage_i = 0; foliage_i < chunk.foliage.size();) {
-                const Foliage& foliage = chunk.foliage.at(foliage_i);
-                u64 foliage_tile_x = chunk_x * this->terrain.tiles_per_chunk()
-                    + (u64) foliage.x / this->terrain.units_per_tile();
-                u64 foliage_tile_z = chunk_z * this->terrain.tiles_per_chunk()
-                    + (u64) foliage.z / this->terrain.units_per_tile();
-                i64 dist_x = (i64) foliage_tile_x - (i64) tile_x;
-                i64 dist_z = (i64) foliage_tile_z - (i64) tile_z;
-                if(dist_x < -1 || dist_x > 0 || dist_z < -1 || dist_z > 0) {
-                    foliage_i += 1;
-                    continue; 
+            for(i64 offset_x = -1; offset_x <= 0; offset_x += 1) {
+                for(i64 offset_z = -1; offset_z <= 0; offset_z += 1) {
+                    u64 u_tile_x = std::min(
+                        (u64) std::max((i64) tile_x + offset_x, (i64) 0),
+                        this->terrain.width_in_tiles()
+                    );
+                    u64 u_tile_z = std::min(
+                        (u64) std::max((i64) tile_z + offset_z, (i64) 0),
+                        this->terrain.height_in_tiles()
+                    );
+                    u64 u_chunk_x = u_tile_x / this->terrain.tiles_per_chunk();
+                    u64 u_chunk_z = u_tile_z / this->terrain.tiles_per_chunk();
+                    Terrain::ChunkData& u_chunk
+                        = this->terrain.chunk_at(u_chunk_x, u_chunk_z);
+                    remove_chunk_foliage_on_tile(
+                        u_chunk, u_chunk_x, u_chunk_z, u_tile_x, u_tile_z,
+                        this->terrain.tiles_per_chunk(),
+                        this->terrain.units_per_tile()
+                    );
+                    this->terrain.reload_chunk_at(u_chunk_x, u_chunk_z);
                 }
-                chunk.foliage.erase(chunk.foliage.begin() + foliage_i);
             }
-            this->terrain.reload_chunk_at(chunk_x,     chunk_z   );
-            this->terrain.reload_chunk_at(chunk_x + 1, chunk_z   );
-            this->terrain.reload_chunk_at(chunk_x - 1, chunk_z   );
-            this->terrain.reload_chunk_at(chunk_x,     chunk_z + 1);
-            this->terrain.reload_chunk_at(chunk_x,     chunk_z - 1);
         }
     }
 

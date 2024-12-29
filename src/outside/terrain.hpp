@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <engine/arena.hpp>
 #include <engine/rng.hpp>
 #include "buildings.hpp"
 #include "foliage.hpp"
@@ -12,6 +13,13 @@ namespace houseofatmos::outside {
 
 
     struct Terrain {
+
+        struct Serialized {
+            u64 width, height;
+            u64 elevation_count, elevation_offset;
+            u64 chunk_count, chunk_offset;
+        };
+
 
         static inline engine::Texture::LoadArgs ground_texture = {
             "res/terrain/ground.png"
@@ -38,8 +46,18 @@ namespace houseofatmos::outside {
         };
 
         struct ChunkData {
+            struct Serialized {
+                u64 foliage_count, foliage_offset;
+                u64 building_count, building_offset;
+            };
+
+            ChunkData() {}
+            ChunkData(const Serialized& serialized, const engine::Arena& buffer);
+
             std::vector<Foliage> foliage;
             std::vector<Building> buildings;
+
+            Serialized serialize(engine::Arena& buffer) const;
         };
 
         private:
@@ -80,8 +98,8 @@ namespace houseofatmos::outside {
         }
 
         Terrain(
-            u64 width, u64 height, i64 draw_distance = 1,
-            u64 tile_size = 5, u64 chunk_tiles = 8
+            u64 width, u64 height, 
+            i64 draw_distance, u64 tile_size, u64 chunk_tiles
         ) {
             if(tile_size * chunk_tiles > UINT8_MAX + 1) {
                 engine::warning("The product of tile_size and chunk_tiles must "
@@ -104,6 +122,12 @@ namespace houseofatmos::outside {
             this->build_water_plane();
             this->show_terrain_wireframe = false;
         }
+        
+        Terrain(
+            const Serialized& serialized, 
+            i64 draw_distance, u64 tile_size, u64 chunk_tiles,
+            const engine::Arena& buffer
+        );
 
         u64 width_in_tiles() const { return this->width; }
         u64 height_in_tiles() const { return this->height; }
@@ -160,6 +184,9 @@ namespace houseofatmos::outside {
             engine::Scene& scene, const Renderer& renderer,
             const engine::Window& window
         );
+
+        public:
+        Serialized serialize(engine::Arena& buffer) const;
 
     };
 

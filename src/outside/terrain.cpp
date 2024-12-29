@@ -474,4 +474,69 @@ namespace houseofatmos::outside {
         this->water_plane.render(shader, renderer.output(), 1);
     }
 
+
+    Terrain::Terrain(
+        const Serialized& serialized,
+        i64 draw_distance, u64 tile_size, u64 chunk_tiles,
+        const engine::Arena& buffer
+    ) {
+        this->width = serialized.width;
+        this->height = serialized.height;
+        this->tile_size = tile_size;
+        this->chunk_tiles = chunk_tiles;
+        this->draw_distance = draw_distance;
+        this->view_chunk_x = 0;
+        this->view_chunk_z = 0;
+        std::span<const i16> elevation = buffer.at<i16>(
+            serialized.elevation_offset, serialized.elevation_count
+        );
+        this->elevation.assign(elevation.begin(), elevation.end());
+        this->width_chunks = (u64) ceil((f64) width / chunk_tiles);
+        this->height_chunks = (u64) ceil((f64) height / chunk_tiles);
+        std::span<const ChunkData::Serialized> chunks = buffer.at<ChunkData::Serialized>(
+            serialized.chunk_offset, serialized.chunk_count
+        );
+        this->chunks.reserve(chunks.size());
+        for(const ChunkData::Serialized& chunk: chunks) {
+            this->chunks.push_back(ChunkData(chunk, buffer));
+        }
+        this->build_water_plane();
+        this->show_terrain_wireframe = false;
+    }
+
+    Terrain::ChunkData::ChunkData(
+        const ChunkData::Serialized& serialized, const engine::Arena& buffer
+    ) {
+        std::span<const Foliage> foliage = buffer.at<Foliage>(
+            serialized.foliage_offset, serialized.foliage_count
+        );
+        this->foliage.assign(foliage.begin(), foliage.end());
+        std::span<const Building> buildings = buffer.at<Building>(
+            serialized.building_offset, serialized.building_count
+        );
+        this->buildings.assign(buildings.begin(), buildings.end());
+    }
+
+    Terrain::ChunkData::Serialized Terrain::ChunkData::serialize(
+        engine::Arena& buffer
+    ) const {
+        return {
+            this->foliage.size(), buffer.alloc_array<Foliage>(this->foliage),
+            this->buildings.size(), buffer.alloc_array<Building>(this->buildings)
+        };
+    }
+
+    Terrain::Serialized Terrain::serialize(engine::Arena& buffer) const {
+        auto chunk_data = std::vector<ChunkData::Serialized>();
+        chunk_data.reserve(this->chunks.size());
+        for(const ChunkData& chunk: this->chunks) {
+            chunk_data.push_back(chunk.serialize(buffer));
+        }
+        return {
+            this->width, this->height,
+            this->elevation.size(), buffer.alloc_array<i16>(this->elevation),
+            this->chunks.size(), buffer.alloc_array<ChunkData::Serialized>(chunk_data)
+        };
+    }
+
 }

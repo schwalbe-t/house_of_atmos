@@ -38,7 +38,7 @@ namespace houseofatmos {
     static const f64 walk_speed = 5.0;
     static const f64 swim_speed = 2.5;
 
-    void Player::update(const engine::Window& window) {
+    void Player::update(engine::Window& window) {
         Vec<3> heading = get_player_heading(window);
         if(this->in_water) { this->set_anim_swim(); }
         else if(heading.len() > 0) { this->set_anim_walk(); }
@@ -60,6 +60,14 @@ namespace houseofatmos {
         const engine::Animation& anim = model.animation(this->anim_name);
         f64 timestamp = fmod(this->anim_time * this->anim_speed, anim.length());
         renderer.render(model, model_transf, anim, timestamp);
+    }
+
+
+    Player::Serialized Player::serialize(engine::Arena& buffer) const {
+        (void) buffer;
+        return {
+            this->position, this->angle
+        };
     }
 
 }

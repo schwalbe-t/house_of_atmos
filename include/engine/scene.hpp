@@ -105,8 +105,8 @@ namespace houseofatmos::engine {
         void internal_load_all();
         void internal_forget_all();
 
-        virtual void update(const Window& window) = 0;
-        virtual void render(const Window& window) = 0;
+        virtual void update(Window& window) = 0;
+        virtual void render(Window& window) = 0;
 
     };
 
