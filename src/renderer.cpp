@@ -52,7 +52,8 @@ namespace houseofatmos {
         engine::Mesh& mesh, 
         const engine::Texture& texture,
         const Mat<4>& local_transform,
-        std::span<const Mat<4>> model_transforms
+        std::span<const Mat<4>> model_transforms,
+        bool wireframe
     ) const {
         this->shader->set_uniform("u_local_transf", local_transform);
         this->shader->set_uniform("u_joint_transfs", std::array { Mat<4>() });
@@ -64,14 +65,17 @@ namespace houseofatmos {
                 "u_model_transfs", 
                 model_transforms.subspan(offset, count)
             );
-            mesh.render(*this->shader, this->target, count, true);
+            mesh.render(
+                *this->shader, this->target, count, wireframe, !wireframe
+            );
             offset += count;
         }
     }
 
     void Renderer::render(
         engine::Model& model,
-        std::span<const Mat<4>> model_transforms
+        std::span<const Mat<4>> model_transforms,
+        bool wireframe
     ) const {
         for(size_t completed = 0; completed < model_transforms.size();) {
             size_t remaining = model_transforms.size() - completed;
@@ -83,7 +87,7 @@ namespace houseofatmos {
             model.render_all(
                 *this->shader, this->target, 
                 "u_local_transf", "u_texture", "u_joint_transfs",
-                count, true
+                count, wireframe, !wireframe
             );
             completed += count;
         }
@@ -93,7 +97,8 @@ namespace houseofatmos {
         engine::Model& model,
         const Mat<4>& model_transform,
         const engine::Animation& animation,
-        f64 timestamp
+        f64 timestamp,
+        bool wireframe
     ) const {
         this->shader->set_uniform(
             "u_model_transfs", 
@@ -103,7 +108,7 @@ namespace houseofatmos {
             *this->shader, this->target,
             animation, timestamp,
             "u_joint_transfs", "u_local_transf", "u_texture", 
-            true
+            wireframe, !wireframe
         );
     }
 

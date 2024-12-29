@@ -71,7 +71,7 @@ namespace houseofatmos::engine {
             std::optional<std::string_view> texture_uniform = std::nullopt,
             std::optional<std::string_view> joint_transform_uniform = std::nullopt,
             size_t count = 1,
-            bool depth_test = true
+            bool wireframe = false, bool depth_test = true
         );
 
         void render_all_animated(
@@ -80,7 +80,7 @@ namespace houseofatmos::engine {
             std::string_view joint_transform_uniform,
             std::optional<std::string_view> local_transform_uniform = std::nullopt,
             std::optional<std::string_view> texture_uniform = std::nullopt,
-            bool depth_test = true
+            bool wireframe = false, bool depth_test = true
         );
 
     };

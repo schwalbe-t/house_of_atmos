@@ -25,15 +25,17 @@ namespace houseofatmos::outside {
         return Vec<3>(1.0 - r_y - r_z, r_y, r_z);
     }
 
-    static bool compute_elevation(
-        const Vec<3>& a, const Vec<3>& b, const Vec<3>& c, const Vec<3>& p,
-        f64& elevation
+    static std::pair<f64, f64> compute_elevation(
+        const Vec<3>& a, const Vec<3>& b, const Vec<3>& c, const Vec<3>& p
     ) {
         Vec<3> bc = compute_barycentric(a, b, c, p);
-        elevation = std::max(bc.x(), 0.0) * a.y()
+        f64 elevation = std::max(bc.x(), 0.0) * a.y()
             + std::max(bc.y(), 0.0) * b.y()
             + std::max(bc.z(), 0.0) * c.y();
-        return bc.x() >= 0 && bc.y() >= 0 && bc.z() >= 0;
+        f64 deviation = (0.0 - std::min(bc.x(), 0.0))
+            + (0.0 - std::min(bc.y(), 0.0))
+            + (0.0 - std::min(bc.z(), 0.0));
+        return { deviation, elevation };
     }
 
     f64 Terrain::elevation_at(const Vec<3>& pos) {
@@ -70,16 +72,16 @@ namespace houseofatmos::outside {
             // tl---tr
             //  | \ |
             // bl---br
-            if(compute_elevation(tl, bl, br, pos, elev)) { return elev; }
-            if(compute_elevation(tl, br, tr, pos, elev)) { return elev; }
-            return elev; // on boundary between the two triangles, return either
+            auto [bl_dev, bl_elev] = compute_elevation(tl, bl, br, pos);
+            auto [tr_dev, tr_elev] = compute_elevation(tl, br, tr, pos);
+            return bl_dev < tr_dev? bl_elev : tr_elev;
         } else {
             // tl---tr
             //  | / |
             // bl---br
-            if(compute_elevation(tl, bl, tr, pos, elev)) { return elev; }
-            if(compute_elevation(tr, bl, br, pos, elev)) { return elev; }
-            return elev; // on boundary between the two triangles, return either
+            auto [tl_dev, tl_elev] = compute_elevation(tl, bl, tr, pos);
+            auto [br_dev, br_elev] = compute_elevation(tr, bl, br, pos);
+            return tl_dev < br_dev? tl_elev : br_elev;
         }
     }
 
@@ -367,28 +369,47 @@ namespace houseofatmos::outside {
     ) {
         const engine::Texture& ground_texture
             = scene.get<engine::Texture>(Terrain::ground_texture);
+        const engine::Texture& wireframe_texture
+            = scene.get<engine::Texture>(Terrain::wireframe_texture);
         for(LoadedChunk& chunk: this->loaded_chunks) {
             if(chunk.modified) {
                 chunk = this->load_chunk(chunk.x, chunk.z);
             }
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
-            chunk.render_ground(scene, renderer, ground_texture, chunk_offset);
+            this->render_chunk_ground(
+                chunk, 
+                ground_texture, wireframe_texture, 
+                chunk_offset, 
+                scene, renderer
+            );
             const ChunkData& data = this->chunk_at(chunk.x, chunk.z);
             this->render_chunk_features(chunk, chunk_offset, scene, renderer);
         }
         this->render_water(scene, renderer, window);
     }
 
-    void Terrain::LoadedChunk::render_ground(
-        engine::Scene& scene, const Renderer& renderer,
-        const engine::Texture& ground_texture, const Vec<3>& chunk_offset
+    void Terrain::render_chunk_ground(
+        LoadedChunk& loaded_chunk,
+        const engine::Texture& ground_texture, 
+        const engine::Texture& wireframe_texture, 
+        const Vec<3>& chunk_offset,
+        engine::Scene& scene, const Renderer& renderer
     ) {
         renderer.render(
-            this->terrain, ground_texture, 
+            loaded_chunk.terrain, ground_texture, 
             Mat<4>(),
-            std::array { Mat<4>::translate(chunk_offset) }
+            std::array { Mat<4>::translate(chunk_offset) },
+            false
         );
+        if(this->show_terrain_wireframe) {
+            renderer.render(
+                loaded_chunk.terrain, wireframe_texture, 
+                Mat<4>(),
+                std::array { Mat<4>::translate(chunk_offset) },
+                true
+            );
+        }
     }
 
     void Terrain::render_chunk_features(
@@ -450,7 +471,7 @@ namespace houseofatmos::outside {
         shader.set_uniform("u_nmap_offset", nmap_offset);
         this->water_time += window.delta_time();
         shader.set_uniform("u_time", this->water_time);
-        this->water_plane.render(shader, renderer.output(), 1, true);
+        this->water_plane.render(shader, renderer.output(), 1);
     }
 
 }

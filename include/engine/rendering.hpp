@@ -238,12 +238,12 @@ namespace houseofatmos::engine {
         void submit();
         void render(
             const Shader& shader, const Texture& dest,
-            size_t count = 1, bool depth_test = true
+            size_t count = 1, bool wireframe = false, bool depth_test = true
         );
         void internal_render(
             const Shader& shader, u64 dest_fbo_id, 
             i32 dest_width, i32 dest_height,
-            size_t count, bool depth_test
+            size_t count,  bool wireframe = false, bool depth_test = true
         );
 
         bool was_moved() {

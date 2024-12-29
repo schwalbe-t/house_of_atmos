@@ -82,8 +82,8 @@ namespace houseofatmos::engine {
         Mouse7 = 6,
         Mouse8 = 7,
         Left = Mouse1,
-        Middle = Mouse2,
-        Right = Mouse3,
+        Right = Mouse2,
+        Middle = Mouse3,
         MaximumValue = Mouse8
     };
 

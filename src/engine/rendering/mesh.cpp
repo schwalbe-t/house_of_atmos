@@ -385,24 +385,26 @@ namespace houseofatmos::engine {
     }
 
     void Mesh::render(
-        const Shader& shader, const Texture& dest, size_t count, bool depth_test
+        const Shader& shader, const Texture& dest, size_t count, 
+        bool wireframe, bool depth_test
     ) {
         this->internal_render(
             shader, dest.internal_fbo_id(), dest.width(), dest.height(),
-            count, depth_test
+            count, wireframe, depth_test
         );
     }
 
     void Mesh::internal_render(
         const Shader& shader, u64 dest_fbo_id, 
         i32 dest_width, i32 dest_height, 
-        size_t count, bool depth_test
+        size_t count, bool wireframe, bool depth_test
     ) {
         if(count == 0) { return; }
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
         if(this->modified) { this->submit(); }
+        if(wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); }
         if(depth_test) { glEnable(GL_DEPTH_TEST); }
         glBindFramebuffer(GL_FRAMEBUFFER, dest_fbo_id);
         glViewport(0, 0, dest_width, dest_height);
@@ -426,6 +428,7 @@ namespace houseofatmos::engine {
         shader.internal_unbind();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         if(depth_test) { glDisable(GL_DEPTH_TEST); }
+        if(wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); }
         glFinish();
     }
 

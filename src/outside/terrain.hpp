@@ -17,6 +17,10 @@ namespace houseofatmos::outside {
             "res/terrain/ground.png"
         };
 
+        static inline engine::Texture::LoadArgs wireframe_texture = {
+            "res/terrain/wireframe.png"
+        };
+
         static inline engine::Texture::LoadArgs water_texture = {
             "res/terrain/water.png"
         };
@@ -31,11 +35,6 @@ namespace houseofatmos::outside {
             bool modified; // re-mesh in next render cycle
             engine::Mesh terrain; // terrain geometry
             std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage;
-
-            void render_ground(
-                engine::Scene& scene, const Renderer& renderer,
-                const engine::Texture& ground_texture, const Vec<3>& chunk_offset
-            );
         };
 
         struct ChunkData {
@@ -55,6 +54,12 @@ namespace houseofatmos::outside {
             { engine::Mesh::F32, 3 }, { engine::Mesh::F32, 2 }
         };
         f64 water_time;
+        // row-major 2D vector of each tile corner height
+        // .size() = (width + 1) * (height + 1)
+        std::vector<i16> elevation;
+        // row-major 2D vector of chunks
+        // .size() = width_chunks * height_chunks
+        std::vector<ChunkData> chunks; 
 
         void build_water_plane();
         engine::Mesh build_chunk_geometry(u64 chunk_x, u64 chunk_z);
@@ -64,16 +69,12 @@ namespace houseofatmos::outside {
 
 
         public:
-        // row-major 2D vector of each tile corner height
-        // .size() = (width + 1) * (height + 1)
-        std::vector<i16> elevation;
-        // row-major 2D vector of chunks
-        // .size() = width_chunks * height_chunks
-        std::vector<ChunkData> chunks; 
+        bool show_terrain_wireframe;
 
 
         static void load_resources(engine::Scene& scene) {
             scene.load(engine::Texture::Loader(Terrain::ground_texture));
+            scene.load(engine::Texture::Loader(Terrain::wireframe_texture));
             scene.load(engine::Texture::Loader(Terrain::water_texture));
             scene.load(engine::Shader::Loader(Terrain::water_shader));
         }
@@ -101,14 +102,35 @@ namespace houseofatmos::outside {
             this->height_chunks = (u64) ceil((f64) height / chunk_tiles);
             this->chunks.resize(width_chunks * height_chunks);
             this->build_water_plane();
+            this->show_terrain_wireframe = false;
         }
 
+        u64 width_in_tiles() const { return this->width; }
+        u64 height_in_tiles() const { return this->height; }
+        u64 width_in_chunks() const { return this->width_chunks; }
+        u64 height_in_chunks() const { return this->height_chunks; }
+        u64 units_per_tile() const { return this->tile_size; }
+        u64 tiles_per_chunk() const { return this->chunk_tiles; }
+        i64 draw_distance_in_chunks() const { return this->draw_distance; }
+        i64 viewed_chunk_x() const { return this->view_chunk_x; }
+        i64 viewed_chunk_z() const { return this->view_chunk_z; }
+
         i16& elevation_at(u64 x, u64 z) {
+            return this->elevation.at(x + (this->width + 1) * z);
+        }
+        i16 elevation_at(u64 x, u64 z) const {
             return this->elevation.at(x + (this->width + 1) * z);
         }
         f64 elevation_at(const Vec<3>& pos);
         ChunkData& chunk_at(u64 chunk_x, u64 chunk_z) {
             return this->chunks.at(chunk_x + this->width_chunks * chunk_z);
+        }
+        void reload_chunk_at(u64 chunk_x, u64 chunk_z) {
+            for(LoadedChunk& chunk: this->loaded_chunks) {
+                if(chunk.x != chunk_x || chunk.z != chunk_z) { continue; }
+                chunk.modified = true;
+                break;
+            }
         }
 
         void generate_elevation(u32 seed = random_init());
@@ -123,6 +145,13 @@ namespace houseofatmos::outside {
             const engine::Window& window
         );
         private:
+        void render_chunk_ground(
+            LoadedChunk& loaded_chunk,
+            const engine::Texture& ground_texture, 
+            const engine::Texture& wireframe_texture, 
+            const Vec<3>& chunk_offset,
+            engine::Scene& scene, const Renderer& renderer
+        );
         void render_chunk_features(
             LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,
             engine::Scene& scene, const Renderer& renderer

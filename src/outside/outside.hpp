@@ -6,6 +6,7 @@
 #include "../renderer.hpp"
 #include "../player.hpp"
 #include "terrain.hpp"
+#include "actionmode.hpp"
 
 namespace houseofatmos::outside {
 
@@ -14,6 +15,7 @@ namespace houseofatmos::outside {
         Renderer renderer;
         Terrain terrain = Terrain(256, 256, 1);
         Player player;
+        std::unique_ptr<ActionMode> action_mode;
 
         Outside();
 

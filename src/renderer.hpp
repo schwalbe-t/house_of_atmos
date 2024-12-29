@@ -47,13 +47,13 @@ namespace houseofatmos {
 
         private:
         engine::Texture target = engine::Texture(100, 100);
-        engine::Shader* shader = nullptr;
 
         public:
         Camera camera;
         i64 resolution = 360;
         Vec<3> light_direction = { -2, -5, -1 };
         f64 ambient_light = 0.75; 
+        engine::Shader* shader = nullptr;
 
         static void load_shaders(engine::Scene& scene) {
             scene.load(engine::Shader::Loader(Renderer::shader_args));
@@ -67,18 +67,21 @@ namespace houseofatmos {
             const engine::Texture& texture,
             const Mat<4>& local_transform = Mat<4>(),
             std::span<const Mat<4>> model_transforms
-                = std::array<Mat<4>, 1> { Mat<4>() }
+                = std::array<Mat<4>, 1> { Mat<4>() },
+            bool wireframe = false
         ) const;
         void render(
             engine::Model& model,
             std::span<const Mat<4>> model_transforms
-                = std::array<Mat<4>, 1> { Mat<4>() }
+                = std::array<Mat<4>, 1> { Mat<4>() },
+            bool wireframe = false
         ) const;
         void render(
             engine::Model& model,
             const Mat<4>& model_transform,
             const engine::Animation& animation,
-            f64 timestamp
+            f64 timestamp,
+            bool wireframe = false
         ) const;
 
         const engine::Texture& output() const { return this->target; }

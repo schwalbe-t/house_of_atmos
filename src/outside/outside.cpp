@@ -12,9 +12,12 @@ namespace houseofatmos::outside {
         this->terrain.generate_elevation();
         this->terrain.generate_foliage();
         this->player.position = { 250, 0, 250 };
+        this->action_mode = std::make_unique<DefaultMode>();
     }
 
     void Outside::update(const engine::Window& window) {
+        ActionMode::choose_current(window, this->terrain, this->action_mode);
+        this->action_mode->update(window, this->renderer);
         this->player.update(window);
         this->player.position.y() = std::max(
             this->terrain.elevation_at(this->player.position),
@@ -31,8 +34,8 @@ namespace houseofatmos::outside {
         this->terrain.load_chunks_around(this->player.position);
         this->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->player.render(*this, this->renderer);
+        this->action_mode->render(*this, this->renderer);
         window.show_texture(this->renderer.output());
-        engine::debug("FPS: " + std::to_string(1.0 / window.delta_time()));
     }
 
 }

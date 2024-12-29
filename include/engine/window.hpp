@@ -69,7 +69,11 @@ namespace houseofatmos::engine {
                 && this->keys_down_last[(size_t) key];
         }
         
-        const Vec<2>& cursor_pos() const { return this->mouse_pos; }
+        const Vec<2>& cursor_pos_px() const { return this->mouse_pos; }
+        const Vec<2> cursor_pos_ndc() const {
+            return (this->mouse_pos / Vec<2>(this->width(), -this->height()) * 2)
+                - Vec<2>(1, 1); 
+        }
         void show_cursor() const;
         void hide_cursor() const;
         bool is_down(Button button) const {
