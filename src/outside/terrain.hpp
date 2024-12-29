@@ -152,6 +152,7 @@ namespace houseofatmos::outside {
             }
             return nullptr;
         }
+        Building* building_at(i64 tile_x, i64 tile_z);
 
         void generate_elevation(u32 seed = random_init());
         void generate_foliage(u32 seed = random_init());

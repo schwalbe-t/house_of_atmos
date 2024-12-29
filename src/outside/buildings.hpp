@@ -11,17 +11,40 @@ namespace houseofatmos::outside {
 
         struct TypeInfo {
             engine::Model::LoadArgs model;
+            std::optional<std::string> door_animation;
             u8 width, height; // in tiles
+            f64 offset_x, offset_z; // in tiles, 0..1
+            u64 cost; // in coins
         };
 
         static inline const std::vector<TypeInfo> types = {
             /* Type::Farmland */ {
                 { "res/buildings/farmland.gltf", Renderer::model_attribs },
-                2, 2
+                std::nullopt,
+                2, 2,
+                0, 0,
+                500
             },
             /* Type::Mineshaft */ {
                 { "res/buildings/mineshaft.gltf", Renderer::model_attribs },
-                2, 2
+                std::nullopt,
+                2, 2,
+                0, 0,
+                1000
+            },
+            /* Type::Factory */ {
+                { "res/buildings/factory.gltf", Renderer::model_attribs },
+                std::nullopt,
+                2, 2,
+                0, 0,
+                1000
+            },
+            /* Type::House */ {
+                { "res/buildings/house.gltf", Renderer::model_attribs },
+                "door",
+                1, 1,
+                0.5, 0.5,
+                500
             }
         };
 
@@ -34,7 +57,9 @@ namespace houseofatmos::outside {
 
         enum Type {
             Farmland = 0,
-            Mineshaft = 1
+            Mineshaft = 1,
+            Factory = 2,
+            House = 3
         };
 
         Type type;

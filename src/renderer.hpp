@@ -74,14 +74,16 @@ namespace houseofatmos {
             engine::Model& model,
             std::span<const Mat<4>> model_transforms
                 = std::array<Mat<4>, 1> { Mat<4>() },
-            bool wireframe = false
+            bool wireframe = false,
+            const engine::Texture* override_texture = nullptr
         ) const;
         void render(
             engine::Model& model,
             const Mat<4>& model_transform,
             const engine::Animation& animation,
             f64 timestamp,
-            bool wireframe = false
+            bool wireframe = false,
+            const engine::Texture* override_texture = nullptr
         ) const;
 
         const engine::Texture& output() const { return this->target; }

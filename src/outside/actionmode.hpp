@@ -21,20 +21,32 @@ namespace houseofatmos::outside {
             "res/terrain/wireframe_sub.png"
         };
 
+        static inline const engine::Texture::LoadArgs wireframe_valid_texture = {
+            "res/terrain/wireframe_valid.png"
+        };
+
+        static inline const engine::Texture::LoadArgs wireframe_error_texture = {
+            "res/terrain/wireframe_error.png"
+        };
+
         static void load_resources(engine::Scene& scene) {
             scene.load(engine::Texture::Loader(ActionMode::wireframe_add_texture));
             scene.load(engine::Texture::Loader(ActionMode::wireframe_sub_texture));
+            scene.load(engine::Texture::Loader(ActionMode::wireframe_valid_texture));
+            scene.load(engine::Texture::Loader(ActionMode::wireframe_error_texture));
         }
 
 
         enum Type {
             Default = 0,
-            Terraform = 1
+            Terraform = 1,
+            Construction = 2
         };
 
         static inline const std::vector<engine::Key> keys = {
             engine::Key::Escape, // Default
-            engine::Key::T // Terraform
+            engine::Key::T, // Terraform
+            engine::Key::C // Construction
         };
 
 
@@ -59,7 +71,8 @@ namespace houseofatmos::outside {
 
         DefaultMode() {
             engine::info(
-                "Press T to enter terraform mode."
+                "Press T to enter terraforming mode "
+                "and C to enter construction mode."
             );
         }
 
@@ -89,7 +102,7 @@ namespace houseofatmos::outside {
         TerraformMode(Terrain& terrain): terrain(terrain) {
             engine::info(
                 "Entered terraform mode. Press T or Escape to exit. "
-                "Right click to raise terrain, left click to lower terrain."
+                "Left click to raise terrain, right click to lower terrain."
             );
         }
 
@@ -104,6 +117,29 @@ namespace houseofatmos::outside {
     };
 
 
+    struct ConstructionMode: ActionMode {
 
+        Terrain& terrain;
+        u64 selected_x, selected_z;
+        Building::Type selected_type;
+        bool placement_valid;
+
+        ConstructionMode(Terrain& terrain): terrain(terrain) {
+            engine::info(
+                "Entered construction mode. Press C or Escape to exit. "
+                "Use the number buttons to select a building and left click to place it."
+            );
+            this->selected_type = Building::Farmland;
+        }
+
+        ActionMode::Type get_type() override { return ActionMode::Construction; }
+
+        void update(
+            const engine::Window& window, const Renderer& renderer,
+            Balance& balance
+        ) override;
+        void render(engine::Scene& scene, const Renderer& renderer) override;
+
+    };
 
 }

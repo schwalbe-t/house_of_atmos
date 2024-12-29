@@ -75,7 +75,8 @@ namespace houseofatmos {
     void Renderer::render(
         engine::Model& model,
         std::span<const Mat<4>> model_transforms,
-        bool wireframe
+        bool wireframe,
+        const engine::Texture* override_texture
     ) const {
         for(size_t completed = 0; completed < model_transforms.size();) {
             size_t remaining = model_transforms.size() - completed;
@@ -84,9 +85,15 @@ namespace houseofatmos {
                 "u_model_transfs", 
                 model_transforms.subspan(completed, count)
             );
+            if(override_texture != nullptr) {
+                this->shader->set_uniform("u_texture", *override_texture);
+            }
             model.render_all(
                 *this->shader, this->target, 
-                "u_local_transf", "u_texture", "u_joint_transfs",
+                "u_local_transf",
+                override_texture == nullptr
+                    ? std::optional("u_texture") : std::nullopt, 
+                "u_joint_transfs",
                 count, wireframe, !wireframe
             );
             completed += count;
@@ -98,16 +105,23 @@ namespace houseofatmos {
         const Mat<4>& model_transform,
         const engine::Animation& animation,
         f64 timestamp,
-        bool wireframe
+        bool wireframe,
+        const engine::Texture* override_texture
     ) const {
         this->shader->set_uniform(
             "u_model_transfs", 
             std::array { model_transform }
         );
+        if(override_texture != nullptr) {
+            this->shader->set_uniform("u_texture", *override_texture);
+        }
         model.render_all_animated(
             *this->shader, this->target,
             animation, timestamp,
-            "u_joint_transfs", "u_local_transf", "u_texture", 
+            "u_joint_transfs", 
+            "u_local_transf",
+            override_texture == nullptr
+                ? std::optional("u_texture") : std::nullopt, 
             wireframe, !wireframe
         );
     }

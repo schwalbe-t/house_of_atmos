@@ -18,6 +18,7 @@ namespace houseofatmos::outside {
             switch(type) {
                 case Default: current = std::make_unique<DefaultMode>(); break;
                 case Terraform: current = std::make_unique<TerraformMode>(terrain); break;
+                case Construction: current = std::make_unique<ConstructionMode>(terrain); break;
                 default: engine::warning(
                     "Unhandled 'ActionMode::Type' in 'ActionMode::choose_current'"
                 );
@@ -30,8 +31,9 @@ namespace houseofatmos::outside {
 
     static const i64 chunk_sel_range = 2;
 
-    static std::pair<u64, u64> find_selected_terrain_vertex(
-        Vec<2> cursor_pos_ndc, const Mat<4>& view_proj, const Terrain& terrain
+    static std::pair<u64, u64> find_selected_terrain_tile(
+        Vec<2> cursor_pos_ndc, const Mat<4>& view_proj, const Terrain& terrain,
+        f64 tile_offset_x, f64 tile_offset_z
     ) {
         i64 start_x = (terrain.viewed_chunk_x() - chunk_sel_range) 
             * (i64) terrain.tiles_per_chunk();
@@ -53,8 +55,10 @@ namespace houseofatmos::outside {
                 tile_z < std::min(end_z, (i64) terrain.width_in_tiles());
                 tile_z += 1
             ) {
-                Vec<3> pos = Vec<3>(tile_x, 0, tile_z) * terrain.units_per_tile();
-                pos.y() = terrain.elevation_at((u64) tile_x, (u64) tile_z);
+                Vec<3> pos = Vec<3>(tile_x + tile_offset_x, 0, tile_z + tile_offset_z)
+                    * terrain.units_per_tile();
+                pos.y() = terrain.elevation_at(
+                    (u64) tile_x, (u64) tile_z);
                 Vec<4> pos_ndc = view_proj * pos.with(1.0);
                 pos_ndc = pos_ndc / pos_ndc.w(); // perspective divide
                 f64 dist = (pos_ndc.swizzle<2>("xy") - cursor_pos_ndc).len();
@@ -65,6 +69,8 @@ namespace houseofatmos::outside {
         }
         return current;
     }
+
+
 
     static void remove_chunk_foliage_on_tile(
         Terrain::ChunkData& chunk, u64 chunk_x, u64 chunk_z, 
@@ -84,6 +90,8 @@ namespace houseofatmos::outside {
             chunk.foliage.erase(chunk.foliage.begin() + foliage_i);
         }
     }
+
+
 
     // <cost> = (100 + 5 ^ <minimum elevation difference>) coins
     static u64 compute_terrain_modification_cost(
@@ -138,8 +146,9 @@ namespace houseofatmos::outside {
         const engine::Window& window, const Renderer& renderer,
         Balance& balance
     ) {
-        auto [tile_x, tile_z] = find_selected_terrain_vertex(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain
+        auto [tile_x, tile_z] = find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
+            0.0, 0.0
         );
         this->selected_x = tile_x;
         this->selected_z = tile_z;
@@ -149,10 +158,10 @@ namespace houseofatmos::outside {
             i16 elevation = this->terrain.elevation_at(tile_x, tile_z);
             i16 modification = 0;
             if(window.was_pressed(engine::Button::Left)) {
-                modification -= 1;
+                modification += 1;
             }
             if(window.was_pressed(engine::Button::Right)) {
-                modification += 1;
+                modification -= 1;
             }
             u64 cost = compute_terrain_modification_cost(
                 tile_x, tile_z, elevation, this->terrain
@@ -195,6 +204,133 @@ namespace houseofatmos::outside {
             Mat<4>(), std::array { transform }, true
         );
         elevation += 1;     
+    }
+
+
+
+    static void choose_building_type(
+        const engine::Window& window, Building::Type& type
+    ) {
+        if(window.was_pressed(engine::Key::Num1)) {
+            type = Building::Farmland;
+        }
+        if(window.was_pressed(engine::Key::Num2)) {
+            type = Building::Mineshaft;
+        }
+        if(window.was_pressed(engine::Key::Num3)) {
+            type = Building::Factory;
+        }
+        if(window.was_pressed(engine::Key::Num4)) {
+            type = Building::House;
+        }
+    }
+
+    static bool building_location_valid(
+        i64 tile_x, i64 tile_z, Terrain& terrain,
+        const Building::TypeInfo& type_info
+    ) {
+        i64 start_x = tile_x - type_info.width / 2;
+        i64 end_x = tile_x + (i64) ceil(type_info.width / 2.0);
+        i64 start_z = tile_z - type_info.height / 2;
+        i64 end_z = tile_z + (i64) ceil(type_info.height / 2.0);
+        if(start_x < 0 || end_x > terrain.width_in_tiles()) { return false; }
+        if(start_z < 0 || end_z > terrain.height_in_tiles()) { return false; }
+        i16 target = terrain.elevation_at((u64) start_x, (u64) start_z);
+        for(i64 x = start_x; x <= end_x; x += 1) {
+            for(i64 z = start_z; z <= end_z; z += 1) {
+                i16 elevation = terrain.elevation_at((u64) x, (u64) z);
+                if(elevation != target) { return false; }
+            }
+        }
+        for(i64 x = start_x; x < end_x; x += 1) {
+            for(i64 z = start_z; z < end_z; z += 1) {
+                if(terrain.building_at(x, z) != nullptr) { return false; }
+            }
+        }
+        return true;
+    }
+
+    static void place_building(
+        u64 tile_x, u64 tile_z, Terrain& terrain,
+        Building::Type type, const Building::TypeInfo& type_info
+    ) {
+        u64 chunk_x = tile_x / terrain.tiles_per_chunk();
+        u64 chunk_z = tile_z / terrain.tiles_per_chunk();
+        Terrain::ChunkData& chunk = terrain.chunk_at(chunk_x, chunk_z);
+        chunk.buildings.push_back({
+            type, 
+            (u8) (tile_x % terrain.tiles_per_chunk()), 
+            (u8) (tile_z % terrain.tiles_per_chunk())
+        });
+        i64 start_x = (i64) tile_x - (i64) type_info.width / 2;
+        i64 end_x = (i64) tile_x + (i64) ceil(type_info.width / 2.0);
+        i64 start_z = (i64) tile_z - (i64) type_info.height / 2;
+        i64 end_z = (i64) tile_z + (i64) ceil(type_info.height / 2.0);
+        for(i64 u_tile_x = start_x; u_tile_x < end_x; u_tile_x += 1) {
+            for(i64 u_tile_z = start_z; u_tile_z < end_z; u_tile_z += 1) {
+                u64 u_chunk_x = u_tile_x / terrain.tiles_per_chunk();
+                u64 u_chunk_z = u_tile_z / terrain.tiles_per_chunk();
+                Terrain::ChunkData& u_chunk
+                    = terrain.chunk_at(u_chunk_x, u_chunk_z);
+                remove_chunk_foliage_on_tile(
+                    u_chunk, u_chunk_x, u_chunk_z, u_tile_x, u_tile_z,
+                    terrain.tiles_per_chunk(),
+                    terrain.units_per_tile()
+                );
+                terrain.reload_chunk_at(u_chunk_x, u_chunk_z);
+            }
+        }
+    }
+
+    void ConstructionMode::update(
+        const engine::Window& window, const Renderer& renderer,
+        Balance& balance
+    ) {
+        choose_building_type(window, this->selected_type);
+        const Building::TypeInfo& type_info = Building::types
+            .at((size_t) this->selected_type);
+        auto [tile_x, tile_z] = find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
+            type_info.offset_x, type_info.offset_z
+        );
+        this->selected_x = tile_x;
+        this->selected_z = tile_z;
+        this->placement_valid = building_location_valid(
+            (i64) tile_x, (i64) tile_z, this->terrain, type_info
+        );
+        bool was_placed = this->placement_valid
+            && window.was_pressed(engine::Button::Left)
+            && balance.pay_coins(type_info.cost);
+        if(was_placed) {
+            place_building(
+                tile_x, tile_z, this->terrain, this->selected_type, type_info
+            );
+        }
+    }
+
+    void ConstructionMode::render(engine::Scene& scene, const Renderer& renderer) {
+        const engine::Texture& wireframe_texture = this->placement_valid
+            ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
+            : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
+        const Building::TypeInfo& type_info = Building::types
+            .at((size_t) this->selected_type);
+        engine::Model& model = scene.get<engine::Model>(type_info.model);
+        Vec<3> offset = Vec<3>(
+            this->selected_x + type_info.offset_x, 0, this->selected_z + type_info.offset_z
+        ) * this->terrain.units_per_tile();
+        offset.y() = this->terrain.elevation_at(this->selected_x, this->selected_z);
+        Mat<4> transform = Mat<4>::translate(offset);
+        if(type_info.door_animation.has_value()) {
+            renderer.render(
+                model, transform, 
+                model.animation(*type_info.door_animation), 0.0,
+                true, &wireframe_texture
+            );
+        } else {
+            renderer.render(
+                model, std::array { transform }, true, &wireframe_texture
+            );
+        }
     }
 
 }

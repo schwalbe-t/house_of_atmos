@@ -363,6 +363,32 @@ namespace houseofatmos::outside {
     }
 
 
+    Building* Terrain::building_at(i64 tile_x, i64 tile_z) {
+        u64 chunk_x = (u64) tile_x / this->chunk_tiles;
+        u64 chunk_z = (u64) tile_z / this->chunk_tiles;
+        ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+        i64 chunk_offset_x = chunk_x * this->chunk_tiles;
+        i64 chunk_offset_z = chunk_z * this->chunk_tiles;
+        for(Building& building: chunk.buildings) {
+            const Building::TypeInfo& type = Building::types
+                .at((size_t) building.type);
+            i64 start_x = chunk_offset_x
+                + (i64) building.x - (i64) type.width / 2;
+            i64 end_x = chunk_offset_x
+                + (i64) building.x + (i64) ceil(type.width / 2.0);
+            i64 start_z = chunk_offset_z
+                + (i64) building.z - (i64) type.height / 2;
+            i64 end_z = chunk_offset_z
+                + (i64) building.z + (i64) ceil(type.height / 2.0);
+            bool overlaps = start_x <= tile_x && tile_x < end_x
+                && start_z <= tile_z && tile_z < end_z;
+            if(!overlaps) { continue; }
+            return &building;
+        }
+        return nullptr;
+    }
+
+
     void Terrain::render_loaded_chunks(
         engine::Scene& scene, const Renderer& renderer,
         const engine::Window& window
@@ -411,12 +437,9 @@ namespace houseofatmos::outside {
         }
         for(const Building& building: data.buildings) {
             const Building::TypeInfo& type = building.get_type_info();
-            Vec<3> offset = chunk_offset 
-                + Vec<3>(building.x, 0, building.z) * this->tile_size
-                + Vec<3>(
-                    type.width * this->tile_size / 2, 0, 
-                    type.height * this->tile_size / 2
-                );
+            Vec<3> offset = chunk_offset + Vec<3>(
+                building.x + type.offset_x, 0, building.z + type.offset_z
+            ) * this->tile_size;
             offset.y() = this->elevation_at(
                 loaded_chunk.x * this->chunk_tiles + building.x,
                 loaded_chunk.z * this->chunk_tiles + building.z
@@ -424,7 +447,15 @@ namespace houseofatmos::outside {
             engine::Model& model = scene.get<engine::Model>(
                 building.get_type_info().model
             );
-            renderer.render(model, std::array { Mat<4>::translate(offset) });
+            Mat<4> transform = Mat<4>::translate(offset);
+            if(type.door_animation.has_value()) {
+                renderer.render(
+                    model, transform, 
+                    model.animation(*type.door_animation), 0.0
+                );
+            } else {
+                renderer.render(model, std::array { transform });
+            }
         }
     }
 
