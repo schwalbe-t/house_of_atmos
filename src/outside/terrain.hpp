@@ -25,10 +25,6 @@ namespace houseofatmos::outside {
             "res/terrain/ground.png"
         };
 
-        static inline engine::Texture::LoadArgs wireframe_texture = {
-            "res/terrain/wireframe.png"
-        };
-
         static inline engine::Texture::LoadArgs water_texture = {
             "res/terrain/water.png"
         };
@@ -80,19 +76,16 @@ namespace houseofatmos::outside {
         std::vector<ChunkData> chunks; 
 
         void build_water_plane();
-        engine::Mesh build_chunk_geometry(u64 chunk_x, u64 chunk_z);
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>>
             collect_foliage_transforms(u64 chunk_x, u64 chunk_z);
         Terrain::LoadedChunk load_chunk(u64 chunk_x, u64 chunk_z);
 
 
         public:
-        bool show_terrain_wireframe;
 
 
         static void load_resources(engine::Scene& scene) {
             scene.load(engine::Texture::Loader(Terrain::ground_texture));
-            scene.load(engine::Texture::Loader(Terrain::wireframe_texture));
             scene.load(engine::Texture::Loader(Terrain::water_texture));
             scene.load(engine::Shader::Loader(Terrain::water_shader));
         }
@@ -120,7 +113,6 @@ namespace houseofatmos::outside {
             this->height_chunks = (u64) ceil((f64) height / chunk_tiles);
             this->chunks.resize(width_chunks * height_chunks);
             this->build_water_plane();
-            this->show_terrain_wireframe = false;
         }
         
         Terrain(
@@ -150,11 +142,15 @@ namespace houseofatmos::outside {
             return this->chunks.at(chunk_x + this->width_chunks * chunk_z);
         }
         void reload_chunk_at(u64 chunk_x, u64 chunk_z) {
+            auto chunk = this->loaded_chunk_at(chunk_x, chunk_z);
+            if(chunk != nullptr) { chunk->modified = true; }
+        }
+        LoadedChunk* loaded_chunk_at(u64 chunk_x, u64 chunk_z) {
             for(LoadedChunk& chunk: this->loaded_chunks) {
                 if(chunk.x != chunk_x || chunk.z != chunk_z) { continue; }
-                chunk.modified = true;
-                break;
+                return &chunk;
             }
+            return nullptr;
         }
 
         void generate_elevation(u32 seed = random_init());
@@ -164,6 +160,8 @@ namespace houseofatmos::outside {
         bool chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const;
         void load_chunks_around(const Vec<3>& position);
 
+        engine::Mesh build_chunk_geometry(u64 chunk_x, u64 chunk_z);
+
         void render_loaded_chunks(
             engine::Scene& scene, const Renderer& renderer,
             const engine::Window& window
@@ -172,7 +170,6 @@ namespace houseofatmos::outside {
         void render_chunk_ground(
             LoadedChunk& loaded_chunk,
             const engine::Texture& ground_texture, 
-            const engine::Texture& wireframe_texture, 
             const Vec<3>& chunk_offset,
             engine::Scene& scene, const Renderer& renderer
         );

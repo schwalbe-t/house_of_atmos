@@ -13,6 +13,20 @@ namespace houseofatmos::outside {
 
     struct ActionMode {
 
+        static inline const engine::Texture::LoadArgs wireframe_add_texture = {
+            "res/terrain/wireframe_add.png"
+        };
+
+        static inline const engine::Texture::LoadArgs wireframe_sub_texture = {
+            "res/terrain/wireframe_sub.png"
+        };
+
+        static void load_resources(engine::Scene& scene) {
+            scene.load(engine::Texture::Loader(ActionMode::wireframe_add_texture));
+            scene.load(engine::Texture::Loader(ActionMode::wireframe_sub_texture));
+        }
+
+
         enum Type {
             Default = 0,
             Terraform = 1
@@ -70,17 +84,13 @@ namespace houseofatmos::outside {
     struct TerraformMode: ActionMode {
 
         Terrain& terrain;
+        u64 selected_x, selected_z;
 
         TerraformMode(Terrain& terrain): terrain(terrain) {
-            terrain.show_terrain_wireframe = true;
             engine::info(
                 "Entered terraform mode. Press T or Escape to exit. "
                 "Right click to raise terrain, left click to lower terrain."
             );
-        }
-        
-        ~TerraformMode() override {
-            this->terrain.show_terrain_wireframe = false;
         }
 
         ActionMode::Type get_type() override { return ActionMode::Terraform; }

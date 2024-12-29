@@ -369,8 +369,6 @@ namespace houseofatmos::outside {
     ) {
         const engine::Texture& ground_texture
             = scene.get<engine::Texture>(Terrain::ground_texture);
-        const engine::Texture& wireframe_texture
-            = scene.get<engine::Texture>(Terrain::wireframe_texture);
         for(LoadedChunk& chunk: this->loaded_chunks) {
             if(chunk.modified) {
                 chunk = this->load_chunk(chunk.x, chunk.z);
@@ -378,10 +376,7 @@ namespace houseofatmos::outside {
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
             this->render_chunk_ground(
-                chunk, 
-                ground_texture, wireframe_texture, 
-                chunk_offset, 
-                scene, renderer
+                chunk, ground_texture, chunk_offset, scene, renderer
             );
             const ChunkData& data = this->chunk_at(chunk.x, chunk.z);
             this->render_chunk_features(chunk, chunk_offset, scene, renderer);
@@ -392,7 +387,6 @@ namespace houseofatmos::outside {
     void Terrain::render_chunk_ground(
         LoadedChunk& loaded_chunk,
         const engine::Texture& ground_texture, 
-        const engine::Texture& wireframe_texture, 
         const Vec<3>& chunk_offset,
         engine::Scene& scene, const Renderer& renderer
     ) {
@@ -402,14 +396,6 @@ namespace houseofatmos::outside {
             std::array { Mat<4>::translate(chunk_offset) },
             false
         );
-        if(this->show_terrain_wireframe) {
-            renderer.render(
-                loaded_chunk.terrain, wireframe_texture, 
-                Mat<4>(),
-                std::array { Mat<4>::translate(chunk_offset) },
-                true
-            );
-        }
     }
 
     void Terrain::render_chunk_features(
@@ -501,7 +487,6 @@ namespace houseofatmos::outside {
             this->chunks.push_back(ChunkData(chunk, buffer));
         }
         this->build_water_plane();
-        this->show_terrain_wireframe = false;
     }
 
     Terrain::ChunkData::ChunkData(

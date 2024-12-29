@@ -10,6 +10,7 @@ namespace houseofatmos::outside {
         Building::load_models(scene);
         Foliage::load_models(scene);
         Player::load_model(scene);
+        ActionMode::load_resources(scene);
     }
 
     Outside::Outside() {

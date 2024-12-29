@@ -28,7 +28,7 @@ namespace houseofatmos::outside {
 
 
 
-    static const i64 chunk_sel_range = 1;
+    static const i64 chunk_sel_range = 2;
 
     static std::pair<u64, u64> find_selected_terrain_vertex(
         Vec<2> cursor_pos_ndc, const Mat<4>& view_proj, const Terrain& terrain
@@ -138,12 +138,14 @@ namespace houseofatmos::outside {
         const engine::Window& window, const Renderer& renderer,
         Balance& balance
     ) {
+        auto [tile_x, tile_z] = find_selected_terrain_vertex(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain
+        );
+        this->selected_x = tile_x;
+        this->selected_z = tile_z;
         bool modified_terrain = window.was_pressed(engine::Button::Left)
             || window.was_pressed(engine::Button::Right);
         if(modified_terrain) {
-            auto [tile_x, tile_z] = find_selected_terrain_vertex(
-                window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain
-            );
             i16 elevation = this->terrain.elevation_at(tile_x, tile_z);
             i16 modification = 0;
             if(window.was_pressed(engine::Button::Left)) {
@@ -164,8 +166,35 @@ namespace houseofatmos::outside {
     }
 
     void TerraformMode::render(engine::Scene& scene, const Renderer& renderer) {
-        (void) scene;
-        (void) renderer;
+        i16& elevation = this->terrain.elevation_at(
+            this->selected_x, this->selected_z
+        );
+        u64 chunk_x = this->selected_x / this->terrain.tiles_per_chunk();
+        u64 chunk_z = this->selected_z / this->terrain.tiles_per_chunk();
+        Vec<3> offset = Vec<3>(chunk_x, 0, chunk_z) 
+            * this->terrain.tiles_per_chunk()
+            * this->terrain.units_per_tile();
+        Mat<4> transform = Mat<4>::translate(offset);
+        const engine::Texture& wireframe_add_texture = scene
+            .get<engine::Texture>(ActionMode::wireframe_add_texture);
+        elevation += 1;
+        engine::Mesh add_geometry = this->terrain
+            .build_chunk_geometry(chunk_x, chunk_z);
+        renderer.render(
+            add_geometry, wireframe_add_texture, 
+            Mat<4>(), std::array { transform }, true
+        );
+        elevation -= 1;
+        const engine::Texture& wireframe_sub_texture = scene
+            .get<engine::Texture>(ActionMode::wireframe_sub_texture);
+        elevation -= 1;
+        engine::Mesh sub_geometry = this->terrain
+            .build_chunk_geometry(chunk_x, chunk_z);
+        renderer.render(
+            sub_geometry, wireframe_sub_texture, 
+            Mat<4>(), std::array { transform }, true
+        );
+        elevation += 1;     
     }
 
 }
