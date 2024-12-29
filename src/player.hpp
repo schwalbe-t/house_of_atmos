@@ -11,6 +11,26 @@ namespace houseofatmos {
     using namespace houseofatmos::engine::math;
 
 
+    struct Balance {
+        u64 coins;
+        u64 population;
+
+        bool pay_coins(u64 amount) {
+            if(amount > this->coins) {
+                engine::info("Not enough coins! (" + std::to_string(this->coins)
+                    + "/" + std::to_string(amount) + ")"
+                );
+                return false;
+            }
+            this->coins -= amount;
+            engine::info("Payed " + std::to_string(amount) + " coins "
+                "(now " + std::to_string(this->coins) + ")"
+            );
+            return true;
+        }
+    };
+
+
     struct Player {
     
         struct Serialized {

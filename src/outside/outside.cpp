@@ -18,6 +18,8 @@ namespace houseofatmos::outside {
         this->terrain.generate_foliage();
         this->player.position = { 250, 0, 250 };
         this->action_mode = std::make_unique<DefaultMode>();
+        this->balance.coins = 105000;
+        this->balance.population = 0;
     }
 
 
@@ -34,7 +36,7 @@ namespace houseofatmos::outside {
 
     void Outside::update(engine::Window& window) {
         ActionMode::choose_current(window, this->terrain, this->action_mode);
-        this->action_mode->update(window, this->renderer);
+        this->action_mode->update(window, this->renderer, this->balance);
         this->player.update(window);
         this->player.position.y() = std::max(
             this->terrain.elevation_at(this->player.position),
@@ -69,6 +71,7 @@ namespace houseofatmos::outside {
         );
         this->player = Player(outside.player, buffer);
         this->action_mode = std::make_unique<DefaultMode>();
+        this->balance = outside.balance;
     }
 
     engine::Arena Outside::serialize() const {
@@ -78,8 +81,9 @@ namespace houseofatmos::outside {
         Terrain::Serialized terrain = this->terrain.serialize(buffer);
         Player::Serialized player = this->player.serialize(buffer);
         auto& outside = buffer.at<Outside::Serialized>(outside_offset);
-        outside.terrain = std::move(terrain);
-        outside.player = std::move(player);
+        outside.terrain = terrain;
+        outside.player = player;
+        outside.balance = this->balance;
         return buffer;
     }
 

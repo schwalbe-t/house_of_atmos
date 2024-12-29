@@ -3,6 +3,7 @@
 
 #include <engine/window.hpp>
 #include "../renderer.hpp"
+#include "../player.hpp"
 #include "terrain.hpp"
 
 namespace houseofatmos::outside {
@@ -26,7 +27,10 @@ namespace houseofatmos::outside {
         virtual ~ActionMode() = default;
 
         virtual Type get_type() = 0;
-        virtual void update(const engine::Window& window, const Renderer& renderer) = 0;
+        virtual void update(
+            const engine::Window& window, const Renderer& renderer, 
+            Balance& balance
+        ) = 0;
         virtual void render(engine::Scene& scene, const Renderer& renderer) = 0;
 
         static void choose_current(
@@ -47,7 +51,10 @@ namespace houseofatmos::outside {
 
         ActionMode::Type get_type() override { return ActionMode::Default; }
 
-        void update(const engine::Window& window, const Renderer& renderer) override {
+        void update(
+            const engine::Window& window, const Renderer& renderer, 
+            Balance& balance
+        ) override {
             (void) window;
             (void) renderer;
         }
@@ -78,7 +85,10 @@ namespace houseofatmos::outside {
 
         ActionMode::Type get_type() override { return ActionMode::Terraform; }
 
-        void update(const engine::Window& window, const Renderer& renderer) override;
+        void update(
+            const engine::Window& window, const Renderer& renderer,
+            Balance& balance
+        ) override;
         void render(engine::Scene& scene, const Renderer& renderer) override;
 
     };

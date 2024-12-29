@@ -85,41 +85,80 @@ namespace houseofatmos::outside {
         }
     }
 
-    void TerraformMode::update(const engine::Window& window, const Renderer& renderer) {
+    // <cost> = (100 + 5 ^ <minimum elevation difference>) coins
+    static u64 compute_terrain_modification_cost(
+        u64 tile_x, u64 tile_z, i64 elevation, const Terrain& terrain
+    ) {
+        u64 min_elev_diff = UINT64_MAX;
+        for(i64 offset_x = -1; offset_x <= 1; offset_x += 1) {
+            for(i64 offset_z = -1; offset_z <= 1; offset_z += 1) {
+                if(offset_x == 0 && offset_z == 0) { continue; }
+                if((i64) tile_x + offset_x < 0) { continue; }
+                if((i64) tile_z + offset_z < 0) { continue; }
+                i64 elev = terrain.elevation_at(
+                    (u64) ((i64) tile_x + offset_x), 
+                    (u64) ((i64) tile_z + offset_z)
+                );
+                u64 diff = (u64) abs(elevation - elev);
+                min_elev_diff = std::min(min_elev_diff, diff);
+            }
+        }
+        return 100 + (u64) pow(5, (min_elev_diff + 1));
+    }
+
+    static void modify_terrain_height(
+        u64 tile_x, u64 tile_z, Terrain& terrain, i16 modification
+    ) {
+        terrain.elevation_at(tile_x, tile_z) += modification;
+        for(i64 offset_x = -1; offset_x <= 0; offset_x += 1) {
+            for(i64 offset_z = -1; offset_z <= 0; offset_z += 1) {
+                u64 u_tile_x = std::min(
+                    (u64) std::max((i64) tile_x + offset_x, (i64) 0),
+                    terrain.width_in_tiles()
+                );
+                u64 u_tile_z = std::min(
+                    (u64) std::max((i64) tile_z + offset_z, (i64) 0),
+                    terrain.height_in_tiles()
+                );
+                u64 u_chunk_x = u_tile_x / terrain.tiles_per_chunk();
+                u64 u_chunk_z = u_tile_z / terrain.tiles_per_chunk();
+                Terrain::ChunkData& u_chunk
+                    = terrain.chunk_at(u_chunk_x, u_chunk_z);
+                remove_chunk_foliage_on_tile(
+                    u_chunk, u_chunk_x, u_chunk_z, u_tile_x, u_tile_z,
+                    terrain.tiles_per_chunk(),
+                    terrain.units_per_tile()
+                );
+                terrain.reload_chunk_at(u_chunk_x, u_chunk_z);
+            }
+        }
+    }
+
+    void TerraformMode::update(
+        const engine::Window& window, const Renderer& renderer,
+        Balance& balance
+    ) {
         bool modified_terrain = window.was_pressed(engine::Button::Left)
             || window.was_pressed(engine::Button::Right);
         if(modified_terrain) {
             auto [tile_x, tile_z] = find_selected_terrain_vertex(
                 window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain
             );
-            i16& elevation = this->terrain.elevation_at(tile_x, tile_z);
+            i16 elevation = this->terrain.elevation_at(tile_x, tile_z);
+            i16 modification = 0;
             if(window.was_pressed(engine::Button::Left)) {
-                elevation -= 1;
+                modification -= 1;
             }
             if(window.was_pressed(engine::Button::Right)) {
-                elevation += 1;
+                modification += 1;
             }
-            for(i64 offset_x = -1; offset_x <= 0; offset_x += 1) {
-                for(i64 offset_z = -1; offset_z <= 0; offset_z += 1) {
-                    u64 u_tile_x = std::min(
-                        (u64) std::max((i64) tile_x + offset_x, (i64) 0),
-                        this->terrain.width_in_tiles()
-                    );
-                    u64 u_tile_z = std::min(
-                        (u64) std::max((i64) tile_z + offset_z, (i64) 0),
-                        this->terrain.height_in_tiles()
-                    );
-                    u64 u_chunk_x = u_tile_x / this->terrain.tiles_per_chunk();
-                    u64 u_chunk_z = u_tile_z / this->terrain.tiles_per_chunk();
-                    Terrain::ChunkData& u_chunk
-                        = this->terrain.chunk_at(u_chunk_x, u_chunk_z);
-                    remove_chunk_foliage_on_tile(
-                        u_chunk, u_chunk_x, u_chunk_z, u_tile_x, u_tile_z,
-                        this->terrain.tiles_per_chunk(),
-                        this->terrain.units_per_tile()
-                    );
-                    this->terrain.reload_chunk_at(u_chunk_x, u_chunk_z);
-                }
+            u64 cost = compute_terrain_modification_cost(
+                tile_x, tile_z, elevation, this->terrain
+            );
+            if(balance.pay_coins(cost)) {
+                modify_terrain_height(
+                    tile_x, tile_z, this->terrain, modification
+                );
             }
         }
     }

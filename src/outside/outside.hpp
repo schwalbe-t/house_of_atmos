@@ -16,6 +16,7 @@ namespace houseofatmos::outside {
         struct Serialized {
             Terrain::Serialized terrain;
             Player::Serialized player;
+            Balance balance;
         };
 
 
@@ -32,6 +33,7 @@ namespace houseofatmos::outside {
         );
         Player player;
         std::unique_ptr<ActionMode> action_mode;
+        Balance balance;
 
         Outside();
         Outside(const engine::Arena& buffer);
