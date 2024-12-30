@@ -25,6 +25,7 @@ namespace houseofatmos::engine {
     namespace internal {
         
         void glfw_error(int error, const char* description) {
+            (void) error;
             std::cout << "!!! [ERROR] (GLFW) " 
                 << std::string(description)
                 << std::endl;

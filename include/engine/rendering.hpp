@@ -176,7 +176,7 @@ namespace houseofatmos::engine {
 
             size_t type_size_bytes() const;
             size_t size_bytes() const;
-            size_t gl_type_constant() const;
+            int gl_type_constant() const;
             std::string display_type() const;
             std::string display() const;
         };

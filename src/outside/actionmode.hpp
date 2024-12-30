@@ -40,13 +40,15 @@ namespace houseofatmos::outside {
         enum Type {
             Default = 0,
             Terraform = 1,
-            Construction = 2
+            Construction = 2,
+            Demolition = 3
         };
 
         static inline const std::vector<engine::Key> keys = {
             engine::Key::Escape, // Default
             engine::Key::T, // Terraform
-            engine::Key::C // Construction
+            engine::Key::C, // Construction
+            engine::Key::R // Demolition
         };
 
 
@@ -71,8 +73,9 @@ namespace houseofatmos::outside {
 
         DefaultMode() {
             engine::info(
-                "Press T to enter terraforming mode "
-                "and C to enter construction mode."
+                "Press T to enter terraforming mode, "
+                "C to enter construction mode and "
+                "R to enter demolition mode."
             );
         }
 
@@ -84,6 +87,7 @@ namespace houseofatmos::outside {
         ) override {
             (void) window;
             (void) renderer;
+            (void) balance;
         }
 
         void render(engine::Scene& scene, const Renderer& renderer) override {
@@ -133,6 +137,31 @@ namespace houseofatmos::outside {
         }
 
         ActionMode::Type get_type() override { return ActionMode::Construction; }
+
+        void update(
+            const engine::Window& window, const Renderer& renderer,
+            Balance& balance
+        ) override;
+        void render(engine::Scene& scene, const Renderer& renderer) override;
+
+    };
+
+
+    struct DemolitionMode: ActionMode {
+
+        Terrain& terrain;
+        u64 selected_tile_x, selected_tile_z;
+        u64 selected_chunk_x, selected_chunk_z;
+        const Building* selected;
+
+        DemolitionMode(Terrain& terrain): terrain(terrain) {
+            engine::info(
+                "Entered demolition mode. Press R or Escape to exit. "
+                "Left click to destroy an existing building."
+            );
+        }
+
+        ActionMode::Type get_type() override { return ActionMode::Demolition; }
 
         void update(
             const engine::Window& window, const Renderer& renderer,

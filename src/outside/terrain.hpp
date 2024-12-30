@@ -152,7 +152,10 @@ namespace houseofatmos::outside {
             }
             return nullptr;
         }
-        Building* building_at(i64 tile_x, i64 tile_z);
+        Building* building_at(
+            i64 tile_x, i64 tile_z, 
+            u64* chunk_x_out = nullptr, u64* chunk_z_out = nullptr
+        );
 
         void generate_elevation(u32 seed = random_init());
         void generate_foliage(u32 seed = random_init());
@@ -172,7 +175,7 @@ namespace houseofatmos::outside {
             LoadedChunk& loaded_chunk,
             const engine::Texture& ground_texture, 
             const Vec<3>& chunk_offset,
-            engine::Scene& scene, const Renderer& renderer
+            const Renderer& renderer
         );
         void render_chunk_features(
             LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,

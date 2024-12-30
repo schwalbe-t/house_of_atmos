@@ -19,6 +19,7 @@ namespace houseofatmos::outside {
                 case Default: current = std::make_unique<DefaultMode>(); break;
                 case Terraform: current = std::make_unique<TerraformMode>(terrain); break;
                 case Construction: current = std::make_unique<ConstructionMode>(terrain); break;
+                case Demolition: current = std::make_unique<DemolitionMode>(terrain); break;
                 default: engine::warning(
                     "Unhandled 'ActionMode::Type' in 'ActionMode::choose_current'"
                 );
@@ -146,6 +147,7 @@ namespace houseofatmos::outside {
         const engine::Window& window, const Renderer& renderer,
         Balance& balance
     ) {
+        (void) renderer;
         auto [tile_x, tile_z] = find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
             0.0, 0.0
@@ -233,8 +235,8 @@ namespace houseofatmos::outside {
         i64 end_x = tile_x + (i64) ceil(type_info.width / 2.0);
         i64 start_z = tile_z - type_info.height / 2;
         i64 end_z = tile_z + (i64) ceil(type_info.height / 2.0);
-        if(start_x < 0 || end_x > terrain.width_in_tiles()) { return false; }
-        if(start_z < 0 || end_z > terrain.height_in_tiles()) { return false; }
+        if(start_x < 0 || (u64) end_x > terrain.width_in_tiles()) { return false; }
+        if(start_z < 0 || (u64) end_z > terrain.height_in_tiles()) { return false; }
         i16 target = terrain.elevation_at((u64) start_x, (u64) start_z);
         for(i64 x = start_x; x <= end_x; x += 1) {
             for(i64 z = start_z; z <= end_z; z += 1) {
@@ -286,6 +288,7 @@ namespace houseofatmos::outside {
         const engine::Window& window, const Renderer& renderer,
         Balance& balance
     ) {
+        (void) renderer;
         choose_building_type(window, this->selected_type);
         const Building::TypeInfo& type_info = Building::types
             .at((size_t) this->selected_type);
@@ -308,7 +311,9 @@ namespace houseofatmos::outside {
         }
     }
 
-    void ConstructionMode::render(engine::Scene& scene, const Renderer& renderer) {
+    void ConstructionMode::render(
+        engine::Scene& scene, const Renderer& renderer
+    ) {
         const engine::Texture& wireframe_texture = this->placement_valid
             ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
             : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
@@ -330,6 +335,76 @@ namespace houseofatmos::outside {
             renderer.render(
                 model, std::array { transform }, true, &wireframe_texture
             );
+        }
+    }
+
+
+
+    static const f64 demolition_refund_factor = 0.25;
+
+    void DemolitionMode::update(
+        const engine::Window& window, const Renderer& renderer, Balance& balance
+    ) {
+        auto [tile_x, tile_z] = find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
+            0.5, 0.5
+        );
+        this->selected_tile_x = tile_x;
+        this->selected_tile_z = tile_z;
+        this->selected = terrain.building_at(
+            (i64) tile_x, (i64) tile_z, 
+            &this->selected_chunk_x, &this->selected_chunk_z
+        );
+        if(this->selected != nullptr && window.was_pressed(engine::Button::Left)) {
+            const Building::TypeInfo& type_info = this->selected->get_type_info();
+            Terrain::ChunkData& chunk = this->terrain
+                .chunk_at(this->selected_chunk_x, this->selected_chunk_z);
+            size_t index = this->selected - chunk.buildings.data();
+            chunk.buildings.erase(chunk.buildings.begin() + index);
+            this->selected = nullptr;
+            u64 refunded = (u64) ((f64) type_info.cost * demolition_refund_factor);
+            balance.coins += refunded;
+            engine::info("Refunded " + std::to_string(refunded) + " coins "
+                "for building demolition (now " + std::to_string(balance.coins) + ")"
+            );
+        }
+    }
+
+    void DemolitionMode::render(
+        engine::Scene& scene, const Renderer& renderer
+    ) {
+        if(this->selected != nullptr) {
+            const engine::Texture& wireframe_texture = scene
+                .get<engine::Texture>(ActionMode::wireframe_error_texture);
+            const Building::TypeInfo& type_info = Building::types
+                .at((size_t) this->selected->type);
+            engine::Model& model = scene.get<engine::Model>(type_info.model);
+            Vec<3> chunk_offset = Vec<3>(
+                this->selected_chunk_x, 0, this->selected_chunk_z
+            ) * this->terrain.tiles_per_chunk() * this->terrain.units_per_tile();
+            Vec<3> offset = chunk_offset + Vec<3>(
+                this->selected->x + type_info.offset_x, 
+                0, 
+                this->selected->z + type_info.offset_z
+            ) * this->terrain.units_per_tile();
+            offset.y() = this->terrain.elevation_at(
+                this->selected_chunk_x * this->terrain.tiles_per_chunk()
+                    + this->selected->x, 
+                this->selected_chunk_z * this->terrain.tiles_per_chunk()
+                    + this->selected->z
+            );
+            Mat<4> transform = Mat<4>::translate(offset);
+            if(type_info.door_animation.has_value()) {
+                renderer.render(
+                    model, transform, 
+                    model.animation(*type_info.door_animation), 0.0,
+                    true, &wireframe_texture
+                );
+            } else {
+                renderer.render(
+                    model, std::array { transform }, true, &wireframe_texture
+                );
+            }
         }
     }
 

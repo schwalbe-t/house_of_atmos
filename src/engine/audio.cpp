@@ -35,7 +35,6 @@ namespace houseofatmos::engine {
         channels = info.channels;
         sample_rate = info.sample_rate;
         std::vector<i16> decoded;
-        size_t samples_per_channel;
         i16 frame[4096];
         for(;;) {
             size_t channel_samples = stb_vorbis_get_frame_short_interleaved(

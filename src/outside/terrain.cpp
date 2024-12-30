@@ -67,7 +67,6 @@ namespace houseofatmos::outside {
         };
         f64 tl_br_height_diff = fabs(tl.y() - br.y());
         f64 tr_bl_height_diff = fabs(tr.y() - bl.y());
-        f64 elev;
         if(tr_bl_height_diff > tl_br_height_diff) {
             // tl---tr
             //  | \ |
@@ -307,7 +306,7 @@ namespace houseofatmos::outside {
     bool Terrain::chunk_in_draw_distance(u64 chunk_x, u64 chunk_z) const {
         i64 diff_x = (i64) chunk_x - this->view_chunk_x;
         i64 diff_z = (i64) chunk_z - this->view_chunk_z;
-        u64 mh_dist = llabs(diff_x) + llabs(diff_z);
+        i64 mh_dist = llabs(diff_x) + llabs(diff_z);
         return mh_dist <= this->draw_distance;
     }
 
@@ -363,27 +362,37 @@ namespace houseofatmos::outside {
     }
 
 
-    Building* Terrain::building_at(i64 tile_x, i64 tile_z) {
-        u64 chunk_x = (u64) tile_x / this->chunk_tiles;
-        u64 chunk_z = (u64) tile_z / this->chunk_tiles;
-        ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
-        i64 chunk_offset_x = chunk_x * this->chunk_tiles;
-        i64 chunk_offset_z = chunk_z * this->chunk_tiles;
-        for(Building& building: chunk.buildings) {
-            const Building::TypeInfo& type = Building::types
-                .at((size_t) building.type);
-            i64 start_x = chunk_offset_x
-                + (i64) building.x - (i64) type.width / 2;
-            i64 end_x = chunk_offset_x
-                + (i64) building.x + (i64) ceil(type.width / 2.0);
-            i64 start_z = chunk_offset_z
-                + (i64) building.z - (i64) type.height / 2;
-            i64 end_z = chunk_offset_z
-                + (i64) building.z + (i64) ceil(type.height / 2.0);
-            bool overlaps = start_x <= tile_x && tile_x < end_x
-                && start_z <= tile_z && tile_z < end_z;
-            if(!overlaps) { continue; }
-            return &building;
+    Building* Terrain::building_at(
+        i64 tile_x, i64 tile_z, u64* chunk_x_out, u64* chunk_z_out
+    ) {
+        i64 r_chunk_x = tile_x / (i64) this->chunk_tiles;
+        i64 r_chunk_z = tile_z / (i64) this->chunk_tiles;
+        for(i64 chunk_x = r_chunk_x - 1; chunk_x <= r_chunk_x + 1; chunk_x += 1) {
+            if(chunk_x < 0 || (u64) chunk_x >= this->width_chunks) { continue; }
+            for(i64 chunk_z = r_chunk_z - 1; chunk_z <= r_chunk_z + 1; chunk_z += 1) {
+                if(chunk_z < 0 || (u64) chunk_z >= this->height_chunks) { continue; }
+                ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+                i64 chunk_offset_x = chunk_x * this->chunk_tiles;
+                i64 chunk_offset_z = chunk_z * this->chunk_tiles;
+                for(Building& building: chunk.buildings) {
+                    const Building::TypeInfo& type = Building::types
+                        .at((size_t) building.type);
+                    i64 start_x = chunk_offset_x
+                        + (i64) building.x - (i64) type.width / 2;
+                    i64 end_x = chunk_offset_x
+                        + (i64) building.x + (i64) ceil(type.width / 2.0);
+                    i64 start_z = chunk_offset_z
+                        + (i64) building.z - (i64) type.height / 2;
+                    i64 end_z = chunk_offset_z
+                        + (i64) building.z + (i64) ceil(type.height / 2.0);
+                    bool overlaps = start_x <= tile_x && tile_x < end_x
+                        && start_z <= tile_z && tile_z < end_z;
+                    if(!overlaps) { continue; }
+                    if(chunk_x_out != nullptr) { *chunk_x_out = (u64) chunk_x; }
+                    if(chunk_z_out != nullptr) { *chunk_z_out = (u64) chunk_z; }
+                    return &building;
+                }
+            }
         }
         return nullptr;
     }
@@ -402,9 +411,8 @@ namespace houseofatmos::outside {
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
             this->render_chunk_ground(
-                chunk, ground_texture, chunk_offset, scene, renderer
+                chunk, ground_texture, chunk_offset, renderer
             );
-            const ChunkData& data = this->chunk_at(chunk.x, chunk.z);
             this->render_chunk_features(chunk, chunk_offset, scene, renderer);
         }
         this->render_water(scene, renderer, window);
@@ -414,7 +422,7 @@ namespace houseofatmos::outside {
         LoadedChunk& loaded_chunk,
         const engine::Texture& ground_texture, 
         const Vec<3>& chunk_offset,
-        engine::Scene& scene, const Renderer& renderer
+        const Renderer& renderer
     ) {
         renderer.render(
             loaded_chunk.terrain, ground_texture, 

@@ -5,7 +5,7 @@
 
 using namespace houseofatmos;
 
-int main(int argc, char** argv) {
+int main() {
     engine::info("As there is no UI system yet, information will be visible here.");
     engine::info("It is recommended to keep this output visible while playing.");
     auto window = engine::Window(1280, 720, "House of Atmos");

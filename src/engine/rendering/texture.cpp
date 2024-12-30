@@ -84,7 +84,7 @@ namespace houseofatmos::engine {
 
     Texture Texture::from_resource(const Texture::LoadArgs& args) {
         std::vector<char> bytes = GenericResource::read_bytes(args.path);
-        int width, height, file_channels;
+        int width, height;
         stbi_uc* data = stbi_load_from_memory(
             (stbi_uc*) bytes.data(), bytes.size(), 
             &width, &height, nullptr, STBI_rgb_alpha

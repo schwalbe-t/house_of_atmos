@@ -125,6 +125,7 @@ namespace houseofatmos::engine {
                     case Mesh::U16: return {
                         (u8*) gltf_default_joints_u16, 0, SIZE_MAX
                     };
+                    default:;
                 }
             }
             case Model::Weights: {
@@ -132,6 +133,7 @@ namespace houseofatmos::engine {
                 if(attrib.second.type != Mesh::F32) { break; }
                 return { (u8*) gltf_default_weights_f32, 0, SIZE_MAX };
             }
+            default:;
         }
         error("Given model attributes expected an attribute '"
             + attrib_name + "' on the primitive with ID "
@@ -139,7 +141,7 @@ namespace houseofatmos::engine {
             + std::to_string(mesh_id) + " in '" + path + "'"
             ", but it does not exist and no matching default could be created"
         );
-        return { 0 };
+        return { nullptr, 0, 0 };
     }
 
     static GltfBufferView gltf_parse_mesh_attrib(
@@ -183,8 +185,7 @@ namespace houseofatmos::engine {
         size_t mesh_i,
         const std::vector<std::pair<Model::Attrib, Mesh::Attrib>>& attribs,
         const std::vector<GltfBufferView>& attribs_data,
-        GltfBufferView indices,
-        const std::string& path
+        GltfBufferView indices
     ) {
         assert(attribs.size() == attribs_data.size());
         size_t vertex_count = SIZE_MAX;
@@ -212,7 +213,6 @@ namespace houseofatmos::engine {
         for(size_t vert_i = 0; vert_i < vertex_count; vert_i += 1) {
             mesh.start_vertex();
             for(size_t attr_i = 0; attr_i < attribs.size(); attr_i += 1) {
-                Model::Attrib model_attrib = attribs[attr_i].first;
                 Mesh::Attrib mesh_attrib = attribs[attr_i].second;
                 GltfBufferView attrib_data = attribs_data[attr_i];
                 const u8* data = attrib_data.buffer
@@ -220,7 +220,7 @@ namespace houseofatmos::engine {
                 mesh.unsafe_put_raw(std::span(data, mesh_attrib.size_bytes()));
                 mesh.unsafe_next_attr();
             }
-            u16 vert_id = mesh.complete_vertex();
+            (void) mesh.complete_vertex();
         }
         for(size_t elem_i = 0; elem_i < indices.count / 3; elem_i += 1) {
             const u8* start = indices.buffer + elem_i * 3 * indices.stride;
@@ -272,12 +272,11 @@ namespace houseofatmos::engine {
                     ));
                 }
                 GltfBufferView indices = gltf_parse_indices(model, primitive, path);
-                const tinygltf::Material& material = model.materials[primitive.material];
                 primitive_indices[primitive_key(mesh_i, pmt_i)]
                     = primitives.size();
                 primitives.push_back({
                     gltf_assemble_mesh(
-                        mesh_i, attribs, attrib_data, indices, path
+                        mesh_i, attribs, attrib_data, indices
                     ),
                     Mat<4>()
                 });

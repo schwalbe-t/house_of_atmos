@@ -24,7 +24,7 @@ namespace houseofatmos::engine {
         return this->type_size_bytes() * this->count;
     }
 
-    size_t Mesh::Attrib::gl_type_constant() const {
+    int Mesh::Attrib::gl_type_constant() const {
         switch(this->type) {
             case Mesh::F32: return GL_FLOAT;
             case Mesh::I8: return GL_BYTE;
