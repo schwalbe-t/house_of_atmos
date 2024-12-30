@@ -67,7 +67,7 @@ namespace houseofatmos::outside {
         ) = 0;
 
         static void choose_current(
-            const engine::Window& window, Terrain& terrain, 
+            const engine::Window& window, Terrain& terrain, const Player& player,
             std::unique_ptr<ActionMode>& current
         );
 
@@ -138,11 +138,13 @@ namespace houseofatmos::outside {
     struct ConstructionMode: ActionMode {
 
         Terrain& terrain;
+        const Player& player;
         u64 selected_x, selected_z;
         Building::Type selected_type;
         bool placement_valid;
 
-        ConstructionMode(Terrain& terrain): terrain(terrain) {
+        ConstructionMode(Terrain& terrain, const Player& player)
+        : terrain(terrain), player(player) {
             this->selected_x = 0;
             this->selected_z = 0;
             this->selected_type = Building::Farmland;

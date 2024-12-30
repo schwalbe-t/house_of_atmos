@@ -36,7 +36,7 @@ namespace houseofatmos::outside {
     }
 
     void Outside::update(engine::Window& window) {
-        ActionMode::choose_current(window, this->terrain, this->action_mode);
+        ActionMode::choose_current(window, this->terrain, this->player, this->action_mode);
         this->action_mode->update(window, *this, this->renderer, this->balance);
         this->player.update(window);
         if(this->terrain.valid_player_position(this->player.next_x())) {

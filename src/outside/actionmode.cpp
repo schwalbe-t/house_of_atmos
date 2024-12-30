@@ -4,7 +4,7 @@
 namespace houseofatmos::outside {
 
     void ActionMode::choose_current(
-        const engine::Window& window, Terrain& terrain,
+        const engine::Window& window, Terrain& terrain, const Player& player,
         std::unique_ptr<ActionMode>& current
     ) {
         for(size_t type_i = 0; type_i < ActionMode::keys.size(); type_i += 1) {
@@ -18,7 +18,7 @@ namespace houseofatmos::outside {
             switch(type) {
                 case Default: current = std::make_unique<DefaultMode>(); break;
                 case Terraform: current = std::make_unique<TerraformMode>(terrain); break;
-                case Construction: current = std::make_unique<ConstructionMode>(terrain); break;
+                case Construction: current = std::make_unique<ConstructionMode>(terrain, player); break;
                 case Demolition: current = std::make_unique<DemolitionMode>(terrain); break;
                 case Pathing: current = std::make_unique<PathingMode>(terrain); break;
                 default: engine::warning(
@@ -247,9 +247,11 @@ namespace houseofatmos::outside {
     }
 
     static bool building_location_valid(
-        i64 tile_x, i64 tile_z, Terrain& terrain,
+        i64 tile_x, i64 tile_z, Terrain& terrain, const Player& player,
         const Building::TypeInfo& type_info
     ) {
+        i64 player_tile_x = (i64) player.position.x() / terrain.units_per_tile();
+        i64 player_tile_z = (i64) player.position.z() / terrain.units_per_tile();
         i64 start_x = tile_x - type_info.width / 2;
         i64 end_x = tile_x + (i64) ceil(type_info.width / 2.0);
         i64 start_z = tile_z - type_info.height / 2;
@@ -265,9 +267,11 @@ namespace houseofatmos::outside {
         }
         for(i64 x = start_x; x < end_x; x += 1) {
             for(i64 z = start_z; z < end_z; z += 1) {
+                if(x == player_tile_x && z == player_tile_z) { return false; }
                 if(terrain.building_at(x, z) != nullptr) { return false; }
             }
         }
+        if(target < 0) { return false; }
         return true;
     }
 
@@ -319,7 +323,7 @@ namespace houseofatmos::outside {
         this->selected_x = tile_x;
         this->selected_z = tile_z;
         this->placement_valid = building_location_valid(
-            (i64) tile_x, (i64) tile_z, this->terrain, type_info
+            (i64) tile_x, (i64) tile_z, this->terrain, this->player, type_info
         );
         bool was_placed = this->placement_valid
             && window.was_pressed(engine::Button::Left)
