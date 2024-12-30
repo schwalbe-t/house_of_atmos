@@ -168,6 +168,7 @@ namespace houseofatmos::engine {
     i32 Window::width() const { return this->last_width; }
     i32 Window::height() const { return this->last_height; }
     f64 Window::delta_time() const { return this->frame_delta; }
+    f64 Window::time() const { return this->last_time; }
 
 
     void Window::show_cursor() const {

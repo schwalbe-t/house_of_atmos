@@ -11,7 +11,8 @@ namespace houseofatmos::outside {
 
         struct TypeInfo {
             engine::Model::LoadArgs model;
-            std::optional<std::string> door_animation;
+            std::optional<std::string> animation;
+            f64 animation_speed;
             u8 width, height; // in tiles
             f64 offset_x, offset_z; // in tiles, 0..1
             u64 cost; // in coins
@@ -20,28 +21,28 @@ namespace houseofatmos::outside {
         static inline const std::vector<TypeInfo> types = {
             /* Type::Farmland */ {
                 { "res/buildings/farmland.gltf", Renderer::model_attribs },
-                std::nullopt,
+                std::nullopt, 0.0,
                 2, 2,
                 0, 0,
                 500
             },
             /* Type::Mineshaft */ {
                 { "res/buildings/mineshaft.gltf", Renderer::model_attribs },
-                std::nullopt,
+                std::nullopt, 0.0,
                 2, 2,
                 0, 0,
                 1000
             },
             /* Type::Factory */ {
                 { "res/buildings/factory.gltf", Renderer::model_attribs },
-                std::nullopt,
-                2, 2,
-                0, 0,
+                std::nullopt, 0.0,
+                2, 1,
+                0, 0.5,
                 1000
             },
             /* Type::House */ {
                 { "res/buildings/house.gltf", Renderer::model_attribs },
-                "door",
+                "door", 0.0, // speed = 0 -> will always be the first frame
                 1, 1,
                 0.5, 0.5,
                 500

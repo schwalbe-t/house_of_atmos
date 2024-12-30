@@ -43,6 +43,8 @@ namespace houseofatmos {
             "res/player.gltf", Renderer::model_attribs
         };
 
+        static const inline Vec<3> collision_box = Vec<3>(1, 0, 1);
+
 
         private:
         f64 angle;
@@ -56,6 +58,7 @@ namespace houseofatmos {
 
         public:
         Vec<3> position;
+        Vec<3> next_step;
         bool in_water;
 
         Player() {
@@ -78,6 +81,24 @@ namespace houseofatmos {
         }
 
         void update(engine::Window& window);
+        Vec<3> next_x() { 
+            Vec<3> result = this->position;
+            result.x() += this->next_step.x();
+            result.x() += this->next_step.x() >= 0
+                ? Player::collision_box.x() / 2
+                : - Player::collision_box.x() / 2;
+            return result; 
+        }
+        Vec<3> next_z() { 
+            Vec<3> result = this->position;
+            result.z() += this->next_step.z();
+            result.z() += this->next_step.z() >= 0
+                ? Player::collision_box.z() / 2
+                : - Player::collision_box.z() / 2;
+            return result; 
+        }
+        void proceed_x() { this->position.x() += this->next_step.x(); }
+        void proceed_z() { this->position.z() += this->next_step.z(); }
         void render(engine::Scene& scene, const Renderer& renderer);
 
         Serialized serialize(engine::Arena& buffer) const;

@@ -49,7 +49,7 @@ namespace houseofatmos {
             this->angle = atan2(cross, model_heading.dot(heading));
         }
         f64 speed = this->in_water? swim_speed : walk_speed;
-        this->position += heading * speed * window.delta_time();
+        this->next_step = heading * speed * window.delta_time();
         this->anim_time += window.delta_time();
     }
 

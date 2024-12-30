@@ -56,6 +56,7 @@ namespace houseofatmos::engine {
         i32 width() const;
         i32 height() const;
         f64 delta_time() const;
+        f64 time() const;
 
         bool is_down(Key key) const {
             return this->keys_down_curr[(size_t) key]; 

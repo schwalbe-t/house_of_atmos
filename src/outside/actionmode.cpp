@@ -145,9 +145,10 @@ namespace houseofatmos::outside {
     }
 
     void TerraformMode::update(
-        const engine::Window& window, const Renderer& renderer,
-        Balance& balance
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer, Balance& balance
     ) {
+        (void) scene;
         (void) renderer;
         auto [tile_x, tile_z] = find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
@@ -177,7 +178,11 @@ namespace houseofatmos::outside {
         }
     }
 
-    void TerraformMode::render(engine::Scene& scene, const Renderer& renderer) {
+    void TerraformMode::render(
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer
+    ) {
+        (void) window;
         i16& elevation = this->terrain.elevation_at(
             this->selected_x, this->selected_z
         );
@@ -286,9 +291,10 @@ namespace houseofatmos::outside {
     }
 
     void ConstructionMode::update(
-        const engine::Window& window, const Renderer& renderer,
-        Balance& balance
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer, Balance& balance
     ) {
+        (void) scene;
         (void) renderer;
         choose_building_type(window, this->selected_type);
         const Building::TypeInfo& type_info = Building::types
@@ -313,7 +319,8 @@ namespace houseofatmos::outside {
     }
 
     void ConstructionMode::render(
-        engine::Scene& scene, const Renderer& renderer
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer
     ) {
         const engine::Texture& wireframe_texture = this->placement_valid
             ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
@@ -326,10 +333,12 @@ namespace houseofatmos::outside {
         ) * this->terrain.units_per_tile();
         offset.y() = this->terrain.elevation_at(this->selected_x, this->selected_z);
         Mat<4> transform = Mat<4>::translate(offset);
-        if(type_info.door_animation.has_value()) {
+        if(type_info.animation.has_value()) {
+            const engine::Animation& animation = model.animation(*type_info.animation);
             renderer.render(
                 model, transform, 
-                model.animation(*type_info.door_animation), 0.0,
+                animation,
+                fmod(window.time() * type_info.animation_speed, animation.length()),
                 true, &wireframe_texture
             );
         } else {
@@ -344,8 +353,10 @@ namespace houseofatmos::outside {
     static const f64 demolition_refund_factor = 0.25;
 
     void DemolitionMode::update(
-        const engine::Window& window, const Renderer& renderer, Balance& balance
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer, Balance& balance
     ) {
+        (void) scene;
         auto [tile_x, tile_z] = find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
             0.5, 0.5
@@ -375,7 +386,8 @@ namespace houseofatmos::outside {
     }
 
     void DemolitionMode::render(
-        engine::Scene& scene, const Renderer& renderer
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer
     ) {
         if(this->selected != nullptr) {
             const engine::Texture& wireframe_texture = scene
@@ -398,10 +410,13 @@ namespace houseofatmos::outside {
                     + this->selected->z
             );
             Mat<4> transform = Mat<4>::translate(offset);
-            if(type_info.door_animation.has_value()) {
+            if(type_info.animation.has_value()) {
+                const engine::Animation& animation = model
+                    .animation(*type_info.animation);
                 renderer.render(
                     model, transform, 
-                    model.animation(*type_info.door_animation), 0.0,
+                    animation,
+                    fmod(window.time() * type_info.animation_speed, animation.length()),
                     true, &wireframe_texture
                 );
             } else {
@@ -418,8 +433,10 @@ namespace houseofatmos::outside {
     static const u64 path_removal_refund = 5;
 
     void PathingMode::update(
-        const engine::Window& window, const Renderer& renderer, Balance& balance
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer, Balance& balance
     ) {
+        (void) scene;
         auto [tile_x, tile_z] = find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
             0.5, 0.5

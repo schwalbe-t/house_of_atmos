@@ -407,6 +407,12 @@ namespace houseofatmos::outside {
         return nullptr;
     }
 
+    bool Terrain::valid_player_position(const Vec<3>& position) {
+        i64 tile_x = (i64) (position.x() / (f64) this->tile_size);
+        i64 tile_z = (i64) (position.z() / (f64) this->tile_size);
+        return this->building_at(tile_x, tile_z) == nullptr;
+    }
+
 
     void Terrain::render_loaded_chunks(
         engine::Scene& scene, const Renderer& renderer,
@@ -423,7 +429,9 @@ namespace houseofatmos::outside {
             this->render_chunk_ground(
                 chunk, ground_texture, chunk_offset, renderer
             );
-            this->render_chunk_features(chunk, chunk_offset, scene, renderer);
+            this->render_chunk_features(
+                chunk, chunk_offset, window, scene, renderer
+            );
         }
         this->render_water(scene, renderer, window);
     }
@@ -444,7 +452,7 @@ namespace houseofatmos::outside {
 
     void Terrain::render_chunk_features(
         LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,
-        engine::Scene& scene, const Renderer& renderer
+        const engine::Window& window, engine::Scene& scene, const Renderer& renderer
     ) {
         const ChunkData& data = this->chunk_at(loaded_chunk.x, loaded_chunk.z);
         for(const auto& [foliage_type, instances]: loaded_chunk.foliage) {
@@ -466,10 +474,12 @@ namespace houseofatmos::outside {
                 building.get_type_info().model
             );
             Mat<4> transform = Mat<4>::translate(offset);
-            if(type.door_animation.has_value()) {
+            if(type.animation.has_value()) {
+                const engine::Animation& animation = model.animation(*type.animation);
                 renderer.render(
                     model, transform, 
-                    model.animation(*type.door_animation), 0.0
+                    animation,
+                    fmod(window.time() * type.animation_speed, animation.length())
                 );
             } else {
                 renderer.render(model, std::array { transform });

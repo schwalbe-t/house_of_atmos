@@ -175,6 +175,7 @@ namespace houseofatmos::outside {
             i64 tile_x, i64 tile_z, 
             u64* chunk_x_out = nullptr, u64* chunk_z_out = nullptr
         );
+        bool valid_player_position(const Vec<3>& position);
 
         void generate_elevation(u32 seed = random_init());
         void generate_foliage(u32 seed = random_init());
@@ -198,7 +199,7 @@ namespace houseofatmos::outside {
         );
         void render_chunk_features(
             LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,
-            engine::Scene& scene, const Renderer& renderer
+            const engine::Window& window, engine::Scene& scene, const Renderer& renderer
         );
         void render_water(
             engine::Scene& scene, const Renderer& renderer,

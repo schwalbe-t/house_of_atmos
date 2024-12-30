@@ -58,10 +58,13 @@ namespace houseofatmos::outside {
 
         virtual Type get_type() = 0;
         virtual void update(
-            const engine::Window& window, const Renderer& renderer, 
-            Balance& balance
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer, Balance& balance
         ) = 0;
-        virtual void render(engine::Scene& scene, const Renderer& renderer) = 0;
+        virtual void render(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) = 0;
 
         static void choose_current(
             const engine::Window& window, Terrain& terrain, 
@@ -84,15 +87,20 @@ namespace houseofatmos::outside {
         ActionMode::Type get_type() override { return ActionMode::Default; }
 
         void update(
-            const engine::Window& window, const Renderer& renderer, 
-            Balance& balance
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer, Balance& balance
         ) override {
             (void) window;
+            (void) scene;
             (void) renderer;
             (void) balance;
         }
 
-        void render(engine::Scene& scene, const Renderer& renderer) override {
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override {
+            (void) window;
             (void) scene;
             (void) renderer;
         }
@@ -115,10 +123,13 @@ namespace houseofatmos::outside {
         ActionMode::Type get_type() override { return ActionMode::Terraform; }
 
         void update(
-            const engine::Window& window, const Renderer& renderer,
-            Balance& balance
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer, Balance& balance
         ) override;
-        void render(engine::Scene& scene, const Renderer& renderer) override;
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override;
 
     };
 
@@ -144,10 +155,13 @@ namespace houseofatmos::outside {
         ActionMode::Type get_type() override { return ActionMode::Construction; }
 
         void update(
-            const engine::Window& window, const Renderer& renderer,
-            Balance& balance
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer, Balance& balance
         ) override;
-        void render(engine::Scene& scene, const Renderer& renderer) override;
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override;
 
     };
 
@@ -174,10 +188,13 @@ namespace houseofatmos::outside {
         ActionMode::Type get_type() override { return ActionMode::Demolition; }
 
         void update(
-            const engine::Window& window, const Renderer& renderer,
-            Balance& balance
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer, Balance& balance
         ) override;
-        void render(engine::Scene& scene, const Renderer& renderer) override;
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override;
 
     };
 
@@ -199,10 +216,14 @@ namespace houseofatmos::outside {
         ActionMode::Type get_type() override { return ActionMode::Pathing; }
 
         void update(
-            const engine::Window& window, const Renderer& renderer,
-            Balance& balance
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer, Balance& balance
         ) override;
-        void render(engine::Scene& scene, const Renderer& renderer) override {
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override {
+            (void) window;
             (void) scene;
             (void) renderer;
         }
