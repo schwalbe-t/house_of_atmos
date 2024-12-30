@@ -116,6 +116,15 @@ namespace houseofatmos::outside {
         return 100 + (u64) pow(5, (min_elev_diff + 1));
     }
 
+    static bool modified_terrain_occupied(
+        i64 tile_x, i64 tile_z, Terrain& terrain
+    ) {
+        return terrain.building_at(tile_x - 1, tile_z - 1) != nullptr
+            || terrain.building_at(tile_x - 1, tile_z) != nullptr
+            || terrain.building_at(tile_x, tile_z - 1) != nullptr
+            || terrain.building_at(tile_x, tile_z) != nullptr;
+    }
+
     static void modify_terrain_height(
         u64 tile_x, u64 tile_z, Terrain& terrain, i16 modification
     ) {
@@ -156,6 +165,9 @@ namespace houseofatmos::outside {
         );
         this->selected_x = tile_x;
         this->selected_z = tile_z;
+        this->modification_valid = !modified_terrain_occupied(
+            (i64) tile_x, (i64) tile_z, this->terrain
+        );
         bool modified_terrain = window.was_pressed(engine::Button::Left)
             || window.was_pressed(engine::Button::Right);
         if(modified_terrain) {
@@ -170,7 +182,7 @@ namespace houseofatmos::outside {
             u64 cost = compute_terrain_modification_cost(
                 tile_x, tile_z, elevation, this->terrain
             );
-            if(balance.pay_coins(cost)) {
+            if(this->modification_valid && balance.pay_coins(cost)) {
                 modify_terrain_height(
                     tile_x, tile_z, this->terrain, modification
                 );
@@ -192,8 +204,9 @@ namespace houseofatmos::outside {
             * this->terrain.tiles_per_chunk()
             * this->terrain.units_per_tile();
         Mat<4> transform = Mat<4>::translate(offset);
-        const engine::Texture& wireframe_add_texture = scene
-            .get<engine::Texture>(ActionMode::wireframe_add_texture);
+        const engine::Texture& wireframe_add_texture = this->modification_valid
+            ? scene.get<engine::Texture>(ActionMode::wireframe_add_texture)
+            : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
         elevation += 1;
         engine::Mesh add_geometry = this->terrain
             .build_chunk_geometry(chunk_x, chunk_z);

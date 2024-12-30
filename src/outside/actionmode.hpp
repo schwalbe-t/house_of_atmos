@@ -112,6 +112,7 @@ namespace houseofatmos::outside {
 
         Terrain& terrain;
         u64 selected_x, selected_z;
+        bool modification_valid;
 
         TerraformMode(Terrain& terrain): terrain(terrain) {
             engine::info(
