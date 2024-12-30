@@ -20,6 +20,7 @@ namespace houseofatmos::outside {
                 case Terraform: current = std::make_unique<TerraformMode>(terrain); break;
                 case Construction: current = std::make_unique<ConstructionMode>(terrain); break;
                 case Demolition: current = std::make_unique<DemolitionMode>(terrain); break;
+                case Pathing: current = std::make_unique<PathingMode>(terrain); break;
                 default: engine::warning(
                     "Unhandled 'ActionMode::Type' in 'ActionMode::choose_current'"
                 );
@@ -364,6 +365,9 @@ namespace houseofatmos::outside {
             this->selected = nullptr;
             u64 refunded = (u64) ((f64) type_info.cost * demolition_refund_factor);
             balance.coins += refunded;
+            this->terrain.reload_chunk_at(
+                this->selected_chunk_x, this->selected_chunk_z
+            );
             engine::info("Refunded " + std::to_string(refunded) + " coins "
                 "for building demolition (now " + std::to_string(balance.coins) + ")"
             );
@@ -405,6 +409,45 @@ namespace houseofatmos::outside {
                     model, std::array { transform }, true, &wireframe_texture
                 );
             }
+        }
+    }
+
+
+
+    static const u64 path_placement_cost = 10;
+    static const u64 path_removal_refund = 5;
+
+    void PathingMode::update(
+        const engine::Window& window, const Renderer& renderer, Balance& balance
+    ) {
+        auto [tile_x, tile_z] = find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
+            0.5, 0.5
+        );
+        this->selected_tile_x = tile_x;
+        this->selected_tile_z = tile_z;
+        u64 chunk_x = tile_x / this->terrain.tiles_per_chunk();
+        u64 chunk_z = tile_z / this->terrain.tiles_per_chunk();
+        u64 rel_x = tile_x % this->terrain.tiles_per_chunk();
+        u64 rel_z = tile_z % this->terrain.tiles_per_chunk();
+        Terrain::ChunkData& chunk = this->terrain.chunk_at(chunk_x, chunk_z);
+        bool has_path = chunk.path_at(rel_x, rel_z);
+        bool place_path = !has_path && window.was_pressed(engine::Button::Left) 
+            && balance.pay_coins(path_placement_cost);
+        if(place_path) {
+            chunk.set_path_at(rel_x, rel_z, true);
+            remove_chunk_foliage_on_tile(
+                chunk, chunk_x, chunk_z, tile_x, tile_z, 
+                this->terrain.tiles_per_chunk(), this->terrain.units_per_tile()
+            );
+            this->terrain.reload_chunk_at(chunk_x, chunk_z);
+        } else if(has_path && window.was_pressed(engine::Button::Right)) {
+            chunk.set_path_at(rel_x, rel_z, false);
+            this->terrain.reload_chunk_at(chunk_x, chunk_z);
+            balance.coins += path_removal_refund;
+            engine::info("Refunded " + std::to_string(path_removal_refund) + " coins "
+                "for path removal (now " + std::to_string(balance.coins) + ")"
+            );
         }
     }
 

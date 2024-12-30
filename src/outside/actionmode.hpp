@@ -41,14 +41,16 @@ namespace houseofatmos::outside {
             Default = 0,
             Terraform = 1,
             Construction = 2,
-            Demolition = 3
+            Demolition = 3,
+            Pathing = 4
         };
 
         static inline const std::vector<engine::Key> keys = {
             engine::Key::Escape, // Default
             engine::Key::T, // Terraform
             engine::Key::C, // Construction
-            engine::Key::R // Demolition
+            engine::Key::R, // Demolition
+            engine::Key::P  // Pathing
         };
 
 
@@ -129,11 +131,14 @@ namespace houseofatmos::outside {
         bool placement_valid;
 
         ConstructionMode(Terrain& terrain): terrain(terrain) {
+            this->selected_x = 0;
+            this->selected_z = 0;
+            this->selected_type = Building::Farmland;
+            this->placement_valid = false;
             engine::info(
                 "Entered construction mode. Press C or Escape to exit. "
                 "Use the number buttons to select a building and left click to place it."
             );
-            this->selected_type = Building::Farmland;
         }
 
         ActionMode::Type get_type() override { return ActionMode::Construction; }
@@ -155,6 +160,11 @@ namespace houseofatmos::outside {
         const Building* selected;
 
         DemolitionMode(Terrain& terrain): terrain(terrain) {
+            this->selected_tile_x = 0;
+            this->selected_tile_z = 0;
+            this->selected_chunk_x = 0;
+            this->selected_chunk_z = 0;
+            this->selected = nullptr;
             engine::info(
                 "Entered demolition mode. Press R or Escape to exit. "
                 "Left click to destroy an existing building."
@@ -168,6 +178,34 @@ namespace houseofatmos::outside {
             Balance& balance
         ) override;
         void render(engine::Scene& scene, const Renderer& renderer) override;
+
+    };
+
+
+    struct PathingMode: ActionMode {
+
+        Terrain& terrain;
+        u64 selected_tile_x, selected_tile_z;
+
+        PathingMode(Terrain& terrain): terrain(terrain) {
+            engine::info(
+                "Entered pathing mode. Press P or Escape to exit. "
+                "Left to place a path, right click to remove an existing one."
+            );
+            this->selected_tile_x = 0;
+            this->selected_tile_z = 0;
+        }
+
+        ActionMode::Type get_type() override { return ActionMode::Pathing; }
+
+        void update(
+            const engine::Window& window, const Renderer& renderer,
+            Balance& balance
+        ) override;
+        void render(engine::Scene& scene, const Renderer& renderer) override {
+            (void) scene;
+            (void) renderer;
+        }
 
     };
 

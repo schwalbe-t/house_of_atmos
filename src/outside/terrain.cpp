@@ -194,18 +194,18 @@ namespace houseofatmos::outside {
     static void put_terrain_element_ccw(
         const Vec<3>& pos_a, const Vec<3>& pos_b, const Vec<3>& pos_c, 
         const Vec<2>& uv_a, const Vec<2>& uv_b, const Vec<2>& uv_c,
-        engine::Mesh& dest
+        bool is_path, engine::Mesh& dest
     ) {
         f64 min_height = std::min(pos_a.y(), std::min(pos_b.y(), pos_c.y()));
         f64 max_height = std::max(pos_a.y(), std::max(pos_b.y(), pos_c.y()));
         f64 height_diff = max_height - min_height;
-        Vec<2> uv_offset = (min_height < sand_max_height
-            ? Vec<2>(0, 0.5)
-            : (height_diff > stone_min_height_diff
-                ? Vec<2>(0.5, 0)
-                : Vec<2>(0, 0)
-            )
-        );
+        Vec<2> uv_offset = is_path
+            ? Vec<2>(0.5, 0.5)
+            : min_height < sand_max_height
+            ? Vec<2>(0.0, 0.5)
+            : height_diff > stone_min_height_diff
+            ? Vec<2>(0.5, 0.0)
+            : Vec<2>(0.0, 0.0);
         Vec<3> normal = compute_normal_ccw(pos_a, pos_b, pos_c);
         dest.add_element(
             put_terrain_vertex(pos_a, uv_a + uv_offset, normal, dest),
@@ -216,6 +216,7 @@ namespace houseofatmos::outside {
 
     engine::Mesh Terrain::build_chunk_geometry(u64 chunk_x, u64 chunk_z) {
         auto geometry = engine::Mesh(Renderer::mesh_attribs);
+        ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
         u64 start_x = chunk_x * this->chunk_tiles;
         u64 end_x = std::min((chunk_x + 1) * this->chunk_tiles, this->width);
         u64 start_z = chunk_z * this->chunk_tiles;
@@ -248,6 +249,7 @@ namespace houseofatmos::outside {
                 };
                 f64 tl_br_height_diff = fabs(pos_tl.y() - pos_br.y());
                 f64 tr_bl_height_diff = fabs(pos_tr.y() - pos_bl.y());
+                bool is_path = chunk_data.path_at(left, top);
                 Vec<2> uv_bl = { 0.0, 0.0 };
                 Vec<2> uv_br = { 0.5, 0.0 };
                 Vec<2> uv_tl = { 0.0, 0.5 };
@@ -257,20 +259,28 @@ namespace houseofatmos::outside {
                     //  | \ |
                     // bl---br
                     put_terrain_element_ccw(
-                        pos_tl, pos_bl, pos_br, uv_tl, uv_bl, uv_br, geometry
+                        pos_tl, pos_bl, pos_br, 
+                        uv_tl, uv_bl, uv_br, 
+                        is_path, geometry
                     );
                     put_terrain_element_ccw(
-                        pos_tl, pos_br, pos_tr, uv_tl, uv_br, uv_tr, geometry
+                        pos_tl, pos_br, pos_tr, 
+                        uv_tl, uv_br, uv_tr, 
+                        is_path, geometry
                     );
                 } else {
                     // tl---tr
                     //  | / |
                     // bl---br
                     put_terrain_element_ccw(
-                        pos_tl, pos_bl, pos_tr, uv_tl, uv_bl, uv_tr, geometry
+                        pos_tl, pos_bl, pos_tr, 
+                        uv_tl, uv_bl, uv_tr, 
+                        is_path, geometry
                     );
                     put_terrain_element_ccw(
-                        pos_tr, pos_bl, pos_br, uv_tr, uv_bl, uv_br, geometry
+                        pos_tr, pos_bl, pos_br, 
+                        uv_tr, uv_bl, uv_br, 
+                        is_path, geometry
                     );
                 }
             }
@@ -523,14 +533,16 @@ namespace houseofatmos::outside {
         );
         this->chunks.reserve(chunks.size());
         for(const ChunkData::Serialized& chunk: chunks) {
-            this->chunks.push_back(ChunkData(chunk, buffer));
+            this->chunks.push_back(ChunkData(this->chunk_tiles, chunk, buffer));
         }
         this->build_water_plane();
     }
 
     Terrain::ChunkData::ChunkData(
+        u64 size_tiles,
         const ChunkData::Serialized& serialized, const engine::Arena& buffer
     ) {
+        this->size_tiles = size_tiles;
         std::span<const Foliage> foliage = buffer.at<Foliage>(
             serialized.foliage_offset, serialized.foliage_count
         );
@@ -539,6 +551,10 @@ namespace houseofatmos::outside {
             serialized.building_offset, serialized.building_count
         );
         this->buildings.assign(buildings.begin(), buildings.end());
+        std::span<const u8> paths = buffer.at<u8>(
+            serialized.paths_offset, serialized.paths_count
+        );
+        this->paths.assign(paths.begin(), paths.end());
     }
 
     Terrain::ChunkData::Serialized Terrain::ChunkData::serialize(
@@ -546,7 +562,8 @@ namespace houseofatmos::outside {
     ) const {
         return {
             this->foliage.size(), buffer.alloc_array<Foliage>(this->foliage),
-            this->buildings.size(), buffer.alloc_array<Building>(this->buildings)
+            this->buildings.size(), buffer.alloc_array<Building>(this->buildings),
+            this->paths.size(), buffer.alloc_array<u8>(this->paths)
         };
     }
 

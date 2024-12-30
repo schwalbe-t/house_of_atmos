@@ -45,13 +45,30 @@ namespace houseofatmos::outside {
             struct Serialized {
                 u64 foliage_count, foliage_offset;
                 u64 building_count, building_offset;
+                u64 paths_count, paths_offset;
             };
 
-            ChunkData() {}
-            ChunkData(const Serialized& serialized, const engine::Arena& buffer);
+            ChunkData(u64 size_tiles) {
+                this->size_tiles = size_tiles;
+                this->paths.resize(size_tiles * size_tiles);
+            }
+            ChunkData(
+                u64 size_tiles, 
+                const Serialized& serialized, const engine::Arena& buffer
+            );
 
             std::vector<Foliage> foliage;
             std::vector<Building> buildings;
+            std::vector<u8> paths;
+            u64 size_tiles;
+
+            void set_path_at(u64 rel_x, u64 rel_z, bool is_present) {
+                this->paths.at(rel_x + this->size_tiles * rel_z) = is_present?
+                    1 : 0;
+            }
+            bool path_at(u64 rel_x, u64 rel_z) const {
+                return this->paths.at(rel_x + this->size_tiles * rel_z) != 0;
+            }
 
             Serialized serialize(engine::Arena& buffer) const;
         };
@@ -111,7 +128,9 @@ namespace houseofatmos::outside {
             this->elevation.resize((width + 1) * (height + 1));
             this->width_chunks = (u64) ceil((f64) width / chunk_tiles);
             this->height_chunks = (u64) ceil((f64) height / chunk_tiles);
-            this->chunks.resize(width_chunks * height_chunks);
+            this->chunks = std::vector<ChunkData>(
+                width_chunks * height_chunks, ChunkData(chunk_tiles)
+            );
             this->build_water_plane();
         }
         
