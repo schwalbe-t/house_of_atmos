@@ -66,6 +66,31 @@ namespace houseofatmos::outside {
                 1, 1,
                 0.5, 0.5,
                 500
+            },
+            /* Type::Plaza */ {
+                { "res/buildings/plaza.glb", Renderer::model_attribs },
+                std::nullopt, 0.0,
+                { 
+                    // well
+                    Collider(Vec<3>(-2.50, -0.5, -2.50), Vec<3>(5.0, 1, 5.0)),
+                    // left stand
+                    Collider(Vec<3>(-7.25, -0.5, -7.25), Vec<3>(0.5, 1, 0.5)),
+                    Collider(Vec<3>(-3.25, -0.5, -7.25), Vec<3>(0.5, 1, 0.5)),
+                    Collider(Vec<3>(-7.25, -0.5, -3.25), Vec<3>(0.5, 1, 0.5)),
+                    Collider(Vec<3>(-3.25, -0.5, -3.25), Vec<3>(0.5, 1, 0.5)),
+                    Collider(Vec<3>(-7.50, -0.5, -2.25), Vec<3>(1.0, 1, 2.0)),
+                    Collider(Vec<3>(-7.00, -0.5, -5.50), Vec<3>(3.5, 1, 1.0)),
+                    // right stand
+                    Collider(Vec<3>( 6.75, -0.5, -7.25), Vec<3>(0.5, 1, 0.5)),
+                    Collider(Vec<3>( 2.75, -0.5, -7.25), Vec<3>(0.5, 1, 0.5)),
+                    Collider(Vec<3>( 6.75, -0.5, -3.25), Vec<3>(0.5, 1, 0.5)),
+                    Collider(Vec<3>( 2.75, -0.5, -3.25), Vec<3>(0.5, 1, 0.5)),
+                    Collider(Vec<3>( 1.50, -0.5, -7.50), Vec<3>(1.0, 1, 1.0)),
+                    Collider(Vec<3>( 4.50, -0.5, -5.50), Vec<3>(2.5, 1, 1.0))
+                },
+                3, 3,
+                0.5, 0.5,
+                5000
             }
         };
 
@@ -81,7 +106,8 @@ namespace houseofatmos::outside {
             Mineshaft = 1,
             Windmill = 2,
             Factory = 3,
-            House = 4
+            House = 4,
+            Plaza = 5
         };
 
         Type type;

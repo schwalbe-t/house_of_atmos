@@ -168,6 +168,9 @@ namespace houseofatmos::outside {
         if(window.was_pressed(engine::Key::Num5)) {
             type = Building::House;
         }
+        if(window.was_pressed(engine::Key::Num9)) {
+            type = Building::Plaza;
+        }
     }
 
     static void place_building(
