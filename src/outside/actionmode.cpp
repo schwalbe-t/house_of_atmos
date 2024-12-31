@@ -31,70 +31,6 @@ namespace houseofatmos::outside {
 
 
 
-    static const i64 chunk_sel_range = 2;
-
-    static std::pair<u64, u64> find_selected_terrain_tile(
-        Vec<2> cursor_pos_ndc, const Mat<4>& view_proj, const Terrain& terrain,
-        f64 tile_offset_x, f64 tile_offset_z
-    ) {
-        i64 start_x = (terrain.viewed_chunk_x() - chunk_sel_range) 
-            * (i64) terrain.tiles_per_chunk();
-        i64 end_x = (terrain.viewed_chunk_x() + chunk_sel_range) 
-            * (i64) terrain.tiles_per_chunk();
-        i64 start_z = (terrain.viewed_chunk_z() - chunk_sel_range) 
-            * (i64) terrain.tiles_per_chunk();
-        i64 end_z = (terrain.viewed_chunk_z() + chunk_sel_range) 
-            * (i64) terrain.tiles_per_chunk();
-        std::pair<u64, u64> current;
-        f64 current_dist = INFINITY;
-        for(
-            i64 tile_x = std::max(start_x, (i64) 0); 
-            tile_x < std::min(end_x, (i64) terrain.width_in_tiles());
-            tile_x += 1
-        ) {
-            for(
-                i64 tile_z = std::max(start_z, (i64) 0); 
-                tile_z < std::min(end_z, (i64) terrain.width_in_tiles());
-                tile_z += 1
-            ) {
-                Vec<3> pos = Vec<3>(tile_x + tile_offset_x, 0, tile_z + tile_offset_z)
-                    * terrain.units_per_tile();
-                pos.y() = terrain.elevation_at(
-                    (u64) tile_x, (u64) tile_z);
-                Vec<4> pos_ndc = view_proj * pos.with(1.0);
-                pos_ndc = pos_ndc / pos_ndc.w(); // perspective divide
-                f64 dist = (pos_ndc.swizzle<2>("xy") - cursor_pos_ndc).len();
-                if(dist > current_dist) { continue; }
-                current = { (u64) tile_x, (u64) tile_z };
-                current_dist = dist;
-            }
-        }
-        return current;
-    }
-
-
-
-    static void remove_chunk_foliage_on_tile(
-        Terrain::ChunkData& chunk, u64 chunk_x, u64 chunk_z, 
-        u64 tile_x, u64 tile_z,
-        u64 tiles_per_chunk, u64 units_per_tile
-    ) {
-        for(size_t foliage_i = 0; foliage_i < chunk.foliage.size();) {
-            const Foliage& foliage = chunk.foliage.at(foliage_i);
-            u64 foliage_tile_x = chunk_x * tiles_per_chunk
-                + (u64) foliage.x / units_per_tile;
-            u64 foliage_tile_z = chunk_z * tiles_per_chunk
-                + (u64) foliage.z / units_per_tile;
-            if(foliage_tile_x != tile_x || foliage_tile_z != tile_z) {
-                foliage_i += 1;
-                continue;
-            }
-            chunk.foliage.erase(chunk.foliage.begin() + foliage_i);
-        }
-    }
-
-
-
     // <cost> = (100 + 5 ^ <minimum elevation difference>) coins
     static u64 compute_terrain_modification_cost(
         u64 tile_x, u64 tile_z, i64 elevation, const Terrain& terrain
@@ -131,24 +67,9 @@ namespace houseofatmos::outside {
         terrain.elevation_at(tile_x, tile_z) += modification;
         for(i64 offset_x = -1; offset_x <= 0; offset_x += 1) {
             for(i64 offset_z = -1; offset_z <= 0; offset_z += 1) {
-                u64 u_tile_x = std::min(
-                    (u64) std::max((i64) tile_x + offset_x, (i64) 0),
-                    terrain.width_in_tiles()
+                terrain.remove_foliage_at(
+                    (i64) tile_x + offset_x, (i64) tile_z + offset_z
                 );
-                u64 u_tile_z = std::min(
-                    (u64) std::max((i64) tile_z + offset_z, (i64) 0),
-                    terrain.height_in_tiles()
-                );
-                u64 u_chunk_x = u_tile_x / terrain.tiles_per_chunk();
-                u64 u_chunk_z = u_tile_z / terrain.tiles_per_chunk();
-                Terrain::ChunkData& u_chunk
-                    = terrain.chunk_at(u_chunk_x, u_chunk_z);
-                remove_chunk_foliage_on_tile(
-                    u_chunk, u_chunk_x, u_chunk_z, u_tile_x, u_tile_z,
-                    terrain.tiles_per_chunk(),
-                    terrain.units_per_tile()
-                );
-                terrain.reload_chunk_at(u_chunk_x, u_chunk_z);
             }
         }
     }
@@ -159,9 +80,9 @@ namespace houseofatmos::outside {
     ) {
         (void) scene;
         (void) renderer;
-        auto [tile_x, tile_z] = find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
-            0.0, 0.0
+        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(),
+            Vec<3>(0, 0, 0)
         );
         this->selected_x = tile_x;
         this->selected_z = tile_z;
@@ -246,35 +167,6 @@ namespace houseofatmos::outside {
         }
     }
 
-    static bool building_location_valid(
-        i64 tile_x, i64 tile_z, Terrain& terrain, const Player& player,
-        const Building::TypeInfo& type_info
-    ) {
-        i64 player_tile_x = (i64) player.position.x() / terrain.units_per_tile();
-        i64 player_tile_z = (i64) player.position.z() / terrain.units_per_tile();
-        i64 start_x = tile_x - type_info.width / 2;
-        i64 end_x = tile_x + (i64) ceil(type_info.width / 2.0);
-        i64 start_z = tile_z - type_info.height / 2;
-        i64 end_z = tile_z + (i64) ceil(type_info.height / 2.0);
-        if(start_x < 0 || (u64) end_x > terrain.width_in_tiles()) { return false; }
-        if(start_z < 0 || (u64) end_z > terrain.height_in_tiles()) { return false; }
-        i16 target = terrain.elevation_at((u64) start_x, (u64) start_z);
-        for(i64 x = start_x; x <= end_x; x += 1) {
-            for(i64 z = start_z; z <= end_z; z += 1) {
-                i16 elevation = terrain.elevation_at((u64) x, (u64) z);
-                if(elevation != target) { return false; }
-            }
-        }
-        for(i64 x = start_x; x < end_x; x += 1) {
-            for(i64 z = start_z; z < end_z; z += 1) {
-                if(x == player_tile_x && z == player_tile_z) { return false; }
-                if(terrain.building_at(x, z) != nullptr) { return false; }
-            }
-        }
-        if(target < 0) { return false; }
-        return true;
-    }
-
     static void place_building(
         u64 tile_x, u64 tile_z, Terrain& terrain,
         Building::Type type, const Building::TypeInfo& type_info
@@ -293,16 +185,7 @@ namespace houseofatmos::outside {
         i64 end_z = (i64) tile_z + (i64) ceil(type_info.height / 2.0);
         for(i64 u_tile_x = start_x; u_tile_x < end_x; u_tile_x += 1) {
             for(i64 u_tile_z = start_z; u_tile_z < end_z; u_tile_z += 1) {
-                u64 u_chunk_x = u_tile_x / terrain.tiles_per_chunk();
-                u64 u_chunk_z = u_tile_z / terrain.tiles_per_chunk();
-                Terrain::ChunkData& u_chunk
-                    = terrain.chunk_at(u_chunk_x, u_chunk_z);
-                remove_chunk_foliage_on_tile(
-                    u_chunk, u_chunk_x, u_chunk_z, u_tile_x, u_tile_z,
-                    terrain.tiles_per_chunk(),
-                    terrain.units_per_tile()
-                );
-                terrain.reload_chunk_at(u_chunk_x, u_chunk_z);
+                terrain.remove_foliage_at(u_tile_x, u_tile_z);
             }
         }
     }
@@ -316,14 +199,14 @@ namespace houseofatmos::outside {
         choose_building_type(window, this->selected_type);
         const Building::TypeInfo& type_info = Building::types
             .at((size_t) this->selected_type);
-        auto [tile_x, tile_z] = find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
-            type_info.offset_x, type_info.offset_z
+        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(),
+            Vec<3>(type_info.offset_x, 0, type_info.offset_z)
         );
         this->selected_x = tile_x;
         this->selected_z = tile_z;
-        this->placement_valid = building_location_valid(
-            (i64) tile_x, (i64) tile_z, this->terrain, this->player, type_info
+        this->placement_valid = this->terrain.valid_building_location(
+            (i64) tile_x, (i64) tile_z, this->player.position, type_info
         );
         bool was_placed = this->placement_valid
             && window.was_pressed(engine::Button::Left)
@@ -374,9 +257,9 @@ namespace houseofatmos::outside {
         const Renderer& renderer, Balance& balance
     ) {
         (void) scene;
-        auto [tile_x, tile_z] = find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
-            0.5, 0.5
+        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(),
+            Vec<3>(0.5, 0, 0.5)
         );
         this->selected_tile_x = tile_x;
         this->selected_tile_z = tile_z;
@@ -446,6 +329,15 @@ namespace houseofatmos::outside {
 
 
 
+    static bool valid_path_location(
+        u64 tile_x, u64 tile_z, Terrain& terrain
+    ) {
+        return terrain.elevation_at(tile_x, tile_z) >= 0
+            && terrain.elevation_at(tile_x + 1, tile_z) >= 0
+            && terrain.elevation_at(tile_x, tile_z + 1) >= 0
+            && terrain.elevation_at(tile_x + 1, tile_z + 1) >= 0;
+    }
+
     static const u64 path_placement_cost = 10;
     static const u64 path_removal_refund = 5;
 
@@ -454,9 +346,9 @@ namespace houseofatmos::outside {
         const Renderer& renderer, Balance& balance
     ) {
         (void) scene;
-        auto [tile_x, tile_z] = find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(), this->terrain,
-            0.5, 0.5
+        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(),
+            Vec<3>(0.5, 0, 0.5)
         );
         this->selected_tile_x = tile_x;
         this->selected_tile_z = tile_z;
@@ -466,14 +358,13 @@ namespace houseofatmos::outside {
         u64 rel_z = tile_z % this->terrain.tiles_per_chunk();
         Terrain::ChunkData& chunk = this->terrain.chunk_at(chunk_x, chunk_z);
         bool has_path = chunk.path_at(rel_x, rel_z);
-        bool place_path = !has_path && window.was_pressed(engine::Button::Left) 
+        bool place_path = !has_path 
+            && window.was_pressed(engine::Button::Left) 
+            && valid_path_location(tile_x, tile_z, this->terrain)
             && balance.pay_coins(path_placement_cost);
         if(place_path) {
             chunk.set_path_at(rel_x, rel_z, true);
-            remove_chunk_foliage_on_tile(
-                chunk, chunk_x, chunk_z, tile_x, tile_z, 
-                this->terrain.tiles_per_chunk(), this->terrain.units_per_tile()
-            );
+            this->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
             this->terrain.reload_chunk_at(chunk_x, chunk_z);
         } else if(has_path && window.was_pressed(engine::Button::Right)) {
             chunk.set_path_at(rel_x, rel_z, false);

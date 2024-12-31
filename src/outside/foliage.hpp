@@ -12,6 +12,7 @@ namespace houseofatmos::outside {
 
         struct TypeInfo {
             engine::Model::LoadArgs model;
+            Collider collider; // in game units
             u64 attempt_count; // number of spawn attempts per tile
             // spawn chance (0-1) with 0 height difference on the tile
             // decreases to 0 on stone with higher slopes, is 0 on sand
@@ -21,11 +22,16 @@ namespace houseofatmos::outside {
         static inline const std::vector<TypeInfo> types = {
             /* Grass */ {
                 { "res/foliage/grass.gltf", Renderer::model_attribs },
+                Collider(Vec<3>(0, 0, 0), Vec<3>(0, 0, 0)),
                 5,
                 1
             },
             /* Tree */ {
                 { "res/foliage/tree.gltf", Renderer::model_attribs },
+                Collider(
+                    Vec<3>(-5.0/16, -0.5, -5.0/16), 
+                    Vec<3>(10.0/16, 1, 10.0/16)
+                ),
                 1,
                 0.25
             }

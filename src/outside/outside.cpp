@@ -39,10 +39,11 @@ namespace houseofatmos::outside {
         ActionMode::choose_current(window, this->terrain, this->player, this->action_mode);
         this->action_mode->update(window, *this, this->renderer, this->balance);
         this->player.update(window);
-        if(this->terrain.valid_player_position(this->player.next_x())) {
+        bool in_coll = !this->terrain.valid_player_position(this->player.position);
+        if(in_coll || this->terrain.valid_player_position(this->player.next_x())) {
             this->player.proceed_x();
         }
-        if(this->terrain.valid_player_position(this->player.next_z())) {
+        if(in_coll || this->terrain.valid_player_position(this->player.next_z())) {
             this->player.proceed_z();
         }
         this->player.position.y() = std::max(

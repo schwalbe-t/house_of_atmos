@@ -131,7 +131,7 @@ namespace houseofatmos::outside {
                             0,
                             z + chunk_z * this->chunk_tiles * this->tile_size
                         ));
-                        f32 angle = (f32) (rng.next_f64() * 2 * pi);
+                        f32 angle = (f32) (rng.next_f64() * 2 * pi);    
                         chunk.foliage.push_back((Foliage) {
                             (Foliage::Type) type_i, x, z, y, angle
                         });
@@ -143,8 +143,9 @@ namespace houseofatmos::outside {
 
 
     void Terrain::build_water_plane() {
-        engine::Mesh& p = this->water_plane;
-        p.clear();
+        if(this->water_plane != nullptr) { return; }
+        this->water_plane = std::make_unique<engine::Mesh>(Terrain::water_plane_attribs);
+        engine::Mesh& p = *this->water_plane;
         // tl---tr
         //  | \ |
         // bl---br
@@ -372,19 +373,19 @@ namespace houseofatmos::outside {
     }
 
 
-    Building* Terrain::building_at(
+    const Building* Terrain::building_at(
         i64 tile_x, i64 tile_z, u64* chunk_x_out, u64* chunk_z_out
-    ) {
+    ) const {
         i64 r_chunk_x = tile_x / (i64) this->chunk_tiles;
         i64 r_chunk_z = tile_z / (i64) this->chunk_tiles;
         for(i64 chunk_x = r_chunk_x - 1; chunk_x <= r_chunk_x + 1; chunk_x += 1) {
             if(chunk_x < 0 || (u64) chunk_x >= this->width_chunks) { continue; }
             for(i64 chunk_z = r_chunk_z - 1; chunk_z <= r_chunk_z + 1; chunk_z += 1) {
                 if(chunk_z < 0 || (u64) chunk_z >= this->height_chunks) { continue; }
-                ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+                const ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
                 i64 chunk_offset_x = chunk_x * this->chunk_tiles;
                 i64 chunk_offset_z = chunk_z * this->chunk_tiles;
-                for(Building& building: chunk.buildings) {
+                for(const Building& building: chunk.buildings) {
                     const Building::TypeInfo& type = Building::types
                         .at((size_t) building.type);
                     i64 start_x = chunk_offset_x
@@ -407,10 +408,139 @@ namespace houseofatmos::outside {
         return nullptr;
     }
 
-    bool Terrain::valid_player_position(const Vec<3>& position) {
-        i64 tile_x = (i64) (position.x() / (f64) this->tile_size);
-        i64 tile_z = (i64) (position.z() / (f64) this->tile_size);
-        return this->building_at(tile_x, tile_z) == nullptr;
+    Building* Terrain::building_at(
+        i64 tile_x, i64 tile_z, u64* chunk_x_out, u64* chunk_z_out
+    ) {
+        return (Building*) ((const Terrain*) this)->building_at(
+            tile_x, tile_z, chunk_x_out, chunk_z_out
+        );
+    }
+
+    bool Terrain::valid_building_location(
+        i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
+        const Building::TypeInfo& building_type
+    ) const {
+        i64 player_tile_x = (i64) player_position.x() / this->units_per_tile();
+        i64 player_tile_z = (i64) player_position.z() / this->units_per_tile();
+        i64 start_x = tile_x - building_type.width / 2;
+        i64 end_x = tile_x + (i64) ceil(building_type.width / 2.0);
+        i64 start_z = tile_z - building_type.height / 2;
+        i64 end_z = tile_z + (i64) ceil(building_type.height / 2.0);
+        if(start_x < 0 || (u64) end_x > this->width_in_tiles()) { return false; }
+        if(start_z < 0 || (u64) end_z > this->height_in_tiles()) { return false; }
+        i16 target = this->elevation_at((u64) start_x, (u64) start_z);
+        for(i64 x = start_x; x <= end_x; x += 1) {
+            for(i64 z = start_z; z <= end_z; z += 1) {
+                i16 elevation = this->elevation_at((u64) x, (u64) z);
+                if(elevation != target) { return false; }
+            }
+        }
+        for(i64 x = start_x; x < end_x; x += 1) {
+            for(i64 z = start_z; z < end_z; z += 1) {
+                if(x == player_tile_x && z == player_tile_z) { return false; }
+                if(this->building_at(x, z) != nullptr) { return false; }
+            }
+        }
+        if(target < 0) { return false; }
+        return true;
+    }
+
+    static const i64 collision_test_dist = 1;
+
+    bool Terrain::valid_player_position(const Vec<3>& position) const {
+        Vec<3> horizontal_pos = position * Vec<3>(1, 0, 1);
+        u64 start_x = (u64) std::max(this->view_chunk_x - collision_test_dist, (i64) 0);
+        u64 end_x = std::min((u64) (this->view_chunk_x + collision_test_dist), this->width_chunks - 1);
+        u64 start_z = (u64) std::max(this->view_chunk_z - collision_test_dist, (i64) 0);
+        u64 end_z = std::min((u64) (this->view_chunk_z + collision_test_dist), this->height_chunks - 1);
+        for(u64 chunk_x = start_x; chunk_x <= end_x; chunk_x += 1) {
+            for(u64 chunk_z = start_z; chunk_z <= end_z; chunk_z += 1) {
+                const ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+                Vec<3> chunk_offset = Vec<3>(chunk_x, 0, chunk_z) 
+                    * this->tiles_per_chunk() * this->units_per_tile();
+                for(const Building& building: chunk.buildings) {
+                    const Building::TypeInfo& type = building.get_type_info();
+                    Vec<3> origin = chunk_offset 
+                        + Vec<3>(building.x, 0, building.z) * this->units_per_tile()
+                        + Vec<3>(type.offset_x, 0, type.offset_z) * this->units_per_tile();
+                    for(const Collider& collider: type.colliders) {
+                        bool collision = collider
+                            .inside_collider(origin, horizontal_pos);
+                        if(collision) { return false; }
+                    }
+                }
+                for(const Foliage& foliage: chunk.foliage) {
+                    const Foliage::TypeInfo& type = foliage.get_type_info();
+                    Vec<3> origin = chunk_offset 
+                        + Vec<3>(foliage.x, 0, foliage.z);
+                    bool collision = type.collider
+                        .inside_collider(origin, horizontal_pos);
+                    if(collision) { return false; }
+                }
+            }
+        }
+        return true;
+    }
+
+    void Terrain::remove_foliage_at(i64 tile_x, i64 tile_z) {
+        if(tile_x < 0 || (u64) tile_x >= this->width) { return; }
+        if(tile_z < 0 || (u64) tile_z >= this->width) { return; }
+        u64 chunk_x = (u64) tile_x / this->chunk_tiles;
+        u64 chunk_z = (u64) tile_z / this->chunk_tiles;
+        ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+        for(size_t foliage_i = 0; foliage_i < chunk.foliage.size();) {
+            const Foliage& foliage = chunk.foliage.at(foliage_i);
+            u64 foliage_tile_x = chunk_x * this->chunk_tiles
+                + (u64) foliage.x / this->tile_size;
+            u64 foliage_tile_z = chunk_z * this->chunk_tiles
+                + (u64) foliage.z / this->tile_size;
+            if(foliage_tile_x != (u64) tile_x || foliage_tile_z != (u64) tile_z) {
+                foliage_i += 1;
+                continue;
+            }
+            chunk.foliage.erase(chunk.foliage.begin() + foliage_i);
+        }
+        this->reload_chunk_at(chunk_x, chunk_z);
+    }
+
+    static const i64 tile_selection_range_chunks = 2;
+
+    std::pair<u64, u64> Terrain::find_selected_terrain_tile(
+        Vec<2> cursor_pos_ndc, const Mat<4>& view_proj, Vec<3> tile_offset
+    ) const {
+        i64 start_x = (this->viewed_chunk_x() - tile_selection_range_chunks) 
+            * (i64) this->tiles_per_chunk();
+        i64 end_x = (this->viewed_chunk_x() + tile_selection_range_chunks) 
+            * (i64) this->tiles_per_chunk();
+        i64 start_z = (this->viewed_chunk_z() - tile_selection_range_chunks) 
+            * (i64) this->tiles_per_chunk();
+        i64 end_z = (this->viewed_chunk_z() + tile_selection_range_chunks) 
+            * (i64) this->tiles_per_chunk();
+        std::pair<u64, u64> current;
+        f64 current_dist = INFINITY;
+        for(
+            i64 tile_x = std::max(start_x, (i64) 0); 
+            tile_x < std::min(end_x, (i64) this->width_in_tiles());
+            tile_x += 1
+        ) {
+            for(
+                i64 tile_z = std::max(start_z, (i64) 0); 
+                tile_z < std::min(end_z, (i64) this->width_in_tiles());
+                tile_z += 1
+            ) {
+                Vec<3> pos = (Vec<3>(tile_x, 0, tile_z) + tile_offset)
+                    * this->units_per_tile();
+                pos.y() = this->elevation_at(
+                    (u64) tile_x, (u64) tile_z);
+                Vec<4> pos_ndc = view_proj * pos.with(1.0);
+                pos_ndc = pos_ndc / pos_ndc.w(); // perspective divide
+                f64 dist = (pos_ndc.swizzle<2>("xy") - cursor_pos_ndc).len();
+                if(dist > current_dist) { continue; }
+                current = { (u64) tile_x, (u64) tile_z };
+                current_dist = dist;
+            }
+        }
+        return current;
     }
 
 
@@ -515,8 +645,9 @@ namespace houseofatmos::outside {
         shader.set_uniform("u_nmap_scale", nmap_scale);
         shader.set_uniform("u_nmap_offset", nmap_offset);
         this->water_time += window.delta_time();
-        shader.set_uniform("u_time", this->water_time);
-        this->water_plane.render(shader, renderer.output(), 1);
+        shader.set_uniform("u_time", this->water_time);\
+        this->build_water_plane();
+        this->water_plane->render(shader, renderer.output(), 1);
     }
 
 
@@ -545,7 +676,7 @@ namespace houseofatmos::outside {
         for(const ChunkData::Serialized& chunk: chunks) {
             this->chunks.push_back(ChunkData(this->chunk_tiles, chunk, buffer));
         }
-        this->build_water_plane();
+        this->water_plane = nullptr;
     }
 
     Terrain::ChunkData::ChunkData(

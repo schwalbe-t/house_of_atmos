@@ -33,6 +33,10 @@ namespace houseofatmos::outside {
             "res/shaders/water_vert.glsl", "res/shaders/water_frag.glsl"
         };
 
+        static const inline std::vector<engine::Mesh::Attrib> water_plane_attribs = {
+            { engine::Mesh::F32, 3 }, { engine::Mesh::F32, 2 }
+        };
+
 
         struct LoadedChunk {
             u64 x, z; // in chunks relative to origin
@@ -81,9 +85,7 @@ namespace houseofatmos::outside {
         u64 width_chunks, height_chunks;
         i64 view_chunk_x, view_chunk_z;
         std::vector<LoadedChunk> loaded_chunks;
-        engine::Mesh water_plane = engine::Mesh {
-            { engine::Mesh::F32, 3 }, { engine::Mesh::F32, 2 }
-        };
+        std::unique_ptr<engine::Mesh> water_plane;
         f64 water_time;
         // row-major 2D vector of each tile corner height
         // .size() = (width + 1) * (height + 1)
@@ -131,7 +133,7 @@ namespace houseofatmos::outside {
             this->chunks = std::vector<ChunkData>(
                 width_chunks * height_chunks, ChunkData(chunk_tiles)
             );
-            this->build_water_plane();
+            this->water_plane = nullptr;
         }
         
         Terrain(
@@ -160,6 +162,9 @@ namespace houseofatmos::outside {
         ChunkData& chunk_at(u64 chunk_x, u64 chunk_z) {
             return this->chunks.at(chunk_x + this->width_chunks * chunk_z);
         }
+        const ChunkData& chunk_at(u64 chunk_x, u64 chunk_z) const {
+            return this->chunks.at(chunk_x + this->width_chunks * chunk_z);
+        }
         void reload_chunk_at(u64 chunk_x, u64 chunk_z) {
             auto chunk = this->loaded_chunk_at(chunk_x, chunk_z);
             if(chunk != nullptr) { chunk->modified = true; }
@@ -175,7 +180,19 @@ namespace houseofatmos::outside {
             i64 tile_x, i64 tile_z, 
             u64* chunk_x_out = nullptr, u64* chunk_z_out = nullptr
         );
-        bool valid_player_position(const Vec<3>& position);
+        const Building* building_at(
+            i64 tile_x, i64 tile_z, 
+            u64* chunk_x_out = nullptr, u64* chunk_z_out = nullptr
+        ) const;
+        bool valid_building_location(
+            i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
+            const Building::TypeInfo& building_type
+        ) const;
+        bool valid_player_position(const Vec<3>& position) const;
+        void remove_foliage_at(i64 tile_x, i64 tile_z);
+        std::pair<u64, u64> find_selected_terrain_tile(
+            Vec<2> cursor_pos_ndc, const Mat<4>& view_proj, Vec<3> tile_offset
+        ) const;
 
         void generate_elevation(u32 seed = random_init());
         void generate_foliage(u32 seed = random_init());
