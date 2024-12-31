@@ -43,6 +43,14 @@ namespace houseofatmos::outside {
                 0, 0,
                 1000
             },
+            /* Type::Windmill */ {
+                { "res/buildings/windmill.gltf", Renderer::model_attribs },
+                "blades", 1.0,
+                { Collider(Vec<3>(-3, -0.5, -3), Vec<3>(6, 1, 6)) },
+                2, 2,
+                0, 0,
+                1000
+            },
             /* Type::Factory */ {
                 { "res/buildings/factory.gltf", Renderer::model_attribs },
                 std::nullopt, 0.0,
@@ -71,8 +79,9 @@ namespace houseofatmos::outside {
         enum Type {
             Farmland = 0,
             Mineshaft = 1,
-            Factory = 2,
-            House = 3
+            Windmill = 2,
+            Factory = 3,
+            House = 4
         };
 
         Type type;

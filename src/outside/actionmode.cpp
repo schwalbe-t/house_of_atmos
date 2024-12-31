@@ -160,9 +160,12 @@ namespace houseofatmos::outside {
             type = Building::Mineshaft;
         }
         if(window.was_pressed(engine::Key::Num3)) {
-            type = Building::Factory;
+            type = Building::Windmill;
         }
         if(window.was_pressed(engine::Key::Num4)) {
+            type = Building::Factory;
+        }
+        if(window.was_pressed(engine::Key::Num5)) {
             type = Building::House;
         }
     }
