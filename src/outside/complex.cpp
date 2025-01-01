@@ -217,6 +217,12 @@ namespace houseofatmos::outside {
         return this->complexes.at(complex.index);   
     }
 
+    void ComplexBank::update(const engine::Window& window) {
+        for(Complex& complex: this->complexes) {
+            complex.update(window);
+        }
+    }
+
     void ComplexBank::delete_complex(ComplexId complex) {
         this->complexes.at(complex.index) = Complex();
         this->free_indices.push_back(complex);
