@@ -3,6 +3,7 @@
 
 #include "nums.hpp"
 #include <vector>
+#include <unordered_map>
 #include <span>
 #include <cstring>
 
@@ -51,31 +52,85 @@ namespace houseofatmos::engine {
             return this->alloc_array<T>(values.data(), values.size());
         }
 
+        template<class T, class Allocator>
+        u64 alloc_array(const std::vector<T, Allocator>& values) {
+            return this->alloc_array<T>(values.data(), values.size());
+        }
+
+        template<
+            class K, class V, 
+            class Hash, class KeyEqual, class Allocator
+        > 
+        u64 alloc_map(
+            const std::unordered_map<K, V, Hash, KeyEqual, Allocator>& map
+        ) {
+            u64 offset = this->next_offset;
+            for(std::pair<K, V> pair: map) {
+                size_t n = sizeof(std::pair<K, V>);
+                u8* dest = this->buffer.data() + this->next_offset;
+                std::memcpy((void*) dest, (void*) &pair, n);
+                this->next_offset += n;
+            }
+            return offset;
+        }
+
         template<typename T>
         u64 alloc(const T& value) {
             return this->alloc_array<T>(std::span<const T>(&value, 1));
         }
 
         template<typename T>
-        std::span<const T> at(u64 offset, u64 count) const {
+        std::span<const T> array_at(u64 offset, u64 count) const {
             const T* data = (const T*) (this->buffer.data() + offset);
             return std::span<const T>(data, count);
         }
 
         template<typename T>
-        std::span<T> at(u64 offset, u64 count) {
+        std::span<T> array_at(u64 offset, u64 count) {
             T* data = (T*) (this->buffer.data() + offset);
             return std::span<T>(data, count);
         }
 
-        template<typename T>
-        const T& at(u64 offset) const {
-            return *(this->at<T>(offset, 1).data());
+        template<class T, class Allocator>
+        void copy_array_at_into(
+            u64 offset, u64 count,
+            std::vector<T, Allocator>& dest_array
+        ) const {
+            const T* data = (T*) (this->buffer.data() + offset);
+            size_t dest_offset = dest_array.size();
+            dest_array.resize(dest_offset + count);
+            size_t n = sizeof(T) * count;
+            std::memcpy(
+                (void*) (dest_array.data() + dest_offset), (void*) data, n
+            );
         }
 
         template<typename T>
-        T& at(u64 offset) {
-            return *(this->at<T>(offset, 1).data());
+        const T& value_at(u64 offset) const {
+            return *(this->array_at<T>(offset, 1).data());
+        }
+
+        template<typename T>
+        T& value_at(u64 offset) {
+            return *(this->array_at<T>(offset, 1).data());
+        }
+
+        template<
+            class K, class V, 
+            class Hash, class KeyEqual, class Allocator
+        > 
+        void copy_map_at_into(
+            u64 offset, u64 count,
+            std::unordered_map<K, V, Hash, KeyEqual, Allocator>& dest_map
+        ) const {
+            std::span<const std::pair<K, V>> data = std::span(
+                (const std::pair<K, V>*) (this->buffer.data() + offset), 
+                count
+            );
+            dest_map.reserve(dest_map.size() + data.size());
+            for(const std::pair<K, V>& pair: data) {
+                dest_map[pair.first] = pair.second;
+            }
         }
 
     };

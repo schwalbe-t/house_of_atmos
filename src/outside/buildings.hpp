@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "complex.hpp"
 #include "../renderer.hpp"
 #include "../collider.hpp"
 
@@ -112,6 +113,7 @@ namespace houseofatmos::outside {
 
         Type type;
         u8 x, z; // in tiles relative to chunk origin
+        std::optional<ComplexId> complex;
 
 
         const TypeInfo& get_type_info() const {

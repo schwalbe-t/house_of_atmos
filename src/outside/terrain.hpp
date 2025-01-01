@@ -3,6 +3,7 @@
 
 #include <engine/arena.hpp>
 #include <engine/rng.hpp>
+#include "complex.hpp"
 #include "buildings.hpp"
 #include "foliage.hpp"
 
@@ -16,6 +17,7 @@ namespace houseofatmos::outside {
 
         struct Serialized {
             u64 width, height;
+            ComplexBank::Serialized complexes;
             u64 elevation_count, elevation_offset;
             u64 chunk_count, chunk_offset;
         };
@@ -84,6 +86,7 @@ namespace houseofatmos::outside {
         i64 draw_distance;
         u64 width_chunks, height_chunks;
         i64 view_chunk_x, view_chunk_z;
+        ComplexBank complexes;
         std::vector<LoadedChunk> loaded_chunks;
         std::unique_ptr<engine::Mesh> water_plane;
         f64 water_time;
@@ -216,7 +219,8 @@ namespace houseofatmos::outside {
         );
         void render_chunk_features(
             LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,
-            const engine::Window& window, engine::Scene& scene, const Renderer& renderer
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
         );
         void render_water(
             engine::Scene& scene, const Renderer& renderer,

@@ -71,7 +71,7 @@ namespace houseofatmos::outside {
 
     Outside::Outside(const engine::Arena& buffer) {
         load_resources(*this);
-        const auto& outside = buffer.at<Outside::Serialized>(0);
+        const auto& outside = buffer.value_at<Outside::Serialized>(0);
         this->terrain = Terrain(
             outside.terrain, 
             Outside::draw_distance, Outside::units_per_tile, Outside::tiles_per_chunk,
@@ -88,7 +88,7 @@ namespace houseofatmos::outside {
         size_t outside_offset = buffer.alloc_array<Outside::Serialized>(nullptr, 1);
         Terrain::Serialized terrain = this->terrain.serialize(buffer);
         Player::Serialized player = this->player.serialize(buffer);
-        auto& outside = buffer.at<Outside::Serialized>(outside_offset);
+        auto& outside = buffer.value_at<Outside::Serialized>(outside_offset);
         outside.terrain = terrain;
         outside.player = player;
         outside.balance = this->balance;

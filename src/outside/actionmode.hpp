@@ -79,8 +79,9 @@ namespace houseofatmos::outside {
         DefaultMode() {
             engine::info(
                 "Press T to enter terraforming mode, "
-                "C to enter construction mode and "
-                "R to enter demolition mode."
+                "C to enter construction mode, "
+                "R to enter demolition mode and "
+                "P to enter pathing mode."
             );
         }
 

@@ -183,7 +183,8 @@ namespace houseofatmos::outside {
         chunk.buildings.push_back({
             type, 
             (u8) (tile_x % terrain.tiles_per_chunk()), 
-            (u8) (tile_z % terrain.tiles_per_chunk())
+            (u8) (tile_z % terrain.tiles_per_chunk()),
+            std::nullopt
         });
         i64 start_x = (i64) tile_x - (i64) type_info.width / 2;
         i64 end_x = (i64) tile_x + (i64) ceil(type_info.width / 2.0);

@@ -664,20 +664,22 @@ namespace houseofatmos::outside {
         this->draw_distance = draw_distance;
         this->view_chunk_x = 0;
         this->view_chunk_z = 0;
-        std::span<const i16> elevation = buffer.at<i16>(
-            serialized.elevation_offset, serialized.elevation_count
+        buffer.copy_array_at_into(
+            serialized.elevation_offset, serialized.elevation_count,
+            this->elevation
         );
-        this->elevation.assign(elevation.begin(), elevation.end());
         this->width_chunks = (u64) ceil((f64) width / chunk_tiles);
         this->height_chunks = (u64) ceil((f64) height / chunk_tiles);
-        std::span<const ChunkData::Serialized> chunks = buffer.at<ChunkData::Serialized>(
-            serialized.chunk_offset, serialized.chunk_count
-        );
+        std::span<const ChunkData::Serialized> chunks = buffer
+            .array_at<ChunkData::Serialized>(
+                serialized.chunk_offset, serialized.chunk_count
+            );
         this->chunks.reserve(chunks.size());
         for(const ChunkData::Serialized& chunk: chunks) {
             this->chunks.push_back(ChunkData(this->chunk_tiles, chunk, buffer));
         }
         this->water_plane = nullptr;
+        this->complexes = ComplexBank(serialized.complexes, buffer);
     }
 
     Terrain::ChunkData::ChunkData(
@@ -685,27 +687,27 @@ namespace houseofatmos::outside {
         const ChunkData::Serialized& serialized, const engine::Arena& buffer
     ) {
         this->size_tiles = size_tiles;
-        std::span<const Foliage> foliage = buffer.at<Foliage>(
-            serialized.foliage_offset, serialized.foliage_count
+        buffer.copy_array_at_into(
+            serialized.foliage_offset, serialized.foliage_count,
+            this->foliage
         );
-        this->foliage.assign(foliage.begin(), foliage.end());
-        std::span<const Building> buildings = buffer.at<Building>(
-            serialized.building_offset, serialized.building_count
+        buffer.copy_array_at_into(
+            serialized.building_offset, serialized.building_count,
+            this->buildings
         );
-        this->buildings.assign(buildings.begin(), buildings.end());
-        std::span<const u8> paths = buffer.at<u8>(
-            serialized.paths_offset, serialized.paths_count
+        buffer.copy_array_at_into(
+            serialized.paths_offset, serialized.paths_count,
+            this->paths
         );
-        this->paths.assign(paths.begin(), paths.end());
     }
 
     Terrain::ChunkData::Serialized Terrain::ChunkData::serialize(
         engine::Arena& buffer
     ) const {
         return {
-            this->foliage.size(), buffer.alloc_array<Foliage>(this->foliage),
-            this->buildings.size(), buffer.alloc_array<Building>(this->buildings),
-            this->paths.size(), buffer.alloc_array<u8>(this->paths)
+            this->foliage.size(), buffer.alloc_array(this->foliage),
+            this->buildings.size(), buffer.alloc_array(this->buildings),
+            this->paths.size(), buffer.alloc_array(this->paths)
         };
     }
 
@@ -717,8 +719,9 @@ namespace houseofatmos::outside {
         }
         return {
             this->width, this->height,
-            this->elevation.size(), buffer.alloc_array<i16>(this->elevation),
-            this->chunks.size(), buffer.alloc_array<ChunkData::Serialized>(chunk_data)
+            this->complexes.serialize(buffer),
+            this->elevation.size(), buffer.alloc_array(this->elevation),
+            this->chunks.size(), buffer.alloc_array(chunk_data)
         };
     }
 
