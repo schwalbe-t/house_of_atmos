@@ -8,24 +8,42 @@ namespace houseofatmos {
     using namespace houseofatmos::engine::math;
 
 
-    struct Collider {
+    struct AbsCollider {
+
+        Vec<3> start;
+        Vec<3> end;
+
+        bool contains(const Vec<3>& pos) const {
+            return this->start.x() < pos.x() && pos.x() < this->end.x()
+                && this->start.y() < pos.y() && pos.y() < this->end.y()
+                && this->start.z() < pos.z() && pos.z() < this->end.z();
+        }
+
+        bool collides_with(const AbsCollider& coll) const {
+            return this->end.x() > coll.start.x()
+                && coll.end.x() > this->start.x()
+                && this->end.y() > coll.start.y()
+                && coll.end.y() > this->start.y()
+                && this->end.z() > coll.start.z()
+                && coll.end.z() > this->start.z();
+        }
+        
+    };
+
+
+    struct RelCollider {
         
         Vec<3> offset;
         Vec<3> size;
     
-        Collider(Vec<3> offset, Vec<3> size) {
+        RelCollider(Vec<3> offset, Vec<3> size) {
             this->offset = offset;
             this->size = size;
         }
 
-        bool inside_collider(
-            const Vec<3>& collider_relative_to, const Vec<3>& position
-        ) const {
-            Vec<3> coll_start = collider_relative_to + this->offset;
-            Vec<3> coll_end = coll_start + this->size;
-            return coll_start.x() < position.x() && position.x() < coll_end.x()
-                && coll_start.y() < position.y() && position.y() < coll_end.y()
-                && coll_start.z() < position.z() && position.z() < coll_end.z();
+        AbsCollider at(const Vec<3>& position) const {
+            Vec<3> start = position + this->offset;
+            return (AbsCollider) { start, start + this->size };
         }
     
     };

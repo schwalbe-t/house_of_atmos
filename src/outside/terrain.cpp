@@ -447,8 +447,7 @@ namespace houseofatmos::outside {
 
     static const i64 collision_test_dist = 1;
 
-    bool Terrain::valid_player_position(const Vec<3>& position) const {
-        Vec<3> horizontal_pos = position * Vec<3>(1, 0, 1);
+    bool Terrain::valid_player_position(const AbsCollider& player_collider) const {
         u64 start_x = (u64) std::max(this->view_chunk_x - collision_test_dist, (i64) 0);
         u64 end_x = std::min((u64) (this->view_chunk_x + collision_test_dist), this->width_chunks - 1);
         u64 start_z = (u64) std::max(this->view_chunk_z - collision_test_dist, (i64) 0);
@@ -460,21 +459,23 @@ namespace houseofatmos::outside {
                     * this->tiles_per_chunk() * this->units_per_tile();
                 for(const Building& building: chunk.buildings) {
                     const Building::TypeInfo& type = building.get_type_info();
-                    Vec<3> origin = chunk_offset 
+                    Vec<3> offset = chunk_offset 
                         + Vec<3>(building.x, 0, building.z) * this->units_per_tile()
                         + Vec<3>(type.offset_x, 0, type.offset_z) * this->units_per_tile();
-                    for(const Collider& collider: type.colliders) {
+                    for(const RelCollider& collider: type.colliders) {
                         bool collision = collider
-                            .inside_collider(origin, horizontal_pos);
+                            .at(offset)
+                            .collides_with(player_collider);
                         if(collision) { return false; }
                     }
                 }
                 for(const Foliage& foliage: chunk.foliage) {
                     const Foliage::TypeInfo& type = foliage.get_type_info();
-                    Vec<3> origin = chunk_offset 
+                    Vec<3> offset = chunk_offset 
                         + Vec<3>(foliage.x, 0, foliage.z);
                     bool collision = type.collider
-                        .inside_collider(origin, horizontal_pos);
+                        .at(offset)
+                        .collides_with(player_collider);
                     if(collision) { return false; }
                 }
             }

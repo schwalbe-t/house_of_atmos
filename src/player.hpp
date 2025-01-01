@@ -4,6 +4,7 @@
 #include <engine/arena.hpp>
 #include <engine/math.hpp>
 #include <engine/model.hpp>
+#include "collider.hpp"
 #include "renderer.hpp"
 
 namespace houseofatmos {
@@ -43,7 +44,8 @@ namespace houseofatmos {
             "res/player.glb", Renderer::model_attribs
         };
 
-        static const inline Vec<3> collision_box = Vec<3>(1, 0, 1);
+        static const inline RelCollider collider
+            = RelCollider({ -0.25, 0, -0.25 }, { 0.5, 1, 0.5 });
 
 
         private:
@@ -81,21 +83,11 @@ namespace houseofatmos {
         }
 
         void update(engine::Window& window);
-        Vec<3> next_x() { 
-            Vec<3> result = this->position;
-            result.x() += this->next_step.x();
-            result.x() += this->next_step.x() >= 0
-                ? Player::collision_box.x() / 2
-                : - Player::collision_box.x() / 2;
-            return result; 
+        Vec<3> next_x() {
+            return this->position + this->next_step * Vec<3>(1, 0, 0); 
         }
         Vec<3> next_z() { 
-            Vec<3> result = this->position;
-            result.z() += this->next_step.z();
-            result.z() += this->next_step.z() >= 0
-                ? Player::collision_box.z() / 2
-                : - Player::collision_box.z() / 2;
-            return result; 
+            return this->position + this->next_step * Vec<3>(0, 0, 1); 
         }
         void proceed_x() { this->position.x() += this->next_step.x(); }
         void proceed_z() { this->position.z() += this->next_step.z(); }
