@@ -40,7 +40,7 @@ namespace houseofatmos {
 
 
         static const inline engine::Model::LoadArgs player_model = {
-            "res/player.gltf", Renderer::model_attribs
+            "res/player.glb", Renderer::model_attribs
         };
 
         static const inline Vec<3> collision_box = Vec<3>(1, 0, 1);

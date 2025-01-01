@@ -21,13 +21,13 @@ namespace houseofatmos::outside {
 
         static inline const std::vector<TypeInfo> types = {
             /* Grass */ {
-                { "res/foliage/grass.gltf", Renderer::model_attribs },
+                { "res/foliage/grass.glb", Renderer::model_attribs },
                 Collider(Vec<3>(0, 0, 0), Vec<3>(0, 0, 0)),
                 5,
                 1
             },
             /* Tree */ {
-                { "res/foliage/tree.gltf", Renderer::model_attribs },
+                { "res/foliage/tree.glb", Renderer::model_attribs },
                 Collider(
                     Vec<3>(-5.0/16, -0.5, -5.0/16), 
                     Vec<3>(10.0/16, 1, 10.0/16)

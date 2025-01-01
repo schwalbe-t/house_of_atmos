@@ -22,7 +22,7 @@ namespace houseofatmos::outside {
 
         static inline const std::vector<TypeInfo> types = {
             /* Type::Farmland */ {
-                { "res/buildings/farmland.gltf", Renderer::model_attribs },
+                { "res/buildings/farmland.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 {
                     // corner fence
@@ -36,7 +36,7 @@ namespace houseofatmos::outside {
                 500
             },
             /* Type::Mineshaft */ {
-                { "res/buildings/mineshaft.gltf", Renderer::model_attribs },
+                { "res/buildings/mineshaft.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { Collider(Vec<3>(-5, -0.5, -5), Vec<3>(10, 1, 10)) },
                 2, 2,
@@ -44,7 +44,7 @@ namespace houseofatmos::outside {
                 1000
             },
             /* Type::Windmill */ {
-                { "res/buildings/windmill.gltf", Renderer::model_attribs },
+                { "res/buildings/windmill.glb", Renderer::model_attribs },
                 "blades", 1.0,
                 { Collider(Vec<3>(-3, -0.5, -3), Vec<3>(6, 1, 6)) },
                 2, 2,
@@ -52,7 +52,7 @@ namespace houseofatmos::outside {
                 1000
             },
             /* Type::Factory */ {
-                { "res/buildings/factory.gltf", Renderer::model_attribs },
+                { "res/buildings/factory.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { Collider(Vec<3>(-5, -0.5, -2.5), Vec<3>(10, 1, 5)) },
                 2, 1,
@@ -60,7 +60,7 @@ namespace houseofatmos::outside {
                 1000
             },
             /* Type::House */ {
-                { "res/buildings/house.gltf", Renderer::model_attribs },
+                { "res/buildings/house.glb", Renderer::model_attribs },
                 "door", 0.0, // speed = 0 -> will always be the first frame
                 { Collider(Vec<3>(-2.5, -0.5, -1.25), Vec<3>(5, 1, 2.5)) },
                 1, 1,
