@@ -1,5 +1,6 @@
 
 #include "actionmode.hpp"
+#include <iostream>
 
 namespace houseofatmos::outside {
 
@@ -150,41 +151,189 @@ namespace houseofatmos::outside {
 
 
 
+    static std::string get_text_input() {
+        std::cout << "> ";
+        std::string input;
+        std::getline(std::cin, input);
+        return input;
+    }
+
     static void choose_building_type(
-        const engine::Window& window, Building::Type& type
+        const engine::Window& window, 
+        Building::Type& type,
+        std::vector<Conversion>& conversions
     ) {
-        if(window.was_pressed(engine::Key::Num1)) {
-            type = Building::Farmland;
-        }
-        if(window.was_pressed(engine::Key::Num2)) {
-            type = Building::Mineshaft;
-        }
-        if(window.was_pressed(engine::Key::Num3)) {
-            type = Building::Windmill;
-        }
-        if(window.was_pressed(engine::Key::Num4)) {
-            type = Building::Factory;
-        }
-        if(window.was_pressed(engine::Key::Num5)) {
-            type = Building::House;
-        }
-        if(window.was_pressed(engine::Key::Num9)) {
-            type = Building::Plaza;
+        if(window.was_pressed(engine::Key::Enter)) {
+            engine::info(
+                "Enter a building type to build "
+                "(one of: 'house', 'farmland', 'mineshaft', 'windmill', 'factory')"
+            );
+            std::string type_name = get_text_input();
+            if(type_name == "house") {
+                type = Building::House;
+                conversions.clear();
+                return;
+            }
+            if(type_name == "farmland") {
+                engine::info("Enter what the farmland should produce (one of: 'wheat', 'barley')");
+                std::string produce_name = get_text_input();
+                if(produce_name == "wheat") {
+                    type = Building::Farmland;
+                    conversions = { Conversion(
+                        {}, 
+                        { { 40, Item::Wheat } }, 
+                        10.0
+                    ) };
+                    engine::info("Selected farmland (-> 40 Wheat / 10 s)");
+                    return;
+                }
+                if(produce_name == "barley") {
+                    type = Building::Farmland;
+                    conversions = { Conversion(
+                        {}, 
+                        { { 40, Item::Barley } }, 
+                        10.0
+                    ) };
+                    engine::info("Selected farmland (-> 40 Barley / 10 s)");
+                    return;
+                }
+            }
+            if(type_name == "mineshaft") {
+                engine::info("Enter what the mineshaft should produce (one of: 'hematite', 'coal')");
+                std::string produce_name = get_text_input();
+                if(produce_name == "hematite") {
+                    type = Building::Mineshaft;
+                    conversions = { Conversion(
+                        {}, 
+                        { { 1, Item::Hematite } }, 
+                        1.0
+                    ) };
+                    engine::info("Selected mineshaft (-> 1 Hematite / 1 s)");
+                    return;
+                }
+                if(produce_name == "coal") {
+                    type = Building::Mineshaft;
+                    conversions = { Conversion(
+                        {}, 
+                        { { 1, Item::Coal } }, 
+                        1.0
+                    ) };
+                    engine::info("Selected coal (-> 1 Coal / 1 s)");
+                    return;
+                }
+            }
+            if(type_name == "windmill") {
+                engine::info("Enter what the windmill should produce (one of: 'malt', 'flour')");
+                std::string produce_name = get_text_input();
+                if(produce_name == "malt") {
+                    type = Building::Windmill;
+                    conversions = { Conversion(
+                        { { 4, Item::Barley } }, 
+                        { { 1, Item::Malt } },
+                        1.0
+                    ) };
+                    engine::info("Selected windmill (4 Barley -> 1 Malt / 1 s)");
+                    return;
+                }
+                if(produce_name == "flour") {
+                    type = Building::Windmill;
+                    conversions = { Conversion(
+                        { { 4, Item::Wheat } }, 
+                        { { 1, Item::Flour } }, 
+                        1.0
+                    ) };
+                    engine::info("Selected windmill (4 Wheat -> 1 Flour / 1 s)");
+                    return;
+                }
+            }
+            if(type_name == "factory") {
+                type = Building::House;
+                engine::info(
+                    "Enter what the factory should produce "
+                    "(one of: 'beer', 'bread', 'steel', 'armor', 'tools')"    
+                );
+                std::string produce_name = get_text_input();
+                if(produce_name == "beer") {
+                    type = Building::Factory;
+                    conversions = { Conversion(
+                        { { 1, Item::Malt } }, 
+                        { { 4, Item::Beer } }, 
+                        4.0
+                    ) };
+                    engine::info("Selected factory (1 Malt -> 4 Beer / 4 s)");
+                    return;
+                }
+                if(produce_name == "bread") {
+                    type = Building::Factory;
+                    conversions = { Conversion(
+                        { { 1, Item::Flour } }, 
+                        { { 2, Item::Bread } }, 
+                        2.0
+                    ) };
+                    engine::info("Selected factory (1 Flour -> 2 Bread / 2 s)");
+                    return;
+                }
+                if(produce_name == "steel") {
+                    type = Building::Factory;
+                    conversions = { Conversion(
+                        { { 2, Item::Hematite }, { 1, Item::Coal } }, 
+                        { { 2, Item::Steel } }, 
+                        5.0
+                    ) };
+                    engine::info("Selected factory (2 Hematite + 1 Coal -> 2 Steel / 5 s)");
+                    return;
+                }
+                if(produce_name == "armor") {
+                    type = Building::Factory;
+                    conversions = { Conversion(
+                        { { 3, Item::Steel } }, 
+                        { { 1, Item::Armor } }, 
+                        10.0
+                    ) };
+                    engine::info("Selected factory (3 Steel -> 1 Armor / 10 s)");
+                    return;
+                }
+                if(produce_name == "tools") {
+                    type = Building::Factory;
+                    conversions = { Conversion(
+                        { { 2, Item::Steel } }, 
+                        { { 1, Item::Tools } }, 
+                        5.0
+                    ) };
+                    engine::info("Selected factory (2 Steel -> 1 Tools / 5 s)");
+                    return;
+                }
+            }
+            engine::info("Invalid input, cancelled. Press enter to try again.");
         }
     }
 
     static void place_building(
         u64 tile_x, u64 tile_z, Terrain& terrain,
-        Building::Type type, const Building::TypeInfo& type_info
+        Building::Type type, const Building::TypeInfo& type_info,
+        const std::vector<Conversion>& conversions
     ) {
         u64 chunk_x = tile_x / terrain.tiles_per_chunk();
         u64 chunk_z = tile_z / terrain.tiles_per_chunk();
         Terrain::ChunkData& chunk = terrain.chunk_at(chunk_x, chunk_z);
+        std::optional<ComplexId> complex_id = std::nullopt;
+        if(conversions.size() > 0) {
+            complex_id = terrain.complexes.closest_to(tile_x, tile_z);
+            if(!complex_id.has_value()) {
+                complex_id = terrain.complexes.create_complex();
+            }
+            Complex& complex = terrain.complexes.get(*complex_id);
+            if(complex.distance_to(tile_x, tile_z) > Complex::max_building_dist) {
+                complex_id = terrain.complexes.create_complex();
+            }
+            complex.add_member(tile_x, tile_z, Complex::Member(conversions));
+        }
+        engine::debug("Building was added to complex " + (complex_id.has_value()? std::to_string(complex_id->index) : "<none>"));
         chunk.buildings.push_back({
             type, 
             (u8) (tile_x % terrain.tiles_per_chunk()), 
             (u8) (tile_z % terrain.tiles_per_chunk()),
-            std::nullopt
+            complex_id
         });
         i64 start_x = (i64) tile_x - (i64) type_info.width / 2;
         i64 end_x = (i64) tile_x + (i64) ceil(type_info.width / 2.0);
@@ -203,7 +352,7 @@ namespace houseofatmos::outside {
     ) {
         (void) scene;
         (void) renderer;
-        choose_building_type(window, this->selected_type);
+        choose_building_type(window, this->selected_type, this->selected_conversion);
         const Building::TypeInfo& type_info = Building::types
             .at((size_t) this->selected_type);
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
@@ -220,7 +369,8 @@ namespace houseofatmos::outside {
             && balance.pay_coins(type_info.cost);
         if(was_placed) {
             place_building(
-                tile_x, tile_z, this->terrain, this->selected_type, type_info
+                tile_x, tile_z, this->terrain, this->selected_type, 
+                type_info, this->selected_conversion
             );
         }
     }
@@ -278,6 +428,14 @@ namespace houseofatmos::outside {
             const Building::TypeInfo& type_info = this->selected->get_type_info();
             Terrain::ChunkData& chunk = this->terrain
                 .chunk_at(this->selected_chunk_x, this->selected_chunk_z);
+            if(this->selected->complex.has_value()) {
+                Complex& complex = this->terrain.complexes
+                    .get(*selected->complex);
+                complex.remove_member(tile_x, tile_z);
+                if(complex.member_count() == 0) {
+                    this->terrain.complexes.delete_complex(*selected->complex);
+                }
+            }
             size_t index = this->selected - chunk.buildings.data();
             chunk.buildings.erase(chunk.buildings.begin() + index);
             this->selected = nullptr;

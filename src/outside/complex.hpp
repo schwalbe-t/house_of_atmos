@@ -2,7 +2,7 @@
 #pragma once
 
 #include <engine/arena.hpp>
-#include <engine/nums.hpp>
+#include <engine/window.hpp>
 #include <vector>
 #include <utility>
 #include <unordered_map>
@@ -10,9 +10,14 @@
 
 namespace houseofatmos::outside {
 
+    using namespace houseofatmos;
+
+
     enum struct Item {
-        Grain, Flour, Bread,
-        Ore, Metal, Tools
+        Barley, /* -> */ Malt, /* -> */ Beer,
+        Wheat, /* -> */ Flour, /* -> */ Bread,
+        Hematite, /* and */ Coal, /* -> */ Steel, /* -> */ Armor,
+                                                  /* or */ Tools
     };
 
 
@@ -20,14 +25,24 @@ namespace houseofatmos::outside {
         struct Serialized {
             u64 inputs_count, inputs_offset;
             u64 outputs_count, outputs_offset;
-            f64 time;
+            f64 period, passed;
         };
 
+        Conversion(
+            std::vector<std::pair<u8, Item>> inputs, 
+            std::vector<std::pair<u8, Item>> outputs, 
+            f64 period
+        ) {
+            this->inputs = std::move(inputs);
+            this->outputs = std::move(outputs);
+            this->period = period;
+            this->passed = 0.0;
+        }
         Conversion(const Serialized& serialized, const engine::Arena& buffer);
 
         std::vector<std::pair<u8, Item>> inputs;
         std::vector<std::pair<u8, Item>> outputs;
-        f64 time;
+        f64 period, passed;
 
         Serialized serialize(engine::Arena& arena) const;
     };
@@ -37,15 +52,12 @@ namespace houseofatmos::outside {
 
         private:
         struct hash_pair {
-            template<class T1, class T2>
-            size_t operator()(const std::pair<T1, T2>& p) const {
-                // Hash the first element
-                size_t hash1 = std::hash<T1>{}(p.first);
-                // Hash the second element
-                size_t hash2 = std::hash<T2>{}(p.second);
-                // Combine the two hash values
-                return hash1
-                    ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
+            template<class A, class B>
+            size_t operator()(const std::pair<A, B>& p) const {
+                size_t hash = 0;
+                hash ^= p.first + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+                hash ^= p.second + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+                return hash;
             }
         };
 
@@ -56,7 +68,9 @@ namespace houseofatmos::outside {
                 u64 conversions_count, conversions_offset;
             };
 
-            Member();
+            Member(std::vector<Conversion> conversions) {
+                this->conversions = conversions;
+            }
             Member(const Serialized& serialized, const engine::Arena& buffer);
 
             std::vector<Conversion> conversions;
@@ -64,19 +78,34 @@ namespace houseofatmos::outside {
             Serialized serialize(engine::Arena& buffer) const;
         };
 
+        static inline const f64 max_building_dist = 4.0;
+
 
         struct Serialized {
-            u64 center_x, center_z;
             u64 members_count, members_offset;
             u64 storage_count, storage_offset;
         };
 
-        Complex();
-        Complex(const Serialized& serialized, const engine::Arena& buffer);
-        
-        u64 center_x, center_z;
+        private:
         std::unordered_map<std::pair<u64, u64>, Member, hash_pair> members;
         std::unordered_map<Item, u64> storage;
+
+        public:
+        Complex();
+        Complex(const Serialized& serialized, const engine::Arena& buffer);
+
+        f64 distance_to(u64 tile_x, u64 tile_z) const;
+        void add_member(u64 tile_x, u64 tile_z, Member member);
+        void remove_member(u64 tile_x, u64 tile_z);
+        Member& member_at(u64 tile_x, u64 tile_z);
+        const Member& member_at(u64 tile_x, u64 tile_z) const;
+        size_t member_count() const;
+        u64 stored_count(Item item) const;
+        void add_stored(Item item, u64 amount);
+        void remove_stored(Item item, u64 amount);
+        void set_stored(Item item, u64 amount);
+
+        void update(const engine::Window& window);
 
         Serialized serialize(engine::Arena& buffer) const;
 
@@ -108,6 +137,7 @@ namespace houseofatmos::outside {
         const Complex& get(ComplexId complex) const;
         void delete_complex(ComplexId complex);
 
+        void update(const engine::Window& window);
 
         Serialized serialize(engine::Arena& buffer) const;
 

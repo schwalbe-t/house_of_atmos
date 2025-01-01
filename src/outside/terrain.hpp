@@ -86,7 +86,6 @@ namespace houseofatmos::outside {
         i64 draw_distance;
         u64 width_chunks, height_chunks;
         i64 view_chunk_x, view_chunk_z;
-        ComplexBank complexes;
         std::vector<LoadedChunk> loaded_chunks;
         std::unique_ptr<engine::Mesh> water_plane;
         f64 water_time;
@@ -104,6 +103,7 @@ namespace houseofatmos::outside {
 
 
         public:
+        ComplexBank complexes;
 
 
         static void load_resources(engine::Scene& scene) {

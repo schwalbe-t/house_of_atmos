@@ -142,17 +142,18 @@ namespace houseofatmos::outside {
         const Player& player;
         u64 selected_x, selected_z;
         Building::Type selected_type;
+        std::vector<Conversion> selected_conversion;
         bool placement_valid;
 
         ConstructionMode(Terrain& terrain, const Player& player)
         : terrain(terrain), player(player) {
             this->selected_x = 0;
             this->selected_z = 0;
-            this->selected_type = Building::Farmland;
+            this->selected_type = Building::House;
             this->placement_valid = false;
             engine::info(
                 "Entered construction mode. Press C or Escape to exit. "
-                "Use the number buttons to select a building and left click to place it."
+                "Press enter to select a building and left click to place it."
             );
         }
 

@@ -17,20 +17,19 @@ namespace houseofatmos::outside {
             serialized.outputs_offset, serialized.outputs_count,
             this->outputs
         );
-        this->time = serialized.time;
+        this->period = serialized.period;
+        this->passed = serialized.passed;
     }
 
     Conversion::Serialized Conversion::serialize(engine::Arena& buffer) const {
         return (Serialized) {
             this->inputs.size(), buffer.alloc_array(this->inputs),
             this->outputs.size(), buffer.alloc_array(this->outputs),
-            this->time
+            this->period, this->passed
         };
     }
 
 
-
-    Complex::Member::Member() {}
 
     Complex::Member::Member(
         const Serialized& serialized, const engine::Arena& buffer
@@ -60,20 +59,15 @@ namespace houseofatmos::outside {
 
 
 
-    Complex::Complex() {
-        this->center_x = UINT32_MAX;
-        this->center_z = UINT32_MAX;
-    }
+    Complex::Complex() {}
 
     Complex::Complex(const Serialized& serialized, const engine::Arena& buffer) {
-        this->center_x = serialized.center_x;
-        this->center_z = serialized.center_z;
         std::vector<std::pair<std::pair<u64, u64>, Member::Serialized>> members;
         buffer.copy_array_at_into(
             serialized.members_offset, serialized.members_count, members
         );
         for(const auto& [location, member]: members) {
-            this->members[location] = Member(member, buffer);
+            this->members.insert({ location, Member(member, buffer) });
         }
         buffer.copy_map_at_into(
             serialized.storage_offset, serialized.storage_count, this->storage
@@ -87,10 +81,76 @@ namespace houseofatmos::outside {
             members.push_back({ location, member.serialize(buffer) });
         }
         return (Serialized) {
-            this->center_x, this->center_z,
             this->members.size(), buffer.alloc_array(members),
             this->storage.size(), buffer.alloc_map(this->storage)
         };
+    }
+
+    f64 Complex::distance_to(u64 tile_x, u64 tile_z) const {
+        f64 min_distance = INFINITY;
+        for(const auto& member: this->members) {
+            const auto& [member_x, member_z] = member.first;
+            f64 distance = Vec<2>(member_x - tile_x, member_z - tile_z).len();
+            min_distance = std::min(min_distance, distance);
+        }
+        return min_distance;
+    }
+
+    void Complex::add_member(u64 tile_x, u64 tile_z, Member member) {
+        this->members.insert({{ tile_x, tile_z }, member });
+    }
+
+    void Complex::remove_member(u64 tile_x, u64 tile_z) {
+        this->members.erase((std::pair<u64, u64>) { tile_x, tile_z });
+    }
+
+    Complex::Member& Complex::member_at(u64 tile_x, u64 tile_z) {
+        return this->members.at((std::pair<u64, u64>) { tile_x, tile_z });
+    }
+
+    const Complex::Member& Complex::member_at(u64 tile_x, u64 tile_z) const {
+        return this->members.at((std::pair<u64, u64>) { tile_x, tile_z });
+    }
+
+    size_t Complex::member_count() const { return this->members.size(); }
+
+    u64 Complex::stored_count(Item item) const {
+        auto count = this->storage.find(item);
+        if(count == this->storage.end()) { return 0; }
+        return count->second;
+    }
+
+    void Complex::add_stored(Item item, u64 amount) {
+        this->storage[item] += amount;
+    }
+
+    void Complex::remove_stored(Item item, u64 amount) {
+        this->storage[item] -= amount;
+    }
+
+    void Complex::set_stored(Item item, u64 amount) {
+        this->storage[item] = amount;
+    }
+
+    void Complex::update(const engine::Window& window) {
+        for(auto& member: this->members) {
+            for(Conversion& conversion: member.second.conversions) {
+                conversion.passed += window.delta_time();
+                u64 passed_times = conversion.passed / conversion.period;
+                conversion.passed = fmod(conversion.passed, conversion.period);
+                u64 allowed_times = passed_times;
+                for(auto& [count, item]: conversion.inputs) {
+                    u64 present_count = this->stored_count(item) / count;
+                    allowed_times = std::min(allowed_times, present_count);
+                }
+                for(auto& [count, item]: conversion.inputs) {
+                    this->remove_stored(item, allowed_times * count);
+                }
+                for(auto& [count, item]: conversion.outputs) {
+                    this->add_stored(item, allowed_times * count);
+                }
+            }
+        }
     }
 
 
@@ -141,9 +201,7 @@ namespace houseofatmos::outside {
         f64 closest_distance = INFINITY;
         for(size_t index = 0; index < this->complexes.size(); index += 1) {
             const Complex& complex = this->complexes.at(index);
-            Vec<2> delta = Vec<2>(complex.center_x, complex.center_z)
-                - Vec<2>(tile_x, tile_z);
-            f64 distance = delta.len();
+            f64 distance = complex.distance_to(tile_x, tile_z);
             if(closest_distance <= distance) { continue; }
             closest = (ComplexId) { (u32) index };
             closest_distance = distance;
