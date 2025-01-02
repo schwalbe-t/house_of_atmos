@@ -317,17 +317,17 @@ namespace houseofatmos::outside {
         u64 chunk_z = tile_z / terrain.tiles_per_chunk();
         Terrain::ChunkData& chunk = terrain.chunk_at(chunk_x, chunk_z);
         std::optional<ComplexId> complex_id = std::nullopt;
-        if(conversions.size() > 0) {
-            complex_id = terrain.complexes.closest_to(tile_x, tile_z);
-            if(!complex_id.has_value()) {
-                complex_id = terrain.complexes.create_complex();
-            }
-            Complex& complex = terrain.complexes.get(*complex_id);
-            if(complex.distance_to(tile_x, tile_z) > Complex::max_building_dist) {
-                complex_id = terrain.complexes.create_complex();
-            }
-            complex.add_member(tile_x, tile_z, Complex::Member(conversions));
-        }
+        // if(conversions.size() > 0) {
+        //     complex_id = terrain.complexes.closest_to(tile_x, tile_z);
+        //     if(!complex_id.has_value()) {
+        //         complex_id = terrain.complexes.create_complex();
+        //     }
+        //     Complex& complex = terrain.complexes.get(*complex_id);
+        //     if(complex.distance_to(tile_x, tile_z) > Complex::max_building_dist) {
+        //         complex_id = terrain.complexes.create_complex();
+        //     }
+        //     complex.add_member(tile_x, tile_z, Complex::Member(conversions));
+        // }
         engine::debug("Building was added to complex " + (complex_id.has_value()? std::to_string(complex_id->index) : "<none>"));
         chunk.buildings.push_back({
             type, 
@@ -428,14 +428,14 @@ namespace houseofatmos::outside {
             const Building::TypeInfo& type_info = this->selected->get_type_info();
             Terrain::ChunkData& chunk = this->terrain
                 .chunk_at(this->selected_chunk_x, this->selected_chunk_z);
-            if(this->selected->complex.has_value()) {
-                Complex& complex = this->terrain.complexes
-                    .get(*selected->complex);
-                complex.remove_member(tile_x, tile_z);
-                if(complex.member_count() == 0) {
-                    this->terrain.complexes.delete_complex(*selected->complex);
-                }
-            }
+            // if(this->selected->complex.has_value()) {
+            //     Complex& complex = this->terrain.complexes
+            //         .get(*selected->complex);
+            //     complex.remove_member(tile_x, tile_z);
+            //     if(complex.member_count() == 0) {
+            //         this->terrain.complexes.delete_complex(*selected->complex);
+            //     }
+            // }
             size_t index = this->selected - chunk.buildings.data();
             chunk.buildings.erase(chunk.buildings.begin() + index);
             this->selected = nullptr;

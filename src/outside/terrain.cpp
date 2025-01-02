@@ -143,9 +143,7 @@ namespace houseofatmos::outside {
 
 
     void Terrain::build_water_plane() {
-        if(this->water_plane != nullptr) { return; }
-        this->water_plane = std::make_unique<engine::Mesh>(Terrain::water_plane_attribs);
-        engine::Mesh& p = *this->water_plane;
+        engine::Mesh& p = this->water_plane;
         // tl---tr
         //  | \ |
         // bl---br
@@ -549,6 +547,7 @@ namespace houseofatmos::outside {
         engine::Scene& scene, const Renderer& renderer,
         const engine::Window& window
     ) {
+        this->render_water(scene, renderer, window);
         const engine::Texture& ground_texture
             = scene.get<engine::Texture>(Terrain::ground_texture);
         for(LoadedChunk& chunk: this->loaded_chunks) {
@@ -564,7 +563,6 @@ namespace houseofatmos::outside {
                 chunk, chunk_offset, window, scene, renderer
             );
         }
-        this->render_water(scene, renderer, window);
     }
 
     void Terrain::render_chunk_ground(
@@ -645,10 +643,8 @@ namespace houseofatmos::outside {
         Vec<2> nmap_offset = offset.swizzle<2>("xz") / scale_xz;
         shader.set_uniform("u_nmap_scale", nmap_scale);
         shader.set_uniform("u_nmap_offset", nmap_offset);
-        this->water_time += window.delta_time();
-        shader.set_uniform("u_time", this->water_time);\
-        this->build_water_plane();
-        this->water_plane->render(shader, renderer.output(), 1);
+        shader.set_uniform("u_time", window.time());
+        this->water_plane.render(shader, renderer.output());
     }
 
 
@@ -678,8 +674,7 @@ namespace houseofatmos::outside {
         for(const ChunkData::Serialized& chunk: chunks) {
             this->chunks.push_back(ChunkData(this->chunk_tiles, chunk, buffer));
         }
-        this->water_plane = nullptr;
-        this->complexes = ComplexBank(serialized.complexes, buffer);
+        this->build_water_plane();
     }
 
     Terrain::ChunkData::ChunkData(
@@ -719,7 +714,6 @@ namespace houseofatmos::outside {
         }
         return {
             this->width, this->height,
-            this->complexes.serialize(buffer),
             this->elevation.size(), buffer.alloc_array(this->elevation),
             this->chunks.size(), buffer.alloc_array(chunk_data)
         };

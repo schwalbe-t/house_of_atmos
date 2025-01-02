@@ -59,7 +59,10 @@ namespace houseofatmos::engine {
             case TINYGLTF_TYPE_VEC2: attrib_elems = 2; break;
             case TINYGLTF_TYPE_VEC3: attrib_elems = 3; break;
             case TINYGLTF_TYPE_VEC4: attrib_elems = 4; break;
-            default: error("You really should never see this message :/");
+            default:
+                error("You really should never see this message :/");
+                attrib_elems = 0;
+                break;
         }
         if(attrib_elems >= expected.count) { return; }
         error("Expected attribute '"
@@ -660,6 +663,7 @@ namespace houseofatmos::engine {
             success = loader.LoadBinaryFromFile(&model, &err, &warn, path);
         } else {
             error("'" + path + "' does not refer to a supported model type");
+            success = false;
         }
         if(!warn.empty()) {
             warning("While loading '" + path + "': " + warn);

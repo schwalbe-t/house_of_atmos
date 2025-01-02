@@ -12,8 +12,8 @@ namespace houseofatmos::engine {
     struct Arena {
         
         private:
-        std::vector<u8> buffer = std::vector<u8>(256);
-        u64 next_offset = 0;
+        std::vector<u8> buffer;
+        u64 next_offset;
 
         void add_size(size_t n) {
             while(this->buffer.size() - this->next_offset < n) {
@@ -22,12 +22,17 @@ namespace houseofatmos::engine {
         }
 
         public:
-        Arena() {}
+        Arena() {
+            this->buffer = std::vector<u8>(256);
+            this->next_offset = 0;
+        }
         Arena(const std::vector<char>& data) {
             this->buffer.resize(data.size());
+            size_t n = data.size() * sizeof(char);
             std::memcpy(
-                (void*) this->buffer.data(), (void*) data.data(), data.size()
+                (void*) this->buffer.data(), (void*) data.data(), n
             );
+            this->next_offset = n;
         }
 
         std::span<const u8> data() const {

@@ -90,6 +90,7 @@ namespace houseofatmos::engine {
     }
 
     Mesh::Mesh(std::initializer_list<Attrib> attrib_sizes) {
+        this->moved = true;
         *this = Mesh(std::span(attrib_sizes));
     }
 

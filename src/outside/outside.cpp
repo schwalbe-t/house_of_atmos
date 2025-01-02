@@ -36,7 +36,7 @@ namespace houseofatmos::outside {
     }
 
     void Outside::update(engine::Window& window) {
-        this->terrain.complexes.update(window);
+        this->complexes.update(window);
         ActionMode::choose_current(window, this->terrain, this->player, this->action_mode);
         this->action_mode->update(window, *this, this->renderer, this->balance);
         this->player.update(window);
@@ -78,6 +78,7 @@ namespace houseofatmos::outside {
             Outside::draw_distance, Outside::units_per_tile, Outside::tiles_per_chunk,
             buffer
         );
+        this->complexes = ComplexBank(outside.complexes, buffer);
         this->player = Player(outside.player, buffer);
         this->action_mode = std::make_unique<DefaultMode>();
         this->balance = outside.balance;
@@ -88,9 +89,11 @@ namespace houseofatmos::outside {
         // we need to allocate the base struct first so that it's always at offset 0
         size_t outside_offset = buffer.alloc_array<Outside::Serialized>(nullptr, 1);
         Terrain::Serialized terrain = this->terrain.serialize(buffer);
+        ComplexBank::Serialized complexes = this->complexes.serialize(buffer);
         Player::Serialized player = this->player.serialize(buffer);
         auto& outside = buffer.value_at<Outside::Serialized>(outside_offset);
         outside.terrain = terrain;
+        outside.complexes = complexes;
         outside.player = player;
         outside.balance = this->balance;
         return buffer;

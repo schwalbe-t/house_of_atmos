@@ -17,7 +17,7 @@ namespace houseofatmos::outside {
 
         struct Serialized {
             u64 width, height;
-            ComplexBank::Serialized complexes;
+            //ComplexBank::Serialized complexes;
             u64 elevation_count, elevation_offset;
             u64 chunk_count, chunk_offset;
         };
@@ -87,8 +87,7 @@ namespace houseofatmos::outside {
         u64 width_chunks, height_chunks;
         i64 view_chunk_x, view_chunk_z;
         std::vector<LoadedChunk> loaded_chunks;
-        std::unique_ptr<engine::Mesh> water_plane;
-        f64 water_time;
+        engine::Mesh water_plane = engine::Mesh(Terrain::water_plane_attribs);  
         // row-major 2D vector of each tile corner height
         // .size() = (width + 1) * (height + 1)
         std::vector<i16> elevation;
@@ -103,7 +102,6 @@ namespace houseofatmos::outside {
 
 
         public:
-        ComplexBank complexes;
 
 
         static void load_resources(engine::Scene& scene) {
@@ -136,7 +134,7 @@ namespace houseofatmos::outside {
             this->chunks = std::vector<ChunkData>(
                 width_chunks * height_chunks, ChunkData(chunk_tiles)
             );
-            this->water_plane = nullptr;
+            this->build_water_plane();
         }
         
         Terrain(

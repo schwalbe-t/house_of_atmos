@@ -15,6 +15,7 @@ namespace houseofatmos::outside {
 
         struct Serialized {
             Terrain::Serialized terrain;
+            ComplexBank::Serialized complexes;
             Player::Serialized player;
             Balance balance;
         };
@@ -31,6 +32,7 @@ namespace houseofatmos::outside {
         Terrain terrain = Terrain(
             256, 256, draw_distance, units_per_tile, tiles_per_chunk
         );
+        ComplexBank complexes;
         Player player;
         std::unique_ptr<ActionMode> action_mode;
         Balance balance;
