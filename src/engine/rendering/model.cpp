@@ -47,7 +47,6 @@ namespace houseofatmos::engine {
             case Model::Joints: return "JOINTS_0";
         }
         error("Unhandled attribute type in 'gltf_attrib_name'");
-        return "<unknown>";
     }
 
     static void gltf_check_matching_attrib_sizes(
@@ -59,10 +58,7 @@ namespace houseofatmos::engine {
             case TINYGLTF_TYPE_VEC2: attrib_elems = 2; break;
             case TINYGLTF_TYPE_VEC3: attrib_elems = 3; break;
             case TINYGLTF_TYPE_VEC4: attrib_elems = 4; break;
-            default:
-                error("You really should never see this message :/");
-                attrib_elems = 0;
-                break;
+            default: error("You really should never see this message :/");
         }
         if(attrib_elems >= expected.count) { return; }
         error("Expected attribute '"
@@ -144,7 +140,6 @@ namespace houseofatmos::engine {
             + std::to_string(mesh_id) + " in '" + path + "'"
             ", but it does not exist and no matching default could be created"
         );
-        return { nullptr, 0, 0 };
     }
 
     static GltfBufferView gltf_parse_mesh_attrib(
@@ -406,7 +401,6 @@ namespace houseofatmos::engine {
         error("The animation '" + anim_name + "' in '" + path + "' refers to a"
             " node that is not part of any skeleton"
         );
-        return 0;
     }
 
     static Animation::Interpolation gltf_parse_interp_type(
@@ -419,7 +413,6 @@ namespace houseofatmos::engine {
             " and 'LINEAR' are supported. The animation '" + anim_name + "'"
             " in '" + path + "' does not meet this condition"
         );
-        return Animation::Step;
     }
 
     template<size_t N>
@@ -663,7 +656,6 @@ namespace houseofatmos::engine {
             success = loader.LoadBinaryFromFile(&model, &err, &warn, path);
         } else {
             error("'" + path + "' does not refer to a supported model type");
-            success = false;
         }
         if(!warn.empty()) {
             warning("While loading '" + path + "': " + warn);

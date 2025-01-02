@@ -37,7 +37,7 @@ namespace houseofatmos::outside {
 
     void Outside::update(engine::Window& window) {
         this->complexes.update(window);
-        ActionMode::choose_current(window, this->terrain, this->player, this->action_mode);
+        ActionMode::choose_current(window, this->terrain, this->complexes, this->player, this->action_mode);
         this->action_mode->update(window, *this, this->renderer, this->balance);
         this->player.update(window);
         bool in_coll = !this->terrain.valid_player_position(Player::collider.at(this->player.position));

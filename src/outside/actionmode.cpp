@@ -5,7 +5,8 @@
 namespace houseofatmos::outside {
 
     void ActionMode::choose_current(
-        const engine::Window& window, Terrain& terrain, const Player& player,
+        const engine::Window& window,
+        Terrain& terrain, ComplexBank& complexes, const Player& player,
         std::unique_ptr<ActionMode>& current
     ) {
         for(size_t type_i = 0; type_i < ActionMode::keys.size(); type_i += 1) {
@@ -17,11 +18,25 @@ namespace houseofatmos::outside {
                 break;
             }
             switch(type) {
-                case Default: current = std::make_unique<DefaultMode>(); break;
-                case Terraform: current = std::make_unique<TerraformMode>(terrain); break;
-                case Construction: current = std::make_unique<ConstructionMode>(terrain, player); break;
-                case Demolition: current = std::make_unique<DemolitionMode>(terrain); break;
-                case Pathing: current = std::make_unique<PathingMode>(terrain); break;
+                case Default: 
+                    current = std::make_unique<DefaultMode>(); 
+                    break;
+                case Terraform: 
+                    current = std::make_unique<TerraformMode>(terrain); 
+                    break;
+                case Construction: 
+                    current = std::make_unique<ConstructionMode>(
+                        terrain, complexes, player
+                    );
+                    break;
+                case Demolition: 
+                    current = std::make_unique<DemolitionMode>(
+                        terrain, complexes
+                    ); 
+                    break;
+                case Pathing: 
+                    current = std::make_unique<PathingMode>(terrain); 
+                    break;
                 default: engine::warning(
                     "Unhandled 'ActionMode::Type' in 'ActionMode::choose_current'"
                 );
@@ -309,7 +324,7 @@ namespace houseofatmos::outside {
     }
 
     static void place_building(
-        u64 tile_x, u64 tile_z, Terrain& terrain,
+        u64 tile_x, u64 tile_z, Terrain& terrain, ComplexBank& complexes,
         Building::Type type, const Building::TypeInfo& type_info,
         const std::vector<Conversion>& conversions
     ) {
@@ -317,18 +332,20 @@ namespace houseofatmos::outside {
         u64 chunk_z = tile_z / terrain.tiles_per_chunk();
         Terrain::ChunkData& chunk = terrain.chunk_at(chunk_x, chunk_z);
         std::optional<ComplexId> complex_id = std::nullopt;
-        // if(conversions.size() > 0) {
-        //     complex_id = terrain.complexes.closest_to(tile_x, tile_z);
-        //     if(!complex_id.has_value()) {
-        //         complex_id = terrain.complexes.create_complex();
-        //     }
-        //     Complex& complex = terrain.complexes.get(*complex_id);
-        //     if(complex.distance_to(tile_x, tile_z) > Complex::max_building_dist) {
-        //         complex_id = terrain.complexes.create_complex();
-        //     }
-        //     complex.add_member(tile_x, tile_z, Complex::Member(conversions));
-        // }
-        engine::debug("Building was added to complex " + (complex_id.has_value()? std::to_string(complex_id->index) : "<none>"));
+        if(conversions.size() > 0) {
+            complex_id = complexes.closest_to(tile_x, tile_z);
+            if(!complex_id.has_value()) {
+                complex_id = complexes.create_complex();
+            } else {
+                const Complex& nearest_complex = complexes.get(*complex_id);
+                f64 distance = nearest_complex.distance_to(tile_x, tile_z);
+                if(distance > Complex::max_building_dist) {
+                    complex_id = complexes.create_complex();
+                }
+            }
+            Complex& complex = complexes.get(*complex_id);
+            complex.add_member(tile_x, tile_z, Complex::Member(conversions));
+        }
         chunk.buildings.push_back({
             type, 
             (u8) (tile_x % terrain.tiles_per_chunk()), 
@@ -369,8 +386,8 @@ namespace houseofatmos::outside {
             && balance.pay_coins(type_info.cost);
         if(was_placed) {
             place_building(
-                tile_x, tile_z, this->terrain, this->selected_type, 
-                type_info, this->selected_conversion
+                tile_x, tile_z, this->terrain, this->complexes,
+                this->selected_type, type_info, this->selected_conversion
             );
         }
     }
@@ -428,14 +445,13 @@ namespace houseofatmos::outside {
             const Building::TypeInfo& type_info = this->selected->get_type_info();
             Terrain::ChunkData& chunk = this->terrain
                 .chunk_at(this->selected_chunk_x, this->selected_chunk_z);
-            // if(this->selected->complex.has_value()) {
-            //     Complex& complex = this->terrain.complexes
-            //         .get(*selected->complex);
-            //     complex.remove_member(tile_x, tile_z);
-            //     if(complex.member_count() == 0) {
-            //         this->terrain.complexes.delete_complex(*selected->complex);
-            //     }
-            // }
+            if(this->selected->complex.has_value()) {
+                Complex& complex = this->complexes.get(*selected->complex);
+                complex.remove_member(tile_x, tile_z);
+                if(complex.member_count() == 0) {
+                    this->complexes.delete_complex(*selected->complex);
+                }
+            }
             size_t index = this->selected - chunk.buildings.data();
             chunk.buildings.erase(chunk.buildings.begin() + index);
             this->selected = nullptr;

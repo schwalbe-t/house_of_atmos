@@ -17,6 +17,7 @@ namespace houseofatmos::engine {
         std::cout << " !  <WARNING> " << message << std::endl;
     }
 
+    [[noreturn]]
     void error(std::string message) {
         std::cout << "!!! [ERROR] " << message << std::endl;
         std::abort();

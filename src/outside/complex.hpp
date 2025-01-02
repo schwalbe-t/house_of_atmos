@@ -50,18 +50,6 @@ namespace houseofatmos::outside {
 
     struct Complex {
 
-        private:
-        struct hash_pair {
-            template<class A, class B>
-            size_t operator()(const std::pair<A, B>& p) const {
-                size_t hash = 0;
-                hash ^= p.first + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-                hash ^= p.second + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-                return hash;
-            }
-        };
-
-
         public:
         struct Member {
             struct Serialized {
@@ -87,7 +75,7 @@ namespace houseofatmos::outside {
         };
 
         private:
-        std::unordered_map<std::pair<u64, u64>, Member, hash_pair> members;
+        std::vector<std::pair<std::pair<u64, u64>, Member>> members;
         std::unordered_map<Item, u64> storage;
 
         public:

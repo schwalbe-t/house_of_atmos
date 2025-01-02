@@ -56,7 +56,6 @@ namespace houseofatmos::engine {
                 : Animation::lerp(last_kf.value, next_kf.value, t);
         }
         error("Unhandled interpolation type in 'compute_property_value'");
-        return Vec<N>();
     }
 
     Animation::BoneState Animation::compute_state(u16 bone_idx, f64 timestamp) const {

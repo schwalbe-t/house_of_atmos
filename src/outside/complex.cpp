@@ -67,7 +67,7 @@ namespace houseofatmos::outside {
             serialized.members_offset, serialized.members_count, members
         );
         for(const auto& [location, member]: members) {
-            this->members.insert({ location, Member(member, buffer) });
+            this->members.push_back({ location, Member(member, buffer) });
         }
         buffer.copy_map_at_into(
             serialized.storage_offset, serialized.storage_count, this->storage
@@ -90,26 +90,48 @@ namespace houseofatmos::outside {
         f64 min_distance = INFINITY;
         for(const auto& member: this->members) {
             const auto& [member_x, member_z] = member.first;
-            f64 distance = Vec<2>(member_x - tile_x, member_z - tile_z).len();
-            min_distance = std::min(min_distance, distance);
+            Vec<2> difference = Vec<2>(member_x, member_z) 
+                - Vec<2>(tile_x, tile_z);
+            min_distance = std::min(min_distance, difference.len());
         }
         return min_distance;
     }
 
     void Complex::add_member(u64 tile_x, u64 tile_z, Member member) {
-        this->members.insert({{ tile_x, tile_z }, member });
+        for(auto& member: this->members) {
+            const auto& [member_x, member_z] = member.first;
+            if(member_x != tile_x || member_z != tile_z) { continue; }
+            engine::error("Complex already contains a member at tile ["
+                + std::to_string(tile_x) + ", " + std::to_string(tile_z) + "]"
+            );
+        }
+        this->members.push_back({{ tile_x, tile_z }, member });
     }
 
     void Complex::remove_member(u64 tile_x, u64 tile_z) {
-        this->members.erase((std::pair<u64, u64>) { tile_x, tile_z });
+        for(size_t mem_i = 0; mem_i < this->members.size(); mem_i += 1) {
+            const auto& [member_x, member_z] = this->members.at(mem_i).first;
+            if(member_x != tile_x || member_z != tile_z) { continue; }
+            this->members.erase(this->members.begin() + mem_i);
+        }
+        engine::error("Complex does not contain a member at tile ["
+            + std::to_string(tile_x) + ", " + std::to_string(tile_z) + "]"
+        );
     }
 
     Complex::Member& Complex::member_at(u64 tile_x, u64 tile_z) {
-        return this->members.at((std::pair<u64, u64>) { tile_x, tile_z });
+        for(auto& member: this->members) {
+            const auto& [member_x, member_z] = member.first;
+            if(member_x != tile_x || member_z != tile_z) { continue; }
+            return member.second;
+        }
+        engine::error("Complex does not contain a member at tile ["
+            + std::to_string(tile_x) + ", " + std::to_string(tile_z) + "]"
+        );
     }
 
     const Complex::Member& Complex::member_at(u64 tile_x, u64 tile_z) const {
-        return this->members.at((std::pair<u64, u64>) { tile_x, tile_z });
+        return (const Member&) ((Complex*) this)->member_at(tile_x, tile_z);
     }
 
     size_t Complex::member_count() const { return this->members.size(); }
@@ -136,13 +158,15 @@ namespace houseofatmos::outside {
         for(auto& member: this->members) {
             for(Conversion& conversion: member.second.conversions) {
                 conversion.passed += window.delta_time();
-                u64 passed_times = conversion.passed / conversion.period;
+                u64 passed_times = (u64) (conversion.passed / conversion.period);
+                if(passed_times == 0) { continue; }
                 conversion.passed = fmod(conversion.passed, conversion.period);
                 u64 allowed_times = passed_times;
                 for(auto& [count, item]: conversion.inputs) {
                     u64 present_count = this->stored_count(item) / count;
                     allowed_times = std::min(allowed_times, present_count);
                 }
+                if(allowed_times == 0) { continue; }
                 for(auto& [count, item]: conversion.inputs) {
                     this->remove_stored(item, allowed_times * count);
                 }

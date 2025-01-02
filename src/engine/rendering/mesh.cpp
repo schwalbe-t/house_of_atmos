@@ -17,7 +17,6 @@ namespace houseofatmos::engine {
             case Mesh::U32: return sizeof(u32);
         }
         error("Unhandled mesh attribute type in 'Mesh::Attrib::type_size_bytes'");
-        return 0;
     }
 
     size_t Mesh::Attrib::size_bytes() const {
@@ -35,7 +34,6 @@ namespace houseofatmos::engine {
             case Mesh::U32: return GL_UNSIGNED_INT;
         }
         error("Unhandled mesh attribute type in 'Mesh::Attrib::gl_type_constant'");
-        return 0;
     }
 
     std::string Mesh::Attrib::display_type() const {
@@ -49,7 +47,6 @@ namespace houseofatmos::engine {
             case Mesh::U32: return "u32";
         }
         error("Unhandled mesh attribute type in 'Mesh::Attrib::display_type'");
-        return "<unknown>";
     }
 
     std::string Mesh::Attrib::display() const {

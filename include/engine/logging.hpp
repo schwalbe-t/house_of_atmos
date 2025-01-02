@@ -11,6 +11,7 @@ namespace houseofatmos::engine {
 
     void warning(std::string message);
 
+    [[noreturn]]
     void error(std::string message);
 
     namespace internal {

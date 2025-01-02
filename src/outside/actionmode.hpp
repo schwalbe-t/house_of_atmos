@@ -67,7 +67,8 @@ namespace houseofatmos::outside {
         ) = 0;
 
         static void choose_current(
-            const engine::Window& window, Terrain& terrain, const Player& player,
+            const engine::Window& window,
+            Terrain& terrain, ComplexBank& complexes, const Player& player,
             std::unique_ptr<ActionMode>& current
         );
 
@@ -139,14 +140,15 @@ namespace houseofatmos::outside {
     struct ConstructionMode: ActionMode {
 
         Terrain& terrain;
+        ComplexBank& complexes;
         const Player& player;
         u64 selected_x, selected_z;
         Building::Type selected_type;
         std::vector<Conversion> selected_conversion;
         bool placement_valid;
 
-        ConstructionMode(Terrain& terrain, const Player& player)
-        : terrain(terrain), player(player) {
+        ConstructionMode(Terrain& terrain, ComplexBank& complexes, const Player& player)
+        : terrain(terrain), complexes(complexes), player(player) {
             this->selected_x = 0;
             this->selected_z = 0;
             this->selected_type = Building::House;
@@ -173,12 +175,13 @@ namespace houseofatmos::outside {
 
     struct DemolitionMode: ActionMode {
 
-        Terrain& terrain;
+        Terrain& terrain; ComplexBank& complexes;
         u64 selected_tile_x, selected_tile_z;
         u64 selected_chunk_x, selected_chunk_z;
         const Building* selected;
 
-        DemolitionMode(Terrain& terrain): terrain(terrain) {
+        DemolitionMode(Terrain& terrain, ComplexBank& complexes)
+        : terrain(terrain), complexes(complexes) {
             this->selected_tile_x = 0;
             this->selected_tile_z = 0;
             this->selected_chunk_x = 0;
