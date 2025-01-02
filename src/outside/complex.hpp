@@ -3,6 +3,7 @@
 
 #include <engine/arena.hpp>
 #include <engine/window.hpp>
+#include "../player.hpp"
 #include <vector>
 #include <utility>
 #include <unordered_map>
@@ -17,7 +18,8 @@ namespace houseofatmos::outside {
         Barley, /* -> */ Malt, /* -> */ Beer,
         Wheat, /* -> */ Flour, /* -> */ Bread,
         Hematite, /* and */ Coal, /* -> */ Steel, /* -> */ Armor,
-                                                  /* or */ Tools
+                                                  /* or */ Tools,
+        Coins
     };
 
 
@@ -93,7 +95,7 @@ namespace houseofatmos::outside {
         void remove_stored(Item item, u64 amount);
         void set_stored(Item item, u64 amount);
 
-        void update(const engine::Window& window);
+        void update(const engine::Window& window, Balance& balance);
 
         Serialized serialize(engine::Arena& buffer) const;
 
@@ -125,7 +127,7 @@ namespace houseofatmos::outside {
         const Complex& get(ComplexId complex) const;
         void delete_complex(ComplexId complex);
 
-        void update(const engine::Window& window);
+        void update(const engine::Window& window, Balance& balance);
 
         Serialized serialize(engine::Arena& buffer) const;
 

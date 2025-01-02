@@ -154,7 +154,7 @@ namespace houseofatmos::outside {
         this->storage[item] = amount;
     }
 
-    void Complex::update(const engine::Window& window) {
+    void Complex::update(const engine::Window& window, Balance& balance) {
         for(auto& member: this->members) {
             for(Conversion& conversion: member.second.conversions) {
                 conversion.passed += window.delta_time();
@@ -175,6 +175,8 @@ namespace houseofatmos::outside {
                 }
             }
         }
+        balance.coins += this->stored_count(Item::Coins);
+        this->set_stored(Item::Coins, 0);
     }
 
 
@@ -241,9 +243,9 @@ namespace houseofatmos::outside {
         return this->complexes.at(complex.index);   
     }
 
-    void ComplexBank::update(const engine::Window& window) {
+    void ComplexBank::update(const engine::Window& window, Balance& balance) {
         for(Complex& complex: this->complexes) {
-            complex.update(window);
+            complex.update(window, balance);
         }
     }
 
