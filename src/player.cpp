@@ -59,7 +59,7 @@ namespace houseofatmos {
             * Mat<4>::rotate_y(this->angle);
         const engine::Animation& anim = model.animation(this->anim_name);
         f64 timestamp = fmod(this->anim_time * this->anim_speed, anim.length());
-        renderer.render(model, model_transf, anim, timestamp);
+        renderer.render(model, std::array { model_transf }, anim, timestamp);
     }
 
 

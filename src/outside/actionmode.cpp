@@ -399,27 +399,22 @@ namespace houseofatmos::outside {
         const engine::Texture& wireframe_texture = this->placement_valid
             ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
             : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
-        const Building::TypeInfo& type_info = Building::types
-            .at((size_t) this->selected_type);
-        engine::Model& model = scene.get<engine::Model>(type_info.model);
-        Vec<3> offset = Vec<3>(
-            this->selected_x + type_info.offset_x, 0, this->selected_z + type_info.offset_z
-        ) * this->terrain.units_per_tile();
-        offset.y() = this->terrain.elevation_at(this->selected_x, this->selected_z);
-        Mat<4> transform = Mat<4>::translate(offset);
-        if(type_info.animation.has_value()) {
-            const engine::Animation& animation = model.animation(*type_info.animation);
-            renderer.render(
-                model, transform, 
-                animation,
-                fmod(window.time() * type_info.animation_speed, animation.length()),
-                true, &wireframe_texture
-            );
-        } else {
-            renderer.render(
-                model, std::array { transform }, true, &wireframe_texture
-            );
-        }
+        u64 chunk_x = this->selected_x / this->terrain.tiles_per_chunk();
+        u64 chunk_z = this->selected_z / this->terrain.tiles_per_chunk();
+        u64 chunk_rel_x = this->selected_x % this->terrain.tiles_per_chunk();
+        u64 chunk_rel_z = this->selected_z % this->terrain.tiles_per_chunk();
+        Building building = (Building) { 
+            this->selected_type, 
+            (u8) chunk_rel_x, (u8) chunk_rel_z, 
+            std::nullopt 
+        };
+        const Building::TypeInfo& type_info = building.get_type_info();
+        Mat<4> transform = this->terrain
+            .building_transform(building, chunk_x, chunk_z);
+        type_info.render_buildings(
+            window, scene, renderer,
+            std::array { transform }, true, &wireframe_texture
+        );
     }
 
 
@@ -470,42 +465,17 @@ namespace houseofatmos::outside {
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
     ) {
-        if(this->selected != nullptr) {
-            const engine::Texture& wireframe_texture = scene
-                .get<engine::Texture>(ActionMode::wireframe_error_texture);
-            const Building::TypeInfo& type_info = Building::types
-                .at((size_t) this->selected->type);
-            engine::Model& model = scene.get<engine::Model>(type_info.model);
-            Vec<3> chunk_offset = Vec<3>(
-                this->selected_chunk_x, 0, this->selected_chunk_z
-            ) * this->terrain.tiles_per_chunk() * this->terrain.units_per_tile();
-            Vec<3> offset = chunk_offset + Vec<3>(
-                this->selected->x + type_info.offset_x, 
-                0, 
-                this->selected->z + type_info.offset_z
-            ) * this->terrain.units_per_tile();
-            offset.y() = this->terrain.elevation_at(
-                this->selected_chunk_x * this->terrain.tiles_per_chunk()
-                    + this->selected->x, 
-                this->selected_chunk_z * this->terrain.tiles_per_chunk()
-                    + this->selected->z
-            );
-            Mat<4> transform = Mat<4>::translate(offset);
-            if(type_info.animation.has_value()) {
-                const engine::Animation& animation = model
-                    .animation(*type_info.animation);
-                renderer.render(
-                    model, transform, 
-                    animation,
-                    fmod(window.time() * type_info.animation_speed, animation.length()),
-                    true, &wireframe_texture
-                );
-            } else {
-                renderer.render(
-                    model, std::array { transform }, true, &wireframe_texture
-                );
-            }
-        }
+        if(this->selected == nullptr) { return; }
+        const engine::Texture& wireframe_texture = scene
+            .get<engine::Texture>(ActionMode::wireframe_error_texture);
+        const Building::TypeInfo& type_info = this->selected->get_type_info();
+        Mat<4> transform = this->terrain.building_transform(
+            *this->selected, this->selected_chunk_x, this->selected_chunk_z
+        );
+        type_info.render_buildings(
+            window, scene, renderer,
+            std::array { transform }, true, &wireframe_texture
+        );
     }
 
 

@@ -58,17 +58,17 @@ namespace houseofatmos {
         this->shader->set_uniform("u_local_transf", local_transform);
         this->shader->set_uniform("u_joint_transfs", std::array { Mat<4>() });
         this->shader->set_uniform("u_texture", texture);
-        for(size_t offset = 0; offset < model_transforms.size();) {
-            size_t remaining = model_transforms.size() - offset;
+        for(size_t completed = 0; completed < model_transforms.size();) {
+            size_t remaining = model_transforms.size() - completed;
             size_t count = std::min(remaining, Renderer::max_inst_c);
             this->shader->set_uniform(
                 "u_model_transfs", 
-                model_transforms.subspan(offset, count)
+                model_transforms.subspan(completed, count)
             );
             mesh.render(
                 *this->shader, this->target, count, wireframe, !wireframe
             );
-            offset += count;
+            completed += count;
         }
     }
 
@@ -78,6 +78,9 @@ namespace houseofatmos {
         bool wireframe,
         const engine::Texture* override_texture
     ) const {
+        if(override_texture != nullptr) {
+            this->shader->set_uniform("u_texture", *override_texture);
+        }
         for(size_t completed = 0; completed < model_transforms.size();) {
             size_t remaining = model_transforms.size() - completed;
             size_t count = std::min(remaining, Renderer::max_inst_c);
@@ -85,9 +88,6 @@ namespace houseofatmos {
                 "u_model_transfs", 
                 model_transforms.subspan(completed, count)
             );
-            if(override_texture != nullptr) {
-                this->shader->set_uniform("u_texture", *override_texture);
-            }
             model.render_all(
                 *this->shader, this->target, 
                 "u_local_transf",
@@ -102,28 +102,34 @@ namespace houseofatmos {
 
     void Renderer::render(
         engine::Model& model,
-        const Mat<4>& model_transform,
+        std::span<const Mat<4>> model_transforms,
         const engine::Animation& animation,
         f64 timestamp,
         bool wireframe,
         const engine::Texture* override_texture
     ) const {
-        this->shader->set_uniform(
-            "u_model_transfs", 
-            std::array { model_transform }
-        );
         if(override_texture != nullptr) {
             this->shader->set_uniform("u_texture", *override_texture);
         }
-        model.render_all_animated(
-            *this->shader, this->target,
-            animation, timestamp,
-            "u_joint_transfs", 
-            "u_local_transf",
-            override_texture == nullptr
-                ? std::optional("u_texture") : std::nullopt, 
-            wireframe, !wireframe
-        );
+        for(size_t completed = 0; completed < model_transforms.size();) {
+            size_t remaining = model_transforms.size() - completed;
+            size_t count = std::min(remaining, Renderer::max_inst_c);
+            this->shader->set_uniform(
+                "u_model_transfs", 
+                model_transforms.subspan(completed, count)
+            );
+            model.render_all_animated(
+                *this->shader, this->target,
+                animation, timestamp,
+                "u_joint_transfs", 
+                "u_local_transf",
+                override_texture == nullptr
+                    ? std::optional("u_texture") : std::nullopt, 
+                count, wireframe, !wireframe
+            );
+            completed += count;
+        }
+
     }
 
 }

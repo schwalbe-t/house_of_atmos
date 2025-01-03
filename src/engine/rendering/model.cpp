@@ -741,7 +741,7 @@ namespace houseofatmos::engine {
         std::string_view joint_transform_uniform,
         std::optional<std::string_view> local_transform_uniform,
         std::optional<std::string_view> texture_uniform,
-        bool wireframe, bool depth_test
+        size_t count, bool wireframe, bool depth_test
     ) {
         for(auto& [name, mesh]: this->meshes) {
             (void) name;
@@ -762,7 +762,9 @@ namespace houseofatmos::engine {
                 const Texture& texture = this->textures.at(std::get<1>(mesh));
                 shader.set_uniform(*texture_uniform, texture);
             }
-            primitive.geometry.render(shader, dest, 1, wireframe, depth_test);
+            primitive.geometry.render(
+                shader, dest, count, wireframe, depth_test
+            );
         }
     }
 

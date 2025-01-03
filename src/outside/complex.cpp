@@ -113,6 +113,7 @@ namespace houseofatmos::outside {
             const auto& [member_x, member_z] = this->members.at(mem_i).first;
             if(member_x != tile_x || member_z != tile_z) { continue; }
             this->members.erase(this->members.begin() + mem_i);
+            return;
         }
         engine::error("Complex does not contain a member at tile ["
             + std::to_string(tile_x) + ", " + std::to_string(tile_z) + "]"

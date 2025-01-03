@@ -213,9 +213,9 @@ namespace houseofatmos::outside {
         );
     }
 
-    engine::Mesh Terrain::build_chunk_geometry(u64 chunk_x, u64 chunk_z) {
+    engine::Mesh Terrain::build_chunk_geometry(u64 chunk_x, u64 chunk_z) const {
         auto geometry = engine::Mesh(Renderer::mesh_attribs);
-        ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
+        const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
         u64 start_x = chunk_x * this->chunk_tiles;
         u64 end_x = std::min((chunk_x + 1) * this->chunk_tiles, this->width);
         u64 start_z = chunk_z * this->chunk_tiles;
@@ -289,9 +289,9 @@ namespace houseofatmos::outside {
     }
 
     std::unordered_map<Foliage::Type, std::vector<Mat<4>>>
-        Terrain::collect_foliage_transforms(u64 chunk_x, u64 chunk_z) {
+        Terrain::collect_foliage_transforms(u64 chunk_x, u64 chunk_z) const {
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>> instances;
-        ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
+        const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
         Vec<3> chunk_offset = Vec<3>(chunk_x, 0, chunk_z)
             * this->chunk_tiles * this->tile_size;
         for(const Foliage& foliage: chunk_data.foliage) {
@@ -304,11 +304,40 @@ namespace houseofatmos::outside {
         return instances;
     }
 
-    Terrain::LoadedChunk Terrain::load_chunk(u64 chunk_x, u64 chunk_z) {
+    Mat<4> Terrain::building_transform(
+        const Building& building, u64 chunk_x, u64 chunk_z
+    ) const {
+        const Building::TypeInfo& type = building.get_type_info(); 
+        Vec<3> chunk_offset_tiles = Vec<3>(chunk_x, 0, chunk_z)
+            * this->tiles_per_chunk();
+        Vec<3> relative_offset_tiles = Vec<3>(building.x, 0, building.z) 
+            + Vec<3>(type.offset_x, 0, type.offset_z);
+        Vec<3> offset = (chunk_offset_tiles + relative_offset_tiles)
+            * this->units_per_tile();
+        offset.y() = this->elevation_at(
+            chunk_x * this->tiles_per_chunk() + building.x,
+            chunk_z * this->tiles_per_chunk() + building.z
+        );
+        return Mat<4>::translate(offset);
+    }
+
+    std::unordered_map<Building::Type, std::vector<Mat<4>>>
+        Terrain::collect_building_transforms(u64 chunk_x, u64 chunk_z) const {
+        std::unordered_map<Building::Type, std::vector<Mat<4>>> instances;
+        const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
+        for(const Building& building: chunk_data.buildings) {
+            Mat<4> inst = this->building_transform(building, chunk_x, chunk_z);
+            instances[building.type].push_back(inst);
+        }
+        return instances;
+    }
+
+    Terrain::LoadedChunk Terrain::load_chunk(u64 chunk_x, u64 chunk_z) const {
         return {
             chunk_x, chunk_z, false, 
             build_chunk_geometry(chunk_x, chunk_z),
-            collect_foliage_transforms(chunk_x, chunk_z)
+            collect_foliage_transforms(chunk_x, chunk_z),
+            collect_building_transforms(chunk_x, chunk_z)
         };
     }
 
@@ -560,7 +589,7 @@ namespace houseofatmos::outside {
                 chunk, ground_texture, chunk_offset, renderer
             );
             this->render_chunk_features(
-                chunk, chunk_offset, window, scene, renderer
+                chunk, window, scene, renderer
             );
         }
     }
@@ -580,39 +609,19 @@ namespace houseofatmos::outside {
     }
 
     void Terrain::render_chunk_features(
-        LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,
+        const LoadedChunk& loaded_chunk,
         const engine::Window& window, engine::Scene& scene, const Renderer& renderer
     ) {
-        const ChunkData& data = this->chunk_at(loaded_chunk.x, loaded_chunk.z);
         for(const auto& [foliage_type, instances]: loaded_chunk.foliage) {
             engine::Model& model = scene.get<engine::Model>(
                 Foliage::types.at((size_t) foliage_type).model
             );
             renderer.render(model, instances);
         }
-        for(const Building& building: data.buildings) {
-            const Building::TypeInfo& type = building.get_type_info();
-            Vec<3> offset = chunk_offset + Vec<3>(
-                building.x + type.offset_x, 0, building.z + type.offset_z
-            ) * this->tile_size;
-            offset.y() = this->elevation_at(
-                loaded_chunk.x * this->chunk_tiles + building.x,
-                loaded_chunk.z * this->chunk_tiles + building.z
-            );
-            engine::Model& model = scene.get<engine::Model>(
-                building.get_type_info().model
-            );
-            Mat<4> transform = Mat<4>::translate(offset);
-            if(type.animation.has_value()) {
-                const engine::Animation& animation = model.animation(*type.animation);
-                renderer.render(
-                    model, transform, 
-                    animation,
-                    fmod(window.time() * type.animation_speed, animation.length())
-                );
-            } else {
-                renderer.render(model, std::array { transform });
-            }
+        for(const auto& [building_type, instances]: loaded_chunk.buildings) {
+            const Building::TypeInfo& type_info
+                = Building::types[(size_t) building_type];
+            type_info.render_buildings(window, scene, renderer, instances);
         }
     }
 

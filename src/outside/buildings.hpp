@@ -19,6 +19,32 @@ namespace houseofatmos::outside {
             u8 width, height; // in tiles
             f64 offset_x, offset_z; // in tiles, 0..1
             u64 cost; // in coins
+
+            void render_buildings(
+                const engine::Window& window, engine::Scene& scene,
+                const Renderer& renderer,
+                std::span<const Mat<4>> instances,
+                bool wireframe = false,
+                const engine::Texture* override_texture = nullptr
+            ) const {
+                engine::Model& model = scene.get<engine::Model>(this->model);
+                if(!this->animation.has_value()) {
+                    renderer.render(
+                        model, instances, wireframe, override_texture
+                    );
+                    return;
+                }
+                const engine::Animation& anim = model
+                    .animation(*this->animation);
+                f64 timestamp = fmod(
+                    window.time() * this->animation_speed, anim.length()
+                );
+                renderer.render(
+                    model, instances, 
+                    anim, timestamp, 
+                    wireframe, override_texture
+                );
+            }
         };
 
         static inline const std::vector<TypeInfo> types = {

@@ -45,6 +45,7 @@ namespace houseofatmos::outside {
             bool modified; // re-mesh in next render cycle
             engine::Mesh terrain; // terrain geometry
             std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage;
+            std::unordered_map<Building::Type, std::vector<Mat<4>>> buildings;
         };
 
         struct ChunkData {
@@ -97,8 +98,10 @@ namespace houseofatmos::outside {
 
         void build_water_plane();
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>>
-            collect_foliage_transforms(u64 chunk_x, u64 chunk_z);
-        Terrain::LoadedChunk load_chunk(u64 chunk_x, u64 chunk_z);
+            collect_foliage_transforms(u64 chunk_x, u64 chunk_z) const;
+        std::unordered_map<Building::Type, std::vector<Mat<4>>>
+            collect_building_transforms(u64 chunk_x, u64 chunk_z) const;
+        Terrain::LoadedChunk load_chunk(u64 chunk_x, u64 chunk_z) const;
 
 
         public:
@@ -202,7 +205,10 @@ namespace houseofatmos::outside {
         bool chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const;
         void load_chunks_around(const Vec<3>& position);
 
-        engine::Mesh build_chunk_geometry(u64 chunk_x, u64 chunk_z);
+        engine::Mesh build_chunk_geometry(u64 chunk_x, u64 chunk_z) const;
+        Mat<4> building_transform(
+            const Building& building, u64 chunk_x, u64 chunk_z
+        ) const;    
 
         void render_loaded_chunks(
             engine::Scene& scene, const Renderer& renderer,
@@ -216,7 +222,7 @@ namespace houseofatmos::outside {
             const Renderer& renderer
         );
         void render_chunk_features(
-            LoadedChunk& loaded_chunk, const Vec<3>& chunk_offset,
+            const LoadedChunk& loaded_chunk,
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
         );

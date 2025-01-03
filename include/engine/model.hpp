@@ -80,6 +80,7 @@ namespace houseofatmos::engine {
             std::string_view joint_transform_uniform,
             std::optional<std::string_view> local_transform_uniform = std::nullopt,
             std::optional<std::string_view> texture_uniform = std::nullopt,
+            size_t count = 1,
             bool wireframe = false, bool depth_test = true
         );
 
