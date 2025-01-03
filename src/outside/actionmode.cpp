@@ -134,22 +134,24 @@ namespace houseofatmos::outside {
     }
 
     static void print_building_info(
-        Building& building, u64 chunk_x, u64 chunk_z, const Complex& complex,
+        Building& building, u64 chunk_x, u64 chunk_z, const Complex* complex,
         const Terrain& terrain
     ) {
         Building::TypeInfo type = building.get_type_info();
         u64 tile_x = building.x + chunk_x * terrain.tiles_per_chunk();
         u64 tile_z = building.z + chunk_z * terrain.tiles_per_chunk();
-        const Complex::Member& member = complex.member_at(tile_x, tile_z);
         std::string output;
         output += "===== " + get_building_name(building.type) + " =====";
-        output += "\n    production: ";
-        bool had_conversion = false;
-        for(const Conversion& conversion: member.conversions) {
-            output += "\n        " + display_conversion(conversion); 
-            had_conversion = true;
+        if(complex != nullptr) {
+            const Complex::Member& member = complex->member_at(tile_x, tile_z);
+            output += "\n    production: ";
+            bool had_conversion = false;
+            for(const Conversion& conversion: member.conversions) {
+                output += "\n        " + display_conversion(conversion); 
+                had_conversion = true;
+            }
+            if(!had_conversion) { output += "\n        <none>"; }
         }
-        if(!had_conversion) { output += "\n        <none>"; }
         if(type.residents != 0) {
             output += "\n     residents: " + std::to_string(type.residents);
         }
@@ -186,7 +188,7 @@ namespace houseofatmos::outside {
                 const Complex& complex = this->complexes.get(*closest);
                 if(complex.has_member_at(tile_x, tile_z)) {
                     print_building_info(
-                        *s_building, s_chunk_x, s_chunk_z, complex,
+                        *s_building, s_chunk_x, s_chunk_z, &complex,
                         this->terrain
                     );
                     print_complex_info(*closest, complex);
@@ -195,6 +197,9 @@ namespace houseofatmos::outside {
                     return;
                 }
             }
+            print_building_info(
+                *s_building, s_chunk_x, s_chunk_z, nullptr, this->terrain
+            );
         }
         this->selected.type = Selection::None;
     }
