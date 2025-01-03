@@ -19,6 +19,8 @@ namespace houseofatmos::outside {
             u8 width, height; // in tiles
             f64 offset_x, offset_z; // in tiles, 0..1
             u64 cost; // in coins
+            u64 workers;
+            u64 residents;
 
             void render_buildings(
                 const engine::Window& window, engine::Scene& scene,
@@ -58,41 +60,51 @@ namespace houseofatmos::outside {
                     // long fence
                     RelCollider({  4.425, -0.5, -4.625 }, { 0.25, 1, 9.25 })
                 },
-                2, 2,
+                2, 2, // size
                 0, 0,
-                500
+                500, // building cost
+                5, // workers
+                0 // residents
             },
             /* Type::Mineshaft */ {
                 { "res/buildings/mineshaft.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -5 }, { 10, 1, 10 }) },
-                2, 2,
+                2, 2, // size
                 0, 0,
-                1000
+                1000, // building cost
+                15, // workers
+                0 // residents
             },
             /* Type::Windmill */ {
                 { "res/buildings/windmill.glb", Renderer::model_attribs },
                 "blades", 1.0,
                 { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
-                2, 2,
+                2, 2, // size
                 0, 0,
-                1000
+                1000, // building cost
+                5, // workers
+                0 // residents
             },
             /* Type::Factory */ {
                 { "res/buildings/factory.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
-                2, 1,
+                2, 1, // size
                 0, 0.5,
-                1000
+                1000, // building cost
+                25, // workers
+                0 // residents
             },
             /* Type::House */ {
                 { "res/buildings/house.glb", Renderer::model_attribs },
                 "door", 0.0, // speed = 0 -> will always be the first frame
                 { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
-                1, 1,
+                1, 1, // size
                 0.5, 0.5,
-                500
+                500, // building cost
+                0, // workers
+                5 // residents
             },
             /* Type::Plaza */ {
                 { "res/buildings/plaza.glb", Renderer::model_attribs },
@@ -115,9 +127,11 @@ namespace houseofatmos::outside {
                     RelCollider({  1.50, -0.5, -7.50 }, { 1.0, 1, 1.0 }),
                     RelCollider({  4.50, -0.5, -5.50 }, { 2.5, 1, 1.0 })
                 },
-                3, 3,
+                3, 3, // size
                 0.5, 0.5,
-                5000
+                999999999, // building cost
+                0, // workers
+                0 // residents
             }
         };
 

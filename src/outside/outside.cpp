@@ -21,7 +21,6 @@ namespace houseofatmos::outside {
         this->action_mode
             = std::make_unique<DefaultMode>(this->terrain, this->complexes);
         this->balance.coins = 105000;
-        this->balance.population = 0;
     }
 
 

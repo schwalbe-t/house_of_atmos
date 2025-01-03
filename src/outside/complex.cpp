@@ -245,7 +245,7 @@ namespace houseofatmos::outside {
 
     ComplexId ComplexBank::create_complex() {
         if(this->free_indices.size() > 0) {
-            ComplexId id = this->free_indices.at(this->free_indices.size());
+            ComplexId id = this->free_indices.at(this->free_indices.size() - 1);
             this->free_indices.pop_back();
             return id;
         }

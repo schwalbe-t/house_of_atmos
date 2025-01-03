@@ -197,6 +197,7 @@ namespace houseofatmos::outside {
         std::pair<u64, u64> find_selected_terrain_tile(
             Vec<2> cursor_pos_ndc, const Mat<4>& view_proj, Vec<3> tile_offset
         ) const;
+        i64 compute_unemployment() const;
 
         void generate_elevation(u32 seed = random_init());
         void generate_foliage(u32 seed = random_init());

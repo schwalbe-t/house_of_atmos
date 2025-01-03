@@ -14,7 +14,6 @@ namespace houseofatmos {
 
     struct Balance {
         u64 coins;
-        u64 population;
 
         bool pay_coins(u64 amount) {
             if(amount > this->coins) {

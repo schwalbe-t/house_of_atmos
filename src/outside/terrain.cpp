@@ -571,6 +571,17 @@ namespace houseofatmos::outside {
         return current;
     }
 
+    i64 Terrain::compute_unemployment() const {
+        i64 unemployment = 0;
+        for(const ChunkData& chunk: this->chunks) {
+            for(const Building& building: chunk.buildings) {
+                const Building::TypeInfo& type = building.get_type_info();
+                unemployment += (i64) type.residents - (i64) type.workers;
+            }
+        }
+        return unemployment;
+    }
+
 
     void Terrain::render_loaded_chunks(
         engine::Scene& scene, const Renderer& renderer,

@@ -150,6 +150,12 @@ namespace houseofatmos::outside {
             had_conversion = true;
         }
         if(!had_conversion) { output += "\n        <none>"; }
+        if(type.residents != 0) {
+            output += "\n     residents: " + std::to_string(type.residents);
+        }
+        if(type.workers != 0) {
+            output += "\n       workers: " + std::to_string(type.workers);
+        }
         engine::info(output);
     }
 
@@ -568,14 +574,21 @@ namespace houseofatmos::outside {
         this->placement_valid = this->terrain.valid_building_location(
             (i64) tile_x, (i64) tile_z, this->player.position, type_info
         );
-        bool was_placed = this->placement_valid
-            && window.was_pressed(engine::Button::Left)
-            && balance.pay_coins(type_info.cost);
-        if(was_placed) {
-            place_building(
-                tile_x, tile_z, this->terrain, this->complexes,
-                this->selected_type, type_info, this->selected_conversion
-            );
+        if(this->placement_valid && window.was_pressed(engine::Button::Left)) {
+            i64 unemployment = this->terrain.compute_unemployment();
+            bool allowed = unemployment >= (i64) type_info.workers
+                && balance.pay_coins(type_info.cost);
+            if(allowed) {
+                place_building(
+                    tile_x, tile_z, this->terrain, this->complexes,
+                    this->selected_type, type_info, this->selected_conversion
+                );
+            } else if(unemployment < (i64) type_info.workers) {
+                engine::info("Not enough unemployed workers available! ("
+                    + std::to_string(unemployment) + "/"
+                    + std::to_string(type_info.workers) + ")"
+                );
+            }
         }
     }
 
@@ -625,30 +638,39 @@ namespace houseofatmos::outside {
         );
         if(this->selected != nullptr && window.was_pressed(engine::Button::Left)) {
             const Building::TypeInfo& type_info = this->selected->get_type_info();
-            Terrain::ChunkData& chunk = this->terrain
+            i64 unemployment = this->terrain.compute_unemployment();
+            bool allowed = unemployment >= (i64) type_info.residents;
+            if(allowed) {
+                Terrain::ChunkData& chunk = this->terrain
                 .chunk_at(this->selected_chunk_x, this->selected_chunk_z);
-            if(this->selected->complex.has_value()) {
-                u64 actual_x = this->selected->x
-                    + this->selected_chunk_x * this->terrain.tiles_per_chunk();
-                u64 actual_z = this->selected->z
-                    + this->selected_chunk_z * this->terrain.tiles_per_chunk();
-                Complex& complex = this->complexes.get(*selected->complex);
-                complex.remove_member(actual_x, actual_z);
-                if(complex.member_count() == 0) {
-                    this->complexes.delete_complex(*selected->complex);
+                if(this->selected->complex.has_value()) {
+                    u64 actual_x = this->selected->x
+                        + this->selected_chunk_x * this->terrain.tiles_per_chunk();
+                    u64 actual_z = this->selected->z
+                        + this->selected_chunk_z * this->terrain.tiles_per_chunk();
+                    Complex& complex = this->complexes.get(*selected->complex);
+                    complex.remove_member(actual_x, actual_z);
+                    if(complex.member_count() == 0) {
+                        this->complexes.delete_complex(*selected->complex);
+                    }
                 }
+                size_t index = this->selected - chunk.buildings.data();
+                chunk.buildings.erase(chunk.buildings.begin() + index);
+                this->selected = nullptr;
+                u64 refunded = (u64) ((f64) type_info.cost * demolition_refund_factor);
+                balance.coins += refunded;
+                this->terrain.reload_chunk_at(
+                    this->selected_chunk_x, this->selected_chunk_z
+                );
+                engine::info("Refunded " + std::to_string(refunded) + " coins "
+                    "for building demolition (now " + std::to_string(balance.coins) + ")"
+                );
+            } else {
+                engine::info("Not enough unemployed workers available! ("
+                    + std::to_string(unemployment) + "/"
+                    + std::to_string(type_info.residents) + ") "
+                );
             }
-            size_t index = this->selected - chunk.buildings.data();
-            chunk.buildings.erase(chunk.buildings.begin() + index);
-            this->selected = nullptr;
-            u64 refunded = (u64) ((f64) type_info.cost * demolition_refund_factor);
-            balance.coins += refunded;
-            this->terrain.reload_chunk_at(
-                this->selected_chunk_x, this->selected_chunk_z
-            );
-            engine::info("Refunded " + std::to_string(refunded) + " coins "
-                "for building demolition (now " + std::to_string(balance.coins) + ")"
-            );
         }
     }
 
