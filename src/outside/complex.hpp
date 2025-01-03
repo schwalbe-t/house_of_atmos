@@ -87,13 +87,18 @@ namespace houseofatmos::outside {
         f64 distance_to(u64 tile_x, u64 tile_z) const;
         void add_member(u64 tile_x, u64 tile_z, Member member);
         void remove_member(u64 tile_x, u64 tile_z);
+        bool has_member_at(u64 tile_x, u64 tile_z) const;
         Member& member_at(u64 tile_x, u64 tile_z);
         const Member& member_at(u64 tile_x, u64 tile_z) const;
         size_t member_count() const;
+        std::span<const std::pair<std::pair<u64, u64>, Member>> get_members() const;
         u64 stored_count(Item item) const;
         void add_stored(Item item, u64 amount);
         void remove_stored(Item item, u64 amount);
         void set_stored(Item item, u64 amount);
+        const std::unordered_map<Item, u64>& stored_items() const;
+
+        std::unordered_map<Item, f64> compute_throughput() const;
 
         void update(const engine::Window& window, Balance& balance);
 

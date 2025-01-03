@@ -13,6 +13,10 @@ namespace houseofatmos::outside {
 
     struct ActionMode {
 
+        static inline const engine::Texture::LoadArgs wireframe_info_texture = {
+            "res/terrain/wireframe_info.png"
+        };
+
         static inline const engine::Texture::LoadArgs wireframe_add_texture = {
             "res/terrain/wireframe_add.png"
         };
@@ -30,6 +34,7 @@ namespace houseofatmos::outside {
         };
 
         static void load_resources(engine::Scene& scene) {
+            scene.load(engine::Texture::Loader(ActionMode::wireframe_info_texture));
             scene.load(engine::Texture::Loader(ActionMode::wireframe_add_texture));
             scene.load(engine::Texture::Loader(ActionMode::wireframe_sub_texture));
             scene.load(engine::Texture::Loader(ActionMode::wireframe_valid_texture));
@@ -77,13 +82,31 @@ namespace houseofatmos::outside {
 
     struct DefaultMode: ActionMode {
 
-        DefaultMode() {
+        struct Selection {
+            enum Type {
+                None,
+                Complex
+            };
+            union Value {
+                ComplexId complex;
+            };
+            Type type;
+            Value value;
+        };
+
+        Terrain& terrain;
+        ComplexBank& complexes;
+        Selection selected;
+
+        DefaultMode(Terrain& terrain, ComplexBank& complexes)
+        : terrain(terrain), complexes(complexes) {
             engine::info(
                 "Press T to enter terraforming mode, "
                 "C to enter construction mode, "
                 "R to enter demolition mode and "
                 "P to enter pathing mode."
             );
+            this->selected.type = Selection::None;
         }
 
         ActionMode::Type get_type() override { return ActionMode::Default; }
@@ -91,21 +114,12 @@ namespace houseofatmos::outside {
         void update(
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer, Balance& balance
-        ) override {
-            (void) window;
-            (void) scene;
-            (void) renderer;
-            (void) balance;
-        }
+        ) override;
 
         void render(
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
-        ) override {
-            (void) window;
-            (void) scene;
-            (void) renderer;
-        }
+        ) override;
 
     };
 

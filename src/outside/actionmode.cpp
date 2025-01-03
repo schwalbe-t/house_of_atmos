@@ -14,12 +14,12 @@ namespace houseofatmos::outside {
             ActionMode::Type type = (ActionMode::Type) type_i;
             if(!window.was_pressed(key)) { continue; }
             if(current->get_type() == type) {
-                current = std::make_unique<DefaultMode>();
+                current = std::make_unique<DefaultMode>(terrain, complexes); 
                 break;
             }
             switch(type) {
                 case Default: 
-                    current = std::make_unique<DefaultMode>(); 
+                    current = std::make_unique<DefaultMode>(terrain, complexes); 
                     break;
                 case Terraform: 
                     current = std::make_unique<TerraformMode>(terrain); 
@@ -42,6 +42,193 @@ namespace houseofatmos::outside {
                 );
             }
             break;
+        }
+    }
+
+
+
+    static std::string get_item_name(Item item) {
+        switch(item) {
+            case Item::Barley: return "Barley";
+            case Item::Malt: return "Malt";
+            case Item::Beer: return "Beer";
+            case Item::Wheat: return "Wheat";
+            case Item::Flour: return "Flour";
+            case Item::Bread: return "Bread";
+            case Item::Hematite: return "Hematite";
+            case Item::Coal: return "Coal";
+            case Item::Steel: return "Steel";
+            case Item::Armor: return "Armor";
+            case Item::Tools: return "Tool(s)";
+            case Item::Coins: return "Coin(s)";
+            default: engine::error("Unhandled 'Item' in 'get_item_name'");
+        }
+    }
+
+    static void print_complex_info(ComplexId id, const Complex& complex) {
+        std::string output;
+        output += "===== Complex #" + std::to_string(id.index) + " =====";
+        std::unordered_map<Item, f64> throughput = complex.compute_throughput();
+        output += "\n     inputs [/s]: ";
+        bool had_input = false;
+        for(const auto& [item, freq]: throughput) {
+            if(freq >= 0.0) { continue; }
+            if(had_input) { output += ", "; }
+            output += std::to_string(fabs(freq)) + " " + get_item_name(item);
+            had_input = true;
+        }
+        if(!had_input) { output += "<none>"; }
+        output += "\n    outputs [/s]: ";
+        bool had_output = false;
+        for(const auto& [item, freq]: throughput) {
+            if(freq <= 0.0) { continue; }
+            if(had_output) { output += ", "; }
+            output += std::to_string(freq) + " " + get_item_name(item);
+            had_output = true;
+        }
+        output += "\n         storage: ";
+        if(!had_output) { output += "<none>"; }
+        bool had_stored = false;
+        for(const auto& [item, count]: complex.stored_items()) {
+            if(count == 0) { continue; }
+            if(had_stored) { output += ", "; }
+            output += std::to_string(count) + " " + get_item_name(item);
+            had_stored = true;
+        }
+        if(!had_stored) { output += "<none>"; }
+        engine::info(output);
+    }
+
+    static std::string get_building_name(Building::Type type) {
+        switch(type) {
+            case Building::Farmland: return "Farmland";
+            case Building::Mineshaft: return "Mineshaft";
+            case Building::Windmill: return "Windmill";
+            case Building::Factory: return "Factory";
+            case Building::House: return "House";
+            case Building::Plaza: return "Plaza";
+            default: engine::error(
+                "Unhandled 'Building::Type' in 'get_building_name'"
+            );
+        }
+    }
+
+    static std::string display_conversion(const Conversion& conversion) {
+        std::string output;
+        output += "[/" + std::to_string(conversion.period) + "s] ";
+        bool had_input = false;
+        for(const auto& [count, item]: conversion.inputs) {
+            if(had_input) { output += ", "; }
+            output += std::to_string(count) + " " + get_item_name(item);
+            had_input = true;
+        }
+        if(had_input) { output += ' '; }
+        output += "-> ";
+        bool had_output = false;
+        for(const auto& [count, item]: conversion.outputs) {
+            if(had_output) { output += ", "; }
+            output += std::to_string(count) + " " + get_item_name(item);
+            had_output = true;
+        }
+        return output;
+    }
+
+    static void print_building_info(
+        Building& building, u64 chunk_x, u64 chunk_z, const Complex& complex,
+        const Terrain& terrain
+    ) {
+        Building::TypeInfo type = building.get_type_info();
+        u64 tile_x = building.x + chunk_x * terrain.tiles_per_chunk();
+        u64 tile_z = building.z + chunk_z * terrain.tiles_per_chunk();
+        const Complex::Member& member = complex.member_at(tile_x, tile_z);
+        std::string output;
+        output += "===== " + get_building_name(building.type) + " =====";
+        output += "\n    production: ";
+        bool had_conversion = false;
+        for(const Conversion& conversion: member.conversions) {
+            output += "\n        " + display_conversion(conversion); 
+            had_conversion = true;
+        }
+        if(!had_conversion) { output += "\n        <none>"; }
+        engine::info(output);
+    }
+
+    void DefaultMode::update(
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer, Balance& balance
+    ) {
+        (void) scene;
+        (void) renderer;
+        (void) balance;
+        if(!window.was_pressed(engine::Button::Left)) { return; }
+        auto [s_tile_x, s_tile_z] = this->terrain.find_selected_terrain_tile(
+            window.cursor_pos_ndc(), renderer.compute_view_proj(),
+            Vec<3>(0.5, 0, 0.5)
+        );
+        u64 s_chunk_x, s_chunk_z;
+        Building* s_building = this->terrain.building_at(
+            (i64) s_tile_x, (i64) s_tile_z, &s_chunk_x, &s_chunk_z
+        );
+        if(s_building) {
+            u64 tile_x = s_building->x
+                + s_chunk_x * this->terrain.tiles_per_chunk();
+            u64 tile_z = s_building->z
+                + s_chunk_z * this->terrain.tiles_per_chunk();
+            std::optional<ComplexId> closest = this->complexes
+                .closest_to(tile_x, tile_z);
+            if(closest.has_value()) {
+                const Complex& complex = this->complexes.get(*closest);
+                if(complex.has_member_at(tile_x, tile_z)) {
+                    print_building_info(
+                        *s_building, s_chunk_x, s_chunk_z, complex,
+                        this->terrain
+                    );
+                    print_complex_info(*closest, complex);
+                    this->selected.type = Selection::Complex;
+                    this->selected.value.complex = *closest;
+                    return;
+                }
+            }
+        }
+        this->selected.type = Selection::None;
+    }
+
+    void DefaultMode::render(
+        const engine::Window& window, engine::Scene& scene, 
+        const Renderer& renderer
+    ) {
+        switch(this->selected.type) {
+            case Selection::None: break;
+            case Selection::Complex: {
+                const Complex& complex = this->complexes
+                    .get(this->selected.value.complex);
+                std::unordered_map<Building::Type, std::vector<Mat<4>>> inst;
+                for(const auto& member: complex.get_members()) {
+                    const auto& [tile_x, tile_z] = member.first;
+                    u64 chunk_x, chunk_z;
+                    Building* building = this->terrain.building_at(
+                        (i64) tile_x, (i64) tile_z, &chunk_x, &chunk_z
+                    );
+                    if(building == nullptr) {
+                        engine::error(
+                            "Complex refers to a building that no longer exists"
+                        );
+                    }
+                    Mat<4> transform = this->terrain
+                        .building_transform(*building, chunk_x, chunk_z);
+                    inst[building->type].push_back(transform);
+                }
+                const engine::Texture& wireframe_texture = scene
+                    .get<engine::Texture>(ActionMode::wireframe_info_texture);
+                for(const auto& [type, instances]: inst) {
+                    Building::TypeInfo type_info = Building::types
+                        .at((size_t) type);
+                    type_info.render_buildings(
+                        window, scene, renderer,
+                        instances, true, &wireframe_texture
+                    );
+                }
+            } break;
         }
     }
 
@@ -196,7 +383,7 @@ namespace houseofatmos::outside {
                     type = Building::Farmland;
                     conversions = { Conversion(
                         {}, 
-                        { { 40, Item::Wheat } }, 
+                        { { 10, Item::Wheat } }, 
                         10.0
                     ) };
                     engine::info("Selected farmland (-> 40 Wheat / 10 s)");
@@ -206,7 +393,7 @@ namespace houseofatmos::outside {
                     type = Building::Farmland;
                     conversions = { Conversion(
                         {}, 
-                        { { 40, Item::Barley } }, 
+                        { { 10, Item::Barley } }, 
                         10.0
                     ) };
                     engine::info("Selected farmland (-> 40 Barley / 10 s)");
@@ -441,8 +628,12 @@ namespace houseofatmos::outside {
             Terrain::ChunkData& chunk = this->terrain
                 .chunk_at(this->selected_chunk_x, this->selected_chunk_z);
             if(this->selected->complex.has_value()) {
+                u64 actual_x = this->selected->x
+                    + this->selected_chunk_x * this->terrain.tiles_per_chunk();
+                u64 actual_z = this->selected->z
+                    + this->selected_chunk_z * this->terrain.tiles_per_chunk();
                 Complex& complex = this->complexes.get(*selected->complex);
-                complex.remove_member(tile_x, tile_z);
+                complex.remove_member(actual_x, actual_z);
                 if(complex.member_count() == 0) {
                     this->complexes.delete_complex(*selected->complex);
                 }

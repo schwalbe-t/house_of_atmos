@@ -18,7 +18,8 @@ namespace houseofatmos::outside {
         this->terrain.generate_elevation();
         this->terrain.generate_foliage();
         this->player.position = { 250, 0, 250 };
-        this->action_mode = std::make_unique<DefaultMode>();
+        this->action_mode
+            = std::make_unique<DefaultMode>(this->terrain, this->complexes);
         this->balance.coins = 105000;
         this->balance.population = 0;
     }
@@ -80,7 +81,8 @@ namespace houseofatmos::outside {
         );
         this->complexes = ComplexBank(outside.complexes, buffer);
         this->player = Player(outside.player, buffer);
-        this->action_mode = std::make_unique<DefaultMode>();
+        this->action_mode
+            = std::make_unique<DefaultMode>(this->terrain, this->complexes);
         this->balance = outside.balance;
     }
 

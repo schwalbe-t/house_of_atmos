@@ -120,6 +120,15 @@ namespace houseofatmos::outside {
         );
     }
 
+    bool Complex::has_member_at(u64 tile_x, u64 tile_z) const {
+        for(auto& member: this->members) {
+            const auto& [member_x, member_z] = member.first;
+            if(member_x != tile_x || member_z != tile_z) { continue; }
+            return true;
+        }
+        return false;
+    }
+
     Complex::Member& Complex::member_at(u64 tile_x, u64 tile_z) {
         for(auto& member: this->members) {
             const auto& [member_x, member_z] = member.first;
@@ -137,6 +146,9 @@ namespace houseofatmos::outside {
 
     size_t Complex::member_count() const { return this->members.size(); }
 
+    std::span<const std::pair<std::pair<u64, u64>, Complex::Member>>
+        Complex::get_members() const { return this->members; }
+
     u64 Complex::stored_count(Item item) const {
         auto count = this->storage.find(item);
         if(count == this->storage.end()) { return 0; }
@@ -153,6 +165,25 @@ namespace houseofatmos::outside {
 
     void Complex::set_stored(Item item, u64 amount) {
         this->storage[item] = amount;
+    }
+
+    const std::unordered_map<Item, u64>& Complex::stored_items() const {
+        return this->storage;
+    }
+
+    std::unordered_map<Item, f64> Complex::compute_throughput() const {
+        auto result = std::unordered_map<Item, f64>();
+        for(const auto& member: this->members) {
+            for(const Conversion& conversion: member.second.conversions) {
+                for(const auto& [count, item]: conversion.inputs) {
+                    result[item] -= (f64) count / conversion.period;
+                }
+                for(const auto& [count, item]: conversion.outputs) {
+                    result[item] += (f64) count / conversion.period;
+                }
+            }
+        }
+        return result;
     }
 
     void Complex::update(const engine::Window& window, Balance& balance) {
@@ -176,8 +207,10 @@ namespace houseofatmos::outside {
                 }
             }
         }
-        balance.coins += this->stored_count(Item::Coins);
-        this->set_stored(Item::Coins, 0);
+        if(this->stored_count(Item::Coins) > 0) {
+            balance.coins += this->stored_count(Item::Coins);
+            this->set_stored(Item::Coins, 0);
+        }
     }
 
 
