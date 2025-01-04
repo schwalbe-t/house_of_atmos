@@ -106,6 +106,26 @@ namespace houseofatmos::outside {
                 0, // workers
                 5 // residents
             },
+            /* Type::Stable */ {
+                { "res/buildings/stable.glb", Renderer::model_attribs },
+                std::nullopt, 0.0,
+                { 
+                    // building
+                    RelCollider({ -7.500, -0.5, -7.500 }, { 15.00, 1, 5.00 }),
+                    RelCollider({ -5.500, -0.5, -2.500 }, {  6.00, 1, 3.00 }),
+                    RelCollider({  2.500, -0.5, -2.500 }, {  5.00, 1, 5.00 }),
+                    // fences
+                    RelCollider({ -7.125, -0.5, -2.125 }, {  0.25, 1, 9.25 }),
+                    RelCollider({ -7.125, -0.5,  6.875 }, { 12.25, 1, 0.25 }),
+                    // trough
+                    RelCollider({ -6.500, -0.5,  3.500 }, {  1.00, 1, 3.00 })
+                },
+                3, 3, // size
+                0.5, 0.5,
+                2000, // building cost
+                20, // workers
+                0 // residents
+            },
             /* Type::Plaza */ {
                 { "res/buildings/plaza.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
@@ -148,7 +168,8 @@ namespace houseofatmos::outside {
             Windmill = 2,
             Factory = 3,
             House = 4,
-            Plaza = 5
+            Stable = 5,
+            Plaza = 6
         };
 
         Type type;

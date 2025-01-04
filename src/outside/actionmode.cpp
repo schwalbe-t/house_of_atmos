@@ -379,7 +379,7 @@ namespace houseofatmos::outside {
         if(window.was_pressed(engine::Key::Enter)) {
             engine::info(
                 "Enter a building type to build "
-                "(one of: 'house', 'farmland', 'mineshaft', 'windmill', 'factory')"
+                "(one of: 'house', 'farmland', 'mineshaft', 'windmill', 'factory', 'stable')"
             );
             std::string type_name = get_text_input();
             if(type_name == "house") {
@@ -516,6 +516,11 @@ namespace houseofatmos::outside {
                     engine::info("Selected factory (2 Steel -> 1 Tools / 5 s)");
                     return;
                 }
+            }
+            if(type_name == "stable") {
+                type = Building::Stable;
+                conversions.clear();
+                return;
             }
             engine::info("Invalid input, cancelled. Press enter to try again.");
         }
