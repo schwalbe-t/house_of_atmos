@@ -35,26 +35,47 @@ namespace houseofatmos::outside {
         );
     }
 
+    static void update_player(
+        engine::Window& window, Terrain& terrain, Player& player
+    ) {
+        player.update(window);
+        bool in_coll = !terrain.valid_player_position(Player::collider.at(player.position));
+        if(in_coll || terrain.valid_player_position(Player::collider.at(player.next_x()))) {
+            player.proceed_x();
+        }
+        if(in_coll || terrain.valid_player_position(Player::collider.at(player.next_z()))) {
+            player.proceed_z();
+        }
+        player.position.y() = std::max(
+            terrain.elevation_at(player.position),
+            -1.7
+        );
+        player.in_water = player.position.y() <= -1.5;
+    }
+
+    static void update_camera(
+        engine::Window& window, Player& player, Camera& camera,
+        Zoom::Level& zoom
+    ) {
+        if(window.was_pressed(engine::Key::Space)) {
+            switch(zoom) {
+                case Zoom::Near: zoom = Zoom::Far; break;
+                case Zoom::Far: zoom = Zoom::Near; break;
+                default: 
+                    engine::error("Unhandled 'Zoom::Level' in 'update_camera'");
+            }
+        }
+        camera.look_at = player.position;
+        f64 offset = Zoom::offset_of(zoom);
+        camera.position = player.position + Vec<3>(0, offset, offset);
+    }
+
     void Outside::update(engine::Window& window) {
         this->complexes.update(window, this->balance);
         ActionMode::choose_current(window, this->terrain, this->complexes, this->player, this->action_mode);
         this->action_mode->update(window, *this, this->renderer, this->balance);
-        this->player.update(window);
-        bool in_coll = !this->terrain.valid_player_position(Player::collider.at(this->player.position));
-        if(in_coll || this->terrain.valid_player_position(Player::collider.at(this->player.next_x()))) {
-            this->player.proceed_x();
-        }
-        if(in_coll || this->terrain.valid_player_position(Player::collider.at(this->player.next_z()))) {
-            this->player.proceed_z();
-        }
-        this->player.position.y() = std::max(
-            this->terrain.elevation_at(this->player.position),
-            -1.7
-        );
-        this->player.in_water = this->player.position.y() <= -1.5;
-        this->renderer.camera.look_at = this->player.position;
-        this->renderer.camera.position = this->player.position
-            + Vec<3>(0, 12, 12);
+        update_player(window, this->terrain, this->player);
+        update_camera(window, this->player, this->renderer.camera, this->zoom);
         if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
             save_game(this->serialize());
         }

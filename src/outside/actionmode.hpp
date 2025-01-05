@@ -5,6 +5,7 @@
 #include "../renderer.hpp"
 #include "../player.hpp"
 #include "terrain.hpp"
+#include "zoom.hpp"
 
 namespace houseofatmos::outside {
 
@@ -101,6 +102,8 @@ namespace houseofatmos::outside {
         DefaultMode(Terrain& terrain, ComplexBank& complexes)
         : terrain(terrain), complexes(complexes) {
             engine::info(
+                "Press space to zoom in/out. "
+                "Left click to view information about a building or carriage. "
                 "Press T to enter terraforming mode, "
                 "C to enter construction mode, "
                 "R to enter demolition mode and "

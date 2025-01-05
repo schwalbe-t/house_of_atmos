@@ -36,6 +36,7 @@ namespace houseofatmos::outside {
         Player player;
         std::unique_ptr<ActionMode> action_mode;
         Balance balance;
+        Zoom::Level zoom = Zoom::Near;
 
         Outside();
         Outside(const engine::Arena& buffer);
