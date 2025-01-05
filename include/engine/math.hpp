@@ -123,6 +123,13 @@ namespace houseofatmos::engine::math {
             return this->elements[3]; 
         }
 
+        bool operator==(const Vec<N, T>& other) const {
+            for(size_t i = 0; i < N; i += 1) {
+                if(this->elements[i] != other.elements[i]) { return false; }
+            }
+            return true;
+        }
+
         template<size_t L>
         Vec<L> swizzle(const char elements[L + 1]) {
             static_assert(L >= 1, "Must at least have one element!");

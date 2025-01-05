@@ -14,7 +14,7 @@ namespace houseofatmos::engine::math {
     struct StatefulRNG {
         u64 state;
 
-        StatefulRNG(u64 seed);
+        StatefulRNG(u64 seed = random_init());
 
         f64 next_f64();
         u64 next_u64();

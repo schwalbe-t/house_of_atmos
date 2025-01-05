@@ -11,6 +11,7 @@ namespace houseofatmos::outside {
         Foliage::load_models(scene);
         Player::load_model(scene);
         ActionMode::load_resources(scene);
+        Carriage::load_resources(scene);
     }
 
     Outside::Outside() {
@@ -71,6 +72,9 @@ namespace houseofatmos::outside {
     }
 
     void Outside::update(engine::Window& window) {
+        this->test_carriage.position.y() = this->terrain
+            .elevation_at(this->test_carriage.position);
+        
         this->complexes.update(window, this->balance);
         ActionMode::choose_current(window, this->terrain, this->complexes, this->player, this->action_mode);
         this->action_mode->update(window, *this, this->renderer, this->balance);
@@ -87,6 +91,9 @@ namespace houseofatmos::outside {
         this->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->player.render(*this, this->renderer);
         this->action_mode->render(window, *this, this->renderer);
+
+        this->test_carriage.render(this->renderer, *this, window);
+
         window.show_texture(this->renderer.output());
     }
 

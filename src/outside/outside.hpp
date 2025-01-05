@@ -8,6 +8,7 @@
 #include "../player.hpp"
 #include "terrain.hpp"
 #include "actionmode.hpp"
+#include "carriage.hpp"
 
 namespace houseofatmos::outside {
 
@@ -37,6 +38,8 @@ namespace houseofatmos::outside {
         std::unique_ptr<ActionMode> action_mode;
         Balance balance;
         Zoom::Level zoom = Zoom::Near;
+
+        Carriage test_carriage = Carriage(Carriage::Round, Vec<3>(260, 0, 260));
 
         Outside();
         Outside(const engine::Arena& buffer);

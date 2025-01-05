@@ -17,7 +17,6 @@ namespace houseofatmos::outside {
 
         struct Serialized {
             u64 width, height;
-            //ComplexBank::Serialized complexes;
             u64 elevation_count, elevation_offset;
             u64 chunk_count, chunk_offset;
         };
