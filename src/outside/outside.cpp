@@ -72,6 +72,7 @@ namespace houseofatmos::outside {
     }
 
     void Outside::update(engine::Window& window) {
+        this->test_carriage.position += Vec<3>(-1, 0, 0).normalized() * 2 * window.delta_time();
         this->test_carriage.position.y() = this->terrain
             .elevation_at(this->test_carriage.position);
         

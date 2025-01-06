@@ -62,7 +62,14 @@ namespace houseofatmos::engine {
         );
 
         const Animation& animation(const std::string& animation_name) const {
-            return this->animations.at(animation_name);
+            auto animation = this->animations.find(animation_name);
+            if(animation != this->animations.end()) {
+                return animation->second;
+            }
+            error(
+                "Model does not contain an animation called '" 
+                + animation_name + "'!"
+            );
         }
         
         void render_all(

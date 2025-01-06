@@ -42,15 +42,28 @@ namespace houseofatmos::outside {
     }
 
 
+    static const Vec<3> model_heading = Vec<3>(0, 0, -1);
+
     void Carriage::render(
         Renderer& renderer, engine::Scene& scene, 
         const engine::Window& window
     ) {
-        // debug //
-        this->yaw = window.time();
-        ///////////
-
         bool moved = this->position != this->last_position;
+        Vec<3> pos_diff = this->position - this->last_position;
+        if(moved) {
+            Vec<3> heading = pos_diff.normalized();
+            f64 yaw_cross = model_heading.x() * heading.z()
+                - model_heading.z() * heading.x();
+            this->yaw = atan2(yaw_cross, model_heading.dot(heading));
+            Vec<3> vert_heading = Vec<3>(
+                model_heading.x(),
+                heading.y(),
+                model_heading.z()
+            );
+            f64 pitch_cross = model_heading.y() * vert_heading.z()
+                - model_heading.z() * vert_heading.y();
+            this->pitch = atan2(pitch_cross, model_heading.dot(vert_heading));
+        }
         this->last_position = this->position;
         CarriageTypeInfo carriage_info = Carriage::carriage_types
             .at((size_t) this->type);
@@ -63,27 +76,39 @@ namespace houseofatmos::outside {
                 .at((size_t) horse_type);
             const engine::Texture& horse_texture = scene
                 .get<engine::Texture>(horse_info.texture);
-            const engine::Animation& animation = moved
+            const engine::Animation& horse_animation = moved
                 ? horse_model.animation("walk")
                 : horse_model.animation("idle");
-            f64 timestamp = window.time() * (moved? 1.0 : 0.5);
-            Mat<4> horse_transform = Mat<4>::rotate_y(this->yaw)
+            f64 timestamp = fmod(
+                window.time() * (moved? 2.5 : 0.5), horse_animation.length()
+            );
+            Mat<4> horse_transform
+                = Mat<4>::translate(this->position)
+                * Mat<4>::rotate_y(this->yaw)
                 * Mat<4>::rotate_x(this->pitch)
                 * Mat<4>::translate(carriage_info.horse_offsets.at(horse_i))
                 * Mat<4>::translate(carriage_info.carriage_offset);
             renderer.render(
                 horse_model, std::array { horse_transform },
-                animation, timestamp, false, &horse_texture
+                horse_animation, timestamp, false, &horse_texture
             );
         }
         // render carriage
         engine::Model& carriage_model = scene
             .get<engine::Model>(carriage_info.model);
-        Mat<4> carriage_transform = Mat<4>::rotate_y(this->yaw)
+        Mat<4> carriage_transform 
+            = Mat<4>::translate(this->position)
+            * Mat<4>::rotate_y(this->yaw)
             * Mat<4>::rotate_x(this->pitch)
             * Mat<4>::translate(carriage_info.carriage_offset);
+        const engine::Animation& carriage_animation
+            = carriage_model.animation("roll");
+        f64 rolled_rotations = pos_diff.len()
+            / (carriage_info.wheel_radius * 2 * pi);
+        this->wheel_timer = fmod(this->wheel_timer + rolled_rotations, 1.0); 
         renderer.render(
-            carriage_model, std::array { carriage_transform }
+            carriage_model, std::array { carriage_transform },
+            carriage_animation, this->wheel_timer
         );
     }
 

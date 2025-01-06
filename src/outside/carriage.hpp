@@ -40,6 +40,7 @@ namespace houseofatmos::outside {
             engine::Model::LoadArgs model;
             Vec<3> carriage_offset;
             std::vector<Vec<3>> horse_offsets;
+            f64 wheel_radius;
         };
 
         static const inline std::vector<CarriageTypeInfo> carriage_types = {
@@ -47,10 +48,11 @@ namespace houseofatmos::outside {
                 (engine::Model::LoadArgs) {
                     "res/entities/round_carriage.glb", Renderer::model_attribs
                 },
-                Vec<3>(0.0, 0.0, -2.5),
+                Vec<3>(0.0, 0.0, 1.5),
                 (std::vector<Vec<3>>) {
-                    Vec<3>(0.0, 0.0, 4.5)
-                }
+                    Vec<3>(0.0, 0.0, -4.5)
+                },
+                0.5 // wheel radius 
             }
         };
 
@@ -86,6 +88,7 @@ namespace houseofatmos::outside {
         u64 curr_target_i;
 
         f64 yaw, pitch;
+        f64 wheel_timer;
         Vec<3> last_position;
         std::vector<Vec<3>> curr_path;
         f64 travelled_dist;
