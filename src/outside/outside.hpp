@@ -19,6 +19,7 @@ namespace houseofatmos::outside {
             ComplexBank::Serialized complexes;
             Player::Serialized player;
             Balance balance;
+            CarriageManager::Serialized carriages;
         };
 
 
@@ -38,8 +39,7 @@ namespace houseofatmos::outside {
         std::unique_ptr<ActionMode> action_mode;
         Balance balance;
         Zoom::Level zoom = Zoom::Near;
-
-        Carriage test_carriage = Carriage(Carriage::Round, Vec<3>(260, 0, 260));
+        CarriageManager carriages;
 
         Outside();
         Outside(const engine::Arena& buffer);

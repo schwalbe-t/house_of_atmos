@@ -72,10 +72,7 @@ namespace houseofatmos::outside {
     }
 
     void Outside::update(engine::Window& window) {
-        this->test_carriage.position += Vec<3>(-1, 0, 0).normalized() * 2 * window.delta_time();
-        this->test_carriage.position.y() = this->terrain
-            .elevation_at(this->test_carriage.position);
-        
+        this->carriages.update_all(window, this->complexes, this->terrain);
         this->complexes.update(window, this->balance);
         ActionMode::choose_current(window, this->terrain, this->complexes, this->player, this->action_mode);
         this->action_mode->update(window, *this, this->renderer, this->balance);
@@ -91,10 +88,8 @@ namespace houseofatmos::outside {
         this->terrain.load_chunks_around(this->player.position);
         this->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->player.render(*this, this->renderer);
+        this->carriages.render_all(this->renderer, *this, window);
         this->action_mode->render(window, *this, this->renderer);
-
-        this->test_carriage.render(this->renderer, *this, window);
-
         window.show_texture(this->renderer.output());
     }
 
@@ -112,6 +107,15 @@ namespace houseofatmos::outside {
         this->action_mode
             = std::make_unique<DefaultMode>(this->terrain, this->complexes);
         this->balance = outside.balance;
+    
+        // DEBUG ///////////////////
+        Carriage carriage = (Carriage) {
+            Carriage::Round, Vec<3>(253, 0, 244)
+        };
+        carriage.targets.push_back((Carriage::Target) { (ComplexId) { 0 } });
+        this->carriages.carriages.push_back(std::move(carriage));
+        this->carriages.refind_all_paths(this->complexes, this->terrain);
+        ////////////////////////////
     }
 
     engine::Arena Outside::serialize() const {
@@ -121,11 +125,13 @@ namespace houseofatmos::outside {
         Terrain::Serialized terrain = this->terrain.serialize(buffer);
         ComplexBank::Serialized complexes = this->complexes.serialize(buffer);
         Player::Serialized player = this->player.serialize(buffer);
+        CarriageManager::Serialized carriages = this->carriages.serialize(buffer);
         auto& outside = buffer.value_at<Outside::Serialized>(outside_offset);
         outside.terrain = terrain;
         outside.complexes = complexes;
         outside.player = player;
         outside.balance = this->balance;
+        outside.carriages = carriages;
         return buffer;
     }
 

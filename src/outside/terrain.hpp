@@ -161,7 +161,7 @@ namespace houseofatmos::outside {
         i16 elevation_at(u64 x, u64 z) const {
             return this->elevation.at(x + (this->width + 1) * z);
         }
-        f64 elevation_at(const Vec<3>& pos);
+        f64 elevation_at(const Vec<3>& pos) const;
         ChunkData& chunk_at(u64 chunk_x, u64 chunk_z) {
             return this->chunks.at(chunk_x + this->width_chunks * chunk_z);
         }

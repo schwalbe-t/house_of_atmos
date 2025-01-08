@@ -7,6 +7,7 @@
 #include <engine/rng.hpp>
 #include "../renderer.hpp"
 #include "complex.hpp"
+#include "terrain.hpp"
 
 namespace houseofatmos::outside {
 
@@ -72,29 +73,38 @@ namespace houseofatmos::outside {
         }
 
 
+        enum struct State {
+            Travelling, Loading, Lost
+        };
+
         struct Serialized {
             CarriageType type;
             u64 horses_count, horses_offset;
             u64 targets_count, targets_offset;
             u64 curr_target_i;
+            State state;
             Vec<3> position;
+        };
+
+        struct Target {
+            ComplexId complex;
         };
 
 
         private:
         CarriageType type;
         std::vector<HorseType> horses;
-        std::vector<ComplexId> targets;
         u64 curr_target_i;
+        State state;
 
         f64 yaw, pitch;
-        f64 wheel_timer;
-        Vec<3> last_position;
         std::vector<Vec<3>> curr_path;
         f64 travelled_dist;
+        bool moving;
 
 
         public:
+        std::vector<Target> targets;
         Vec<3> position;
 
         Carriage(
@@ -103,20 +113,81 @@ namespace houseofatmos::outside {
         );
         Carriage(const Serialized& serialized, const engine::Arena& buffer);
 
-
-        std::vector<ComplexId>& all_targets() {
-            return this->targets;
+        void clear_path() { this->curr_path.clear(); }
+        bool has_path() const { return this->curr_path.size() > 0; }
+        void set_path(std::vector<Vec<3>>& path) {
+            this->curr_path.assign(path.begin(), path.end());
+            this->travelled_dist = 0.0;
+            if(this->state == State::Lost) {
+                this->state = State::Travelling;
+            }
         }
-        const std::vector<ComplexId>& all_targets() const {
-            return this->targets;
+
+        bool is_lost() const { return this->state == State::Lost; }
+        void make_lost() { this->state = State::Lost; }
+
+        const Target& target() const {
+            return this->targets[this->curr_target_i]; 
         }
 
+        void update(
+            const engine::Window& window,
+            const ComplexBank& complexes, const Terrain& terrain
+        );
 
         void render(
             Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window
         );
 
+        Serialized serialize(engine::Arena& buffer) const;
+
+    };
+
+
+    struct CarriageManager {
+
+        struct Serialized {
+            u64 carriage_count, carriage_offset;
+        };
+
+
+        private:
+        std::vector<bool> obstacle_tiles;
+
+        void fill_obstacle_data(const Terrain& terrain);
+
+
+        public:
+        std::vector<Carriage> carriages;
+
+        CarriageManager() {}
+        CarriageManager(
+            const Serialized& serialized, const engine::Arena& buffer
+        );
+
+        std::optional<std::vector<Vec<3>>> find_path_to(
+            u64 start_x, u64 start_z,
+            const Complex& target, const Terrain& terrain
+        );
+
+        void find_carriage_path(
+            Carriage& carriage, 
+            const ComplexBank& complexes, const Terrain& terrain
+        );
+        void refind_all_paths(
+            const ComplexBank& complexes, const Terrain& terrain
+        );
+        
+        void update_all(
+            const engine::Window& window, 
+            const ComplexBank& complexes, const Terrain& terrain   
+        );
+
+        void render_all(
+            Renderer& renderer, engine::Scene& scene, 
+            const engine::Window& window
+        );
 
         Serialized serialize(engine::Arena& buffer) const;
 

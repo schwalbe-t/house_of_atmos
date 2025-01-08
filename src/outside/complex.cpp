@@ -86,15 +86,31 @@ namespace houseofatmos::outside {
         };
     }
 
-    f64 Complex::distance_to(u64 tile_x, u64 tile_z) const {
+    std::pair<u64, u64> Complex::closest_member_to(
+        u64 tile_x, u64 tile_z, f64* dist_out
+    ) const {
+        assert(this->members.size() > 0);
         f64 min_distance = INFINITY;
+        std::pair<u64, u64> closest;
         for(const auto& member: this->members) {
             const auto& [member_x, member_z] = member.first;
             Vec<2> difference = Vec<2>(member_x, member_z) 
                 - Vec<2>(tile_x, tile_z);
-            min_distance = std::min(min_distance, difference.len());
+            f64 distance = difference.len();
+            if(distance >= min_distance) { continue; }
+            min_distance = distance;
+            closest = member.first;
         }
-        return min_distance;
+        if(dist_out != nullptr) {
+            *dist_out = min_distance;
+        }
+        return closest;
+    }
+
+    f64 Complex::distance_to(u64 tile_x, u64 tile_z) const {
+        f64 distance;
+        (void) this->closest_member_to(tile_x, tile_z, &distance);
+        return distance;
     }
 
     void Complex::add_member(u64 tile_x, u64 tile_z, Member member) {

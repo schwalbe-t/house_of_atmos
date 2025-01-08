@@ -38,7 +38,7 @@ namespace houseofatmos::outside {
         return { deviation, elevation };
     }
 
-    f64 Terrain::elevation_at(const Vec<3>& pos) {
+    f64 Terrain::elevation_at(const Vec<3>& pos) const {
         if(pos.x() < 0 || pos.z() < 0) { return 0.0; }
         u64 left = (u64) (pos.x() / this->tile_size);
         u64 top = (u64) (pos.z() / this->tile_size);
