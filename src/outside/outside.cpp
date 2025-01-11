@@ -19,9 +19,11 @@ namespace houseofatmos::outside {
         this->terrain.generate_elevation();
         this->terrain.generate_foliage();
         this->player.position = { 250, 0, 250 };
-        this->action_mode
-            = std::make_unique<DefaultMode>(this->terrain, this->complexes);
+        this->action_mode = std::make_unique<DefaultMode>(
+            this->terrain, this->complexes, this->carriages
+        );
         this->balance.coins = 105000;
+        this->carriages = CarriageManager(this->terrain);
     }
 
 
@@ -74,7 +76,11 @@ namespace houseofatmos::outside {
     void Outside::update(engine::Window& window) {
         this->carriages.update_all(window, this->complexes, this->terrain);
         this->complexes.update(window, this->balance);
-        ActionMode::choose_current(window, this->terrain, this->complexes, this->player, this->action_mode);
+        ActionMode::choose_current(
+            window, 
+            this->terrain, this->complexes, this->player, this->carriages, 
+            this->action_mode
+        );
         this->action_mode->update(window, *this, this->renderer, this->balance);
         update_player(window, this->terrain, this->player);
         update_camera(window, this->player, this->renderer.camera, this->zoom);
@@ -104,9 +110,13 @@ namespace houseofatmos::outside {
         );
         this->complexes = ComplexBank(outside.complexes, buffer);
         this->player = Player(outside.player, buffer);
-        this->action_mode
-            = std::make_unique<DefaultMode>(this->terrain, this->complexes);
+        this->action_mode = std::make_unique<DefaultMode>(
+            this->terrain, this->complexes, this->carriages
+        );
         this->balance = outside.balance;
+        this->carriages = CarriageManager(
+            outside.carriages, buffer, this->terrain
+        );
     
         // DEBUG ///////////////////
         Carriage carriage = (Carriage) {
@@ -114,7 +124,6 @@ namespace houseofatmos::outside {
         };
         carriage.targets.push_back((Carriage::Target) { (ComplexId) { 0 } });
         this->carriages.carriages.push_back(std::move(carriage));
-        this->carriages.refind_all_paths(this->complexes, this->terrain);
         ////////////////////////////
     }
 

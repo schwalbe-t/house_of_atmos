@@ -59,7 +59,9 @@ namespace houseofatmos::outside {
 
 
 
-    Complex::Complex() {}
+    Complex::Complex() {
+        this->free = false;
+    }
 
     Complex::Complex(const Serialized& serialized, const engine::Arena& buffer) {
         std::vector<std::pair<std::pair<u64, u64>, Member::Serialized>> members;
@@ -72,6 +74,7 @@ namespace houseofatmos::outside {
         buffer.copy_map_at_into(
             serialized.storage_offset, serialized.storage_count, this->storage
         );
+        this->free = serialized.free;
     }
 
     Complex::Serialized Complex::serialize(engine::Arena& buffer) const {
@@ -82,7 +85,8 @@ namespace houseofatmos::outside {
         }
         return (Serialized) {
             this->members.size(), buffer.alloc_array(members),
-            this->storage.size(), buffer.alloc_map(this->storage)
+            this->storage.size(), buffer.alloc_map(this->storage),
+            this->free
         };
     }
 
@@ -262,6 +266,7 @@ namespace houseofatmos::outside {
     ComplexId ComplexBank::create_complex() {
         if(this->free_indices.size() > 0) {
             ComplexId id = this->free_indices.at(this->free_indices.size() - 1);
+            this->get(id).set_free(false);
             this->free_indices.pop_back();
             return id;
         }
@@ -277,6 +282,7 @@ namespace houseofatmos::outside {
         f64 closest_distance = INFINITY;
         for(size_t index = 0; index < this->complexes.size(); index += 1) {
             const Complex& complex = this->complexes.at(index);
+            if(complex.is_free()) { continue; }
             f64 distance = complex.distance_to(tile_x, tile_z);
             if(closest_distance <= distance) { continue; }
             closest = (ComplexId) { (u32) index };
@@ -295,12 +301,15 @@ namespace houseofatmos::outside {
 
     void ComplexBank::update(const engine::Window& window, Balance& balance) {
         for(Complex& complex: this->complexes) {
+            if(complex.is_free()) { continue; }
             complex.update(window, balance);
         }
     }
 
     void ComplexBank::delete_complex(ComplexId complex) {
-        this->complexes.at(complex.index) = Complex();
+        Complex& deleted = this->complexes.at(complex.index);
+        deleted = Complex();
+        deleted.set_free(true);
         this->free_indices.push_back(complex);
     }
 

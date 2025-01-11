@@ -74,15 +74,20 @@ namespace houseofatmos::outside {
         struct Serialized {
             u64 members_count, members_offset;
             u64 storage_count, storage_offset;
+            bool free;
         };
 
         private:
         std::vector<std::pair<std::pair<u64, u64>, Member>> members;
         std::unordered_map<Item, u64> storage;
+        bool free;
 
         public:
         Complex();
         Complex(const Serialized& serialized, const engine::Arena& buffer);
+
+        bool is_free() const { return this->free; }
+        void set_free(bool is_free) { this->free = is_free; }
 
         std::pair<u64, u64> closest_member_to(
             u64 tile_x, u64 tile_z, f64* dist_out = nullptr

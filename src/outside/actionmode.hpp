@@ -4,6 +4,7 @@
 #include <engine/window.hpp>
 #include "../renderer.hpp"
 #include "../player.hpp"
+#include "carriage.hpp"
 #include "terrain.hpp"
 #include "zoom.hpp"
 
@@ -75,6 +76,7 @@ namespace houseofatmos::outside {
         static void choose_current(
             const engine::Window& window,
             Terrain& terrain, ComplexBank& complexes, const Player& player,
+            CarriageManager& carriages,
             std::unique_ptr<ActionMode>& current
         );
 
@@ -97,10 +99,12 @@ namespace houseofatmos::outside {
 
         Terrain& terrain;
         ComplexBank& complexes;
+        CarriageManager& carriages;
         Selection selected;
 
-        DefaultMode(Terrain& terrain, ComplexBank& complexes)
-        : terrain(terrain), complexes(complexes) {
+        DefaultMode(
+            Terrain& terrain, ComplexBank& complexes, CarriageManager& carriages
+        ): terrain(terrain), complexes(complexes), carriages(carriages) {
             engine::info(
                 "Press space to zoom in/out. "
                 "Left click to view information about a building or carriage. "
@@ -159,13 +163,17 @@ namespace houseofatmos::outside {
         Terrain& terrain;
         ComplexBank& complexes;
         const Player& player;
+        CarriageManager& carriages;
         u64 selected_x, selected_z;
         Building::Type selected_type;
         std::vector<Conversion> selected_conversion;
         bool placement_valid;
 
-        ConstructionMode(Terrain& terrain, ComplexBank& complexes, const Player& player)
-        : terrain(terrain), complexes(complexes), player(player) {
+        ConstructionMode(
+            Terrain& terrain, ComplexBank& complexes, const Player& player,
+            CarriageManager& carriages
+        ): terrain(terrain), complexes(complexes), 
+            player(player), carriages(carriages) {
             this->selected_x = 0;
             this->selected_z = 0;
             this->selected_type = Building::House;
@@ -192,13 +200,16 @@ namespace houseofatmos::outside {
 
     struct DemolitionMode: ActionMode {
 
-        Terrain& terrain; ComplexBank& complexes;
+        Terrain& terrain; 
+        ComplexBank& complexes;
+        CarriageManager& carriages;
         u64 selected_tile_x, selected_tile_z;
         u64 selected_chunk_x, selected_chunk_z;
         const Building* selected;
 
-        DemolitionMode(Terrain& terrain, ComplexBank& complexes)
-        : terrain(terrain), complexes(complexes) {
+        DemolitionMode(
+            Terrain& terrain, ComplexBank& complexes, CarriageManager& carriages
+        ): terrain(terrain), complexes(complexes), carriages(carriages) {
             this->selected_tile_x = 0;
             this->selected_tile_z = 0;
             this->selected_chunk_x = 0;
@@ -227,9 +238,13 @@ namespace houseofatmos::outside {
     struct PathingMode: ActionMode {
 
         Terrain& terrain;
+        ComplexBank& complexes;
+        CarriageManager& carriages;
         u64 selected_tile_x, selected_tile_z;
 
-        PathingMode(Terrain& terrain): terrain(terrain) {
+        PathingMode(
+            Terrain& terrain, ComplexBank& complexes, CarriageManager& carriages
+        ): terrain(terrain), complexes(complexes), carriages(carriages) {
             engine::info(
                 "Entered pathing mode. Press P or Escape to exit. "
                 "Left to place a path, right click to remove an existing one."

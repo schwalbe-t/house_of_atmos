@@ -7,6 +7,7 @@ namespace houseofatmos::outside {
     void ActionMode::choose_current(
         const engine::Window& window,
         Terrain& terrain, ComplexBank& complexes, const Player& player,
+        CarriageManager& carriages,
         std::unique_ptr<ActionMode>& current
     ) {
         for(size_t type_i = 0; type_i < ActionMode::keys.size(); type_i += 1) {
@@ -14,28 +15,34 @@ namespace houseofatmos::outside {
             ActionMode::Type type = (ActionMode::Type) type_i;
             if(!window.was_pressed(key)) { continue; }
             if(current->get_type() == type) {
-                current = std::make_unique<DefaultMode>(terrain, complexes); 
+                current = std::make_unique<DefaultMode>(
+                    terrain, complexes, carriages
+                ); 
                 break;
             }
             switch(type) {
                 case Default: 
-                    current = std::make_unique<DefaultMode>(terrain, complexes); 
+                    current = std::make_unique<DefaultMode>(
+                        terrain, complexes, carriages
+                    ); 
                     break;
                 case Terraform: 
                     current = std::make_unique<TerraformMode>(terrain); 
                     break;
                 case Construction: 
                     current = std::make_unique<ConstructionMode>(
-                        terrain, complexes, player
+                        terrain, complexes, player, carriages
                     );
                     break;
                 case Demolition: 
                     current = std::make_unique<DemolitionMode>(
-                        terrain, complexes
+                        terrain, complexes, carriages
                     ); 
                     break;
                 case Pathing: 
-                    current = std::make_unique<PathingMode>(terrain); 
+                    current = std::make_unique<PathingMode>(
+                        terrain, complexes, carriages
+                    ); 
                     break;
                 default: engine::warning(
                     "Unhandled 'ActionMode::Type' in 'ActionMode::choose_current'"
@@ -593,6 +600,7 @@ namespace houseofatmos::outside {
                     tile_x, tile_z, this->terrain, this->complexes,
                     this->selected_type, type_info, this->selected_conversion
                 );
+                this->carriages.refind_all_paths(this->complexes, this->terrain);
             } else if(unemployment < (i64) type_info.workers) {
                 engine::info("Not enough unemployed workers available! ("
                     + std::to_string(unemployment) + "/"
@@ -672,6 +680,7 @@ namespace houseofatmos::outside {
                 this->terrain.reload_chunk_at(
                     this->selected_chunk_x, this->selected_chunk_z
                 );
+                this->carriages.refind_all_paths(this->complexes, this->terrain);
                 engine::info("Refunded " + std::to_string(refunded) + " coins "
                     "for building demolition (now " + std::to_string(balance.coins) + ")"
                 );
@@ -740,9 +749,11 @@ namespace houseofatmos::outside {
             chunk.set_path_at(rel_x, rel_z, true);
             this->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
             this->terrain.reload_chunk_at(chunk_x, chunk_z);
+            this->carriages.refind_all_paths(this->complexes, this->terrain);
         } else if(has_path && window.was_pressed(engine::Button::Right)) {
             chunk.set_path_at(rel_x, rel_z, false);
             this->terrain.reload_chunk_at(chunk_x, chunk_z);
+            this->carriages.refind_all_paths(this->complexes, this->terrain);
             balance.coins += path_removal_refund;
             engine::info("Refunded " + std::to_string(path_removal_refund) + " coins "
                 "for path removal (now " + std::to_string(balance.coins) + ")"

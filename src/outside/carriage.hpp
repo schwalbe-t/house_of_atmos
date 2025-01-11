@@ -153,7 +153,7 @@ namespace houseofatmos::outside {
 
 
         private:
-        std::vector<bool> obstacle_tiles;
+        std::vector<u8> obstacle_tiles;
 
         void fill_obstacle_data(const Terrain& terrain);
 
@@ -162,12 +162,14 @@ namespace houseofatmos::outside {
         std::vector<Carriage> carriages;
 
         CarriageManager() {}
+        CarriageManager(const Terrain& terrain);
         CarriageManager(
-            const Serialized& serialized, const engine::Arena& buffer
+            const Serialized& serialized, const engine::Arena& buffer,
+            const Terrain& terrain
         );
 
         std::optional<std::vector<Vec<3>>> find_path_to(
-            u64 start_x, u64 start_z,
+            const Vec<3>& start,
             const Complex& target, const Terrain& terrain
         );
 

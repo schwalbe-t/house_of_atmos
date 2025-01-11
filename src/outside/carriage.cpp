@@ -181,8 +181,13 @@ namespace houseofatmos::outside {
 
 
 
+    CarriageManager::CarriageManager(const Terrain& terrain) {
+        this->fill_obstacle_data(terrain);
+    }
+
     CarriageManager::CarriageManager(
-        const Serialized& serialized, const engine::Arena& buffer
+        const Serialized& serialized, const engine::Arena& buffer,
+        const Terrain& terrain
     ) {
         std::vector<Carriage::Serialized> carriages;
         buffer.copy_array_at_into(
@@ -193,6 +198,7 @@ namespace houseofatmos::outside {
         for(const Carriage::Serialized& carriage: carriages) {
             this->carriages.push_back(Carriage(carriage, buffer));
         }
+        this->fill_obstacle_data(terrain);
     }
 
 
@@ -201,15 +207,11 @@ namespace houseofatmos::outside {
             + (u64) llabs((i64) a_z - (u64) b_z);
     }
 
-    static const std::array<std::pair<i64, i64>, 8> neighbour_t_offsets = {
-        std::make_pair(-1, +1),
+    static const std::array<std::pair<i64, i64>, 4> neighbour_t_offsets = {
         std::make_pair( 0, +1),
-        std::make_pair(+1, +1),
         std::make_pair(-1,  0),
         std::make_pair(+1,  0),
-        std::make_pair(-1, -1),
-        std::make_pair( 0, -1),
-        std::make_pair(+1, -1)
+        std::make_pair( 0, -1)
     };
 
     struct SearchedTile {
@@ -236,6 +238,48 @@ namespace houseofatmos::outside {
         return cheapest_i;
     }
 
+    static const u64 max_loading_distance = 1;
+
+    static bool building_loadable_from(
+        u64 building_x, u64 building_z, const Building& building,
+        u64 tested_x, u64 tested_z 
+    ) {
+        const Building::TypeInfo& type = building.get_type_info();
+        i64 start_x = (i64) building_x;
+        i64 end_x = (i64) building_x + (i64) type.width - 1;
+        u64 dist_x = std::max(
+            (u64) std::max(start_x - (i64) tested_x, (i64) 0),
+            (u64) std::max((i64) tested_x - end_x, (i64) 0)
+        );
+        i64 start_z = (i64) building_z;
+        i64 end_z = (i64) building_z + (i64) type.height - 1;
+        u64 dist_z = std::max(
+            (u64) std::max(start_z - (i64) tested_z, (i64) 0),
+            (u64) std::max((i64) tested_z - end_z, (i64) 0)
+        );
+        return (dist_x + dist_z) <= max_loading_distance;
+    }
+
+    static std::vector<Vec<3>> build_found_path(
+        const Vec<3>& start,
+        const std::vector<SearchedTile>& explorable, 
+        i64 target_tile_i,
+        const Terrain& terrain
+    ) {
+        std::vector<Vec<3>> result;
+        i64 current_i = target_tile_i;
+        for(;;) {
+            const SearchedTile& current = explorable[current_i];
+            if(!current.parent.has_value()) { break; }
+            Vec<3> position = Vec<3>(current.x + 0.5, 0, current.z + 0.5)
+                * terrain.units_per_tile();
+            result.insert(result.begin(), position);
+            current_i = *current.parent;
+        }
+        result.insert(result.begin(), start);
+        return result;
+    }
+
     static u64 explorable_tile_at(
         const std::vector<SearchedTile>& explorable, u64 tile_x, u64 tile_z
     ) {
@@ -247,27 +291,11 @@ namespace houseofatmos::outside {
         return UINT64_MAX;
     }
 
-    static std::vector<Vec<3>> build_found_path(
-        const std::vector<SearchedTile>& explorable, 
-        i64 target_tile_i,
-        const Terrain& terrain
-    ) {
-        std::vector<Vec<3>> result;
-        i64 current_i = target_tile_i;
-        for(;;) {
-            const SearchedTile& current = explorable[current_i];
-            Vec<3> position = Vec<3>(current.x + 0.5, 0, current.z + 0.5)
-                * terrain.units_per_tile();
-            result.insert(result.begin(), position);
-            if(!current.parent.has_value()) { break; }
-            current_i = *current.parent;
-        }
-        return result;
-    }
-
     std::optional<std::vector<Vec<3>>> CarriageManager::find_path_to(
-        u64 start_x, u64 start_z, const Complex& target, const Terrain& terrain
+        const Vec<3>& start, const Complex& target, const Terrain& terrain
     ) {
+        u64 start_x = (u64) start.x() / terrain.units_per_tile();
+        u64 start_z = (u64) start.z() / terrain.units_per_tile();
         auto [target_x, target_z] = target.closest_member_to(start_x, start_z);
         const Building* target_b = terrain.building_at(target_x, target_z);
         assert(target_b != nullptr);
@@ -286,9 +314,12 @@ namespace houseofatmos::outside {
             }
             SearchedTile& current = explorable[current_i];
             current.explored = true;
-            // check if the current tile is at the end
-            if(current.x == target_x && current.z == target_z) {
-                return build_found_path(explorable, current_i, terrain);
+            // check if the current tile is in range of the target building
+            bool loadable = building_loadable_from(
+                target_x, target_z, *target_b, current.x, current.z
+            );
+            if(loadable) {
+                return build_found_path(start, explorable, current_i, terrain);
             }
             // compute data about neighbours
             for(const auto& [neighbour_ox, neighbour_oz]: neighbour_t_offsets) {
@@ -309,9 +340,7 @@ namespace houseofatmos::outside {
                     explorable, (u64) neighbour_x, (u64) neighbour_z
                 );
                 u64 start_dist_over_current = current.start_dist
-                    + manhattan_distance(
-                        current.x, current.z, neighbour_x, neighbour_z
-                    );
+                    + abs(neighbour_ox) + abs(neighbour_oz);
                 if(neighbour_i == UINT64_MAX) {
                     neighbour_i = explorable.size();
                     explorable.push_back((SearchedTile) {
@@ -320,11 +349,12 @@ namespace houseofatmos::outside {
                         manhattan_distance(start_x, start_z, target_x, target_z)
                     });
                 }
+                // adjust start distance and parent of neighbour if needed
                 SearchedTile& neighbour = explorable[neighbour_i];
-                // adjust start distance if closer or neighbour not explored
-                if(neighbour.start_dist <= start_dist_over_current) { continue; }
-                if(neighbour.explored) { continue; }
-                neighbour.start_dist = start_dist_over_current;
+                if(neighbour.start_dist > start_dist_over_current) {
+                    neighbour.start_dist = start_dist_over_current;
+                    neighbour.parent = current_i;
+                }
             }
         }
     }
@@ -333,10 +363,8 @@ namespace houseofatmos::outside {
         Carriage& carriage, 
         const ComplexBank& complexes, const Terrain& terrain
     ) {
-        u64 start_x = (u64) carriage.position.x() / terrain.units_per_tile();
-        u64 start_z = (u64) carriage.position.z() / terrain.units_per_tile();
         const Complex& target = complexes.get(carriage.target().complex);
-        auto path = this->find_path_to(start_x, start_z, target, terrain);
+        auto path = this->find_path_to(carriage.position, target, terrain);
         if(path.has_value()) {
             carriage.set_path(*path);
         } else if(!carriage.is_lost()) {
