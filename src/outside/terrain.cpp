@@ -311,7 +311,7 @@ namespace houseofatmos::outside {
         Vec<3> chunk_offset_tiles = Vec<3>(chunk_x, 0, chunk_z)
             * this->tiles_per_chunk();
         Vec<3> relative_offset_tiles = Vec<3>(building.x, 0, building.z) 
-            + Vec<3>(type.offset_x, 0, type.offset_z);
+            + Vec<3>(type.width / 2.0, 0, type.height / 2.0);
         Vec<3> offset = (chunk_offset_tiles + relative_offset_tiles)
             * this->units_per_tile();
         offset.y() = this->elevation_at(
@@ -415,14 +415,10 @@ namespace houseofatmos::outside {
                 for(const Building& building: chunk.buildings) {
                     const Building::TypeInfo& type = Building::types
                         .at((size_t) building.type);
-                    i64 start_x = chunk_offset_x
-                        + (i64) building.x - (i64) type.width / 2;
-                    i64 end_x = chunk_offset_x
-                        + (i64) building.x + (i64) ceil(type.width / 2.0);
-                    i64 start_z = chunk_offset_z
-                        + (i64) building.z - (i64) type.height / 2;
-                    i64 end_z = chunk_offset_z
-                        + (i64) building.z + (i64) ceil(type.height / 2.0);
+                    i64 start_x = chunk_offset_x + (i64) building.x;
+                    i64 end_x = start_x + (i64) type.width;
+                    i64 start_z = chunk_offset_z + (i64) building.z;
+                    i64 end_z = start_z + (i64) type.height;
                     bool overlaps = start_x <= tile_x && tile_x < end_x
                         && start_z <= tile_z && tile_z < end_z;
                     if(!overlaps) { continue; }
@@ -449,21 +445,19 @@ namespace houseofatmos::outside {
     ) const {
         i64 player_tile_x = (i64) player_position.x() / this->units_per_tile();
         i64 player_tile_z = (i64) player_position.z() / this->units_per_tile();
-        i64 start_x = tile_x - building_type.width / 2;
-        i64 end_x = tile_x + (i64) ceil(building_type.width / 2.0);
-        i64 start_z = tile_z - building_type.height / 2;
-        i64 end_z = tile_z + (i64) ceil(building_type.height / 2.0);
-        if(start_x < 0 || (u64) end_x > this->width_in_tiles()) { return false; }
-        if(start_z < 0 || (u64) end_z > this->height_in_tiles()) { return false; }
-        i16 target = this->elevation_at((u64) start_x, (u64) start_z);
-        for(i64 x = start_x; x <= end_x; x += 1) {
-            for(i64 z = start_z; z <= end_z; z += 1) {
+        i64 end_x = tile_x + (i64) building_type.width;
+        i64 end_z = tile_z + (i64) building_type.height;
+        if(tile_x < 0 || (u64) end_x > this->width_in_tiles()) { return false; }
+        if(tile_z < 0 || (u64) end_z > this->height_in_tiles()) { return false; }
+        i16 target = this->elevation_at((u64) tile_x, (u64) tile_z);
+        for(i64 x = tile_x; x <= end_x; x += 1) {
+            for(i64 z = tile_z; z <= end_z; z += 1) {
                 i16 elevation = this->elevation_at((u64) x, (u64) z);
                 if(elevation != target) { return false; }
             }
         }
-        for(i64 x = start_x; x < end_x; x += 1) {
-            for(i64 z = start_z; z < end_z; z += 1) {
+        for(i64 x = tile_x; x < end_x; x += 1) {
+            for(i64 z = tile_z; z < end_z; z += 1) {
                 if(x == player_tile_x && z == player_tile_z) { return false; }
                 if(this->building_at(x, z) != nullptr) { return false; }
             }
@@ -482,23 +476,23 @@ namespace houseofatmos::outside {
         for(u64 chunk_x = start_x; chunk_x <= end_x; chunk_x += 1) {
             for(u64 chunk_z = start_z; chunk_z <= end_z; chunk_z += 1) {
                 const ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
-                Vec<3> chunk_offset = Vec<3>(chunk_x, 0, chunk_z) 
-                    * this->tiles_per_chunk() * this->units_per_tile();
+                Vec<3> chunk_offset_tiles = Vec<3>(chunk_x, 0, chunk_z) 
+                    * this->tiles_per_chunk();
                 for(const Building& building: chunk.buildings) {
                     const Building::TypeInfo& type = building.get_type_info();
-                    Vec<3> offset = chunk_offset 
-                        + Vec<3>(building.x, 0, building.z) * this->units_per_tile()
-                        + Vec<3>(type.offset_x, 0, type.offset_z) * this->units_per_tile();
+                    Vec<3> offset_tiles = chunk_offset_tiles 
+                        + Vec<3>(building.x, 0, building.z)
+                        + Vec<3>(type.width / 2.0, 0, type.height / 2.0);
                     for(const RelCollider& collider: type.colliders) {
                         bool collision = collider
-                            .at(offset)
+                            .at(offset_tiles * this->units_per_tile())
                             .collides_with(player_collider);
                         if(collision) { return false; }
                     }
                 }
                 for(const Foliage& foliage: chunk.foliage) {
                     const Foliage::TypeInfo& type = foliage.get_type_info();
-                    Vec<3> offset = chunk_offset 
+                    Vec<3> offset = (chunk_offset_tiles * this->units_per_tile())
                         + Vec<3>(foliage.x, 0, foliage.z);
                     bool collision = type.collider
                         .at(offset)

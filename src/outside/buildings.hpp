@@ -17,7 +17,6 @@ namespace houseofatmos::outside {
             f64 animation_speed;
             std::vector<RelCollider> colliders; // in game units
             u8 width, height; // in tiles
-            f64 offset_x, offset_z; // in tiles, 0..1
             u64 cost; // in coins
             u64 workers;
             u64 residents;
@@ -61,7 +60,6 @@ namespace houseofatmos::outside {
                     RelCollider({  4.425, -0.5, -4.625 }, { 0.25, 1, 9.25 })
                 },
                 2, 2, // size
-                0, 0,
                 500, // building cost
                 5, // workers
                 0 // residents
@@ -71,7 +69,6 @@ namespace houseofatmos::outside {
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -5 }, { 10, 1, 10 }) },
                 2, 2, // size
-                0, 0,
                 1000, // building cost
                 15, // workers
                 0 // residents
@@ -81,7 +78,6 @@ namespace houseofatmos::outside {
                 "blades", 1.0,
                 { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
                 2, 2, // size
-                0, 0,
                 1000, // building cost
                 5, // workers
                 0 // residents
@@ -91,7 +87,6 @@ namespace houseofatmos::outside {
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
                 2, 1, // size
-                0, 0.5,
                 1000, // building cost
                 25, // workers
                 0 // residents
@@ -101,7 +96,6 @@ namespace houseofatmos::outside {
                 "door", 0.0, // speed = 0 -> will always be the first frame
                 { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
                 1, 1, // size
-                0.5, 0.5,
                 500, // building cost
                 0, // workers
                 5 // residents
@@ -121,7 +115,6 @@ namespace houseofatmos::outside {
                     RelCollider({ -6.500, -0.5,  3.500 }, {  1.00, 1, 3.00 })
                 },
                 3, 3, // size
-                0.5, 0.5,
                 2000, // building cost
                 20, // workers
                 0 // residents
@@ -148,7 +141,6 @@ namespace houseofatmos::outside {
                     RelCollider({  4.50, -0.5, -5.50 }, { 2.5, 1, 1.0 })
                 },
                 3, 3, // size
-                0.5, 0.5,
                 999999999, // building cost
                 0, // workers
                 0 // residents

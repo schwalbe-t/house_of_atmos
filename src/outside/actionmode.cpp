@@ -577,7 +577,7 @@ namespace houseofatmos::outside {
             .at((size_t) this->selected_type);
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer.compute_view_proj(),
-            Vec<3>(type_info.offset_x, 0, type_info.offset_z)
+            Vec<3>(type_info.width / 2.0, 0, type_info.height / 2.0)
         );
         this->selected_x = tile_x;
         this->selected_z = tile_z;
