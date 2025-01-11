@@ -312,8 +312,8 @@ namespace houseofatmos::outside {
             if(current_i == UINT64_MAX) { // no more tiles to explore
                 return std::nullopt;
             }
-            SearchedTile& current = explorable[current_i];
-            current.explored = true;
+            explorable[current_i].explored = true;
+            SearchedTile current = explorable[current_i];
             // check if the current tile is in range of the target building
             bool loadable = building_loadable_from(
                 target_x, target_z, *target_b, current.x, current.z
@@ -328,10 +328,12 @@ namespace houseofatmos::outside {
                 i64 neighbour_z = (i64) current.z + neighbour_oz;
                 u64 neighbour_fo = (u64) neighbour_x 
                     + terrain.width_in_tiles() * (u64) neighbour_z;
+                u64 start_dist_over_current = current.start_dist
+                    + abs(neighbour_ox) + abs(neighbour_oz);
                 // check if neighbour is reachable
-                bool reachable = neighbour_x > 0 
+                bool reachable = neighbour_x >= 0 
                     && (u64) neighbour_x < terrain.width_in_tiles()
-                    && neighbour_z > 0
+                    && neighbour_z >= 0
                     && (u64) neighbour_z < terrain.height_in_tiles()
                     && !this->obstacle_tiles[neighbour_fo];
                 if(!reachable) { continue; }
@@ -339,8 +341,6 @@ namespace houseofatmos::outside {
                 u64 neighbour_i = explorable_tile_at(
                     explorable, (u64) neighbour_x, (u64) neighbour_z
                 );
-                u64 start_dist_over_current = current.start_dist
-                    + abs(neighbour_ox) + abs(neighbour_oz);
                 if(neighbour_i == UINT64_MAX) {
                     neighbour_i = explorable.size();
                     explorable.push_back((SearchedTile) {
@@ -351,10 +351,10 @@ namespace houseofatmos::outside {
                 }
                 // adjust start distance and parent of neighbour if needed
                 SearchedTile& neighbour = explorable[neighbour_i];
-                if(neighbour.start_dist > start_dist_over_current) {
-                    neighbour.start_dist = start_dist_over_current;
-                    neighbour.parent = current_i;
-                }
+                if(neighbour.explored) { continue; }
+                if(neighbour.start_dist < start_dist_over_current) { continue; }
+                neighbour.start_dist = start_dist_over_current;
+                neighbour.parent = current_i;
             }
         }
     }
@@ -386,6 +386,26 @@ namespace houseofatmos::outside {
                 );
                 size_t offset = x + terrain.width_in_tiles() * z;
                 this->obstacle_tiles[offset] = !has_path;
+            }
+        }
+        for(u64 chunk_x = 0; chunk_x < terrain.width_in_chunks(); chunk_x += 1) {
+            u64 chunk_ox = chunk_x * terrain.tiles_per_chunk();
+            for(u64 chunk_z = 0; chunk_z < terrain.height_in_chunks(); chunk_z += 1) {
+                u64 chunk_oz = chunk_z * terrain.tiles_per_chunk();
+                const Terrain::ChunkData& chunk = terrain.chunk_at(chunk_x, chunk_z);
+                for(const Building& building: chunk.buildings) {
+                    const Building::TypeInfo type = building.get_type_info();
+                    for(u64 bx = 0; bx < type.width; bx += 1) {
+                        u64 x = chunk_ox + building.x + bx;
+                        if(x >= terrain.width_in_tiles()) { break; }
+                        for(u64 bz = 0; bz < type.height; bz += 1) {
+                            u64 z = chunk_oz + building.z + bz;
+                            if(z >= terrain.height_in_tiles()) { break; }
+                            size_t offset = x + terrain.width_in_tiles() * z;
+                            this->obstacle_tiles[offset] = true;
+                        }
+                    }
+                }
             }
         }
     }

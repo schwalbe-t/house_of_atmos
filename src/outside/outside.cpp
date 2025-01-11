@@ -123,6 +123,7 @@ namespace houseofatmos::outside {
             Carriage::Round, Vec<3>(253, 0, 244)
         };
         carriage.targets.push_back((Carriage::Target) { (ComplexId) { 0 } });
+        this->carriages.carriages.clear();
         this->carriages.carriages.push_back(std::move(carriage));
         ////////////////////////////
     }
