@@ -207,6 +207,10 @@ namespace houseofatmos::outside {
             print_building_info(
                 *s_building, s_chunk_x, s_chunk_z, nullptr, this->terrain
             );
+            this->selected.type = Selection::Building;
+            this->selected.value.building.x = tile_x;
+            this->selected.value.building.z = tile_z;
+            return;
         }
         this->selected.type = Selection::None;
     }
@@ -239,13 +243,29 @@ namespace houseofatmos::outside {
                 const engine::Texture& wireframe_texture = scene
                     .get<engine::Texture>(ActionMode::wireframe_info_texture);
                 for(const auto& [type, instances]: inst) {
-                    Building::TypeInfo type_info = Building::types
+                    const Building::TypeInfo& type_info = Building::types
                         .at((size_t) type);
                     type_info.render_buildings(
                         window, scene, renderer,
                         instances, true, &wireframe_texture
                     );
                 }
+            } break;
+            case Selection::Building: {
+                u64 tile_x = this->selected.value.building.x;
+                u64 tile_z = this->selected.value.building.z;
+                u64 chunk_x, chunk_z;
+                const Building* building = this->terrain
+                    .building_at((i64) tile_x, (i64) tile_z, &chunk_x, &chunk_z);
+                const Building::TypeInfo& type_info = building->get_type_info();
+                Mat<4> transform = this->terrain
+                    .building_transform(*building, chunk_x, chunk_z);
+                const engine::Texture& wireframe_texture = scene
+                    .get<engine::Texture>(ActionMode::wireframe_info_texture);
+                type_info.render_buildings(
+                    window, scene, renderer,
+                    std::array { transform }, true, &wireframe_texture
+                );
             } break;
         }
     }

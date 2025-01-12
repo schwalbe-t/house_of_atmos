@@ -21,6 +21,7 @@ namespace houseofatmos::outside {
         this->yaw = 0.0;
         this->pitch = 0.0;
         this->travelled_dist = 0.0;
+        this->load_timer = 0.0;
         this->moving = false;
     }
 
@@ -36,12 +37,17 @@ namespace houseofatmos::outside {
             serialized.targets_offset, serialized.targets_count,
             this->targets
         );
+        buffer.copy_map_at_into(
+            serialized.items_offset, serialized.items_count,
+            this->items
+        );
         this->curr_target_i = serialized.curr_target_i;
         this->state = serialized.state;
         this->position = serialized.position;
         this->yaw = 0.0;
         this->pitch = 0.0;
         this->travelled_dist = 0.0;
+        this->load_timer = 0.0;
         this->moving = false;
     }
 
@@ -71,10 +77,11 @@ namespace houseofatmos::outside {
 
     static const Vec<3> model_heading = Vec<3>(0, 0, -1);
     static const f64 carriage_speed = 4.0;
+    static const f64 load_time = 5.0;
 
     void Carriage::update(
         const engine::Window& window, 
-        const ComplexBank& complexes, const Terrain& terrain
+        ComplexBank& complexes, const Terrain& terrain
     ) {
         this->moving = this->state == State::Travelling;
         if(this->state == State::Travelling) {
@@ -103,13 +110,45 @@ namespace houseofatmos::outside {
             if(at_end) { this->state = State::Loading; }
         }
         if(this->state == State::Loading) {
-            // TODO! transfer items and change target
-            if(false /* TODO! when done loading*/) {
+            this->load_timer += window.delta_time();
+            if(this->load_timer >= load_time) {
+                // do item transfer specified in schedule
+                const Target& target = this->targets[this->curr_target_i];
+                Complex& complex = complexes.get(target.complex);
+                u64 s_amount;
+                switch(target.action) {
+                    case Carriage::LoadFixed: case Carriage::LoadPercentage:
+                        s_amount = complex.stored_count(target.item); break;
+                    case Carriage::PutFixed: case Carriage::PutPercentage:
+                        s_amount = this->stored_count(target.item); break;
+                }
+                u64 amount;
+                switch(target.action) {
+                    case Carriage::LoadFixed: case Carriage::PutFixed:
+                        amount = target.amount.fixed; break;
+                    case Carriage::LoadPercentage: case Carriage::PutPercentage:
+                        amount = (u64) (target.amount.percentage * s_amount); 
+                        break;
+                }
+                amount = std::max(amount, s_amount);
+                switch(target.action) {
+                    case Carriage::LoadFixed: case Carriage::LoadPercentage:
+                        complex.remove_stored(target.item, amount);
+                        this->add_stored(target.item, amount);
+                        break;
+                    case Carriage::PutFixed: case Carriage::PutPercentage:
+                        this->remove_stored(target.item, amount);
+                        complex.add_stored(target.item, amount);
+                        break;
+                }
+                // proceed to next target
                 this->curr_target_i += 1;
                 this->curr_target_i %= this->targets.size();
                 this->clear_path();
                 this->state = State::Travelling;
             } 
+        } else {
+            this->load_timer = 0.0;
         }
     }
 
@@ -173,6 +212,7 @@ namespace houseofatmos::outside {
             this->type,
             this->horses.size(), buffer.alloc_array(this->horses),
             this->targets.size(), buffer.alloc_array(this->targets),
+            this->items.size(), buffer.alloc_map(this->items),
             this->curr_target_i,
             this->state,
             this->position
@@ -422,7 +462,7 @@ namespace houseofatmos::outside {
 
     void CarriageManager::update_all(
         const engine::Window& window, 
-        const ComplexBank& complexes, const Terrain& terrain 
+        ComplexBank& complexes, const Terrain& terrain 
     ) {
         for(Carriage& carriage: this->carriages) {
             if(!carriage.is_lost() && !carriage.has_path()) {

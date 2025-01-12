@@ -88,10 +88,14 @@ namespace houseofatmos::outside {
         struct Selection {
             enum Type {
                 None,
-                Complex
+                Complex,
+                Building
             };
             union Value {
                 ComplexId complex;
+                struct {
+                    u64 x, z;
+                } building;
             };
             Type type;
             Value value;

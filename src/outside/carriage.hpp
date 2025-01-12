@@ -81,25 +81,39 @@ namespace houseofatmos::outside {
             CarriageType type;
             u64 horses_count, horses_offset;
             u64 targets_count, targets_offset;
+            u64 items_count, items_offset;
             u64 curr_target_i;
             State state;
             Vec<3> position;
         };
 
+        enum TargetAction {
+            LoadFixed, LoadPercentage,
+            PutFixed, PutPercentage
+        };
+
         struct Target {
             ComplexId complex;
+            TargetAction action;
+            union {
+                u32 fixed;
+                f32 percentage;
+            } amount;
+            Item item;
         };
 
 
         private:
         CarriageType type;
         std::vector<HorseType> horses;
+        std::unordered_map<Item, u64> items;
         u64 curr_target_i;
         State state;
 
         f64 yaw, pitch;
         std::vector<Vec<3>> curr_path;
         f64 travelled_dist;
+        f64 load_timer;
         bool moving;
 
 
@@ -126,13 +140,25 @@ namespace houseofatmos::outside {
         bool is_lost() const { return this->state == State::Lost; }
         void make_lost() { this->state = State::Lost; }
 
+        u64 stored_count(Item item) const {
+            auto count = this->items.find(item);
+            if(count == this->items.end()) { return 0; }
+            return count->second;
+        }
+        void add_stored(Item item, u64 amount) { this->items[item] += amount; }
+        void remove_stored(Item item, u64 amount) { this->items[item] -= amount; }
+        void set_stored(Item item, u64 amount) { this->items[item] = amount; }
+        const std::unordered_map<Item, u64>& stored_items() const {
+            return this->items;
+        }
+
         const Target& target() const {
             return this->targets[this->curr_target_i]; 
         }
 
         void update(
             const engine::Window& window,
-            const ComplexBank& complexes, const Terrain& terrain
+            ComplexBank& complexes, const Terrain& terrain
         );
 
         void render(
@@ -183,7 +209,7 @@ namespace houseofatmos::outside {
         
         void update_all(
             const engine::Window& window, 
-            const ComplexBank& complexes, const Terrain& terrain   
+            ComplexBank& complexes, const Terrain& terrain   
         );
 
         void render_all(
