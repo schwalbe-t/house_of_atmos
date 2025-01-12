@@ -56,7 +56,10 @@ namespace houseofatmos::outside {
         const std::vector<Vec<3>>& path, f64 distance, bool* at_end = nullptr
     ) {
         assert(path.size() > 0);
-        if(path.size() == 1) { return path.front(); }
+        if(path.size() == 1) {
+            if(at_end != nullptr) { *at_end = true; }
+            return path.front(); 
+        }
         f64 remaining = std::max(distance, 0.0);
         for(size_t step_i = 0; step_i < path.size() - 1; step_i += 1) {
             const Vec<3>& current = path[step_i];
@@ -86,12 +89,15 @@ namespace houseofatmos::outside {
         this->moving = this->state == State::Travelling;
         if(this->state == State::Travelling) {
             // update position
-            bool at_end;
-            this->travelled_dist += window.delta_time() * carriage_speed;
+            bool at_end = false;
             Vec<3> last_position = this->position;
-            this->position = position_along_path(
-                this->curr_path, this->travelled_dist, &at_end
-            );
+            if(this->target() != nullptr) {
+                this->travelled_dist += window.delta_time() * carriage_speed;
+                this->position = position_along_path(
+                    this->curr_path, this->travelled_dist, &at_end
+                );
+            }
+            this->moving = this->target() != nullptr;
             this->position.y() = terrain.elevation_at(this->position);
             // compute yaw and pitch
             Vec<3> heading = (this->position - last_position).normalized();
@@ -111,7 +117,7 @@ namespace houseofatmos::outside {
         }
         if(this->state == State::Loading) {
             this->load_timer += window.delta_time();
-            if(this->load_timer >= load_time) {
+            if(this->load_timer >= load_time && this->targets.size() > 0) {
                 // do item transfer specified in schedule
                 const Target& target = this->targets[this->curr_target_i];
                 Complex& complex = complexes.get(target.complex);
@@ -403,8 +409,10 @@ namespace houseofatmos::outside {
         Carriage& carriage, 
         const ComplexBank& complexes, const Terrain& terrain
     ) {
-        const Complex& target = complexes.get(carriage.target().complex);
-        auto path = this->find_path_to(carriage.position, target, terrain);
+        const Carriage::Target* target = carriage.target();
+        if(target == nullptr) { return; }
+        const Complex& target_c = complexes.get(target->complex);
+        auto path = this->find_path_to(carriage.position, target_c, terrain);
         if(path.has_value()) {
             carriage.set_path(*path);
         } else if(!carriage.is_lost()) {

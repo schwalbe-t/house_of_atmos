@@ -113,6 +113,7 @@ namespace houseofatmos::outside {
             case Building::Windmill: return "Windmill";
             case Building::Factory: return "Factory";
             case Building::House: return "House";
+            case Building::Stable: return "Stable";
             case Building::Plaza: return "Plaza";
             default: engine::error(
                 "Unhandled 'Building::Type' in 'get_building_name'"
@@ -165,7 +166,251 @@ namespace houseofatmos::outside {
         if(type.workers != 0) {
             output += "\n       workers: " + std::to_string(type.workers);
         }
+        if(building.type == Building::Stable) {
+            output += "\n    (press enter to manage carriages.)";
+        }
         engine::info(output);
+    }
+
+    static std::string get_text_input() {
+        std::cout << "> ";
+        std::string input;
+        std::getline(std::cin, input);
+        return input;
+    }
+
+    static void manage_carriage(
+        CarriageManager& carriages, unsigned long int carr_i,
+        const ComplexBank& complexes
+    ) {
+        Carriage& carriage = carriages.carriages[carr_i];
+        std::string output;
+        output += "===== Carriage #" + std::to_string(carr_i) + " =====";
+        output += "\n    Scheduled stops and their actions by their indices:";
+        for(size_t tgt_i = 0; tgt_i < carriage.targets.size(); tgt_i += 1) {
+            output += "\n[" + std::to_string(tgt_i) + "] ";
+            const Carriage::Target& target = carriage.targets[tgt_i];
+            output += "complex #" + std::to_string(target.complex.index) + ", ";
+            switch(target.action) {
+                case Carriage::LoadFixed: case Carriage::LoadPercentage:
+                    output += "load "; break;
+                case Carriage::PutFixed: case Carriage::PutPercentage:
+                    output += "unload "; break;
+            }
+            switch(target.action) {
+                case Carriage::LoadFixed: case Carriage::PutFixed:
+                    output += std::to_string(target.amount.fixed) + " "; break;
+                case Carriage::LoadPercentage: case Carriage::PutPercentage:
+                    output += std::to_string(target.amount.percentage * 100) + "% of "; break;
+            }
+            output += get_item_name(target.item);
+        }
+        engine::info(output);
+        engine::info("Enter what to do with the carriage ('remove', 'manage'):");
+        std::string carr_action = get_text_input();
+        if(carr_action == "remove") {
+            carriages.carriages.erase(carriages.carriages.begin() + carr_i);
+            engine::info("Removed carriage with index ["
+                + std::to_string(carr_i) + "]. (Please note that this may "
+                "have changed the indices of other carriages.)"
+            );
+            return;
+        }
+        if(carr_action != "manage") {
+            engine::info("Invalid input, cancelled. Press enter to try again.");
+            return;
+        }
+        engine::info(
+            "Enter the position of a stop to manage, "
+            "or enter 'add' to add a new one:"
+        );
+        std::string target_i_str = get_text_input();
+        if(target_i_str == "add") {
+            Carriage::Target target;
+            engine::info("Enter the index of the building complex to stop at:");
+            std::string complex_i_str = get_text_input();
+            unsigned long int complex_i = UINT64_MAX;
+            sscanf(complex_i_str.c_str(), "%lu", &complex_i);
+            if(complexes.get_arbitrary(complex_i) == nullptr) {
+                engine::info("Invalid input, cancelled. Press enter to try again.");
+                return;
+            }
+            target.complex = (ComplexId) { (u32) complex_i };
+            engine::info("Enter whether to load or unload items ('load', 'unload'):");
+            std::string action_str = get_text_input();
+            if(action_str != "load" && action_str != "unload") {
+                engine::info("Invalid input, cancelled. Press enter to try again.");
+                return;
+            }
+            engine::info(
+                "Enter the item to transfer ('barley', 'malt', 'beer', "
+                "'wheat', 'flour', 'bread', 'hematite', 'coal', 'steel', "
+                "'armor', 'tools'):"
+            );
+            std::string item_str = get_text_input();
+            if(item_str == "barley") { target.item = Item::Barley; }
+            else if(item_str == "malt") { target.item = Item::Malt; }
+            else if(item_str == "beer") { target.item = Item::Beer; }
+            else if(item_str == "wheat") { target.item = Item::Wheat; }
+            else if(item_str == "flour") { target.item = Item::Flour; }
+            else if(item_str == "bread") { target.item = Item::Bread; }
+            else if(item_str == "hematite") { target.item = Item::Hematite; }
+            else if(item_str == "coal") { target.item = Item::Coal; }
+            else if(item_str == "steel") { target.item = Item::Steel; }
+            else if(item_str == "armor") { target.item = Item::Armor; }
+            else if(item_str == "tools") { target.item = Item::Tools; }
+            else {
+                engine::info("Invalid input, cancelled. Press enter to try again.");
+                return;
+            }
+            engine::info(
+                "Enter the amount of items to transfer "
+                "(positive, may be a percentage, e.g. '3', '4.1%'):"
+            );
+            std::string amount_str = get_text_input();
+            std::string amount_num_str = amount_str.ends_with("%")
+                ? amount_str.substr(0, amount_str.size() - 1)
+                : amount_str;
+            f64 amount = NAN;
+            sscanf(amount_num_str.c_str(), "%lf", &amount);
+            bool valid = amount != NAN && amount != INFINITY && amount > 0;
+            if(!valid) {
+                engine::info("Invalid input, cancelled. Press enter to try again.");
+                return;
+            }
+            target.action = action_str == "load"
+                ? (amount_str.ends_with("%")
+                    ? Carriage::LoadPercentage
+                    : Carriage::LoadFixed
+                )
+                : (amount_str.ends_with("%")
+                    ? Carriage::PutPercentage
+                    : Carriage::PutFixed
+                );
+            if(amount_str.ends_with("%")) {
+                target.amount.percentage = (f32) amount / 100.0;
+            } else {
+                target.amount.fixed = (u32) amount;
+            }
+            engine::info("Created a new stop at position [" 
+                + std::to_string(carriage.targets.size()) + "]"
+            );
+            carriage.targets.push_back(target);
+            return;
+        }
+        unsigned long int target_i = UINT64_MAX;
+        sscanf(target_i_str.c_str(), "%lu", &target_i);
+        if(target_i >= carriage.targets.size()) {
+            engine::info("Invalid input, cancelled. Press enter to try again.");
+            return;
+        }
+        engine::info("Enter what to do with the scheduled stop "
+            "('swap', 'remove'):" 
+        );
+        std::string tgt_action = get_text_input();
+        if(tgt_action == "remove") {
+            carriage.targets.erase(carriage.targets.begin() + target_i);
+            engine::info("Removed stop with position ["
+                + std::to_string(target_i) + "]. (Please note that this may "
+                "have changed the indices of other stops.)"
+            );
+            return;
+        }
+        if(tgt_action != "swap") {
+            engine::info("Invalid input, cancelled. Press enter to try again.");
+            return;
+        }
+        engine::info("Enter the position of a stop to swap the stop at position ["
+            + std::to_string(target_i) + "] with:"
+        );
+        std::string swap_target_i_str = get_text_input();
+        unsigned long int swap_target_i = UINT64_MAX;
+        sscanf(swap_target_i_str.c_str(), "%lu", &swap_target_i);
+        if(swap_target_i >= carriage.targets.size()) {
+            engine::info("Invalid input, cancelled. Press enter to try again.");
+            return;
+        }
+        std::swap(
+            carriage.targets[target_i], carriage.targets[swap_target_i]
+        );
+        engine::info("Swapped the stops at positions ["
+            + std::to_string(target_i) + "] and ["
+            + std::to_string(swap_target_i) + "]."
+        );
+    }
+
+    static const u64 carriage_buy_cost = 1000;
+    static const u64 carr_spawn_d = 1;
+
+    static void manage_carriages(
+        i64 stable_x, i64 stable_z, const Terrain& terrain,
+        CarriageManager& carriages, Balance& balance, 
+        const ComplexBank& complexes
+    ) {
+        std::string output;
+        output += "===== Carriages =====";
+        output += "\n    All carriages and their targets by their indices:";
+        size_t carr_c = carriages.carriages.size();
+        for(size_t carr_i = 0; carr_i < carr_c; carr_i += 1) {
+            output += "\n[" + std::to_string(carr_i) + "]";
+            const Carriage& carriage = carriages.carriages[carr_i];
+            for(const Carriage::Target& target: carriage.targets) {
+                output += " #" + std::to_string(target.complex.index);
+            }
+        }
+        engine::info(output);
+        engine::info(
+            "Enter the index of a carriage to manage, "
+            "or enter 'add' to create a new one:"
+        );
+        std::string carr_i_str = get_text_input();
+        if(carr_i_str == "add") {
+            Vec<3> pos;
+            bool found_pos = false;
+            const Building::TypeInfo& stable
+                = Building::types[(size_t) Building::Stable];
+            i64 start_x = stable_x - carr_spawn_d;
+            i64 start_z = stable_z - carr_spawn_d;
+            i64 end_x = stable_x + stable.width + carr_spawn_d;
+            i64 end_z = stable_z + stable.height + carr_spawn_d;
+            for(i64 x = start_x; x < end_x; x += 1) {
+                for(i64 z = start_z; z < end_z; z += 1) {
+                    if(x < 0 || (u64) x >= terrain.width_in_tiles()) { continue; }
+                    if(z < 0 || (u64) z >= terrain.height_in_tiles()) { continue; }
+                    u64 chunk_x = (u64) x / terrain.tiles_per_chunk();
+                    u64 chunk_z = (u64) z / terrain.tiles_per_chunk();
+                    const Terrain::ChunkData& chunk = terrain
+                        .chunk_at(chunk_x, chunk_z);
+                    u64 rel_x = (u64) x % terrain.tiles_per_chunk();
+                    u64 rel_z = (u64) z % terrain.tiles_per_chunk();
+                    bool is_obstacle = !chunk.path_at(rel_x, rel_z)
+                        || terrain.building_at(x, z) != nullptr;
+                    if(is_obstacle) { continue; }
+                    pos = Vec<3>(x + 0.5, 0, z + 0.5) * terrain.units_per_tile();
+                    found_pos = true;
+                    break;
+                }
+            }
+            if(!found_pos) {
+                engine::info(
+                    "There is no valid location for a carriage nearby."
+                );
+                return;
+            }
+            if(!balance.pay_coins(carriage_buy_cost)) { return; }
+            engine::info("Created a new carriage with index [" 
+                + std::to_string(carriages.carriages.size()) + "]"
+            );
+            carriages.carriages.push_back((Carriage) { Carriage::Round, pos });
+            return;
+        }
+        unsigned long int carr_i = UINT64_MAX;
+        sscanf(carr_i_str.c_str(), "%lu", &carr_i);
+        if(carr_i >= carriages.carriages.size()) {
+            engine::info("Invalid input, cancelled. Press enter to try again.");
+            return;
+        }
+        manage_carriage(carriages, carr_i, complexes);
     }
 
     void DefaultMode::update(
@@ -175,6 +420,19 @@ namespace houseofatmos::outside {
         (void) scene;
         (void) renderer;
         (void) balance;
+        bool edit_carriage = this->selected.type == Selection::Building
+            && window.was_pressed(engine::Key::Enter);
+        if(edit_carriage) {
+            i64 tile_x = (i64) this->selected.value.building.x; 
+            i64 tile_z = (i64) this->selected.value.building.z; 
+            const Building* building = this->terrain.building_at(tile_x, tile_z);
+            if(building != nullptr && building->type == Building::Stable) {
+                manage_carriages(
+                    tile_x, tile_z, this->terrain, this->carriages, balance,
+                    this->complexes
+                );
+            }
+        }
         if(!window.was_pressed(engine::Button::Left)) { return; }
         auto [s_tile_x, s_tile_z] = this->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer.compute_view_proj(),
@@ -390,13 +648,6 @@ namespace houseofatmos::outside {
     }
 
 
-
-    static std::string get_text_input() {
-        std::cout << "> ";
-        std::string input;
-        std::getline(std::cin, input);
-        return input;
-    }
 
     static void choose_building_type(
         const engine::Window& window, 

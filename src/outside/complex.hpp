@@ -138,6 +138,7 @@ namespace houseofatmos::outside {
         std::optional<ComplexId> closest_to(u64 tile_x, u64 tile_z) const;
         Complex& get(ComplexId complex);
         const Complex& get(ComplexId complex) const;
+        const Complex* get_arbitrary(u64 complex_i) const;
         void delete_complex(ComplexId complex);
 
         void update(const engine::Window& window, Balance& balance);

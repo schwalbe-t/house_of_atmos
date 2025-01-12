@@ -152,8 +152,9 @@ namespace houseofatmos::outside {
             return this->items;
         }
 
-        const Target& target() const {
-            return this->targets[this->curr_target_i]; 
+        const Target* target() const {
+            if(this->targets.size() == 0) { return nullptr; }
+            return &this->targets[this->curr_target_i]; 
         }
 
         void update(

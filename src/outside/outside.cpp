@@ -117,26 +117,6 @@ namespace houseofatmos::outside {
         this->carriages = CarriageManager(
             outside.carriages, buffer, this->terrain
         );
-    
-        // DEBUG ///////////////////
-        Carriage carriage = (Carriage) {
-            Carriage::Round, Vec<3>(253, 0, 244)
-        };
-        Carriage::Target target_a;
-        target_a.complex = (ComplexId) { 0 };
-        target_a.action = Carriage::PutPercentage;
-        target_a.amount.percentage = 1.0;
-        target_a.item = Item::Malt;
-        carriage.targets.push_back(target_a);
-        Carriage::Target target_b;
-        target_b.complex = (ComplexId) { 1 };
-        target_b.action = Carriage::LoadPercentage;
-        target_b.amount.percentage = 1.0;
-        target_b.item = Item::Malt;
-        carriage.targets.push_back(target_b);
-        this->carriages.carriages.clear();
-        this->carriages.carriages.push_back(std::move(carriage));
-        ////////////////////////////
     }
 
     engine::Arena Outside::serialize() const {

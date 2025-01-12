@@ -299,6 +299,11 @@ namespace houseofatmos::outside {
         return this->complexes.at(complex.index);   
     }
 
+    const Complex* ComplexBank::get_arbitrary(u64 complex_i) const {
+        if(complex_i >= this->complexes.size()) { return nullptr; }
+        return &this->complexes[complex_i];   
+    }
+
     void ComplexBank::update(const engine::Window& window, Balance& balance) {
         for(Complex& complex: this->complexes) {
             if(complex.is_free()) { continue; }
