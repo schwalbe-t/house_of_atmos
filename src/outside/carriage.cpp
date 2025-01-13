@@ -81,6 +81,22 @@ namespace houseofatmos::outside {
     static const Vec<3> model_heading = Vec<3>(0, 0, -1);
     static const f64 carriage_speed = 4.0;
     static const f64 load_time = 5.0;
+    static const f64 alignment_points_dist = 1.0;
+
+    static Vec<3> find_heading(
+        f64 travelled_dist, const std::vector<Vec<3>>& curr_path,
+        const Terrain& terrain
+    ) {
+        Vec<3> back = position_along_path(
+            curr_path, travelled_dist - alignment_points_dist
+        );
+        back.y() = terrain.elevation_at(back);
+        Vec<3> front = position_along_path(
+            curr_path, travelled_dist + alignment_points_dist
+        );
+        front.y() = terrain.elevation_at(front);
+        return (front - back).normalized();
+    }
 
     void Carriage::update(
         const engine::Window& window, 
@@ -90,7 +106,6 @@ namespace houseofatmos::outside {
         if(this->state == State::Travelling) {
             // update position
             bool at_end = false;
-            Vec<3> last_position = this->position;
             if(this->target() != nullptr) {
                 this->travelled_dist += window.delta_time() * carriage_speed;
                 this->position = position_along_path(
@@ -100,7 +115,9 @@ namespace houseofatmos::outside {
             this->moving = this->target() != nullptr;
             this->position.y() = terrain.elevation_at(this->position);
             // compute yaw and pitch
-            Vec<3> heading = (this->position - last_position).normalized();
+            Vec<3> heading = find_heading(
+                this->travelled_dist, this->curr_path, terrain
+            );
             f64 yaw_cross = model_heading.x() * heading.z()
                 - model_heading.z() * heading.x();
             this->yaw = atan2(yaw_cross, model_heading.dot(heading));
@@ -248,35 +265,35 @@ namespace houseofatmos::outside {
     }
 
 
-    static u64 manhattan_distance(u64 a_x, u64 a_z, u64 b_x, u64 b_z) {
-        return (u64) llabs((i64) a_x - (u64) b_x) 
-            + (u64) llabs((i64) a_z - (u64) b_z);
-    }
+    struct Neighbour {
+        i64 ox, oz;
+        f64 distance;
+    };
 
-    static const std::array<std::pair<i64, i64>, 4> neighbour_t_offsets = {
-        std::make_pair( 0, +1),
-        std::make_pair(-1,  0),
-        std::make_pair(+1,  0),
-        std::make_pair( 0, -1)
+    static const std::array<Neighbour, 4> neighbour_tiles = {
+        (Neighbour) {  0, +1, 1.0 },
+        (Neighbour) { -1,  0, 1.0 },
+        (Neighbour) { +1,  0, 1.0 },
+        (Neighbour) {  0, -1, 1.0 }
     };
 
     struct SearchedTile {
         u64 x, z;
         bool explored;
         std::optional<u64> parent;
-        u64 start_dist; // manhattan distance to start tile in tiles
-        u64 target_dist; // manhattan distance to target in tiles
+        f64 start_dist; // cartesian distance to start tile in tiles
+        f64 target_dist; // cartesian distance to target in tiles
     };
 
     static u64 cheapest_explorable_tile(
         const std::vector<SearchedTile>& explorable
     ) {
-        u64 cheapest_cost = UINT64_MAX;
+        f64 cheapest_cost = UINT64_MAX;
         u64 cheapest_i = UINT64_MAX;
         for(u64 search_i = 0; search_i < explorable.size(); search_i += 1) {
             const SearchedTile& searched = explorable[search_i];
             if(searched.explored) { continue; }
-            u64 search_cost = searched.start_dist + searched.target_dist;
+            f64 search_cost = searched.start_dist + searched.target_dist;
             if(search_cost >= cheapest_cost) { continue; }
             cheapest_cost = search_cost;
             cheapest_i = search_i;
@@ -306,18 +323,23 @@ namespace houseofatmos::outside {
         return (dist_x + dist_z) <= max_loading_distance;
     }
 
+    static const f64 max_path_var = 0.05;
+
     static std::vector<Vec<3>> build_found_path(
         const Vec<3>& start,
         const std::vector<SearchedTile>& explorable, 
         i64 target_tile_i,
         const Terrain& terrain
     ) {
+        StatefulRNG rng;
         std::vector<Vec<3>> result;
         i64 current_i = target_tile_i;
         for(;;) {
             const SearchedTile& current = explorable[current_i];
             if(!current.parent.has_value()) { break; }
-            Vec<3> position = Vec<3>(current.x + 0.5, 0, current.z + 0.5)
+            f64 ox = 0.5 + (rng.next_f64() * 2 - 1) * max_path_var;
+            f64 oz = 0.5 + (rng.next_f64() * 2 - 1) * max_path_var;
+            Vec<3> position = Vec<3>(current.x + ox, 0, current.z + oz)
                 * terrain.units_per_tile();
             result.insert(result.begin(), position);
             current_i = *current.parent;
@@ -348,8 +370,8 @@ namespace houseofatmos::outside {
         // keep a list of tiles we can explore and add the start tile to it
         std::vector<SearchedTile> explorable;
         explorable.push_back((SearchedTile) {
-            start_x, start_z, false, std::nullopt, 0, 
-            manhattan_distance(start_x, start_z, target_x, target_z)
+            start_x, start_z, false, std::nullopt, 0,
+            (Vec<3>(target_x, 0, target_z) - Vec<3>(start_x, 0, start_z)).len()
         });
         // repeatedly explore the cheapest tile
         for(;;) {
@@ -368,14 +390,14 @@ namespace houseofatmos::outside {
                 return build_found_path(start, explorable, current_i, terrain);
             }
             // compute data about neighbours
-            for(const auto& [neighbour_ox, neighbour_oz]: neighbour_t_offsets) {
+            for(const Neighbour& neighbour: neighbour_tiles) {
                 // compute position of neighbour
-                i64 neighbour_x = (i64) current.x + neighbour_ox;
-                i64 neighbour_z = (i64) current.z + neighbour_oz;
+                i64 neighbour_x = (i64) current.x + neighbour.ox;
+                i64 neighbour_z = (i64) current.z + neighbour.oz;
                 u64 neighbour_fo = (u64) neighbour_x 
                     + terrain.width_in_tiles() * (u64) neighbour_z;
-                u64 start_dist_over_current = current.start_dist
-                    + abs(neighbour_ox) + abs(neighbour_oz);
+                f64 start_dist_over_current = current.start_dist
+                    + neighbour.distance;
                 // check if neighbour is reachable
                 bool reachable = neighbour_x >= 0 
                     && (u64) neighbour_x < terrain.width_in_tiles()
@@ -389,18 +411,20 @@ namespace houseofatmos::outside {
                 );
                 if(neighbour_i == UINT64_MAX) {
                     neighbour_i = explorable.size();
+                    Vec<3> to_target = Vec<3>(target_x, 0, target_z)
+                        - Vec<3>(neighbour_x, 0, neighbour_z);
                     explorable.push_back((SearchedTile) {
                         (u64) neighbour_x, (u64) neighbour_z, false,
                         current_i, start_dist_over_current,
-                        manhattan_distance(start_x, start_z, target_x, target_z)
+                        to_target.len()
                     });
                 }
                 // adjust start distance and parent of neighbour if needed
-                SearchedTile& neighbour = explorable[neighbour_i];
-                if(neighbour.explored) { continue; }
-                if(neighbour.start_dist < start_dist_over_current) { continue; }
-                neighbour.start_dist = start_dist_over_current;
-                neighbour.parent = current_i;
+                SearchedTile& neighbour_sd = explorable[neighbour_i];
+                if(neighbour_sd.explored) { continue; }
+                if(neighbour_sd.start_dist < start_dist_over_current) { continue; }
+                neighbour_sd.start_dist = start_dist_over_current;
+                neighbour_sd.parent = current_i;
             }
         }
     }
