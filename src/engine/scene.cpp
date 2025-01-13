@@ -7,7 +7,7 @@
 namespace houseofatmos::engine {
 
     std::vector<char> GenericResource::read_bytes(const std::string& path) {
-        auto stream = std::ifstream(path);
+        auto stream = std::ifstream(path, std::ios::binary);
         if(stream.fail()) {
             error("The file '" + path + "' could not be read");
         }
@@ -16,7 +16,7 @@ namespace houseofatmos::engine {
     }
 
     std::string GenericResource::read_string(const std::string& path) {
-        auto stream = std::ifstream(path);
+        auto stream = std::ifstream(path, std::ios::binary);
         if(stream.fail()) {
             error("The file '" + path + "' could not be read");
         }
