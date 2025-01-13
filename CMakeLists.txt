@@ -40,8 +40,9 @@ target_link_libraries(
     house_of_atmos PRIVATE
     ${GLFW_LIBRARIES}
     ${OpenAL_LIBRARIES}
+    -static
 )
 
 target_compile_features(house_of_atmos PRIVATE cxx_std_20)
 # target_compile_options(house_of_atmos PRIVATE -g -Wall -Wextra -O0)
-target_compile_options(house_of_atmos PRIVATE -Wall -Wextra -O3 -static-libgcc -static-libstdc++)
+target_compile_options(house_of_atmos PRIVATE -Wall -Wextra -O3)
