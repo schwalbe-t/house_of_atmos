@@ -19,6 +19,7 @@ namespace houseofatmos::engine::math {
         f64 next_f64();
         u64 next_u64();
         i64 next_i64();
+        bool next_bool() { return this->next_f64() < 0.5; }
     };
 
 }

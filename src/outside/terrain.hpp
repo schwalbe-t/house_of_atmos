@@ -187,6 +187,17 @@ namespace houseofatmos::outside {
             i64 tile_x, i64 tile_z, 
             u64* chunk_x_out = nullptr, u64* chunk_z_out = nullptr
         ) const;
+        bool path_at(i64 tile_x, i64 tile_z) const {
+            if(tile_x < 0 || tile_z < 0) { return false; }
+            if((u64) tile_x >= this->width) { return false; }
+            if((u64) tile_z >= this->height) { return false; }
+            u64 chunk_x = (u64) tile_x / this->chunk_tiles;
+            u64 chunk_z = (u64) tile_z / this->chunk_tiles;
+            const Terrain::ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+            u64 rel_x = (u64) tile_x % this->chunk_tiles;
+            u64 rel_z = (u64) tile_z % this->chunk_tiles;
+            return chunk.path_at(rel_x, rel_z);
+        }
         bool valid_building_location(
             i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
             const Building::TypeInfo& building_type
@@ -198,8 +209,8 @@ namespace houseofatmos::outside {
         ) const;
         i64 compute_unemployment() const;
 
-        void generate_elevation(u32 seed = random_init());
-        void generate_foliage(u32 seed = random_init());
+        void generate_elevation(u32 seed = (u32) random_init());
+        void generate_foliage(u32 seed = (u32) random_init());
 
         bool chunk_in_draw_distance(u64 chunk_x, u64 chunk_z) const;
         bool chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const;

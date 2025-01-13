@@ -476,26 +476,30 @@ namespace houseofatmos::outside {
         for(u64 chunk_x = start_x; chunk_x <= end_x; chunk_x += 1) {
             for(u64 chunk_z = start_z; chunk_z <= end_z; chunk_z += 1) {
                 const ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
-                Vec<3> chunk_offset_tiles = Vec<3>(chunk_x, 0, chunk_z) 
-                    * this->tiles_per_chunk();
+                u64 chunk_tile_x = chunk_x * this->tiles_per_chunk();
+                u64 chunk_tile_z = chunk_z * this->tiles_per_chunk();
                 for(const Building& building: chunk.buildings) {
                     const Building::TypeInfo& type = building.get_type_info();
-                    Vec<3> offset_tiles = chunk_offset_tiles 
-                        + Vec<3>(building.x, 0, building.z)
+                    u64 tile_x = chunk_tile_x + building.x;
+                    u64 tile_z = chunk_tile_z + building.z;
+                    Vec<3> offset_tiles = Vec<3>(tile_x, 0, tile_z)
                         + Vec<3>(type.width / 2.0, 0, type.height / 2.0);
+                    Vec<3> offset = offset_tiles * this->units_per_tile()
+                        + Vec<3>(0, this->elevation_at(tile_x, tile_z), 0);
                     for(const RelCollider& collider: type.colliders) {
                         bool collision = collider
-                            .at(offset_tiles * this->units_per_tile())
+                            .at(offset)
                             .collides_with(player_collider);
                         if(collision) { return false; }
                     }
                 }
                 for(const Foliage& foliage: chunk.foliage) {
                     const Foliage::TypeInfo& type = foliage.get_type_info();
-                    Vec<3> offset = (chunk_offset_tiles * this->units_per_tile())
-                        + Vec<3>(foliage.x, 0, foliage.z);
+                    u64 x = chunk_tile_x * this->units_per_tile() + foliage.x;
+                    u64 z = chunk_tile_z * this->units_per_tile() + foliage.z;
+                    i64 h = this->elevation_at(Vec<3>(x, 0, z));
                     bool collision = type.collider
-                        .at(offset)
+                        .at(Vec<3>(x, h, z))
                         .collides_with(player_collider);
                     if(collision) { return false; }
                 }

@@ -270,7 +270,12 @@ namespace houseofatmos::outside {
         f64 distance;
     };
 
-    static const std::array<Neighbour, 4> neighbour_tiles = {
+    static const std::array<Neighbour, 8> neighbour_tiles = {
+        (Neighbour) { +1, +1, 1.4 },
+        (Neighbour) { -1, +1, 1.4 },
+        (Neighbour) { +1, -1, 1.4 },
+        (Neighbour) { -1, -1, 1.4 },
+
         (Neighbour) {  0, +1, 1.0 },
         (Neighbour) { -1,  0, 1.0 },
         (Neighbour) { +1,  0, 1.0 },
