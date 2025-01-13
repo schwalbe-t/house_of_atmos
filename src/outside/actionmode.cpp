@@ -180,7 +180,7 @@ namespace houseofatmos::outside {
     }
 
     static void manage_carriage(
-        CarriageManager& carriages, unsigned long int carr_i,
+        CarriageManager& carriages, unsigned long long int carr_i,
         const ComplexBank& complexes
     ) {
         Carriage& carriage = carriages.carriages[carr_i];
@@ -229,8 +229,8 @@ namespace houseofatmos::outside {
             Carriage::Target target;
             engine::info("Enter the index of the building complex to stop at:");
             std::string complex_i_str = get_text_input();
-            unsigned long int complex_i = UINT64_MAX;
-            sscanf(complex_i_str.c_str(), "%lu", &complex_i);
+            unsigned long long int complex_i = ULLONG_MAX;
+            sscanf(complex_i_str.c_str(), "%llu", &complex_i);
             if(complexes.get_arbitrary(complex_i) == nullptr) {
                 engine::info("Invalid input, cancelled. Press enter to try again.");
                 return;
@@ -298,8 +298,8 @@ namespace houseofatmos::outside {
             carriage.targets.push_back(target);
             return;
         }
-        unsigned long int target_i = UINT64_MAX;
-        sscanf(target_i_str.c_str(), "%lu", &target_i);
+        unsigned long long int target_i = ULLONG_MAX;
+        sscanf(target_i_str.c_str(), "%llu", &target_i);
         if(target_i >= carriage.targets.size()) {
             engine::info("Invalid input, cancelled. Press enter to try again.");
             return;
@@ -324,8 +324,8 @@ namespace houseofatmos::outside {
             + std::to_string(target_i) + "] with:"
         );
         std::string swap_target_i_str = get_text_input();
-        unsigned long int swap_target_i = UINT64_MAX;
-        sscanf(swap_target_i_str.c_str(), "%lu", &swap_target_i);
+        unsigned long long int swap_target_i = ULLONG_MAX;
+        sscanf(swap_target_i_str.c_str(), "%llu", &swap_target_i);
         if(swap_target_i >= carriage.targets.size()) {
             engine::info("Invalid input, cancelled. Press enter to try again.");
             return;
@@ -404,8 +404,8 @@ namespace houseofatmos::outside {
             carriages.carriages.push_back((Carriage) { Carriage::Round, pos });
             return;
         }
-        unsigned long int carr_i = UINT64_MAX;
-        sscanf(carr_i_str.c_str(), "%lu", &carr_i);
+        unsigned long long int carr_i = ULLONG_MAX;
+        sscanf(carr_i_str.c_str(), "%llu", &carr_i);
         if(carr_i >= carriages.carriages.size()) {
             engine::info("Invalid input, cancelled. Press enter to try again.");
             return;
