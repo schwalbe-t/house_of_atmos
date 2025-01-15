@@ -1,7 +1,7 @@
 
 set(REQUIRED_PACKAGES
     OpenGL
-    glfw
+    glfw3
     OpenAL
 )
 

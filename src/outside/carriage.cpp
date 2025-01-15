@@ -245,13 +245,14 @@ namespace houseofatmos::outside {
 
 
 
-    CarriageManager::CarriageManager(const Terrain& terrain) {
+    CarriageManager::CarriageManager(const Terrain& terrain, f64 draw_distance) {
         this->fill_obstacle_data(terrain);
+        this->draw_distance = draw_distance;
     }
 
     CarriageManager::CarriageManager(
         const Serialized& serialized, const engine::Arena& buffer,
-        const Terrain& terrain
+        const Terrain& terrain, f64 draw_distance
     ) {
         std::vector<Carriage::Serialized> carriages;
         buffer.copy_array_at_into(
@@ -263,6 +264,7 @@ namespace houseofatmos::outside {
             this->carriages.push_back(Carriage(carriage, buffer));
         }
         this->fill_obstacle_data(terrain);
+        this->draw_distance = draw_distance;
     }
 
 
@@ -511,11 +513,13 @@ namespace houseofatmos::outside {
     }
 
 
-    void CarriageManager::render_all(
-        Renderer& renderer, engine::Scene& scene, 
+    void CarriageManager::render_all_around(
+        const Vec<3>& observer, Renderer& renderer, engine::Scene& scene, 
         const engine::Window& window
     ) {
         for(Carriage& carriage: this->carriages) {
+            f64 distance = (carriage.position - observer).len();
+            if(distance > this->draw_distance) { continue; }
             carriage.render(renderer, scene, window);
         }
     }

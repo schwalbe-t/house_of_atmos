@@ -8,43 +8,14 @@ namespace houseofatmos::outside {
     static f64 stone_min_height_diff = 2.5;
 
 
-    static Vec<3> compute_barycentric(
-        const Vec<3>& a, const Vec<3>& b, const Vec<3>& c, const Vec<3>& p
-    ) {
-        Vec<3> v_0 = b - a;
-        Vec<3> v_1 = c - a;
-        Vec<3> v_2 = p - a;
-        f64 d_00 = v_0.dot(v_0);
-        f64 d_01 = v_0.dot(v_1);
-        f64 d_11 = v_1.dot(v_1);
-        f64 d_20 = v_2.dot(v_0);
-        f64 d_21 = v_2.dot(v_1);
-        f64 denom = (d_00 * d_11) - (d_01 * d_01);
-        f64 r_y = ((d_11 * d_20) - (d_01 * d_21)) / denom;
-        f64 r_z = ((d_00 * d_21) - (d_01 * d_20)) / denom;
-        return Vec<3>(1.0 - r_y - r_z, r_y, r_z);
-    }
-
-    static std::pair<f64, f64> compute_elevation(
-        const Vec<3>& a, const Vec<3>& b, const Vec<3>& c, const Vec<3>& p
-    ) {
-        Vec<3> bc = compute_barycentric(a, b, c, p);
-        f64 elevation = std::max(bc.x(), 0.0) * a.y()
-            + std::max(bc.y(), 0.0) * b.y()
-            + std::max(bc.z(), 0.0) * c.y();
-        f64 deviation = (0.0 - std::min(bc.x(), 0.0))
-            + (0.0 - std::min(bc.y(), 0.0))
-            + (0.0 - std::min(bc.z(), 0.0));
-        return { deviation, elevation };
-    }
-
     f64 Terrain::elevation_at(const Vec<3>& pos) const {
         if(pos.x() < 0 || pos.z() < 0) { return 0.0; }
         u64 left = (u64) (pos.x() / this->tile_size);
         u64 top = (u64) (pos.z() / this->tile_size);
         u64 right = left + 1;
         u64 bottom = top + 1;
-        if(left >= this->width || top >= this->height) { return 0.0; }
+        if(left >= this->width * this->tile_size) { return 0.0; }
+        if(top >= this->height * this->tile_size) { return 0.0; }
         Vec<3> tl = {
             left * this->tile_size, 
             this->elevation_at(left, top), 
@@ -65,23 +36,11 @@ namespace houseofatmos::outside {
             this->elevation_at(right, bottom), 
             bottom * this->tile_size 
         };
-        f64 tl_br_height_diff = fabs(tl.y() - br.y());
-        f64 tr_bl_height_diff = fabs(tr.y() - bl.y());
-        if(tr_bl_height_diff > tl_br_height_diff) {
-            // tl---tr
-            //  | \ |
-            // bl---br
-            auto [bl_dev, bl_elev] = compute_elevation(tl, bl, br, pos);
-            auto [tr_dev, tr_elev] = compute_elevation(tl, br, tr, pos);
-            return bl_dev < tr_dev? bl_elev : tr_elev;
-        } else {
-            // tl---tr
-            //  | / |
-            // bl---br
-            auto [tl_dev, tl_elev] = compute_elevation(tl, bl, tr, pos);
-            auto [br_dev, br_elev] = compute_elevation(tr, bl, br, pos);
-            return tl_dev < br_dev? tl_elev : br_elev;
-        }
+        f64 rel_z = (pos.z() - tl.z()) / this->tile_size;
+        f64 l = rel_z * (bl.y() - tl.y()) + tl.y();
+        f64 r = rel_z * (br.y() - tr.y()) + tr.y();
+        f64 rel_x = (pos.x() - tl.x()) / this->tile_size;
+        return (r - l) * rel_x + l;
     }
 
 

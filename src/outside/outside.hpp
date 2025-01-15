@@ -25,14 +25,16 @@ namespace houseofatmos::outside {
 
         static inline const char* const save_location = "savegame.bin"; 
 
-        static inline const i64 draw_distance = 1;
         static inline const u64 units_per_tile = 5;
         static inline const u64 tiles_per_chunk = 8;
+        static inline const i64 draw_distance_ch = 1;
+        static inline const i64 draw_distance_un 
+            = draw_distance_ch * tiles_per_chunk * units_per_tile;
 
 
         Renderer renderer;
         Terrain terrain = Terrain(
-            256, 256, draw_distance, units_per_tile, tiles_per_chunk
+            256, 256, draw_distance_ch, units_per_tile, tiles_per_chunk
         );
         ComplexBank complexes;
         Player player;

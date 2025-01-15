@@ -226,7 +226,9 @@ namespace houseofatmos::outside {
         this->action_mode = std::make_unique<DefaultMode>(
             this->terrain, this->complexes, this->carriages
         );
-        this->carriages = CarriageManager(this->terrain);
+        this->carriages = CarriageManager(
+            this->terrain, Outside::draw_distance_un
+        );
         generate_map(
             random_init(), 
             this->terrain, this->player, this->balance, this->complexes
@@ -301,7 +303,9 @@ namespace houseofatmos::outside {
         this->terrain.load_chunks_around(this->player.position);
         this->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->player.render(*this, this->renderer);
-        this->carriages.render_all(this->renderer, *this, window);
+        this->carriages.render_all_around(
+            this->player.position, this->renderer, *this, window
+        );
         this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
     }
@@ -312,7 +316,7 @@ namespace houseofatmos::outside {
         const auto& outside = buffer.value_at<Outside::Serialized>(0);
         this->terrain = Terrain(
             outside.terrain, 
-            Outside::draw_distance, Outside::units_per_tile, Outside::tiles_per_chunk,
+            Outside::draw_distance_ch, Outside::units_per_tile, Outside::tiles_per_chunk,
             buffer
         );
         this->complexes = ComplexBank(outside.complexes, buffer);
@@ -322,7 +326,7 @@ namespace houseofatmos::outside {
         );
         this->balance = outside.balance;
         this->carriages = CarriageManager(
-            outside.carriages, buffer, this->terrain
+            outside.carriages, buffer, this->terrain, Outside::draw_distance_un
         );
     }
 

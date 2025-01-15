@@ -22,7 +22,7 @@ namespace houseofatmos::outside {
         static inline const std::vector<TypeInfo> types = {
             /* Grass */ {
                 { "res/foliage/grass.glb", Renderer::model_attribs },
-                RelCollider({ 0, 0, 0 }, { 0, 0, 0 }),
+                RelCollider::none(),
                 5,
                 1
             },

@@ -833,12 +833,10 @@ namespace houseofatmos::outside {
             (u8) (tile_z % terrain.tiles_per_chunk()),
             complex_id
         });
-        i64 start_x = (i64) tile_x - (i64) type_info.width / 2;
-        i64 end_x = (i64) tile_x + (i64) ceil(type_info.width / 2.0);
-        i64 start_z = (i64) tile_z - (i64) type_info.height / 2;
-        i64 end_z = (i64) tile_z + (i64) ceil(type_info.height / 2.0);
-        for(i64 u_tile_x = start_x; u_tile_x < end_x; u_tile_x += 1) {
-            for(i64 u_tile_z = start_z; u_tile_z < end_z; u_tile_z += 1) {
+        i64 end_x = (i64) (tile_x + type_info.width);
+        i64 end_z = (i64) (tile_z + type_info.height);
+        for(i64 u_tile_x = (i64) tile_x; u_tile_x < end_x; u_tile_x += 1) {
+            for(i64 u_tile_z = (i64) tile_z; u_tile_z < end_z; u_tile_z += 1) {
                 terrain.remove_foliage_at(u_tile_x, u_tile_z);
             }
         }

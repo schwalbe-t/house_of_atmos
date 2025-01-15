@@ -181,6 +181,7 @@ namespace houseofatmos::outside {
 
         private:
         std::vector<u8> obstacle_tiles;
+        f64 draw_distance = INFINITY;
 
         void fill_obstacle_data(const Terrain& terrain);
 
@@ -189,10 +190,10 @@ namespace houseofatmos::outside {
         std::vector<Carriage> carriages;
 
         CarriageManager() {}
-        CarriageManager(const Terrain& terrain);
+        CarriageManager(const Terrain& terrain, f64 draw_distance);
         CarriageManager(
             const Serialized& serialized, const engine::Arena& buffer,
-            const Terrain& terrain
+            const Terrain& terrain, f64 draw_distance
         );
 
         std::optional<std::vector<Vec<3>>> find_path_to(
@@ -213,8 +214,8 @@ namespace houseofatmos::outside {
             ComplexBank& complexes, const Terrain& terrain   
         );
 
-        void render_all(
-            Renderer& renderer, engine::Scene& scene, 
+        void render_all_around(
+            const Vec<3>& observer, Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window
         );
 

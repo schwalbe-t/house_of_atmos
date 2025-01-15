@@ -41,6 +41,11 @@ namespace houseofatmos {
             this->size = size;
         }
 
+        static RelCollider none() {
+            Vec<3> inf = Vec<3>(INFINITY, INFINITY, INFINITY);
+            return RelCollider(inf, inf);
+        }
+
         AbsCollider at(const Vec<3>& position) const {
             Vec<3> start = position + this->offset;
             return (AbsCollider) { start, start + this->size };
