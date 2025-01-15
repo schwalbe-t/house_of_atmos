@@ -178,8 +178,10 @@ namespace houseofatmos::outside {
 
 
     void Carriage::render(
-        Renderer& renderer, engine::Scene& scene, 
-        const engine::Window& window
+        const Renderer& renderer, engine::Scene& scene, 
+        const engine::Window& window,
+        bool wireframe,
+        const engine::Texture* override_texture
     ) {
         CarriageTypeInfo carriage_info = Carriage::carriage_types
             .at((size_t) this->type);
@@ -207,7 +209,9 @@ namespace houseofatmos::outside {
                 * Mat<4>::translate(carriage_info.carriage_offset);
             renderer.render(
                 horse_model, std::array { horse_transform },
-                horse_animation, timestamp, false, &horse_texture
+                horse_animation, timestamp, 
+                wireframe, 
+                override_texture == nullptr? &horse_texture : override_texture
             );
         }
         // render carriage
@@ -226,7 +230,8 @@ namespace houseofatmos::outside {
             * carriage_animation.length();
         renderer.render(
             carriage_model, std::array { carriage_transform },
-            carriage_animation, timestamp
+            carriage_animation, timestamp,
+            wireframe, override_texture
         );
     }
 
@@ -514,14 +519,29 @@ namespace houseofatmos::outside {
 
 
     void CarriageManager::render_all_around(
-        const Vec<3>& observer, Renderer& renderer, engine::Scene& scene, 
-        const engine::Window& window
+        const Vec<3>& observer, const Renderer& renderer, 
+        engine::Scene& scene, const engine::Window& window
     ) {
         for(Carriage& carriage: this->carriages) {
             f64 distance = (carriage.position - observer).len();
             if(distance > this->draw_distance) { continue; }
             carriage.render(renderer, scene, window);
         }
+    }
+
+
+    static const f64 max_selection_dist = 0.2;
+    
+    std::optional<size_t> CarriageManager::find_selected_carriage(
+        Vec<2> cursor_pos_ndc, const Renderer& renderer
+    ) const {
+        for(size_t carr_i = 0; carr_i < this->carriages.size(); carr_i += 1) {
+            const Carriage& carriage = this->carriages[carr_i];
+            Vec<2> pos_ndc = renderer.world_to_ndc(carriage.position);
+            f64 dist = (pos_ndc - cursor_pos_ndc).len();
+            if(dist <= max_selection_dist) { return carr_i; } 
+        }
+        return std::nullopt;
     }
 
 

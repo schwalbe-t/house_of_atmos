@@ -93,8 +93,8 @@ namespace houseofatmos::outside {
             output += std::to_string(freq) + " " + get_item_name(item);
             had_output = true;
         }
-        output += "\n         storage: ";
         if(!had_output) { output += "<none>"; }
+        output += "\n         storage: ";
         bool had_stored = false;
         for(const auto& [item, count]: complex.stored_items()) {
             if(count == 0) { continue; }
@@ -179,33 +179,67 @@ namespace houseofatmos::outside {
         return input;
     }
 
+    static std::string display_scheduled_stop(
+        const Carriage& carriage, size_t tgt_i
+    ) {
+        std::string output;
+        output += "[" + std::to_string(tgt_i) + "] ";
+        const Carriage::Target& target = carriage.targets[tgt_i];
+        output += "complex #" + std::to_string(target.complex.index) + ", ";
+        switch(target.action) {
+            case Carriage::LoadFixed: case Carriage::LoadPercentage:
+                output += "load "; break;
+            case Carriage::PutFixed: case Carriage::PutPercentage:
+                output += "unload "; break;
+        }
+        switch(target.action) {
+            case Carriage::LoadFixed: case Carriage::PutFixed:
+                output += std::to_string(target.amount.fixed) + " "; break;
+            case Carriage::LoadPercentage: case Carriage::PutPercentage:
+                output += std::to_string(target.amount.percentage * 100) + "% of "; break;
+        }
+        output += get_item_name(target.item);
+        return output;
+    }
+
+    static void print_carriage_info(
+        const CarriageManager& carriages, size_t carr_i
+    ) {
+        const Carriage& carriage = carriages.carriages[carr_i];
+        std::string output;
+        output += "===== Carriage #" + std::to_string(carr_i) + " =====";
+        output += "\n       schedule:";
+        for(size_t tgt_i = 0; tgt_i < carriage.targets.size(); tgt_i += 1) {
+            output += "\n        " + display_scheduled_stop(carriage, tgt_i);
+        }
+        output += "\n    destination: ";
+        if(carriage.is_lost()) {
+             output += "<unable to find path!> ";
+        }
+        if(carriage.has_path()) {
+            output += "\n        " 
+                + display_scheduled_stop(carriage, *carriage.target_i());
+        } else {
+            output += "<none>";
+        }
+        output += "\n        storage: ";
+        bool had_stored = false;
+        for(const auto& [item, count]: carriage.stored_items()) {
+            if(count == 0) { continue; }
+            if(had_stored) { output += ", "; }
+            output += std::to_string(count) + " " + get_item_name(item);
+            had_stored = true;
+        }
+        if(!had_stored) { output += "<none>"; }
+        engine::info(output);
+    }
+
     static void manage_carriage(
         CarriageManager& carriages, unsigned long long int carr_i,
         const ComplexBank& complexes
     ) {
+        print_carriage_info(carriages, (size_t) carr_i);
         Carriage& carriage = carriages.carriages[carr_i];
-        std::string output;
-        output += "===== Carriage #" + std::to_string(carr_i) + " =====";
-        output += "\n    Scheduled stops and their actions by their indices:";
-        for(size_t tgt_i = 0; tgt_i < carriage.targets.size(); tgt_i += 1) {
-            output += "\n[" + std::to_string(tgt_i) + "] ";
-            const Carriage::Target& target = carriage.targets[tgt_i];
-            output += "complex #" + std::to_string(target.complex.index) + ", ";
-            switch(target.action) {
-                case Carriage::LoadFixed: case Carriage::LoadPercentage:
-                    output += "load "; break;
-                case Carriage::PutFixed: case Carriage::PutPercentage:
-                    output += "unload "; break;
-            }
-            switch(target.action) {
-                case Carriage::LoadFixed: case Carriage::PutFixed:
-                    output += std::to_string(target.amount.fixed) + " "; break;
-                case Carriage::LoadPercentage: case Carriage::PutPercentage:
-                    output += std::to_string(target.amount.percentage * 100) + "% of "; break;
-            }
-            output += get_item_name(target.item);
-        }
-        engine::info(output);
         engine::info("Enter what to do with the carriage ('remove', 'manage'):");
         std::string carr_action = get_text_input();
         if(carr_action == "remove") {
@@ -349,7 +383,7 @@ namespace houseofatmos::outside {
     ) {
         std::string output;
         output += "===== Carriages =====";
-        output += "\n    All carriages and their targets by their indices:";
+        output += "\n    all carriages and their targets by their indices:";
         size_t carr_c = carriages.carriages.size();
         for(size_t carr_i = 0; carr_i < carr_c; carr_i += 1) {
             output += "\n[" + std::to_string(carr_i) + "]";
@@ -420,9 +454,9 @@ namespace houseofatmos::outside {
         (void) scene;
         (void) renderer;
         (void) balance;
-        bool edit_carriage = this->selected.type == Selection::Building
+        bool edit_carriages = this->selected.type == Selection::Building
             && window.was_pressed(engine::Key::Enter);
-        if(edit_carriage) {
+        if(edit_carriages) {
             i64 tile_x = (i64) this->selected.value.building.x; 
             i64 tile_z = (i64) this->selected.value.building.z; 
             const Building* building = this->terrain.building_at(tile_x, tile_z);
@@ -434,9 +468,16 @@ namespace houseofatmos::outside {
             }
         }
         if(!window.was_pressed(engine::Button::Left)) { return; }
+        std::optional<size_t> carriage_i = this->carriages
+            .find_selected_carriage(window.cursor_pos_ndc(), renderer);
+        if(carriage_i.has_value()) {
+            this->selected.type = Selection::Carriage;
+            this->selected.value.carriage = *carriage_i;
+            print_carriage_info(this->carriages, *carriage_i);
+            return;
+        }
         auto [s_tile_x, s_tile_z] = this->terrain.find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(),
-            Vec<3>(0.5, 0, 0.5)
+            window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
         u64 s_chunk_x, s_chunk_z;
         Building* s_building = this->terrain.building_at(
@@ -477,6 +518,8 @@ namespace houseofatmos::outside {
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
     ) {
+        const engine::Texture& wireframe_texture = scene
+            .get<engine::Texture>(ActionMode::wireframe_info_texture);
         switch(this->selected.type) {
             case Selection::None: break;
             case Selection::Complex: {
@@ -498,8 +541,6 @@ namespace houseofatmos::outside {
                         .building_transform(*building, chunk_x, chunk_z);
                     inst[building->type].push_back(transform);
                 }
-                const engine::Texture& wireframe_texture = scene
-                    .get<engine::Texture>(ActionMode::wireframe_info_texture);
                 for(const auto& [type, instances]: inst) {
                     const Building::TypeInfo& type_info = Building::types
                         .at((size_t) type);
@@ -518,11 +559,16 @@ namespace houseofatmos::outside {
                 const Building::TypeInfo& type_info = building->get_type_info();
                 Mat<4> transform = this->terrain
                     .building_transform(*building, chunk_x, chunk_z);
-                const engine::Texture& wireframe_texture = scene
-                    .get<engine::Texture>(ActionMode::wireframe_info_texture);
                 type_info.render_buildings(
                     window, scene, renderer,
                     std::array { transform }, true, &wireframe_texture
+                );
+            } break;
+            case Selection::Carriage: {
+                Carriage& carriage = this->carriages
+                    .carriages[this->selected.value.carriage];
+                carriage.render(
+                    renderer, scene, window, true, &wireframe_texture
                 );
             } break;
         }
@@ -580,8 +626,7 @@ namespace houseofatmos::outside {
         (void) scene;
         (void) renderer;
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(),
-            Vec<3>(0, 0, 0)
+            window.cursor_pos_ndc(), renderer, Vec<3>(0, 0, 0)
         );
         this->selected_x = tile_x;
         this->selected_z = tile_z;
@@ -852,7 +897,7 @@ namespace houseofatmos::outside {
         const Building::TypeInfo& type_info = Building::types
             .at((size_t) this->selected_type);
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(),
+            window.cursor_pos_ndc(), renderer,
             Vec<3>(type_info.width / 2.0, 0, type_info.height / 2.0)
         );
         this->selected_x = tile_x;
@@ -914,8 +959,7 @@ namespace houseofatmos::outside {
     ) {
         (void) scene;
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(),
-            Vec<3>(0.5, 0, 0.5)
+            window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
         this->selected_tile_x = tile_x;
         this->selected_tile_z = tile_z;
@@ -999,8 +1043,7 @@ namespace houseofatmos::outside {
     ) {
         (void) scene;
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
-            window.cursor_pos_ndc(), renderer.compute_view_proj(),
-            Vec<3>(0.5, 0, 0.5)
+            window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
         this->selected_tile_x = tile_x;
         this->selected_tile_z = tile_z;

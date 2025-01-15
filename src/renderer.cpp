@@ -47,6 +47,13 @@ namespace houseofatmos {
         this->shader->set_uniform("u_ambient_light", this->ambient_light);
     }
 
+    Vec<2> Renderer::world_to_ndc(const Vec<3>& pos) const {
+        Mat<4> view_proj = this->compute_view_proj();
+        Vec<4> ndc = view_proj * pos.with(1.0);
+        ndc = ndc / ndc.w(); // perspective divide
+        return ndc.swizzle<2>("xy");
+    }
+
 
     void Renderer::render(
         engine::Mesh& mesh, 

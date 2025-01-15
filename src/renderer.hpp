@@ -62,6 +62,8 @@ namespace houseofatmos {
         Mat<4> compute_view_proj() const;
         void configure(const engine::Window& window, engine::Scene& scene);
 
+        Vec<2> world_to_ndc(const Vec<3>& pos) const;
+
         void render(
             engine::Mesh& mesh, 
             const engine::Texture& texture,

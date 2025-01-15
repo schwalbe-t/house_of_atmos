@@ -89,13 +89,15 @@ namespace houseofatmos::outside {
             enum Type {
                 None,
                 Complex,
-                Building
+                Building,
+                Carriage
             };
             union Value {
                 ComplexId complex;
                 struct {
                     u64 x, z;
                 } building;
+                u64 carriage;
             };
             Type type;
             Value value;

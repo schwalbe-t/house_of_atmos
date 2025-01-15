@@ -491,7 +491,7 @@ namespace houseofatmos::outside {
     static const i64 tile_selection_range_chunks = 2;
 
     std::pair<u64, u64> Terrain::find_selected_terrain_tile(
-        Vec<2> cursor_pos_ndc, const Mat<4>& view_proj, Vec<3> tile_offset
+        Vec<2> cursor_pos_ndc, const Renderer& renderer, Vec<3> tile_offset
     ) const {
         i64 start_x = (this->viewed_chunk_x() - tile_selection_range_chunks) 
             * (i64) this->tiles_per_chunk();
@@ -517,9 +517,8 @@ namespace houseofatmos::outside {
                     * this->units_per_tile();
                 pos.y() = this->elevation_at(
                     (u64) tile_x, (u64) tile_z);
-                Vec<4> pos_ndc = view_proj * pos.with(1.0);
-                pos_ndc = pos_ndc / pos_ndc.w(); // perspective divide
-                f64 dist = (pos_ndc.swizzle<2>("xy") - cursor_pos_ndc).len();
+                Vec<2> pos_ndc = renderer.world_to_ndc(pos);
+                f64 dist = (pos_ndc - cursor_pos_ndc).len();
                 if(dist > current_dist) { continue; }
                 current = { (u64) tile_x, (u64) tile_z };
                 current_dist = dist;

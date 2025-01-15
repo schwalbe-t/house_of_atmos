@@ -156,6 +156,10 @@ namespace houseofatmos::outside {
             if(this->targets.size() == 0) { return nullptr; }
             return &this->targets[this->curr_target_i]; 
         }
+        std::optional<u64> target_i() const {
+            if(this->targets.size() == 0) { return std::nullopt; }
+            return this->curr_target_i; 
+        }
 
         void update(
             const engine::Window& window,
@@ -163,8 +167,10 @@ namespace houseofatmos::outside {
         );
 
         void render(
-            Renderer& renderer, engine::Scene& scene, 
-            const engine::Window& window
+            const Renderer& renderer, engine::Scene& scene, 
+            const engine::Window& window,
+            bool wireframe = false,
+            const engine::Texture* override_texture = nullptr
         );
 
         Serialized serialize(engine::Arena& buffer) const;
@@ -215,9 +221,13 @@ namespace houseofatmos::outside {
         );
 
         void render_all_around(
-            const Vec<3>& observer, Renderer& renderer, engine::Scene& scene, 
-            const engine::Window& window
+            const Vec<3>& observer, const Renderer& renderer, 
+            engine::Scene& scene, const engine::Window& window
         );
+
+        std::optional<size_t> find_selected_carriage(
+            Vec<2> cursor_pos_ndc, const Renderer& renderer
+        ) const;
 
         Serialized serialize(engine::Arena& buffer) const;
 
