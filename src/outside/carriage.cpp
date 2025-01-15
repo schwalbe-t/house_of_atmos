@@ -107,28 +107,29 @@ namespace houseofatmos::outside {
             // update position
             bool at_end = false;
             if(this->target() != nullptr) {
+                // update position
                 this->travelled_dist += window.delta_time() * carriage_speed;
                 this->position = position_along_path(
                     this->curr_path, this->travelled_dist, &at_end
                 );
+                // compute yaw and pitch of the carriage
+                Vec<3> heading = find_heading(
+                    this->travelled_dist, this->curr_path, terrain
+                );
+                f64 yaw_cross = model_heading.x() * heading.z()
+                    - model_heading.z() * heading.x();
+                this->yaw = atan2(yaw_cross, model_heading.dot(heading));
+                Vec<3> vert_heading = Vec<3>(
+                    model_heading.x(),
+                    heading.y(),
+                    model_heading.z()
+                );
+                f64 pitch_cross = model_heading.y() * vert_heading.z()
+                    - model_heading.z() * vert_heading.y();
+                this->pitch = atan2(pitch_cross, model_heading.dot(vert_heading));
             }
             this->moving = this->target() != nullptr;
             this->position.y() = terrain.elevation_at(this->position);
-            // compute yaw and pitch
-            Vec<3> heading = find_heading(
-                this->travelled_dist, this->curr_path, terrain
-            );
-            f64 yaw_cross = model_heading.x() * heading.z()
-                - model_heading.z() * heading.x();
-            this->yaw = atan2(yaw_cross, model_heading.dot(heading));
-            Vec<3> vert_heading = Vec<3>(
-                model_heading.x(),
-                heading.y(),
-                model_heading.z()
-            );
-            f64 pitch_cross = model_heading.y() * vert_heading.z()
-                - model_heading.z() * vert_heading.y();
-            this->pitch = atan2(pitch_cross, model_heading.dot(vert_heading));
             // change state if at end
             if(at_end) { this->state = State::Loading; }
         }

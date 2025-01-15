@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(OpenGL_GL_PREFERENCE GLVND)
 
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/toolchain-default.cmake" CACHE FILEPATH "Default toolchain file")
+endif()
+
 project(
     house_of_atmos
     VERSION 0.1
@@ -12,10 +16,9 @@ project(
     LANGUAGES CXX
 )
 
-# Comment these out when cross-compiling to Windows >:^)
-# find_package(OpenGL REQUIRED)
-# find_package(glfw3 3.3 REQUIRED)
-# find_package(OpenAL REQUIRED)
+foreach(PKG ${REQUIRED_PACKAGES})
+    find_package(${PKG} REQUIRED)
+endforeach()
 
 file(GLOB_RECURSE LIB_SOURCES "libsrc/*.cpp")
 file(GLOB_RECURSE SOURCES "src/*.cpp")
@@ -28,21 +31,19 @@ add_executable(
 include_directories("include")
 include_directories("glad/include")
 
-# Comment the first out when cross-compiling to Windows >:^)
-# target_link_libraries(
-#     house_of_atmos PRIVATE
-#     OpenGL::GL
-#     OpenGL::GLU
-#     glfw
-#     OpenAL::OpenAL
-# )
 target_link_libraries(
     house_of_atmos PRIVATE
-    ${GLFW_LIBRARIES}
-    ${OpenAL_LIBRARIES}
-    -static
+    ${LINKED_LIBS}
 )
 
 target_compile_features(house_of_atmos PRIVATE cxx_std_20)
-# target_compile_options(house_of_atmos PRIVATE -g -Wall -Wextra -O0)
-target_compile_options(house_of_atmos PRIVATE -Wall -Wextra -O3)
+
+set(MODE "debug" CACHE STRING "Build mode: debug or release")
+string(TOLOWER "${MODE}" MODE)
+if(MODE STREQUAL "release")
+    target_compile_options(house_of_atmos PRIVATE -g -Wall -Wextra -O0)
+elseif(MODE STREQUAL "debug")
+    target_compile_options(house_of_atmos PRIVATE -Wall -Wextra -O3)
+else()
+    message(FATAL_ERROR "Unknown build mode '${MODE}'")
+endif()
