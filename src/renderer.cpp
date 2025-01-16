@@ -8,6 +8,7 @@ namespace houseofatmos {
         const engine::Window& window,
         i64 resolution
     ) {
+        if(window.width() <= 0 || window.height() <= 0) { return; }
         if(window.height() < resolution) {
             output.resize_fast(window.width(), window.height());
         } else {
