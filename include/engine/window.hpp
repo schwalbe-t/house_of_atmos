@@ -55,6 +55,7 @@ namespace houseofatmos::engine {
 
         i32 width() const;
         i32 height() const;
+        Vec<2> size() const;
         f64 delta_time() const;
         f64 time() const;
 
