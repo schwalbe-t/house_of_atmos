@@ -12,6 +12,8 @@ namespace houseofatmos::outside {
         Player::load_model(scene);
         ActionMode::load_resources(scene);
         Carriage::load_resources(scene);
+        ui::Manager::load_shaders(scene);
+        ui_background::load_textures(scene);
     }
 
     static const u64 settlement_min_land_rad = 5; // in tiles
@@ -296,6 +298,8 @@ namespace houseofatmos::outside {
         if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
             save_game(this->serialize());
         }
+        this->ui.update(window);
+        engine::debug("FPS: " + std::to_string(1.0 / window.delta_time()));
     }
 
     void Outside::render(engine::Window& window) {
@@ -308,6 +312,8 @@ namespace houseofatmos::outside {
         );
         this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
+        this->ui.render(window, *this);
+        window.show_texture(this->ui.output());
     }
 
 

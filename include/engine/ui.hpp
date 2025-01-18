@@ -42,6 +42,8 @@ namespace houseofatmos::engine::ui {
     };
 
 
+    struct Manager;
+
     struct Element {
 
         private:
@@ -60,7 +62,7 @@ namespace houseofatmos::engine::ui {
 
         std::vector<Element> children;
         Direction list_direction;
-        
+
         const Background* background;
         const Background* background_hover;
         const Texture* texture;
@@ -69,27 +71,29 @@ namespace houseofatmos::engine::ui {
 
         std::string text;
 
+        bool hidden;
+
 
         public:
         Element();
-        Element with_size(f64 width, f64 height, SizeFunc size_func) {
+        Element& with_size(f64 width, f64 height, SizeFunc size_func) {
             this->size = Vec<2>(width, height);
             this->size_func = size_func;
             return *this;
         }
-        Element with_pos(f64 x, f64 y, PosFunc pos_func) {
+        Element& with_pos(f64 x, f64 y, PosFunc pos_func) {
             this->position = Vec<2>(x, y);
             this->pos_func = pos_func;
             return *this;
         }
-        Element with_children(
-            std::vector<Element> children, Direction dir = Direction::Vertical
+        Element& with_children(
+            std::vector<Element>&& children, Direction dir = Direction::Vertical
         ) {
             this->children = std::move(children);
             this->list_direction = dir;
             return *this;
         }
-        Element with_background(
+        Element& with_background(
             const Background* background,
             const Background* background_hover = nullptr
         ) {
@@ -97,15 +101,15 @@ namespace houseofatmos::engine::ui {
             this->background_hover = background_hover;
             return *this;
         }
-        Element with_texture(const Texture* texture) {
+        Element& with_texture(const Texture* texture) {
             this->texture = texture;
             return *this;
         }
-        Element with_click_handler(std::function<void()> handler) {
+        Element& with_click_handler(std::function<void()> handler) {
             this->on_click = std::move(handler);
             return *this;
         }
-        Element with_text(std::string text) {
+        Element& with_text(std::string text) {
             this->text = std::move(text);
             return *this;
         }
@@ -116,7 +120,7 @@ namespace houseofatmos::engine::ui {
 
         Vec<2> offset_of_child(size_t child_i) const;
         void update_root(const Window& window, f64 unit);
-        void render_root();
+        void render_root(Manager& manager, Scene& scene, f64 unit) const;
 
 
         private:
@@ -125,6 +129,8 @@ namespace houseofatmos::engine::ui {
             std::optional<ChildRef> parent, const Window& window, f64 unit
         );
         void update_input(const Window& window);
+
+        void render_background(Manager& manager, Scene& scene, f64 unit) const;
 
     };
 
@@ -146,5 +152,55 @@ namespace houseofatmos::engine::ui {
         Vec<2> parent_fract(const Element& self, const Element* parent, const Window& window, f64 unit);
         Vec<2> window_fract(const Element& self, const Element* parent, const Window& window, f64 unit);
     }
+
+
+    struct Manager {
+
+        static const inline std::vector<Mesh::Attrib> mesh_attribs = {
+            (Mesh::Attrib) { Mesh::F32, 2 }
+        };
+
+        static const inline Shader::LoadArgs shader_args = {
+            "res/shaders/ui_vert.glsl", "res/shaders/ui_frag.glsl"
+        };
+
+        static void load_shaders(Scene& scene) {
+            scene.load(Shader::Loader(Manager::shader_args));
+        }
+
+
+        private:
+        Texture target = Texture(100, 100);
+        Mesh quad = Mesh(Manager::mesh_attribs);
+        Shader* shader;
+
+        public:
+        Element root = Element()
+            .with_pos(0, 0, ui::position::window_tl_units)
+            .with_size(1.0, 1.0, ui::size::window_fract);
+        f64 unit_fract_size; // fraction of window height
+
+        Manager(f64 unit_fract_size);
+        Manager& with_element(Element&& element) {
+            this->root.children.push_back(std::move(element));
+            return *this;
+        }
+
+        const engine::Texture& output() const { return this->target; }
+
+        void update(const Window& window);
+
+        void render(const Window& window, Scene& scene);
+
+        struct Instance {
+            Vec<2> src_pos, src_size;
+            Vec<2> dest_pos, dest_size;
+        };
+
+        void blit_texture(
+            const Texture& src, std::span<const Instance> instances
+        );
+
+    };
 
 }

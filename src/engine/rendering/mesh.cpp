@@ -427,7 +427,6 @@ namespace houseofatmos::engine {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         if(depth_test) { glDisable(GL_DEPTH_TEST); }
         if(wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); }
-        glFinish();
     }
 
 }
