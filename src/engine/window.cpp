@@ -98,6 +98,16 @@ namespace houseofatmos::engine {
         window->buttons_down_curr[button] = action == GLFW_PRESS;
     }
 
+    void Window::glfw_scroll_callback(
+        void* glfw_window_raw, f64 x, f64 y
+    ) {
+        GLFWwindow* glfw_window = (GLFWwindow*) glfw_window_raw;
+        if(!existing_windows.contains(glfw_window)) { return; }
+        Window* window = existing_windows[glfw_window];
+        window->scroll_dist.x() += x;
+        window->scroll_dist.y() += y;
+    }
+
     void Window::update_last_frame_input() {
         std::memcpy(
             (void*) this->keys_down_last.data(), 
@@ -109,6 +119,7 @@ namespace houseofatmos::engine {
             (void*) this->buttons_down_curr.data(), 
             sizeof(bool) * button_array_length
         );
+        this->scroll_dist = Vec<2>();
     }
 
 
@@ -151,6 +162,10 @@ namespace houseofatmos::engine {
         glfwSetMouseButtonCallback(
             (GLFWwindow*) this->ptr, 
             (GLFWmousebuttonfun) &Window::glfw_mouse_button_callback
+        );
+        glfwSetScrollCallback(
+            (GLFWwindow*) this->ptr,
+            (GLFWscrollfun) &Window::glfw_scroll_callback
         );
         existing_windows[(GLFWwindow*) this->ptr] = this;
     }

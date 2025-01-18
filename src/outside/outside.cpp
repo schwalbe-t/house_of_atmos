@@ -14,6 +14,8 @@ namespace houseofatmos::outside {
         Carriage::load_resources(scene);
         ui::Manager::load_shaders(scene);
         ui_background::load_textures(scene);
+        ui_font::load_textures(scene);
+        ui_icon::load_textures(scene);
     }
 
     static const u64 settlement_min_land_rad = 5; // in tiles
@@ -269,19 +271,16 @@ namespace houseofatmos::outside {
 
     static void update_camera(
         engine::Window& window, Player& player, Camera& camera,
-        Zoom::Level& zoom
+        f64& distance
     ) {
-        if(window.was_pressed(engine::Key::Space)) {
-            switch(zoom) {
-                case Zoom::Near: zoom = Zoom::Far; break;
-                case Zoom::Far: zoom = Zoom::Near; break;
-                default: 
-                    engine::error("Unhandled 'Zoom::Level' in 'update_camera'");
-            }
-        }
+        distance += window.scrolled().y() * -5.0;
+        distance = std::min(
+            std::max(distance, Outside::min_camera_dist), 
+            Outside::max_camera_dist
+        );
         camera.look_at = player.position;
-        f64 offset = Zoom::offset_of(zoom);
-        camera.position = player.position + Vec<3>(0, offset, offset);
+        camera.position = player.position 
+            + Vec<3>(0, 1, 1).normalized() * distance;
     }
 
     void Outside::update(engine::Window& window) {
@@ -294,7 +293,7 @@ namespace houseofatmos::outside {
         );
         this->action_mode->update(window, *this, this->renderer, this->balance);
         update_player(window, this->terrain, this->player);
-        update_camera(window, this->player, this->renderer.camera, this->zoom);
+        update_camera(window, this->player, this->renderer.camera, this->camera_distance);
         if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
             save_game(this->serialize());
         }

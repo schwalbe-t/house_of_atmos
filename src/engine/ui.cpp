@@ -16,8 +16,19 @@ namespace houseofatmos::engine::ui {
         this->with_background(nullptr, nullptr);
         this->with_texture(nullptr);
         this->with_click_handler(default_click_handler);
-        this->with_text("");
+        this->with_text("", nullptr, true);
         this->hidden = false;
+    }
+
+    Element& Element::with_padding(f64 amount) {
+        auto padding = Element()
+            .with_pos(this->position.x(), this->position.y(), this->pos_func)
+            .with_size(amount * 2, amount * 2, size::units_with_children);
+        padding.children.push_back(
+            std::move(this->with_pos(amount, amount, position::parent_units))
+        );
+        *this = std::move(padding);
+        return *this;
     }
 
 
@@ -44,6 +55,15 @@ namespace houseofatmos::engine::ui {
     void Element::render_root(Manager& manager, Scene& scene, f64 unit) const {
         if(this->hidden) { return; }
         this->render_background(manager, scene, unit);
+        this->render_text(manager, scene, unit);
+        if(this->texture != nullptr) {
+            std::array<Manager::Instance, 1> instance = { (Manager::Instance) {
+                Vec<2>(0, 0), 
+                Vec<2>(this->texture->width(), this->texture->height()),
+                this->final_pos(), this->final_size()
+            } };
+            manager.blit_texture(*this->texture, instance);
+        }
         for(const Element& child: this->children) {
             child.render_root(manager, scene, unit);
         }
@@ -227,6 +247,95 @@ namespace houseofatmos::engine::ui {
             instances, unit, this->final_pos(), this->final_size(), *bkg
         );
         manager.blit_texture(tex, instances);
+    }    
+
+    static size_t utf8_char_length(std::string_view text) {
+        if(text.size() == 0) { return 0; }
+        size_t length = 1;
+        while((text[length] & 0b11000000) == 0b10000000) {
+            length += 1;
+        }
+        return length;
+    }
+
+    static size_t utf8_find_char_pos(
+        std::string_view text, std::string_view searched, 
+        size_t* offset_bytes_o = nullptr
+    ) {
+        size_t offset = 0;
+        for(size_t i = 0; offset < text.size(); i += 1) {
+            size_t c_len = utf8_char_length(text.substr(offset));
+            std::string_view c = text.substr(offset, c_len);
+            if(c == searched) {
+                if(offset_bytes_o != nullptr) { *offset_bytes_o = offset; }
+                return i;
+            }
+            offset += c_len;
+        }
+        return std::string::npos;
+    }
+
+    static f64 find_next_space_distance(
+        std::string_view text, const Font& font,
+        size_t o
+    ) {
+        size_t sc_len = 0;
+        f64 ns_dist = 0;
+        for(size_t d = 0; d + o < text.size(); d += sc_len) {
+            sc_len = utf8_char_length(text.substr(d + o));
+            std::string_view c = text.substr(d + o, sc_len);
+            size_t idx = utf8_find_char_pos(font.chars, c);
+            if(idx == std::string::npos) { idx = 0; sc_len = 1; }
+            if(d > 0 && sc_len == 1 && (c[0] == ' ' || c[0] == '\n')) {
+                break;
+            }
+            ns_dist += font.char_padding + font.char_widths[idx];
+        }
+        return ns_dist;
+    }
+
+    void Element::render_text(
+        Manager& manager, Scene& scene, f64 unit
+    ) const {
+        if(this->text.size() == 0 || this->font == nullptr) { return; }
+        Texture& tex = scene.get<Texture>(this->font->texture);
+        std::vector<Manager::Instance> instances;
+        instances.reserve(this->text.size()); 
+        Vec<2> char_offset;
+        size_t c_len;
+        for(size_t o = 0; o < this->text.size(); o += c_len) {
+            c_len = utf8_char_length(
+                std::string_view(this->text).substr(o)
+            );
+            std::string_view c = std::string_view(this->text).substr(o, c_len);
+            if(c_len == 1 && c[0] == ' ') {
+                f64 ns_pos_x = char_offset.x()
+                    + find_next_space_distance(this->text, *this->font, o);
+                if(ns_pos_x * unit > this->final_size().x()) {
+                    c = "\n";
+                }
+            }
+            if(c_len == 1 && c[0] == '\n') {
+                char_offset.x() = 0.0;
+                char_offset.y() += this->font->height 
+                    + this->font->char_padding;
+                continue;
+            }
+            size_t idx = utf8_find_char_pos(this->font->chars, c);
+            if(idx == std::string::npos) { idx = 0; c_len = 1; }
+            f64 width = this->font->char_widths[idx];
+            f64 src_offset_x = this->font->char_offsets_x[idx];
+            Vec<2> src_size = Vec<2>(width, this->font->height);
+            instances.push_back((Manager::Instance) {
+                this->font->offset + Vec<2>(src_offset_x, 0), 
+                src_size,
+                this->final_pos() + char_offset * unit,
+                src_size * unit
+            });
+            if(o > 0) { char_offset.x() += font->char_padding; }
+            char_offset.x() += width;
+        }
+        manager.blit_texture(tex, instances);
     }     
 
 
@@ -348,6 +457,27 @@ namespace houseofatmos::engine::ui {
         (void) unit;
         (void) parent;
         return window.size() * self.size;
+    }
+
+    Vec<2> size::units_with_children(
+        const Element& self, const Element* parent, 
+        const Window& window, f64 unit
+    ) {
+        (void) parent;
+        (void) window;
+        Vec<2> offset = self.offset_of_child(self.children.size());
+        Vec<2> size;
+        for(const Element& child: self.children) {
+            size.x() = std::max(size.x(), child.final_size().x());
+            size.y() = std::max(size.y(), child.final_size().y());
+        }
+        switch(self.list_direction) {
+            case Direction::Horizontal:
+                return Vec<2>(offset.x(), size.y()) + self.size * unit;
+            case Direction::Vertical:
+                return Vec<2>(size.x(), offset.y()) + self.size * unit;
+        }
+        engine::error("Unhandled 'Direction' in 'size::fit_children'!");
     }
 
 

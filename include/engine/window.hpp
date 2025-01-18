@@ -30,6 +30,7 @@ namespace houseofatmos::engine {
         Vec<2> mouse_pos;
         std::array<bool, button_array_length> buttons_down_curr = {};
         std::array<bool, button_array_length> buttons_down_last = {};
+        Vec<2> scroll_dist;
 
         static void glfw_key_callback(
             void* glfw_window_raw, 
@@ -41,6 +42,9 @@ namespace houseofatmos::engine {
         static void glfw_mouse_button_callback(
             void* glfw_window_raw, 
             int button, int action, int mods
+        );
+        static void glfw_scroll_callback(
+            void* glfw_window_raw, f64 x, f64 y
         );
         void update_last_frame_input();
 
@@ -91,6 +95,7 @@ namespace houseofatmos::engine {
             return !this->buttons_down_curr[(size_t) button]
                 && this->buttons_down_last[(size_t) button];
         }
+        const Vec<2>& scrolled() const { return this->scroll_dist; }
 
         void set_scene(std::shared_ptr<Scene> scene);
         std::shared_ptr<Scene> scene(); 

@@ -41,6 +41,25 @@ namespace houseofatmos::engine::ui {
         Vec<2> edge_size;
     };
 
+    struct Font {
+        Texture::LoadArgs texture;
+        Vec<2> offset;
+        f64 height;
+        f64 char_padding;
+        std::string chars;
+        std::vector<f64> char_widths;
+        std::vector<f64> char_offsets_x;
+
+        void compute_char_offsets() {
+            this->char_offsets_x.reserve(this->char_widths.size());
+            f64 offset = 0;
+            for(f64 char_width: this->char_widths) {
+                this->char_offsets_x.push_back(offset);
+                offset += char_width + char_padding;
+            }
+        }
+    };
+
 
     struct Manager;
 
@@ -70,6 +89,8 @@ namespace houseofatmos::engine::ui {
         std::function<void()> on_click;
 
         std::string text;
+        const Font* font;
+        bool wrap_text;
 
         bool hidden;
 
@@ -109,8 +130,12 @@ namespace houseofatmos::engine::ui {
             this->on_click = std::move(handler);
             return *this;
         }
-        Element& with_text(std::string text) {
+        Element& with_text(
+            std::string text, const Font* font, bool wrap_text = true
+        ) {
             this->text = std::move(text);
+            this->font = font;
+            this->wrap_text = wrap_text;
             return *this;
         }
 
@@ -122,6 +147,8 @@ namespace houseofatmos::engine::ui {
         void update_root(const Window& window, f64 unit);
         void render_root(Manager& manager, Scene& scene, f64 unit) const;
 
+        Element& with_padding(f64 amount);
+
 
         private:
         void update_size(const Element* parent, const Window& window, f64 unit);
@@ -131,6 +158,7 @@ namespace houseofatmos::engine::ui {
         void update_input(const Window& window);
 
         void render_background(Manager& manager, Scene& scene, f64 unit) const;
+        void render_text(Manager& manager, Scene& scene, f64 unit) const;
 
     };
 
@@ -151,6 +179,7 @@ namespace houseofatmos::engine::ui {
         Vec<2> units(const Element& self, const Element* parent, const Window& window, f64 unit);
         Vec<2> parent_fract(const Element& self, const Element* parent, const Window& window, f64 unit);
         Vec<2> window_fract(const Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> units_with_children(const Element& self, const Element* parent, const Window& window, f64 unit);
     }
 
 

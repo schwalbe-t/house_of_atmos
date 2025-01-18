@@ -6,7 +6,6 @@
 #include "../player.hpp"
 #include "carriage.hpp"
 #include "terrain.hpp"
-#include "zoom.hpp"
 
 namespace houseofatmos::outside {
 
