@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "localization.hpp"
 #include "window.hpp"
 #include "math.hpp"
 #include <vector>
@@ -89,6 +90,7 @@ namespace houseofatmos::engine::ui {
         std::function<void()> on_click;
 
         std::string text;
+        const Localization::LoadArgs* local;
         const Font* font;
         bool wrap_text;
 
@@ -130,10 +132,21 @@ namespace houseofatmos::engine::ui {
             this->on_click = std::move(handler);
             return *this;
         }
+        Element& with_local_text(
+            std::string text, const engine::Localization::LoadArgs& local,
+            const Font* font, bool wrap_text = true
+        ) {
+            this->text = std::move(text);
+            this->local = &local;
+            this->font = font;
+            this->wrap_text = wrap_text;
+            return *this;
+        }
         Element& with_text(
             std::string text, const Font* font, bool wrap_text = true
         ) {
             this->text = std::move(text);
+            this->local = nullptr;
             this->font = font;
             this->wrap_text = wrap_text;
             return *this;

@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <engine/localization.hpp>
 #include <engine/arena.hpp>
 #include <engine/window.hpp>
 #include <engine/model.hpp>
@@ -30,6 +31,10 @@ namespace houseofatmos::outside {
         };
 
 
+        static inline const engine::Localization::LoadArgs local = {
+            "res/localization.json", "bg"
+        };
+
         static inline const char* const save_location = "savegame.bin"; 
 
         static inline const u64 units_per_tile = 5;
@@ -54,6 +59,14 @@ namespace houseofatmos::outside {
         f64 camera_distance = min_camera_dist;
         std::unique_ptr<ActionMode> action_mode;
         ui::Manager ui = std::move(ui::Manager(ui_unit_size)
+            .with_element(std::move(ui::Element()
+                .with_pos(0.95, 0.5, ui::position::window_fract)
+                .with_size(64, 128, ui::size::units)
+                .with_background(&ui_background::scroll_vertical)
+                .with_local_text(
+                    "item_name_malt", Outside::local, &ui_font::standard
+                )
+            ))
             .with_element(std::move(ui::Element()
                 .with_pos(0.05, 0.05, ui::position::window_fract)
                 .with_size(0, 0, ui::size::units_with_children)

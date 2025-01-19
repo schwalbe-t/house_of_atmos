@@ -297,20 +297,23 @@ namespace houseofatmos::engine::ui {
     void Element::render_text(
         Manager& manager, Scene& scene, f64 unit
     ) const {
-        if(this->text.size() == 0 || this->font == nullptr) { return; }
+        if(this->font == nullptr) { return; }
+        const std::string* text = &this->text;
+        if(this->local != nullptr) {
+            text = &scene.get<Localization>(*this->local).text(this->text);
+        }
+        if(text->size() == 0) { return; }
         Texture& tex = scene.get<Texture>(this->font->texture);
         std::vector<Manager::Instance> instances;
-        instances.reserve(this->text.size()); 
+        instances.reserve(text->size()); 
         Vec<2> char_offset;
         size_t c_len;
-        for(size_t o = 0; o < this->text.size(); o += c_len) {
-            c_len = utf8_char_length(
-                std::string_view(this->text).substr(o)
-            );
-            std::string_view c = std::string_view(this->text).substr(o, c_len);
+        for(size_t o = 0; o < text->size(); o += c_len) {
+            c_len = utf8_char_length(std::string_view(*text).substr(o));
+            std::string_view c = std::string_view(*text).substr(o, c_len);
             if(c_len == 1 && c[0] == ' ') {
                 f64 ns_pos_x = char_offset.x()
-                    + find_next_space_distance(this->text, *this->font, o);
+                    + find_next_space_distance(*text, *this->font, o);
                 if(ns_pos_x * unit > this->final_size().x()) {
                     c = "\n";
                 }
@@ -322,7 +325,7 @@ namespace houseofatmos::engine::ui {
                 continue;
             }
             size_t idx = utf8_find_char_pos(this->font->chars, c);
-            if(idx == std::string::npos) { idx = 0; c_len = 1; }
+            if(idx == std::string::npos) { idx = 0; }
             f64 width = this->font->char_widths[idx];
             f64 src_offset_x = this->font->char_offsets_x[idx];
             Vec<2> src_size = Vec<2>(width, this->font->height);
@@ -332,8 +335,7 @@ namespace houseofatmos::engine::ui {
                 this->final_pos() + char_offset * unit,
                 src_size * unit
             });
-            if(o > 0) { char_offset.x() += font->char_padding; }
-            char_offset.x() += width;
+            char_offset.x() += font->char_padding + width;
         }
         manager.blit_texture(tex, instances);
     }     

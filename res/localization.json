@@ -1,0 +1,96 @@
+{
+
+    "ui_building_selection": {
+        "de": "Wählen sie den Typ Gebäude aus",
+        "en": "Select the type of building"
+    },
+    "ui_product_selection": {
+        "de": "Wählen sie, was das Gebäude produzieren soll",
+        "en": "Select what the building should produce"
+    },
+
+
+    "item_name_barley": {
+        "de": "Gerste", 
+        "en": "Barley"
+    },
+    "item_name_malt": {
+        "de": "Malz", 
+        "en": "Malt"
+    },
+    "item_name_beer": {
+        "de": "Bier", 
+        "en": "Beer",
+        "bg": "Бира"
+    },
+    "item_name_wheat": {
+        "de": "Weizen", 
+        "en": "Wheat"
+    },
+    "item_name_flour": {
+        "de": "Mehl", 
+        "en": "Flour"
+    },
+    "item_name_bread": {
+        "de": "Brot", 
+        "en": "Bread", 
+        "bg": "Хляб"
+    },
+    "item_name_hematite": {
+        "de": "Hematit",
+        "en": "Hematite"
+    },
+    "item_name_coal": {
+        "de": "Kohle",
+        "en": "Coal",
+        "bg": "Въглища"
+    },
+    "item_name_steel": {
+        "de": "Stahl",
+        "en": "Steel"
+    },
+    "item_name_armor": {
+        "de": "Rüstung",
+        "en": "Armor"
+    },
+    "item_name_tools": {
+        "de": "Werkzeug",
+        "en": "Tools"
+    },
+    "item_name_coins": {
+        "de": "Münzen",
+        "en": "Coins",
+        "bg": "Монети"
+    },
+
+
+    "building_name_farmland": {
+        "de": "Ackerland",
+        "en": "Farmland"
+    },
+    "building_name_mineshaft": {
+        "de": "Minenschacht",
+        "en": "Mineshaft"
+    },
+    "building_name_windmill": {
+        "de": "Windmühle",
+        "en": "Windmill"
+    },
+    "building_name_factory": {
+        "de": "Fabrik",
+        "en": "Factory"
+    },
+    "building_name_house": {
+        "de": "Haus",
+        "en": "House"
+    },
+    "building_name_stable": {
+        "de": "Pferdestall",
+        "en": "Stable"
+    },
+    "building_name_plaza": {
+        "de": "Marktplatz",
+        "en": "Plaza"
+    }
+
+}
