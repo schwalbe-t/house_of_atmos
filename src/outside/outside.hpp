@@ -32,7 +32,7 @@ namespace houseofatmos::outside {
 
 
         static inline const engine::Localization::LoadArgs local = {
-            "res/localization.json", "bg"
+            "res/localization.json", "de"
         };
 
         static inline const char* const save_location = "savegame.bin"; 
@@ -64,7 +64,7 @@ namespace houseofatmos::outside {
                 .with_size(64, 128, ui::size::units)
                 .with_background(&ui_background::scroll_vertical)
                 .with_local_text(
-                    "item_name_malt", Outside::local, &ui_font::standard
+                    "ui_product_selection", Outside::local, &ui_font::standard
                 )
             ))
             .with_element(std::move(ui::Element()
