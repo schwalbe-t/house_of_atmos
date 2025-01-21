@@ -1,12 +1,12 @@
 {
 
     "ui_building_selection": {
-        "de": "Wählen sie den Typ Gebäude aus",
-        "en": "Select the type of building"
+        "de": "Gebäudeauswahl",
+        "en": "Building Selection"
     },
     "ui_product_selection": {
-        "de": "Wählen sie, was das Gebäude produzieren soll",
-        "en": "Select what the building should produce"
+        "de": "Produktauswahl",
+        "en": "Product Selection"
     },
 
 

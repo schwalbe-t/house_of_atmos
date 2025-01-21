@@ -50,7 +50,7 @@ namespace houseofatmos {
 
         public:
         Camera camera;
-        i64 resolution = 360;
+        u64 resolution = 360;
         Vec<3> light_direction = { -2, -5, -1 };
         f64 ambient_light = 0.75; 
         engine::Shader* shader = nullptr;

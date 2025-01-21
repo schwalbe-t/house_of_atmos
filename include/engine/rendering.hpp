@@ -14,6 +14,63 @@ namespace houseofatmos::engine {
     using namespace math;
 
 
+    struct Image {
+        struct LoadArgs {
+            std::string path;
+
+            std::string identifier() const { return path; }
+            std::string pretty_identifier() const {
+                return "Image@'" + path + "'"; 
+            }
+        };
+        using Loader = Resource<Image, LoadArgs>;
+
+        struct Color {
+            u8 r, g, b, a; 
+
+            Color(u8 r = 0, u8 g = 0, u8 b = 0, u8 a = 255) {
+                this->r = r;
+                this->g = g;
+                this->b = b;
+                this->a = a;
+            }
+        };
+
+        private:
+        u64 width_px;
+        u64 height_px;
+        std::vector<Color> pixels;
+
+        public:
+        Image(u64 width, u64 height, const u8* data = nullptr);
+        static Image from_resource(const LoadArgs& args);
+
+        u64 width() const { return this->width_px; }
+        u64 height() const { return this->height_px; }
+
+        Color& pixel_at(u64 x, u64 y) {
+            if(x >= this->width_px || y >= this->height_px) {
+                error("The pixel position (" 
+                    + std::to_string(x) + ", " 
+                    + std::to_string(y) + ") is out of bounds"
+                    + "for an image of size "
+                    + std::to_string(this->width_px) + "x"
+                    + std::to_string(this->height_px) + "!"
+                );
+            }
+            return this->pixels[y * this->width_px + x];
+        }
+        const Color& pixel_at(u64 x, u64 y) const {
+            return ((Image*) this)->pixel_at(x, y);
+        }
+
+        const Color* data() const { return this->pixels.data(); }
+
+        void clear(Color color);
+
+    };
+
+
     struct Texture {
         struct LoadArgs {
             std::string path;
@@ -26,8 +83,8 @@ namespace houseofatmos::engine {
         using Loader = Resource<Texture, LoadArgs>;
 
         private:
-        i64 width_px;
-        i64 height_px;
+        u64 width_px;
+        u64 height_px;
 
         u64 fbo_id;
         u64 tex_id;
@@ -36,8 +93,9 @@ namespace houseofatmos::engine {
 
 
         public:
-        Texture(i64 width, i64 height, const u8* data);
-        Texture(i64 width, i64 height);
+        Texture(u64 width, u64 height, const u8* data);
+        Texture(u64 width, u64 height);
+        Texture(const Image& image);
         static Texture from_resource(const LoadArgs& arg);
         Texture(const Texture& other) = delete;
         Texture(Texture&& other) noexcept;
@@ -45,8 +103,8 @@ namespace houseofatmos::engine {
         Texture& operator=(Texture&& other) noexcept;
         ~Texture();
 
-        i64 width() const;
-        i64 height() const;
+        u64 width() const;
+        u64 height() const;
 
         u64 internal_fbo_id() const;
         u64 internal_tex_id() const;
@@ -54,8 +112,8 @@ namespace houseofatmos::engine {
         void clear_color(Vec<4> color) const;
         void clear_depth(f64 depth) const;
 
-        void resize_fast(i64 width, i64 height);
-        void resize(i64 width, i64 height);
+        void resize_fast(u64 width, u64 height);
+        void resize(u64 width, u64 height);
 
         void blit(const Texture& dest, f64 x, f64 y, f64 w, f64 h) const;
         void internal_blit(

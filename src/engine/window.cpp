@@ -123,8 +123,8 @@ namespace houseofatmos::engine {
     }
 
 
-    Window::Window(i32 width, i32 height, const char* name) {
-        if(width <= 0 || height <= 0) {
+    Window::Window(u64 width, u64 height, const char* name) {
+        if(width == 0 || height == 0) {
             error("Window width and height must both be larger than 0"
                 " (given was " + std::to_string(width)
                 + "x" + std::to_string(height) + ")"
@@ -180,8 +180,8 @@ namespace houseofatmos::engine {
     }
 
 
-    i32 Window::width() const { return this->last_width; }
-    i32 Window::height() const { return this->last_height; }
+    u64 Window::width() const { return this->last_width; }
+    u64 Window::height() const { return this->last_height; }
     Vec<2> Window::size() const {
         return Vec<2>(this->width(), this->height()); 
     }

@@ -3,7 +3,6 @@
 #include <engine/logging.hpp>
 #include <engine/scene.hpp>
 #include <glad/gl.h>
-#include <stb/stb_image.h>
 #include <optional>
 
 namespace houseofatmos::engine {
@@ -15,7 +14,7 @@ namespace houseofatmos::engine {
         return fbo_id;
     }
 
-    static GLuint init_tex(i64 width, i64 height, const void* data) {
+    static GLuint init_tex(u64 width, u64 height, const void* data) {
         GLuint tex_id;
         glGenTextures(1, &tex_id);
         glBindTexture(GL_TEXTURE_2D, tex_id);
@@ -31,7 +30,7 @@ namespace houseofatmos::engine {
         return tex_id;
     }
 
-    static GLuint init_dbo(i64 width, i64 height) {
+    static GLuint init_dbo(u64 width, u64 height) {
         GLuint dbo_id;
         glGenRenderbuffers(1, &dbo_id);
         glBindRenderbuffer(GL_RENDERBUFFER, dbo_id);
@@ -41,7 +40,7 @@ namespace houseofatmos::engine {
         return dbo_id;
     }
 
-    Texture::Texture(i64 width, i64 height, const u8* data) {
+    Texture::Texture(u64 width, u64 height, const u8* data) {
         if(width <= 0 || height <= 0) {
             error("Texture width and height must both be larger than 0"
                 " (given was " + std::to_string(width)
@@ -77,24 +76,20 @@ namespace houseofatmos::engine {
         this->moved = false;
     }
 
-    Texture::Texture(i64 width, i64 height) {
+    Texture::Texture(u64 width, u64 height) {
         this->moved = true;
         *this = std::move(Texture(width, height, nullptr));
     }
 
+    Texture::Texture(const Image& image) {
+        this->moved = true;
+        *this = std::move(Texture(
+            image.width(), image.height(), (const u8*) image.data()
+        ));
+    }
+
     Texture Texture::from_resource(const Texture::LoadArgs& args) {
-        std::vector<char> bytes = GenericResource::read_bytes(args.path);
-        int width, height;
-        stbi_uc* data = stbi_load_from_memory(
-            (stbi_uc*) bytes.data(), bytes.size(), 
-            &width, &height, nullptr, STBI_rgb_alpha
-        );
-        if(data == nullptr) {
-            error("The file '" + args.path + "' contains invalid image data!");
-        }
-        auto instance = Texture(width, height, (u8*) data);
-        stbi_image_free((void*) data);
-        return instance;
+        return Texture(Image::from_resource({ args.path }));
     }
 
     Texture::Texture(Texture&& other) noexcept {
@@ -140,8 +135,8 @@ namespace houseofatmos::engine {
     }
 
 
-    i64 Texture::width() const { return this->width_px; }
-    i64 Texture::height() const { return this->height_px; }
+    u64 Texture::width() const { return this->width_px; }
+    u64 Texture::height() const { return this->height_px; }
 
 
     u64 Texture::internal_fbo_id() const {
@@ -179,14 +174,14 @@ namespace houseofatmos::engine {
     }
 
 
-    void Texture::resize_fast(i64 width, i64 height) {
+    void Texture::resize_fast(u64 width, u64 height) {
         if(this->width() == width && this->height() == height && !this->moved) {
             return;
         }
         *this = std::move(Texture(width, height));
     }
 
-    void Texture::resize(i64 width, i64 height) {
+    void Texture::resize(u64 width, u64 height) {
         if(this->moved) {
             error("Attempted to use a moved 'Texture'");
         }

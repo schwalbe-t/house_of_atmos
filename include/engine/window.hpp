@@ -50,15 +50,15 @@ namespace houseofatmos::engine {
 
 
         public:
-        Window(i32 width, i32 height, const char* name);
+        Window(u64 width, u64 height, const char* name);
         Window(const Window& other) = delete;
         Window(Window&& other) = delete;
         Window& operator=(const Window& other) = delete;
         Window& operator=(Window&& other) = delete;
         ~Window();
 
-        i32 width() const;
-        i32 height() const;
+        u64 width() const;
+        u64 height() const;
         Vec<2> size() const;
         f64 delta_time() const;
         f64 time() const;

@@ -6,9 +6,9 @@ namespace houseofatmos {
     static void resize_output_texture(
         engine::Texture& output, 
         const engine::Window& window,
-        i64 resolution
+        u64 resolution
     ) {
-        if(window.width() <= 0 || window.height() <= 0) { return; }
+        if(window.width() == 0 || window.height() == 0) { return; }
         if(window.height() < resolution) {
             output.resize_fast(window.width(), window.height());
         } else {
