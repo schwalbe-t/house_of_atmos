@@ -67,6 +67,8 @@ namespace houseofatmos::engine {
         const Color* data() const { return this->pixels.data(); }
 
         void clear(Color color);
+        void mirror_vertical();
+        void mirror_horizontal();
 
     };
 
@@ -74,10 +76,17 @@ namespace houseofatmos::engine {
     struct Texture {
         struct LoadArgs {
             std::string path;
+            bool mirror_vertical = false;
 
-            std::string identifier() const { return path; }
+            std::string identifier() const {
+                return this->path + "|" + (this->mirror_vertical? "v" : "n"); 
+            }
             std::string pretty_identifier() const {
-                return "Texture@'" + path + "'"; 
+                return std::string("Texture[") +
+                    + (this->mirror_vertical? "vertical mirror" : "no mirror")
+                    + "]@'" 
+                    + this->path 
+                    + "'"; 
             }
         };
         using Loader = Resource<Texture, LoadArgs>;

@@ -27,8 +27,10 @@ namespace houseofatmos::outside {
         };
 
         static const inline std::vector<HorseTypeInfo> horse_types = {
+            // The 'true' in each texture loader is there to flip the loaded
+            // texture vertically - this is needed since GLTF uses them flipped
             /* White */ {
-                (engine::Texture::LoadArgs) { "res/entities/horse.png" }
+                (engine::Texture::LoadArgs) { "res/entities/horse.png", true }
             }
         };
 

@@ -158,12 +158,12 @@ namespace houseofatmos::outside {
         f64 max_height = std::max(pos_a.y(), std::max(pos_b.y(), pos_c.y()));
         f64 height_diff = max_height - min_height;
         Vec<2> uv_offset = is_path
-            ? Vec<2>(0.5, 0.5)
-            : min_height < sand_max_height
-            ? Vec<2>(0.0, 0.5)
-            : height_diff > stone_min_height_diff
             ? Vec<2>(0.5, 0.0)
-            : Vec<2>(0.0, 0.0);
+            : min_height < sand_max_height
+            ? Vec<2>(0.0, 0.0)
+            : height_diff > stone_min_height_diff
+            ? Vec<2>(0.5, 0.5)
+            : Vec<2>(0.0, 0.5);
         Vec<3> normal = compute_normal_ccw(pos_a, pos_b, pos_c);
         dest.add_element(
             put_terrain_vertex(pos_a, uv_a + uv_offset, normal, dest),

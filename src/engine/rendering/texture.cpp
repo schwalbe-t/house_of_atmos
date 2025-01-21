@@ -81,15 +81,22 @@ namespace houseofatmos::engine {
         *this = std::move(Texture(width, height, nullptr));
     }
 
-    Texture::Texture(const Image& image) {
+    Texture::Texture(const Image& img) {
         this->moved = true;
+        // 'Image' stores the image vertically flipped to how OpenGL expects it
+        Image img_flipped = img;
+        img_flipped.mirror_vertical();
         *this = std::move(Texture(
-            image.width(), image.height(), (const u8*) image.data()
+            img.width(), img.height(), (const u8*) img_flipped.data()
         ));
     }
 
     Texture Texture::from_resource(const Texture::LoadArgs& args) {
-        return Texture(Image::from_resource({ args.path }));
+        auto image = Image::from_resource({ args.path });
+        if(args.mirror_vertical) {
+            image.mirror_vertical();
+        }
+        return Texture(image);
     }
 
     Texture::Texture(Texture&& other) noexcept {
@@ -118,7 +125,7 @@ namespace houseofatmos::engine {
         }
         if(!this->moved) {
             delete_resources(this->fbo_id, this->tex_id, this->dbo_id);
-        }
+        };
         this->width_px = other.width_px;
         this->height_px = other.height_px;
         this->fbo_id = other.fbo_id;

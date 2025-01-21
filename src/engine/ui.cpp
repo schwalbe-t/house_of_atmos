@@ -534,8 +534,12 @@ namespace houseofatmos::engine::ui {
         dest_scales.reserve(instances.size());
         dest_offsets.reserve(instances.size());
         for(const Instance& instance: instances) {
-            src_scales.push_back(instance.src_size / src_tex_size);
-            src_offsets.push_back(instance.src_pos / src_tex_size);
+            src_scales.push_back(instance.src_size
+                / src_tex_size * Vec<2>( 1.0, -1.0)
+            );
+            src_offsets.push_back(instance.src_pos 
+                / src_tex_size * Vec<2>( 1.0, -1.0) + Vec<2>(0.0, 1.0)
+            );
             Vec<2> dest_size = instance.dest_size;
             dest_size.x() = ceil(dest_size.x());
             dest_size.y() = ceil(dest_size.y());
