@@ -41,7 +41,7 @@ namespace houseofatmos::engine {
     }
 
     Texture::Texture(u64 width, u64 height, const u8* data) {
-        if(width <= 0 || height <= 0) {
+        if(width == 0 || height == 0) {
             error("Texture width and height must both be larger than 0"
                 " (given was " + std::to_string(width)
                 + "x" + std::to_string(height) + ")"

@@ -2,6 +2,8 @@
 #include "outside.hpp"
 #include <fstream>
 
+#include "terrainmap.hpp"
+
 namespace houseofatmos::outside {
 
     static void load_resources(engine::Scene& scene) {
@@ -313,6 +315,10 @@ namespace houseofatmos::outside {
         window.show_texture(this->renderer.output());
         this->ui.render(window, *this);
         window.show_texture(this->ui.output());
+
+        TerrainMap map = TerrainMap(this->terrain);
+        map.render();
+        window.show_texture(map.output_tex());
     }
 
 
