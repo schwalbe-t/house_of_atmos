@@ -286,7 +286,17 @@ namespace houseofatmos::outside {
             + Vec<3>(0, 1, 1).normalized() * distance;
     }
 
+    static void update_map(
+        engine::Window& window, TerrainMap& terrain_map, ui::Element*& map
+    ) {
+        terrain_map.adjust_view(window);
+        if(window.was_pressed(engine::Key::M)) {
+            map->hidden = !map->hidden;
+        }
+    }
+
     void Outside::update(engine::Window& window) {
+        this->ui.update(window);
         this->carriages.update_all(window, this->complexes, this->terrain);
         this->complexes.update(window, this->balance);
         ActionMode::choose_current(
@@ -300,7 +310,14 @@ namespace houseofatmos::outside {
         if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
             save_game(this->serialize());
         }
-        this->ui.update(window);
+        update_map(window, this->terrain_map, this->map);
+    }
+
+    static void render_map(TerrainMap& terrain_map, ui::Element*& map) {
+        terrain_map.output_size = map->final_size();
+        terrain_map.render_map();
+        terrain_map.render_view();
+        map->texture = &terrain_map.output();
     }
 
     void Outside::render(engine::Window& window) {
@@ -313,12 +330,9 @@ namespace houseofatmos::outside {
         );
         this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
+        render_map(this->terrain_map, this->map);
         this->ui.render(window, *this);
         window.show_texture(this->ui.output());
-
-        TerrainMap map = TerrainMap(this->terrain);
-        map.render();
-        window.show_texture(map.output_tex());
     }
 
 

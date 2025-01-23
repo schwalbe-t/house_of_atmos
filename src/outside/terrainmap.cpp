@@ -30,9 +30,9 @@ namespace houseofatmos::outside {
         );
     }
 
-    void TerrainMap::render() {
-        for(u64 x = 0; x < this->width; x += 1) {
-            for(u64 z = 0; z < this->height; z += 1) {
+    void TerrainMap::render_map() {
+        for(u64 x = 0; x < this->t_width; x += 1) {
+            for(u64 z = 0; z < this->t_height; z += 1) {
                 // get elevation data
                 i64 elev_tl = this->terrain.elevation_at(x,     z    );
                 i64 elev_tr = this->terrain.elevation_at(x + 1, z    );
@@ -64,11 +64,28 @@ namespace houseofatmos::outside {
                 bool is_building = this->terrain.building_at(x, z) != nullptr;
                 if(is_building) { color = building_color; }
                 // write computed color
-                this->target.pixel_at(x, z) = color;
+                this->rendered_img.pixel_at(x, z) = color;
             }
         }
-        this->result = std::move(engine::Texture(this->target));
+        this->rendered_tex = std::move(engine::Texture(this->rendered_img));
     }
 
+
+    void TerrainMap::adjust_view(const engine::Window& window) {
+        // todo
+    }
+
+    void TerrainMap::render_view() {
+        if(this->output_size.x() == 0 || this->output_size.y() == 0) { return; }
+        this->output_tex.resize_fast(
+            (u64) this->output_size.x(), (u64) this->output_size.y()
+        );
+        this->output_tex.clear_color(Vec<4>(0, 0, 0, 0));
+        f64 view_h = (f64) this->output_size.y() * this->view_scale;
+        f64 view_w = (f64) this->t_width / this->t_height * view_h;
+        f64 view_x = this->output_size.x() / 2 - view_w * this->view_pos.x();
+        f64 view_y = this->output_size.y() / 2 - view_h * this->view_pos.y();
+        this->rendered_tex.blit(this->output_tex, view_x, view_y, view_w, view_h);
+    }
 
 }

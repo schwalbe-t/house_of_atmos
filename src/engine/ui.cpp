@@ -10,20 +10,77 @@ namespace houseofatmos::engine::ui {
         this->size_px = Vec<2>();
         this->position_px = Vec<2>();
         this->hovering = false;
+        this->clicked = false;
         this->with_size(10, 10, size::units);
         this->with_pos(0, 0, position::parent_units);
-        this->with_children(std::vector<Element>(), Direction::Vertical);
+        this->with_list_dir(Direction::Vertical);
         this->with_background(nullptr, nullptr);
         this->with_texture(nullptr);
         this->with_click_handler(default_click_handler);
         this->with_text("", nullptr, true);
-        this->hidden = false;
+        this->with_handle(nullptr);
+        this->as_hidden(false);
+    }
+
+    static void inherit_element_values(Element& from, Element& to, bool to_exists) {
+        if(&from == &to) { return; }
+        if(to_exists && to.handle != nullptr) {
+            // set the pointer to the old element to null, since the element
+            // is overwritten
+            // this will result in a segfault if dereferenced,
+            // but at least it's easier to debug than if we just left it :)
+            *to.handle = nullptr;    
+            to.handle = nullptr;
+        }
+        to.size = from.size;
+        to.size_func = from.size_func;
+        to.position = from.position;
+        to.pos_func = from.pos_func;
+        to.children = std::move(from.children);
+        to.list_direction = from.list_direction;
+        to.background = from.background;
+        to.background_hover = from.background_hover;
+        to.texture = from.texture;
+        to.on_click = std::move(from.on_click);
+        to.text = std::move(from.text);
+        to.local = from.local;
+        to.font = from.font;
+        to.wrap_text = from.wrap_text;
+        to.hidden = from.hidden;
+        to.handle = from.handle;
+        from.handle = nullptr;
+        if(to.handle != nullptr) {
+            // point the pointer to the old element to this location, since
+            // it has moved here
+            *to.handle = &to;
+        }
+    }
+
+    Element::Element(Element&& other) noexcept {
+        inherit_element_values(other, *this, false);
+    }
+
+    Element& Element::operator=(Element&& other) noexcept {
+        inherit_element_values(other, *this, true);
+        return *this;
+    }
+
+    Element::~Element() {
+        if(this->handle != nullptr) {
+            // set the pointer to the old element to null, since the element
+            // is overwritten
+            // this will result in a segfault if dereferenced,
+            // but at least it's easier to debug than if we just left it :)
+            *this->handle = nullptr;    
+            this->handle = nullptr;
+        }
     }
 
     Element& Element::with_padding(f64 amount) {
         auto padding = Element()
             .with_pos(this->position.x(), this->position.y(), this->pos_func)
-            .with_size(amount * 2, amount * 2, size::units_with_children);
+            .with_size(amount * 2, amount * 2, size::units_with_children)
+            .as_movable();
         padding.children.push_back(
             std::move(this->with_pos(amount, amount, position::parent_units))
         );
@@ -94,16 +151,20 @@ namespace houseofatmos::engine::ui {
 
     void Element::update_input(const Window& window) {
         if(this->hidden) { return; }
+        this->clicked = false;
+        for(Element& child: this->children) {
+            child.update_input(window);
+            this->clicked |= child.was_clicked();
+        }
         Vec<2> cursor = window.cursor_pos_px();
         this->hovering = this->position_px.x() <= cursor.x()
             && cursor.x() < this->position_px.x() + this->size_px.x()
             && this->position_px.y() <= cursor.y()
             && cursor.y() < this->position_px.y() + this->size_px.y();
-        if(this->hovering && window.was_pressed(Button::Left)) {
+        this->clicked = !this->clicked && this->hovering 
+            && window.was_pressed(Button::Left);
+        if(this->clicked) {
             this->on_click();
-        }
-        for(Element& child: this->children) {
-            child.update_input(window);
         }
     }
 

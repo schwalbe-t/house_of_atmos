@@ -262,7 +262,7 @@ namespace houseofatmos::engine {
         Vec<2> scale = Vec<2>(w, h)
             / Vec<2>(dest_width, dest_height)
             * 2;
-        Vec<2> offset = Vec<2>(x, y)
+        Vec<2> offset = Vec<2>(x, dest_height - y - h)
             / Vec<2>(dest_width, dest_height)
             * 2
             - Vec<2>(1.0, 1.0);

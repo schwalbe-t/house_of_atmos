@@ -71,6 +71,7 @@ namespace houseofatmos::engine::ui {
         Vec<2> position_px;
 
         bool hovering;
+        bool clicked;
 
 
         public:
@@ -96,9 +97,14 @@ namespace houseofatmos::engine::ui {
 
         bool hidden;
 
+        Element** handle;
+
 
         public:
         Element();
+        Element(Element&& other) noexcept;
+        Element& operator=(Element&& other) noexcept;
+        ~Element();
         Element& with_size(f64 width, f64 height, SizeFunc size_func) {
             this->size = Vec<2>(width, height);
             this->size_func = size_func;
@@ -109,11 +115,12 @@ namespace houseofatmos::engine::ui {
             this->pos_func = pos_func;
             return *this;
         }
-        Element& with_children(
-            std::vector<Element>&& children, Direction dir = Direction::Vertical
-        ) {
-            this->children = std::move(children);
-            this->list_direction = dir;
+        Element& with_list_dir(Direction list_dir) {
+            this->list_direction = list_dir;
+            return *this;
+        }
+        Element& with_child(Element&& child) {
+            this->children.push_back(std::move(child));
             return *this;
         }
         Element& with_background(
@@ -151,8 +158,21 @@ namespace houseofatmos::engine::ui {
             this->wrap_text = wrap_text;
             return *this;
         }
+        Element& as_hidden(bool is_hidden) {
+            this->hidden = is_hidden;
+            return *this;
+        }
+        Element& with_handle(Element** handle_ptr) {
+            this->handle = handle_ptr;
+            if(this->handle != nullptr) {
+                *this->handle = this;
+            }
+            return *this;
+        }
+        Element&& as_movable() { return std::move(*this); }
 
         bool is_hovered_over() const { return this->hovering; }
+        bool was_clicked() const { return this->clicked; }
         const Vec<2>& final_size() const { return this->size_px; }
         const Vec<2>& final_pos() const { return this->position_px; }
 
@@ -219,7 +239,8 @@ namespace houseofatmos::engine::ui {
         public:
         Element root = Element()
             .with_pos(0, 0, ui::position::window_tl_units)
-            .with_size(1.0, 1.0, ui::size::window_fract);
+            .with_size(1.0, 1.0, ui::size::window_fract)
+            .as_movable();
         f64 unit_fract_size; // fraction of window height
 
         Manager(f64 unit_fract_size);
