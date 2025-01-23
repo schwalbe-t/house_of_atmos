@@ -274,9 +274,11 @@ namespace houseofatmos::outside {
 
     static void update_camera(
         engine::Window& window, Player& player, Camera& camera,
-        f64& distance
+        f64& distance, ui::Element*& map
     ) {
-        distance += window.scrolled().y() * -5.0;
+        if(map->hidden) {
+            distance += window.scrolled().y() * -5.0;
+        }
         distance = std::min(
             std::max(distance, Outside::min_camera_dist), 
             Outside::max_camera_dist
@@ -289,7 +291,9 @@ namespace houseofatmos::outside {
     static void update_map(
         engine::Window& window, TerrainMap& terrain_map, ui::Element*& map
     ) {
-        terrain_map.adjust_view(window);
+        if(!map->hidden) {
+            terrain_map.adjust_view(window, map->final_pos());
+        }
         if(window.was_pressed(engine::Key::M)) {
             map->hidden = !map->hidden;
         }
@@ -306,7 +310,10 @@ namespace houseofatmos::outside {
         );
         this->action_mode->update(window, *this, this->renderer, this->balance);
         update_player(window, this->terrain, this->player);
-        update_camera(window, this->player, this->renderer.camera, this->camera_distance);
+        update_camera(
+            window, this->player, this->renderer.camera, this->camera_distance, 
+            this->map
+        );
         if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
             save_game(this->serialize());
         }
