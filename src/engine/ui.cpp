@@ -10,7 +10,6 @@ namespace houseofatmos::engine::ui {
         this->size_px = Vec<2>();
         this->position_px = Vec<2>();
         this->hovering = false;
-        this->clicked = false;
         this->with_size(10, 10, size::units);
         this->with_pos(0, 0, position::parent_units);
         this->with_list_dir(Direction::Vertical);
@@ -103,27 +102,20 @@ namespace houseofatmos::engine::ui {
         engine::error("Unhandled 'Direction' in 'Element::child_offset'!");
     }
 
-    void Element::update_root(const Window& window, f64 unit) {
+    bool Element::update_root(const Window& window, f64 unit) {
         this->update_size(nullptr, window, unit);
         this->update_position(std::nullopt, window, unit);
-        this->update_input(window);
+        this->update_hovering(window);
+        return this->update_clicked(window);
     }
 
-    void Element::render_root(Manager& manager, Scene& scene, f64 unit) const {
-        if(this->hidden) { return; }
-        this->render_background(manager, scene, unit);
-        this->render_text(manager, scene, unit);
-        if(this->texture != nullptr) {
-            std::array<Manager::Instance, 1> instance = { (Manager::Instance) {
-                Vec<2>(0, 0), 
-                Vec<2>(this->texture->width(), this->texture->height()),
-                this->final_pos(), this->final_size()
-            } };
-            manager.blit_texture(*this->texture, instance);
-        }
-        for(const Element& child: this->children) {
-            child.render_root(manager, scene, unit);
-        }
+    void Element::render_root(
+        Manager& manager, Scene& scene, const Window& window, f64 unit
+    ) {
+        this->update_size(nullptr, window, unit);
+        this->update_position(std::nullopt, window, unit);
+        this->update_hovering(window);
+        this->render(manager, scene, unit);
     }
 
 
@@ -149,25 +141,55 @@ namespace houseofatmos::engine::ui {
         }
     }
 
-    void Element::update_input(const Window& window) {
-        if(this->hidden) { return; }
-        this->clicked = false;
-        for(Element& child: this->children) {
-            child.update_input(window);
-            this->clicked |= child.was_clicked();
+    void Element::update_hovering(const Window& window) {
+        if(this->hidden) {
+            this->hovering = false;
+            return;
         }
         Vec<2> cursor = window.cursor_pos_px();
         this->hovering = this->position_px.x() <= cursor.x()
             && cursor.x() < this->position_px.x() + this->size_px.x()
             && this->position_px.y() <= cursor.y()
             && cursor.y() < this->position_px.y() + this->size_px.y();
-        this->clicked = !this->clicked && this->hovering 
-            && window.was_pressed(Button::Left);
-        if(this->clicked) {
-            this->on_click();
+        for(Element& child: this->children) {
+            child.update_hovering(window);
         }
     }
 
+    bool Element::update_clicked(const Window& window) const {
+        if(this->hidden) { return false; }
+        for(const Element& child: this->children) {
+            if(child.update_clicked(window)) { return true; }
+        }
+        if(this->hovering && window.was_pressed(Button::Left)) {
+            this->on_click();
+            return true;
+        }
+        return false;
+    }
+
+
+    void Element::force_size_compute(const Window& window, f64 unit) {
+        this->update_size(nullptr, window, unit);
+    }
+
+
+    void Element::render(Manager& manager, Scene& scene, f64 unit) const {
+        if(this->hidden) { return; }
+        this->render_background(manager, scene, unit);
+        this->render_text(manager, scene, unit);
+        if(this->texture != nullptr) {
+            std::array<Manager::Instance, 1> instance = { (Manager::Instance) {
+                Vec<2>(0, 0), 
+                Vec<2>(this->texture->width(), this->texture->height()),
+                this->final_pos(), this->final_size()
+            } };
+            manager.blit_texture(*this->texture, instance);
+        }
+        for(const Element& child: this->children) {
+            child.render(manager, scene, unit);
+        }
+    }
 
     static void render_background_corners(
         std::vector<Manager::Instance>& instances, f64 unit,
@@ -404,7 +426,7 @@ namespace houseofatmos::engine::ui {
 
 
     Vec<2> position::window_tl_units(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
         (void) parent;
@@ -413,7 +435,7 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> position::window_tr_units(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
         (void) parent;
@@ -424,7 +446,7 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> position::window_bl_units(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
         (void) parent;
@@ -435,7 +457,7 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> position::window_br_units(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
         (void) parent;
@@ -443,7 +465,7 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> position::window_fract(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
         (void) parent;
@@ -452,7 +474,7 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> position::window_ndc(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
         (void) parent;
@@ -464,7 +486,7 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> position::parent_units(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
         (void) window;
@@ -477,7 +499,7 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> position::parent_fract(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
         (void) window;
@@ -493,7 +515,7 @@ namespace houseofatmos::engine::ui {
 
 
     Vec<2> size::units(
-        const Element& self, const Element* parent, 
+        Element& self, const Element* parent, 
         const Window& window, f64 unit
     ) {
         (void) parent;
@@ -502,19 +524,22 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> size::parent_fract(
-        const Element& self, const Element* parent, 
+        Element& self, const Element* parent, 
         const Window& window, f64 unit
     ) {
         (void) unit;
         (void) window;
         if(parent == nullptr) {
-            engine::error("Cannot use 'size::parent_fract' with root element!");
+            engine::error(
+                "Cannot use 'size::parent_fract' with the root element or "
+                "an element whose parents' size depends on that of its children!"
+            );
         }
         return parent->final_size() * self.size;
     }
 
     Vec<2> size::window_fract(
-        const Element& self, const Element* parent, 
+        Element& self, const Element* parent, 
         const Window& window, f64 unit
     ) {
         (void) unit;
@@ -523,24 +548,24 @@ namespace houseofatmos::engine::ui {
     }
 
     Vec<2> size::units_with_children(
-        const Element& self, const Element* parent, 
+        Element& self, const Element* parent, 
         const Window& window, f64 unit
     ) {
         (void) parent;
-        (void) window;
-        Vec<2> offset = self.offset_of_child(self.children.size());
         Vec<2> size;
-        for(const Element& child: self.children) {
+        for(Element& child: self.children) {
+            child.force_size_compute(window, unit);
             size.x() = std::max(size.x(), child.final_size().x());
             size.y() = std::max(size.y(), child.final_size().y());
         }
+        Vec<2> offset = self.offset_of_child(self.children.size());
         switch(self.list_direction) {
             case Direction::Horizontal:
                 return Vec<2>(offset.x(), size.y()) + self.size * unit;
             case Direction::Vertical:
                 return Vec<2>(size.x(), offset.y()) + self.size * unit;
         }
-        engine::error("Unhandled 'Direction' in 'size::fit_children'!");
+        engine::error("Unhandled 'Direction' in 'size::units_with_children'!");
     }
 
 
@@ -565,7 +590,8 @@ namespace houseofatmos::engine::ui {
     }
 
     void Manager::update(const Window& window) {
-        this->root.update_root(window, window.height() * this->unit_fract_size);
+        this->clicked = this->root
+            .update_root(window, window.height() * this->unit_fract_size);
     }
 
     void Manager::render(const Window& window, Scene& scene) {
@@ -575,7 +601,7 @@ namespace houseofatmos::engine::ui {
         this->target.clear_color(Vec<4>(0.0, 0.0, 0.0, 0.0));
         this->shader = &scene.get<Shader>(Manager::shader_args);
         this->root.render_root(
-            *this, scene, window.height() * this->unit_fract_size
+            *this, scene, window, window.height() * this->unit_fract_size
         );
     }
 

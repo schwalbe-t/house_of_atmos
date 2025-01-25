@@ -21,6 +21,91 @@ namespace houseofatmos::outside {
         scene.load(engine::Localization::Loader(Outside::local));
     }
 
+    static void add_base_ui(Outside& scene, u64 selected);
+
+    static void set_action_mode(
+        Outside& scene, std::unique_ptr<ActionMode>&& mode, u64 selected
+    ) {
+        scene.ui.root.children.clear();
+        add_base_ui(scene, selected);
+        scene.action_mode = std::move(mode);
+    }
+
+    using ActionModeBuilder = std::unique_ptr<ActionMode> (*)(Outside& scene);
+    static const ActionModeBuilder default_mode_const = [](Outside& s) {
+        return (std::unique_ptr<ActionMode>) std::make_unique<DefaultMode>(
+            s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+        );
+    };
+    static const std::array<
+        std::pair<const ui::Background*, ActionModeBuilder>, 4
+    > action_modes = {
+        (std::pair<const ui::Background*, ActionModeBuilder>) 
+        { &ui_icon::terrain, [](Outside& s) {
+            return (std::unique_ptr<ActionMode>) std::make_unique<TerraformMode>(
+                s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+            );
+        } },
+        { &ui_icon::construction, [](Outside& s) {
+            return (std::unique_ptr<ActionMode>) std::make_unique<ConstructionMode>(
+                s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+            );
+        } },
+        { &ui_icon::demolition, [](Outside& s) {
+            return (std::unique_ptr<ActionMode>) std::make_unique<DemolitionMode>(
+                s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+            );
+        } },
+        { &ui_icon::pathing, [](Outside& s) {
+            return (std::unique_ptr<ActionMode>) std::make_unique<PathingMode>(
+                s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+            );
+        } }
+    };
+
+    static void add_base_ui(Outside& scene, u64 selected) {
+        ui::Element mode_list = ui::Element()
+            .with_pos(0.05, 0.05, ui::position::window_fract)
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_background(&ui_background::scroll_horizontal)
+            .with_list_dir(ui::Direction::Horizontal)
+            .as_movable();
+        for(u64 mode_i = 0; mode_i < action_modes.size(); mode_i += 1) {
+            const auto& [mode_bkg, mode_const] = action_modes[mode_i];
+            mode_list.children.push_back(ui::Element()
+                .with_size(16, 16, ui::size::units)
+                .with_background(mode_bkg)
+                .with_click_handler([mode_i, &scene, selected, mode_const]() {
+                    if(selected != mode_i) {
+                        set_action_mode(scene, mode_const(scene), mode_i);
+                        return;
+                    }
+                    set_action_mode(scene, default_mode_const(scene), UINT64_MAX);
+                })
+                .with_padding(0)
+                .with_background(
+                    selected == mode_i
+                        ? &ui_background::border_selected
+                        : &ui_background::border,
+                    &ui_background::border_hovering
+                )
+                .with_padding(2)
+                .as_movable()
+            );
+        }
+        scene.ui.root.children.push_back(std::move(mode_list));
+        scene.ui.root.children.push_back(ui::Element()
+            .with_pos(0.5, 0.5, ui::position::window_fract)
+            .with_size(0.9, 0.9, ui::size::window_fract)
+            .with_background(&ui_background::scroll_horizontal)
+            .with_handle(&scene.map)
+            .as_hidden(true)
+            .as_movable()
+        );
+    }
+
+
+
     static const u64 settlement_min_land_rad = 5; // in tiles
     static const f64 min_settlement_distance = 10; // in tiles
 
@@ -230,9 +315,6 @@ namespace houseofatmos::outside {
 
     Outside::Outside() {
         load_resources(*this);
-        this->action_mode = std::make_unique<DefaultMode>(
-            this->terrain, this->complexes, this->carriages
-        );
         this->carriages = CarriageManager(
             this->terrain, Outside::draw_distance_un
         );
@@ -240,7 +322,9 @@ namespace houseofatmos::outside {
             random_init(), 
             this->terrain, this->player, this->balance, this->complexes
         );
+        set_action_mode(*this, default_mode_const(*this), UINT64_MAX);
     }
+
 
 
     static void save_game(engine::Arena buffer) {
@@ -291,7 +375,7 @@ namespace houseofatmos::outside {
     static void update_map(
         engine::Window& window, TerrainMap& terrain_map, ui::Element*& map
     ) {
-        if(!map->hidden) {
+        if(map->is_hovered_over()) {
             terrain_map.adjust_view(window, map->final_pos());
         }
         if(window.was_pressed(engine::Key::M)) {
@@ -303,12 +387,7 @@ namespace houseofatmos::outside {
         this->ui.update(window);
         this->carriages.update_all(window, this->complexes, this->terrain);
         this->complexes.update(window, this->balance);
-        ActionMode::choose_current(
-            window, 
-            this->terrain, this->complexes, this->player, this->carriages, 
-            this->action_mode
-        );
-        this->action_mode->update(window, *this, this->renderer, this->balance);
+        this->action_mode->update(window, *this, this->renderer);
         update_player(window, this->terrain, this->player);
         update_camera(
             window, this->player, this->renderer.camera, this->camera_distance, 
@@ -319,6 +398,8 @@ namespace houseofatmos::outside {
         }
         update_map(window, this->terrain_map, this->map);
     }
+
+
 
     static void render_map(TerrainMap& terrain_map, ui::Element*& map) {
         terrain_map.output_size = map->final_size();
@@ -343,6 +424,7 @@ namespace houseofatmos::outside {
     }
 
 
+
     Outside::Outside(const engine::Arena& buffer) {
         load_resources(*this);
         const auto& outside = buffer.value_at<Outside::Serialized>(0);
@@ -353,13 +435,11 @@ namespace houseofatmos::outside {
         );
         this->complexes = ComplexBank(outside.complexes, buffer);
         this->player = Player(outside.player, buffer);
-        this->action_mode = std::make_unique<DefaultMode>(
-            this->terrain, this->complexes, this->carriages
-        );
         this->balance = outside.balance;
         this->carriages = CarriageManager(
             outside.carriages, buffer, this->terrain, Outside::draw_distance_un
         );
+        set_action_mode(*this, default_mode_const(*this), UINT64_MAX);
     }
 
     engine::Arena Outside::serialize() const {

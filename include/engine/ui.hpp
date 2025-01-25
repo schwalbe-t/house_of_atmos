@@ -22,12 +22,12 @@ namespace houseofatmos::engine::ui {
     };
 
     using SizeFunc = Vec<2> (*)(
-        const Element& self, const Element* parent,
+        Element& self, const Element* parent,
         const Window& window, f64 unit
     );
 
     using PosFunc = Vec<2> (*)(
-        const Element& self, std::optional<ChildRef> parent, 
+        Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     );
 
@@ -71,7 +71,6 @@ namespace houseofatmos::engine::ui {
         Vec<2> position_px;
 
         bool hovering;
-        bool clicked;
 
 
         public:
@@ -172,13 +171,19 @@ namespace houseofatmos::engine::ui {
         Element&& as_movable() { return std::move(*this); }
 
         bool is_hovered_over() const { return this->hovering; }
-        bool was_clicked() const { return this->clicked; }
         const Vec<2>& final_size() const { return this->size_px; }
         const Vec<2>& final_pos() const { return this->position_px; }
 
         Vec<2> offset_of_child(size_t child_i) const;
-        void update_root(const Window& window, f64 unit);
-        void render_root(Manager& manager, Scene& scene, f64 unit) const;
+        bool update_root(const Window& window, f64 unit);
+        void render_root(
+            Manager& manager, Scene& scene, const Window& window, f64 unit
+        );
+
+        // may be called by sizing functions to force computation of the
+        // child size first 
+        // (note that sizing function of child may not depend on parent element)
+        void force_size_compute(const Window& window, f64 unit);
 
         Element& with_padding(f64 amount);
 
@@ -188,8 +193,10 @@ namespace houseofatmos::engine::ui {
         void update_position(
             std::optional<ChildRef> parent, const Window& window, f64 unit
         );
-        void update_input(const Window& window);
+        void update_hovering(const Window& window);
+        bool update_clicked(const Window& window) const;
 
+        void render(Manager& manager, Scene& scene, f64 unit) const;
         void render_background(Manager& manager, Scene& scene, f64 unit) const;
         void render_text(Manager& manager, Scene& scene, f64 unit) const;
 
@@ -197,22 +204,22 @@ namespace houseofatmos::engine::ui {
 
 
     namespace position {
-        Vec<2> window_tl_units(const Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_tr_units(const Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_bl_units(const Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_br_units(const Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_fract(const Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_ndc(const Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> parent_units(const Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> parent_fract(const Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> window_tl_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> window_tr_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> window_bl_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> window_br_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> window_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> window_ndc(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> parent_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> parent_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
     }
 
 
     namespace size {
-        Vec<2> units(const Element& self, const Element* parent, const Window& window, f64 unit);
-        Vec<2> parent_fract(const Element& self, const Element* parent, const Window& window, f64 unit);
-        Vec<2> window_fract(const Element& self, const Element* parent, const Window& window, f64 unit);
-        Vec<2> units_with_children(const Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> units(Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> parent_fract(Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> window_fract(Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> units_with_children(Element& self, const Element* parent, const Window& window, f64 unit);
     }
 
 
@@ -235,6 +242,7 @@ namespace houseofatmos::engine::ui {
         Texture target = Texture(100, 100);
         Mesh quad = Mesh(Manager::mesh_attribs);
         Shader* shader;
+        bool clicked = false;
 
         public:
         Element root = Element()
@@ -250,6 +258,7 @@ namespace houseofatmos::engine::ui {
         }
 
         const engine::Texture& output() const { return this->target; }
+        bool was_clicked() const { return this->clicked; }
 
         void update(const Window& window);
 

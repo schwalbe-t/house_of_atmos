@@ -4,56 +4,6 @@
 
 namespace houseofatmos::outside {
 
-    void ActionMode::choose_current(
-        const engine::Window& window,
-        Terrain& terrain, ComplexBank& complexes, const Player& player,
-        CarriageManager& carriages,
-        std::unique_ptr<ActionMode>& current
-    ) {
-        for(size_t type_i = 0; type_i < ActionMode::keys.size(); type_i += 1) {
-            engine::Key key = ActionMode::keys.at(type_i);
-            ActionMode::Type type = (ActionMode::Type) type_i;
-            if(!window.was_pressed(key)) { continue; }
-            if(current->get_type() == type) {
-                current = std::make_unique<DefaultMode>(
-                    terrain, complexes, carriages
-                ); 
-                break;
-            }
-            switch(type) {
-                case Default: 
-                    current = std::make_unique<DefaultMode>(
-                        terrain, complexes, carriages
-                    ); 
-                    break;
-                case Terraform: 
-                    current = std::make_unique<TerraformMode>(terrain); 
-                    break;
-                case Construction: 
-                    current = std::make_unique<ConstructionMode>(
-                        terrain, complexes, player, carriages
-                    );
-                    break;
-                case Demolition: 
-                    current = std::make_unique<DemolitionMode>(
-                        terrain, complexes, carriages
-                    ); 
-                    break;
-                case Pathing: 
-                    current = std::make_unique<PathingMode>(
-                        terrain, complexes, carriages
-                    ); 
-                    break;
-                default: engine::warning(
-                    "Unhandled 'ActionMode::Type' in 'ActionMode::choose_current'"
-                );
-            }
-            break;
-        }
-    }
-
-
-
     static std::string get_item_name(Item item) {
         switch(item) {
             case Item::Barley: return "Barley";
@@ -449,11 +399,10 @@ namespace houseofatmos::outside {
 
     void DefaultMode::update(
         const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer, Balance& balance
+        const Renderer& renderer
     ) {
         (void) scene;
         (void) renderer;
-        (void) balance;
         bool edit_carriages = this->selected.type == Selection::Building
             && window.was_pressed(engine::Key::Enter);
         if(edit_carriages) {
@@ -462,8 +411,8 @@ namespace houseofatmos::outside {
             const Building* building = this->terrain.building_at(tile_x, tile_z);
             if(building != nullptr && building->type == Building::Stable) {
                 manage_carriages(
-                    tile_x, tile_z, this->terrain, this->carriages, balance,
-                    this->complexes
+                    tile_x, tile_z, this->terrain, this->carriages, 
+                    this->balance, this->complexes
                 );
             }
         }
@@ -621,7 +570,7 @@ namespace houseofatmos::outside {
 
     void TerraformMode::update(
         const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer, Balance& balance
+        const Renderer& renderer
     ) {
         (void) scene;
         (void) renderer;
@@ -647,7 +596,7 @@ namespace houseofatmos::outside {
             u64 cost = compute_terrain_modification_cost(
                 tile_x, tile_z, elevation, this->terrain
             );
-            if(this->modification_valid && balance.pay_coins(cost)) {
+            if(this->modification_valid && this->balance.pay_coins(cost)) {
                 modify_terrain_height(
                     tile_x, tile_z, this->terrain, modification
                 );
@@ -889,7 +838,7 @@ namespace houseofatmos::outside {
 
     void ConstructionMode::update(
         const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer, Balance& balance
+        const Renderer& renderer
     ) {
         (void) scene;
         (void) renderer;
@@ -908,7 +857,7 @@ namespace houseofatmos::outside {
         if(this->placement_valid && window.was_pressed(engine::Button::Left)) {
             i64 unemployment = this->terrain.compute_unemployment();
             bool allowed = unemployment >= (i64) type_info.workers
-                && balance.pay_coins(type_info.cost);
+                && this->balance.pay_coins(type_info.cost);
             if(allowed) {
                 place_building(
                     tile_x, tile_z, this->terrain, this->complexes,
@@ -955,7 +904,7 @@ namespace houseofatmos::outside {
 
     void DemolitionMode::update(
         const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer, Balance& balance
+        const Renderer& renderer
     ) {
         (void) scene;
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
@@ -989,13 +938,13 @@ namespace houseofatmos::outside {
                 chunk.buildings.erase(chunk.buildings.begin() + index);
                 this->selected = nullptr;
                 u64 refunded = (u64) ((f64) type_info.cost * demolition_refund_factor);
-                balance.coins += refunded;
+                this->balance.coins += refunded;
                 this->terrain.reload_chunk_at(
                     this->selected_chunk_x, this->selected_chunk_z
                 );
                 this->carriages.refind_all_paths(this->complexes, this->terrain);
                 engine::info("Refunded " + std::to_string(refunded) + " coins "
-                    "for building demolition (now " + std::to_string(balance.coins) + ")"
+                    "for building demolition (now " + std::to_string(this->balance.coins) + ")"
                 );
             } else {
                 engine::info("Not enough unemployed workers available! ("
@@ -1039,7 +988,7 @@ namespace houseofatmos::outside {
 
     void PathingMode::update(
         const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer, Balance& balance
+        const Renderer& renderer
     ) {
         (void) scene;
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
@@ -1056,7 +1005,7 @@ namespace houseofatmos::outside {
         bool place_path = !has_path 
             && window.was_pressed(engine::Button::Left) 
             && valid_path_location(tile_x, tile_z, this->terrain)
-            && balance.pay_coins(path_placement_cost);
+            && this->balance.pay_coins(path_placement_cost);
         if(place_path) {
             chunk.set_path_at(rel_x, rel_z, true);
             this->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
@@ -1066,9 +1015,9 @@ namespace houseofatmos::outside {
             chunk.set_path_at(rel_x, rel_z, false);
             this->terrain.reload_chunk_at(chunk_x, chunk_z);
             this->carriages.refind_all_paths(this->complexes, this->terrain);
-            balance.coins += path_removal_refund;
+            this->balance.coins += path_removal_refund;
             engine::info("Refunded " + std::to_string(path_removal_refund) + " coins "
-                "for path removal (now " + std::to_string(balance.coins) + ")"
+                "for path removal (now " + std::to_string(this->balance.coins) + ")"
             );
         }
     }

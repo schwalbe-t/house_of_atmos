@@ -378,8 +378,18 @@ namespace houseofatmos::outside {
         u64 start_x = (u64) start.x() / terrain.units_per_tile();
         u64 start_z = (u64) start.z() / terrain.units_per_tile();
         auto [target_x, target_z] = target.closest_member_to(start_x, start_z);
+        // the pathfinding attempts to find a way to the closest building,
+        // but any building in the complex will stop the algorithm
         const Building* target_b = terrain.building_at(target_x, target_z);
         assert(target_b != nullptr);
+        std::vector<std::pair<std::pair<u64, u64>, const Building*>> target_m;
+        target_m.reserve(target.get_members().size());
+        for(const auto& member: target.get_members()) {
+            const auto& [member_x, member_z] = member.first;
+            const Building* member_b = terrain.building_at(member_x, member_z);
+            assert(member_b != nullptr);
+            target_m.push_back({{(u64) member_x, (u64) member_z}, member_b});
+        }
         // keep a list of tiles we can explore and add the start tile to it
         std::vector<SearchedTile> explorable;
         explorable.push_back((SearchedTile) {
@@ -395,11 +405,16 @@ namespace houseofatmos::outside {
             }
             explorable[current_i].explored = true;
             SearchedTile current = explorable[current_i];
-            // check if the current tile is in range of the target building
-            bool loadable = building_loadable_from(
-                target_x, target_z, *target_b, current.x, current.z
-            );
-            if(loadable) {
+            // check if the current tile is in range of any target building
+            bool any_loadable = false;
+            for(const auto& [member_p, member_b]: target_m) {
+                const auto& [member_x, member_z] = member_p;
+                any_loadable |= building_loadable_from(
+                    member_x, member_z, *member_b, current.x, current.z
+                );
+                if(any_loadable) { break; }
+            }
+            if(any_loadable) {
                 return build_found_path(start, explorable, current_i, terrain);
             }
             // compute data about neighbours

@@ -44,22 +44,28 @@ namespace houseofatmos::ui_background {
         Vec<2>(120, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
-    static inline const ui::Background border_select = (ui::Background) {
+    static inline const ui::Background border_hovering = (ui::Background) {
         (engine::Texture::LoadArgs) { "res/ui.png" },
         // offset, corner size, edge size
         Vec<2>(176, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
-    static inline const ui::Background button = (ui::Background) {
+    static inline const ui::Background border_selected = (ui::Background) {
         (engine::Texture::LoadArgs) { "res/ui.png" },
         // offset, corner size, edge size
         Vec<2>(232, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
-    static inline const ui::Background button_select = (ui::Background) {
+    static inline const ui::Background button = (ui::Background) {
         (engine::Texture::LoadArgs) { "res/ui.png" },
         // offset, corner size, edge size
         Vec<2>(288, 8), Vec<2>(8, 8), Vec<2>(32, 32)
+    };
+
+    static inline const ui::Background button_select = (ui::Background) {
+        (engine::Texture::LoadArgs) { "res/ui.png" },
+        // offset, corner size, edge size
+        Vec<2>(344, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
 
@@ -67,7 +73,8 @@ namespace houseofatmos::ui_background {
         scene.load(engine::Texture::Loader(scroll_horizontal.texture));
         scene.load(engine::Texture::Loader(scroll_vertical.texture));
         scene.load(engine::Texture::Loader(border.texture));
-        scene.load(engine::Texture::Loader(border_select.texture));
+        scene.load(engine::Texture::Loader(border_hovering.texture));
+        scene.load(engine::Texture::Loader(border_selected.texture));
         scene.load(engine::Texture::Loader(button.texture));
         scene.load(engine::Texture::Loader(button_select.texture));
     }
