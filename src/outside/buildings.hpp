@@ -141,7 +141,7 @@ namespace houseofatmos::outside {
                     RelCollider({  4.50, -0.5, -5.50 }, { 2.5, 1, 1.0 })
                 },
                 3, 3, // size
-                999999999, // building cost
+                5000, // building cost (can't be built, but for refund)
                 0, // workers
                 0 // residents
             }

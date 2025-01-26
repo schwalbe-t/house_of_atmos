@@ -60,8 +60,10 @@ namespace houseofatmos::outside {
         f64 camera_distance = min_camera_dist;
         std::unique_ptr<ActionMode> action_mode;
         TerrainMap terrain_map = TerrainMap(this->terrain);
-        ui::Element* map = nullptr;
+        ui::Element* coins_elem = nullptr;
+        ui::Element* map_elem = nullptr;
         ui::Manager ui = ui::Manager(ui_unit_size);
+        Toasts toasts;
 
         Outside();
         Outside(const engine::Arena& buffer);

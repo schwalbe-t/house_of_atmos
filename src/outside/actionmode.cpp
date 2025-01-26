@@ -4,6 +4,10 @@
 
 namespace houseofatmos::outside {
 
+    namespace ui = houseofatmos::engine::ui;
+
+
+
     static std::string get_item_name(Item item) {
         switch(item) {
             case Item::Barley: return "Barley";
@@ -329,7 +333,7 @@ namespace houseofatmos::outside {
     static void manage_carriages(
         i64 stable_x, i64 stable_z, const Terrain& terrain,
         CarriageManager& carriages, Balance& balance, 
-        const ComplexBank& complexes
+        const ComplexBank& complexes, Toasts& toasts
     ) {
         std::string output;
         output += "===== Carriages =====";
@@ -381,7 +385,7 @@ namespace houseofatmos::outside {
                 );
                 return;
             }
-            if(!balance.pay_coins(carriage_buy_cost)) { return; }
+            if(!balance.pay_coins(carriage_buy_cost, toasts)) { return; }
             engine::info("Created a new carriage with index [" 
                 + std::to_string(carriages.carriages.size()) + "]"
             );
@@ -412,7 +416,7 @@ namespace houseofatmos::outside {
             if(building != nullptr && building->type == Building::Stable) {
                 manage_carriages(
                     tile_x, tile_z, this->terrain, this->carriages, 
-                    this->balance, this->complexes
+                    this->balance, this->complexes, this->toasts
                 );
             }
         }
@@ -596,7 +600,9 @@ namespace houseofatmos::outside {
             u64 cost = compute_terrain_modification_cost(
                 tile_x, tile_z, elevation, this->terrain
             );
-            if(this->modification_valid && this->balance.pay_coins(cost)) {
+            bool modified = this->modification_valid 
+                && this->balance.pay_coins(cost, this->toasts);
+            if(modified) {
                 modify_terrain_height(
                     tile_x, tile_z, this->terrain, modification
                 );
@@ -857,7 +863,7 @@ namespace houseofatmos::outside {
         if(this->placement_valid && window.was_pressed(engine::Button::Left)) {
             i64 unemployment = this->terrain.compute_unemployment();
             bool allowed = unemployment >= (i64) type_info.workers
-                && this->balance.pay_coins(type_info.cost);
+                && this->balance.pay_coins(type_info.cost, this->toasts);
             if(allowed) {
                 place_building(
                     tile_x, tile_z, this->terrain, this->complexes,
@@ -916,7 +922,10 @@ namespace houseofatmos::outside {
             (i64) tile_x, (i64) tile_z, 
             &this->selected_chunk_x, &this->selected_chunk_z
         );
-        if(this->selected != nullptr && window.was_pressed(engine::Button::Left)) {
+        bool attempted = this->selected != nullptr
+            && window.was_pressed(engine::Button::Left)
+            && !this->ui.was_clicked();
+        if(attempted) {
             const Building::TypeInfo& type_info = this->selected->get_type_info();
             i64 unemployment = this->terrain.compute_unemployment();
             bool allowed = unemployment >= (i64) type_info.residents;
@@ -938,18 +947,16 @@ namespace houseofatmos::outside {
                 chunk.buildings.erase(chunk.buildings.begin() + index);
                 this->selected = nullptr;
                 u64 refunded = (u64) ((f64) type_info.cost * demolition_refund_factor);
-                this->balance.coins += refunded;
+                this->balance.add_coins(refunded, this->toasts);
                 this->terrain.reload_chunk_at(
                     this->selected_chunk_x, this->selected_chunk_z
                 );
                 this->carriages.refind_all_paths(this->complexes, this->terrain);
-                engine::info("Refunded " + std::to_string(refunded) + " coins "
-                    "for building demolition (now " + std::to_string(this->balance.coins) + ")"
-                );
             } else {
-                engine::info("Not enough unemployed workers available! ("
-                    + std::to_string(unemployment) + "/"
-                    + std::to_string(type_info.residents) + ") "
+                this->toasts.add_toast(
+                    "Missing unemployed workers ("
+                        + std::to_string(unemployment) + "/"
+                        + std::to_string(type_info.residents) + ") "
                 );
             }
         }
@@ -1003,9 +1010,10 @@ namespace houseofatmos::outside {
         Terrain::ChunkData& chunk = this->terrain.chunk_at(chunk_x, chunk_z);
         bool has_path = chunk.path_at(rel_x, rel_z);
         bool place_path = !has_path 
-            && window.was_pressed(engine::Button::Left) 
+            && window.was_pressed(engine::Button::Left)
+            && !this->ui.was_clicked()
             && valid_path_location(tile_x, tile_z, this->terrain)
-            && this->balance.pay_coins(path_placement_cost);
+            && this->balance.pay_coins(path_placement_cost, this->toasts);
         if(place_path) {
             chunk.set_path_at(rel_x, rel_z, true);
             this->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
@@ -1015,10 +1023,7 @@ namespace houseofatmos::outside {
             chunk.set_path_at(rel_x, rel_z, false);
             this->terrain.reload_chunk_at(chunk_x, chunk_z);
             this->carriages.refind_all_paths(this->complexes, this->terrain);
-            this->balance.coins += path_removal_refund;
-            engine::info("Refunded " + std::to_string(path_removal_refund) + " coins "
-                "for path removal (now " + std::to_string(this->balance.coins) + ")"
-            );
+            this->balance.add_coins(path_removal_refund, this->toasts);
         }
     }
 

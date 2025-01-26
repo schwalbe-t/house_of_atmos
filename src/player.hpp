@@ -6,6 +6,7 @@
 #include <engine/model.hpp>
 #include "collider.hpp"
 #include "renderer.hpp"
+#include "toasts.hpp"
 
 namespace houseofatmos {
 
@@ -13,20 +14,24 @@ namespace houseofatmos {
 
 
     struct Balance {
+
         u64 coins;
 
-        bool pay_coins(u64 amount) {
+        bool pay_coins(u64 amount, Toasts& toasts) {
             if(amount > this->coins) {
-                engine::info("Not enough coins! (" + std::to_string(this->coins)
-                    + "/" + std::to_string(amount) + ")"
+                toasts.add_toast(
+                    "Too expensive! (" + std::to_string(amount) + " 🪙)"
                 );
-                return false;
+                return false; 
             }
             this->coins -= amount;
-            engine::info("Payed " + std::to_string(amount) + " coins "
-                "(now " + std::to_string(this->coins) + ")"
-            );
+            toasts.add_toast("-" + std::to_string(amount) + " 🪙");
             return true;
+        }
+
+        void add_coins(u64 amount, Toasts& toasts) {
+            this->coins += amount;
+            toasts.add_toast("+" + std::to_string(amount) + " 🪙");
         }
     };
 

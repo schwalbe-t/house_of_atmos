@@ -19,6 +19,7 @@ namespace houseofatmos::engine::ui {
         this->with_text("", nullptr, true);
         this->with_handle(nullptr);
         this->as_hidden(false);
+        this->as_clickable(true);
     }
 
     static void inherit_element_values(Element& from, Element& to, bool to_exists) {
@@ -46,6 +47,7 @@ namespace houseofatmos::engine::ui {
         to.font = from.font;
         to.wrap_text = from.wrap_text;
         to.hidden = from.hidden;
+        to.clickable = from.clickable;
         to.handle = from.handle;
         from.handle = nullptr;
         if(to.handle != nullptr) {
@@ -102,8 +104,8 @@ namespace houseofatmos::engine::ui {
         engine::error("Unhandled 'Direction' in 'Element::child_offset'!");
     }
 
-    bool Element::update_root(const Window& window, f64 unit) {
-        this->update_size(nullptr, window, unit);
+    bool Element::update_root(Scene& scene, const Window& window, f64 unit) {
+        this->update_size(nullptr, scene, window, unit);
         this->update_position(std::nullopt, window, unit);
         this->update_hovering(window);
         return this->update_clicked(window);
@@ -112,7 +114,7 @@ namespace houseofatmos::engine::ui {
     void Element::render_root(
         Manager& manager, Scene& scene, const Window& window, f64 unit
     ) {
-        this->update_size(nullptr, window, unit);
+        this->update_size(nullptr, scene, window, unit);
         this->update_position(std::nullopt, window, unit);
         this->update_hovering(window);
         this->render(manager, scene, unit);
@@ -120,12 +122,12 @@ namespace houseofatmos::engine::ui {
 
 
     void Element::update_size(
-        const Element* parent, const Window& window, f64 unit
+        const Element* parent, Scene& scene, const Window& window, f64 unit
     ) {
         if(this->hidden) { return; }
-        this->size_px = this->size_func(*this, parent, window, unit);
+        this->size_px = this->size_func(*this, parent, scene, window, unit);
         for(Element& child: this->children) {
-            child.update_size(this, window, unit);
+            child.update_size(this, scene, window, unit);
         }
     }
 
@@ -161,16 +163,18 @@ namespace houseofatmos::engine::ui {
         for(const Element& child: this->children) {
             if(child.update_clicked(window)) { return true; }
         }
-        if(this->hovering && window.was_pressed(Button::Left)) {
-            this->on_click();
-            return true;
-        }
-        return false;
+        bool was_clicked = this->clickable 
+            && this->hovering 
+            && window.was_pressed(Button::Left);
+        if(was_clicked) { this->on_click(); }
+        return was_clicked;
     }
 
 
-    void Element::force_size_compute(const Window& window, f64 unit) {
-        this->update_size(nullptr, window, unit);
+    void Element::force_size_compute(
+        Scene& scene, const Window& window, f64 unit
+    ) {
+        this->update_size(nullptr, scene, window, unit);
     }
 
 
@@ -358,6 +362,20 @@ namespace houseofatmos::engine::ui {
         return std::string::npos;
     }
 
+    static f64 collect_text_width(
+        std::string_view text, const Font& font
+    ) {
+        size_t c_len = 0;
+        f64 width = 0.0;
+        for(size_t o = 0; o < text.size(); o += c_len) {
+            c_len = utf8_char_length(text.substr(o));
+            std::string_view c = text.substr(o, c_len);
+            size_t idx = utf8_find_char_pos(font.chars, c);
+            width += font.char_padding + font.char_widths[idx];
+        }
+        return width;
+    }
+
     static f64 find_next_space_distance(
         std::string_view text, const Font& font,
         size_t o
@@ -381,22 +399,19 @@ namespace houseofatmos::engine::ui {
         Manager& manager, Scene& scene, f64 unit
     ) const {
         if(this->font == nullptr) { return; }
-        const std::string* text = &this->text;
-        if(this->local != nullptr) {
-            text = &scene.get<Localization>(*this->local).text(this->text);
-        }
-        if(text->size() == 0) { return; }
+        const std::string& text = this->shown_text(scene);
+        if(text.size() == 0) { return; }
         Texture& tex = scene.get<Texture>(this->font->texture);
         std::vector<Manager::Instance> instances;
-        instances.reserve(text->size()); 
+        instances.reserve(text.size()); 
         Vec<2> char_offset;
         size_t c_len;
-        for(size_t o = 0; o < text->size(); o += c_len) {
-            c_len = utf8_char_length(std::string_view(*text).substr(o));
-            std::string_view c = std::string_view(*text).substr(o, c_len);
+        for(size_t o = 0; o < text.size(); o += c_len) {
+            c_len = utf8_char_length(std::string_view(text).substr(o));
+            std::string_view c = std::string_view(text).substr(o, c_len);
             if(c_len == 1 && c[0] == ' ') {
                 f64 ns_pos_x = char_offset.x()
-                    + find_next_space_distance(*text, *this->font, o);
+                    + find_next_space_distance(text, *this->font, o);
                 if(ns_pos_x * unit > this->final_size().x()) {
                     c = "\n";
                 }
@@ -418,7 +433,7 @@ namespace houseofatmos::engine::ui {
                 this->final_pos() + char_offset * unit,
                 src_size * unit
             });
-            char_offset.x() += font->char_padding + width;
+            char_offset.x() += width + font->char_padding;
         }
         manager.blit_texture(tex, instances);
     }     
@@ -461,7 +476,7 @@ namespace houseofatmos::engine::ui {
         const Window& window, f64 unit
     ) {
         (void) parent;
-        return window.size() - (self.position * unit);
+        return window.size() - (self.position * unit) - self.final_size();
     }
 
     Vec<2> position::window_fract(
@@ -516,19 +531,21 @@ namespace houseofatmos::engine::ui {
 
     Vec<2> size::units(
         Element& self, const Element* parent, 
-        const Window& window, f64 unit
+        Scene& scene, const Window& window, f64 unit
     ) {
         (void) parent;
+        (void) scene;
         (void) window;
         return self.size * unit;
     }
 
     Vec<2> size::parent_fract(
         Element& self, const Element* parent, 
-        const Window& window, f64 unit
+        Scene& scene, const Window& window, f64 unit
     ) {
-        (void) unit;
+        (void) scene;
         (void) window;
+        (void) unit;
         if(parent == nullptr) {
             engine::error(
                 "Cannot use 'size::parent_fract' with the root element or "
@@ -540,21 +557,22 @@ namespace houseofatmos::engine::ui {
 
     Vec<2> size::window_fract(
         Element& self, const Element* parent, 
-        const Window& window, f64 unit
+        Scene& scene, const Window& window, f64 unit
     ) {
-        (void) unit;
         (void) parent;
+        (void) scene;
+        (void) unit;
         return window.size() * self.size;
     }
 
     Vec<2> size::units_with_children(
         Element& self, const Element* parent, 
-        const Window& window, f64 unit
+        Scene& scene, const Window& window, f64 unit
     ) {
         (void) parent;
         Vec<2> size;
         for(Element& child: self.children) {
-            child.force_size_compute(window, unit);
+            child.force_size_compute(scene, window, unit);
             size.x() = std::max(size.x(), child.final_size().x());
             size.y() = std::max(size.y(), child.final_size().y());
         }
@@ -566,6 +584,19 @@ namespace houseofatmos::engine::ui {
                 return Vec<2>(size.x(), offset.y()) + self.size * unit;
         }
         engine::error("Unhandled 'Direction' in 'size::units_with_children'!");
+    }
+
+    Vec<2> size::unwrapped_text(
+        Element& self, const Element* parent, 
+        Scene& scene, const Window& window, f64 unit
+    ) {
+        (void) parent;
+        (void) window;
+        if(self.font == nullptr) { return Vec<2>(0.0, 0.0); }
+        Vec<2> size;
+        size.x() = collect_text_width(self.shown_text(scene), *self.font);
+        size.y() = self.font->height;
+        return size * unit;
     }
 
 
@@ -589,12 +620,13 @@ namespace houseofatmos::engine::ui {
         this->quad.submit();
     }
 
-    void Manager::update(const Window& window) {
-        this->clicked = this->root
-            .update_root(window, window.height() * this->unit_fract_size);
+    void Manager::update(Scene& scene, const Window& window) {
+        this->clicked = this->root.update_root(
+            scene, window, window.height() * this->unit_fract_size
+        );
     }
 
-    void Manager::render(const Window& window, Scene& scene) {
+    void Manager::render(Scene& scene, const Window& window) {
         if(window.width() > 0 && window.height() > 0) {
             this->target.resize_fast(window.width(), window.height());
         }

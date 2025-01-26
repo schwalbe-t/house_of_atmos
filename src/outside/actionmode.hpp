@@ -5,6 +5,10 @@
 #include <engine/ui.hpp>
 #include "../renderer.hpp"
 #include "../player.hpp"
+#include "../toasts.hpp"
+#include "../ui_background.hpp"
+#include "../ui_font.hpp"
+#include "../ui_icon.hpp"
 #include "carriage.hpp"
 #include "terrain.hpp"
 
@@ -52,13 +56,14 @@ namespace houseofatmos::outside {
         Player& player;
         Balance& balance;
         ui::Manager& ui;
+        Toasts& toasts;
 
         ActionMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui
+            ui::Manager& ui, Toasts& toasts
         ): terrain(terrain), complexes(complexes), carriages(carriages),
-            player(player), balance(balance), ui(ui) {}
+            player(player), balance(balance), ui(ui), toasts(toasts) {}
 
         virtual ~ActionMode() = default;
 
@@ -99,8 +104,8 @@ namespace houseofatmos::outside {
         DefaultMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui) {
+            ui::Manager& ui, Toasts& toasts
+        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
             this->selected.type = Selection::None;
         }
 
@@ -125,8 +130,8 @@ namespace houseofatmos::outside {
         TerraformMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui) {}
+            ui::Manager& ui, Toasts& toasts
+        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {}
 
         void update(
             const engine::Window& window, engine::Scene& scene, 
@@ -150,8 +155,8 @@ namespace houseofatmos::outside {
         ConstructionMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui) {
+            ui::Manager& ui, Toasts& toasts
+        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
             this->selected_x = 0;
             this->selected_z = 0;
             this->selected_type = Building::House;
@@ -179,8 +184,8 @@ namespace houseofatmos::outside {
         DemolitionMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui) {
+            ui::Manager& ui, Toasts& toasts
+        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
             this->selected_tile_x = 0;
             this->selected_tile_z = 0;
             this->selected_chunk_x = 0;
@@ -207,8 +212,8 @@ namespace houseofatmos::outside {
         PathingMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui) {
+            ui::Manager& ui, Toasts& toasts
+        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
             this->selected_tile_x = 0;
             this->selected_tile_z = 0;
         }

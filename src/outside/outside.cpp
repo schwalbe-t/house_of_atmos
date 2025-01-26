@@ -21,20 +21,20 @@ namespace houseofatmos::outside {
         scene.load(engine::Localization::Loader(Outside::local));
     }
 
-    static void add_base_ui(Outside& scene, u64 selected);
+    static void set_base_ui(Outside& scene, u64 selected);
 
     static void set_action_mode(
         Outside& scene, std::unique_ptr<ActionMode>&& mode, u64 selected
     ) {
-        scene.ui.root.children.clear();
-        add_base_ui(scene, selected);
+        set_base_ui(scene, selected);
         scene.action_mode = std::move(mode);
     }
 
     using ActionModeBuilder = std::unique_ptr<ActionMode> (*)(Outside& scene);
     static const ActionModeBuilder default_mode_const = [](Outside& s) {
         return (std::unique_ptr<ActionMode>) std::make_unique<DefaultMode>(
-            s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+            s.terrain, s.complexes, s.carriages, s.player, s.balance,
+            s.ui, s.toasts
         );
     };
     static const std::array<
@@ -43,31 +43,37 @@ namespace houseofatmos::outside {
         (std::pair<const ui::Background*, ActionModeBuilder>) 
         { &ui_icon::terrain, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<TerraformMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+                s.terrain, s.complexes, s.carriages, s.player, s.balance, 
+                s.ui, s.toasts
             );
         } },
         { &ui_icon::construction, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<ConstructionMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+                s.terrain, s.complexes, s.carriages, s.player, s.balance, 
+                s.ui, s.toasts
             );
         } },
         { &ui_icon::demolition, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<DemolitionMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+                s.terrain, s.complexes, s.carriages, s.player, s.balance,
+                s.ui, s.toasts
             );
         } },
         { &ui_icon::pathing, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<PathingMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance, s.ui
+                s.terrain, s.complexes, s.carriages, s.player, s.balance, 
+                s.ui, s.toasts
             );
         } }
     };
 
-    static void add_base_ui(Outside& scene, u64 selected) {
+    static void set_base_ui(Outside& scene, u64 selected) {
+        Toasts::States toast_states = scene.toasts.make_states();
+        scene.ui.root.children.clear();
         ui::Element mode_list = ui::Element()
-            .with_pos(0.05, 0.05, ui::position::window_fract)
+            .with_pos(0.05, 0.95, ui::position::window_fract)
             .with_size(0, 0, ui::size::units_with_children)
-            .with_background(&ui_background::scroll_horizontal)
+            .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Horizontal)
             .as_movable();
         for(u64 mode_i = 0; mode_i < action_modes.size(); mode_i += 1) {
@@ -87,7 +93,9 @@ namespace houseofatmos::outside {
                     selected == mode_i
                         ? &ui_background::border_selected
                         : &ui_background::border,
-                    &ui_background::border_hovering
+                    selected == mode_i
+                        ? &ui_background::border_selected
+                        : &ui_background::border_hovering
                 )
                 .with_padding(2)
                 .as_movable()
@@ -95,10 +103,24 @@ namespace houseofatmos::outside {
         }
         scene.ui.root.children.push_back(std::move(mode_list));
         scene.ui.root.children.push_back(ui::Element()
+            .with_handle(&scene.coins_elem)
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(
+                std::to_string(scene.balance.coins) + " 🪙",
+                &ui_font::standard
+            )
+            .with_padding(1.0)
+            .with_pos(0.95, 0.05, ui::position::window_fract)
+            .with_background(&ui_background::note)
+            .as_movable()
+        );
+        scene.ui.root.children.push_back(scene.toasts.create_container());
+        scene.toasts.put_states(std::move(toast_states));
+        scene.ui.root.children.push_back(ui::Element()
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .with_size(0.9, 0.9, ui::size::window_fract)
             .with_background(&ui_background::scroll_horizontal)
-            .with_handle(&scene.map)
+            .with_handle(&scene.map_elem)
             .as_hidden(true)
             .as_movable()
         );
@@ -356,6 +378,11 @@ namespace houseofatmos::outside {
         player.in_water = player.position.y() <= -1.5;
     }
 
+    static const f64 min_cam_angle_height = 10.0;
+    static const f64 min_cam_angle = 45.0 / 180.0 * pi;
+    static const f64 max_cam_angle_height = 40.0;
+    static const f64 max_cam_angle = 80.0 / 180.0 * pi;
+
     static void update_camera(
         engine::Window& window, Player& player, Camera& camera,
         f64& distance, ui::Element*& map
@@ -367,9 +394,17 @@ namespace houseofatmos::outside {
             std::max(distance, Outside::min_camera_dist), 
             Outside::max_camera_dist
         );
+        f64 cam_angle_height = std::min(
+            std::max(player.position.y(), min_cam_angle_height), 
+            max_cam_angle_height
+        );
+        f64 angle = (cam_angle_height - min_cam_angle_height)
+            / (max_cam_angle_height - min_cam_angle_height)
+            * (max_cam_angle - min_cam_angle)
+            + min_cam_angle;
         camera.look_at = player.position;
         camera.position = player.position 
-            + Vec<3>(0, 1, 1).normalized() * distance;
+            + Vec<3>(0, sin(angle), cos(angle)).normalized() * distance;
     }
 
     static void update_map(
@@ -384,19 +419,21 @@ namespace houseofatmos::outside {
     }
 
     void Outside::update(engine::Window& window) {
-        this->ui.update(window);
+        this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
+        this->toasts.update(window);
+        this->ui.update(*this, window);
         this->carriages.update_all(window, this->complexes, this->terrain);
         this->complexes.update(window, this->balance);
         this->action_mode->update(window, *this, this->renderer);
         update_player(window, this->terrain, this->player);
         update_camera(
             window, this->player, this->renderer.camera, this->camera_distance, 
-            this->map
+            this->map_elem
         );
         if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
             save_game(this->serialize());
         }
-        update_map(window, this->terrain_map, this->map);
+        update_map(window, this->terrain_map, this->map_elem);
     }
 
 
@@ -418,8 +455,8 @@ namespace houseofatmos::outside {
         );
         this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
-        render_map(this->terrain_map, this->map);
-        this->ui.render(window, *this);
+        render_map(this->terrain_map, this->map_elem);
+        this->ui.render(*this, window);
         window.show_texture(this->ui.output());
     }
 
