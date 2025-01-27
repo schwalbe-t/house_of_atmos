@@ -33,7 +33,7 @@ namespace houseofatmos::outside {
 
 
         static inline const engine::Localization::LoadArgs local = {
-            "res/localization.json", "de"
+            "res/localization.json", "en"
         };
 
         static inline const char* const save_location = "savegame.bin"; 

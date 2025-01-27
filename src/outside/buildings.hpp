@@ -18,6 +18,7 @@ namespace houseofatmos::outside {
             std::vector<RelCollider> colliders; // in game units
             u8 width, height; // in tiles
             u64 cost; // in coins
+            bool destructible;
             u64 workers;
             u64 residents;
 
@@ -61,6 +62,7 @@ namespace houseofatmos::outside {
                 },
                 2, 2, // size
                 500, // building cost
+                true, // may be destroyed
                 5, // workers
                 0 // residents
             },
@@ -70,6 +72,7 @@ namespace houseofatmos::outside {
                 { RelCollider({ -5, -0.5, -5 }, { 10, 1, 10 }) },
                 2, 2, // size
                 1000, // building cost
+                true, // may be destroyed
                 15, // workers
                 0 // residents
             },
@@ -79,6 +82,7 @@ namespace houseofatmos::outside {
                 { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
                 2, 2, // size
                 1000, // building cost
+                true, // may be destroyed
                 5, // workers
                 0 // residents
             },
@@ -88,6 +92,7 @@ namespace houseofatmos::outside {
                 { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
                 2, 1, // size
                 1000, // building cost
+                true, // may be destroyed
                 25, // workers
                 0 // residents
             },
@@ -97,6 +102,7 @@ namespace houseofatmos::outside {
                 { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
                 1, 1, // size
                 500, // building cost
+                true, // may be destroyed
                 0, // workers
                 5 // residents
             },
@@ -116,6 +122,7 @@ namespace houseofatmos::outside {
                 },
                 3, 3, // size
                 2000, // building cost
+                true, // may be destroyed
                 20, // workers
                 0 // residents
             },
@@ -141,7 +148,20 @@ namespace houseofatmos::outside {
                     RelCollider({  4.50, -0.5, -5.50 }, { 2.5, 1, 1.0 })
                 },
                 3, 3, // size
-                5000, // building cost (can't be built, but for refund)
+                0, // building cost (can't be built nor destroyed)
+                false, // may not be destroyed
+                0, // workers
+                0 // residents
+            },
+            /* Type::Palace */ {
+                { "res/buildings/palace.glb", Renderer::model_attribs },
+                std::nullopt, 0.0,
+                { 
+                    // colliders
+                },
+                3, 2, // size
+                0, // building cost (can't be built nor destroyed)
+                false, // may not be destroyed
                 0, // workers
                 0 // residents
             }
@@ -161,7 +181,8 @@ namespace houseofatmos::outside {
             Factory = 3,
             House = 4,
             Stable = 5,
-            Plaza = 6
+            Plaza = 6,
+            Palace = 7
         };
 
         Type type;

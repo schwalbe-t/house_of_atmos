@@ -10,6 +10,10 @@
     },
 
 
+    "toast_saved_game": {
+        "de": "💾 Spiel gespeichert.",
+        "en": "💾 Progress saved."
+    },
     "toast_too_expensive": {
         "de": "Zu teuer! ({} 🪙)",
         "en": "Too expensive! ({} 🪙)"

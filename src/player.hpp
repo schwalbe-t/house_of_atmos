@@ -19,7 +19,7 @@ namespace houseofatmos {
 
         bool pay_coins(u64 amount, Toasts& toasts) {
             if(amount > this->coins) {
-                toasts.add_toast(
+                toasts.add_error(
                     "toast_too_expensive", { std::to_string(amount) }
                 );
                 return false; 

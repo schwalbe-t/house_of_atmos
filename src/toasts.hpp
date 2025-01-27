@@ -34,7 +34,7 @@ namespace houseofatmos {
         ui::Element create_container() {
             ui::Element container = ui::Element()
                 .with_handle(&this->toasts_container)
-                .with_pos(10, 10, ui::position::window_br_units)
+                .with_pos(10, 10, ui::position::window_tl_units)
                 .with_size(0, 0, ui::size::units_with_children)
                 .as_movable();
             return container;
@@ -50,7 +50,8 @@ namespace houseofatmos {
 
         void add_toast(
             std::string name, std::span<const std::string> values, 
-            f64 time = 5.0
+            f64 time = 5.0, 
+            const ui::Background* background = &ui_background::note
         ) {
             if(this->local == nullptr) { return; }
             if(this->toasts_container == nullptr) {
@@ -67,7 +68,7 @@ namespace houseofatmos {
                     this->local->pattern(name, values), 
                     &ui_font::standard
                 )
-                .with_background(&ui_background::note)
+                .with_background(background)
                 .with_padding(5.0)
                 .as_movable()
             );
@@ -78,6 +79,15 @@ namespace houseofatmos {
             f64 time = 5.0
         ) {
             this->add_toast(name, std::span(values), time);
+        }
+
+        void add_error(
+            std::string name, std::initializer_list<const std::string> values, 
+            f64 time = 5.0
+        ) {
+            this->add_toast(
+                name, std::span(values), time, &ui_background::note_error
+            );
         }
 
         States make_states() {

@@ -278,7 +278,7 @@ namespace houseofatmos::outside {
             Conversion({ { 1, Item::Tools } }, { { 30, Item::Coins } }, 0.1)
         }));
         place_building(
-            Building::Plaza, plaza_x, plaza_z, plaza_complex_i, terrain
+            Building::Palace, plaza_x, plaza_z, plaza_complex_i, terrain
         );
         // generate houses
         for(u64 x = min_x; x < max_x; x += 1) {
@@ -349,14 +349,13 @@ namespace houseofatmos::outside {
 
 
 
-    static void save_game(engine::Arena buffer) {
+    static void save_game(engine::Arena buffer, Toasts& toasts) {
         std::ofstream fout;
         fout.open(Outside::save_location, std::ios::binary | std::ios::out);
         fout.write((const char*) buffer.data().data(), buffer.data().size());
         fout.close();
-        engine::info(
-            "Saved game to '" + std::string(Outside::save_location) + "'. "
-            "Deleting the file will reset your progress."
+        toasts.add_toast(
+            "toast_saved_game", { std::string(Outside::save_location) }
         );
     }
 
@@ -431,7 +430,7 @@ namespace houseofatmos::outside {
             this->map_elem
         );
         if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
-            save_game(this->serialize());
+            save_game(this->serialize(), this->toasts);
         }
         update_map(window, this->terrain_map, this->map_elem);
         engine::debug(std::to_string(1.0 / window.delta_time()));

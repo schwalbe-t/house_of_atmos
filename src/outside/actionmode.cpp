@@ -953,7 +953,7 @@ namespace houseofatmos::outside {
                 );
                 this->carriages.refind_all_paths(this->complexes, this->terrain);
             } else {
-                this->toasts.add_toast("toast_missing_unemployment", {
+                this->toasts.add_error("toast_missing_unemployment", {
                     std::to_string(unemployment), 
                     std::to_string(type_info.residents)
                 });

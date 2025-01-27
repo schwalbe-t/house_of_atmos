@@ -74,6 +74,12 @@ namespace houseofatmos::ui_background {
         Vec<2>(392, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
+    static inline const ui::Background note_error = (ui::Background) {
+        (engine::Texture::LoadArgs) { "res/ui.png" },
+        // offset, corner size, edge size
+        Vec<2>(440, 8), Vec<2>(8, 8), Vec<2>(32, 32)
+    };
+
 
     inline void load_textures(engine::Scene& scene) {
         scene.load(engine::Texture::Loader(scroll_horizontal.texture));
