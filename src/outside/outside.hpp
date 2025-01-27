@@ -63,7 +63,7 @@ namespace houseofatmos::outside {
         ui::Element* coins_elem = nullptr;
         ui::Element* map_elem = nullptr;
         ui::Manager ui = ui::Manager(ui_unit_size);
-        Toasts toasts;
+        Toasts toasts = Toasts(local);
 
         Outside();
         Outside(const engine::Arena& buffer);

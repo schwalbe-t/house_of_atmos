@@ -2,6 +2,7 @@
 #pragma once
 
 #include <engine/ui.hpp>
+#include <engine/localization.hpp>
 #include "ui_background.hpp"
 #include "ui_font.hpp"
 
@@ -22,10 +23,13 @@ namespace houseofatmos {
         static inline const size_t max_toast_count = 10;
 
         private:
+        const engine::Localization::LoadArgs& local_ref;
+        const engine::Localization* local = nullptr;
         ui::Element* toasts_container = nullptr;
         std::vector<f64> toast_timers;
 
         public:
+        Toasts(const engine::Localization::LoadArgs& l): local_ref(l) {}
 
         ui::Element create_container() {
             ui::Element container = ui::Element()
@@ -44,7 +48,11 @@ namespace houseofatmos {
             return toasts_container->children;
         }
 
-        void add_toast(std::string text, f64 time = 5.0) {
+        void add_toast(
+            std::string name, std::span<const std::string> values, 
+            f64 time = 5.0
+        ) {
+            if(this->local == nullptr) { return; }
             if(this->toasts_container == nullptr) {
                 this->toast_timers.clear();
             }
@@ -55,11 +63,21 @@ namespace houseofatmos {
             toast_timers.push_back(time);
             this->elements().push_back(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(text, &ui_font::standard)
+                .with_text(
+                    this->local->pattern(name, values), 
+                    &ui_font::standard
+                )
                 .with_background(&ui_background::note)
                 .with_padding(5.0)
                 .as_movable()
             );
+        }
+
+        void add_toast(
+            std::string name, std::initializer_list<const std::string> values, 
+            f64 time = 5.0
+        ) {
+            this->add_toast(name, std::span(values), time);
         }
 
         States make_states() {
@@ -77,7 +95,8 @@ namespace houseofatmos {
             this->toast_timers = std::move(states.timers);
         }
 
-        void update(const engine::Window& window) {
+        void update(const engine::Window& window, engine::Scene& scene) {
+            this->local = &scene.get<engine::Localization>(this->local_ref);
             if(this->toasts_container == nullptr) {
                 this->toast_timers.clear();
             }

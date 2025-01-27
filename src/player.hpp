@@ -20,18 +20,22 @@ namespace houseofatmos {
         bool pay_coins(u64 amount, Toasts& toasts) {
             if(amount > this->coins) {
                 toasts.add_toast(
-                    "Too expensive! (" + std::to_string(amount) + " 🪙)"
+                    "toast_too_expensive", { std::to_string(amount) }
                 );
                 return false; 
             }
             this->coins -= amount;
-            toasts.add_toast("-" + std::to_string(amount) + " 🪙");
+            toasts.add_toast(
+                "toast_removed_coins", { std::to_string(amount) }
+            );
             return true;
         }
 
         void add_coins(u64 amount, Toasts& toasts) {
             this->coins += amount;
-            toasts.add_toast("+" + std::to_string(amount) + " 🪙");
+            toasts.add_toast(
+                "toast_added_coins", { std::to_string(amount) }
+            );
         }
     };
 

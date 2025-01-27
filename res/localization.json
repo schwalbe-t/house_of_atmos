@@ -10,6 +10,24 @@
     },
 
 
+    "toast_too_expensive": {
+        "de": "Zu teuer! ({} 🪙)",
+        "en": "Too expensive! ({} 🪙)"
+    },
+    "toast_added_coins": {
+        "de": "+ {} 🪙",
+        "en": "+ {} 🪙"
+    },
+    "toast_removed_coins": {
+        "de": "- {} 🪙",
+        "en": "- {} 🪙"
+    },
+    "toast_missing_unemployment": {
+        "de": "Keine verfügbaren Arbeiter! ({}/{})",
+        "en": "Missing unemployed workers! ({}/{})"
+    },
+
+
     "item_name_barley": {
         "de": "Gerste", 
         "en": "Barley"
