@@ -19,5 +19,5 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN")
 set(LINKED_LIBS
     ${GLFW_LIBRARIES}
     ${OpenAL_LIBRARIES}
-    -static
+    -static -Wl,-subsystem,windows
 )
