@@ -421,7 +421,7 @@ namespace houseofatmos::outside {
     void Outside::update(engine::Window& window) {
         this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
         this->toasts.update(window, *this);
-        this->ui.update(*this, window);
+        this->ui.update(window);
         this->carriages.update_all(window, this->complexes, this->terrain);
         this->complexes.update(window, this->balance);
         this->action_mode->update(window, *this, this->renderer);

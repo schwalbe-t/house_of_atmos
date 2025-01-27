@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include "localization.hpp"
 #include "window.hpp"
 #include "math.hpp"
 #include <vector>
@@ -22,8 +21,7 @@ namespace houseofatmos::engine::ui {
     };
 
     using SizeFunc = Vec<2> (*)(
-        Element& self, const Element* parent,
-        Scene& scene, const Window& window, f64 unit
+        Element& self, const Element* parent, const Window& window, f64 unit
     );
 
     using PosFunc = Vec<2> (*)(
@@ -90,7 +88,6 @@ namespace houseofatmos::engine::ui {
         std::function<void()> on_click;
 
         std::string text;
-        const Localization::LoadArgs* local;
         const Font* font;
         bool wrap_text;
 
@@ -140,21 +137,10 @@ namespace houseofatmos::engine::ui {
             this->on_click = std::move(handler);
             return *this;
         }
-        Element& with_local_text(
-            std::string text, const engine::Localization::LoadArgs& local,
-            const Font* font, bool wrap_text = true
-        ) {
-            this->text = std::move(text);
-            this->local = &local;
-            this->font = font;
-            this->wrap_text = wrap_text;
-            return *this;
-        }
         Element& with_text(
             std::string text, const Font* font, bool wrap_text = true
         ) {
             this->text = std::move(text);
-            this->local = nullptr;
             this->font = font;
             this->wrap_text = wrap_text;
             return *this;
@@ -179,19 +165,10 @@ namespace houseofatmos::engine::ui {
         bool is_hovered_over() const { return this->hovering; }
         const Vec<2>& final_size() const { return this->size_px; }
         const Vec<2>& final_pos() const { return this->position_px; }
-        const std::string& shown_text(Scene& scene) const {
-            const std::string* text = &this->text;
-            if(this->local != nullptr) {
-                text = &scene
-                    .get<Localization>(*this->local)
-                    .text(this->text);
-            }
-            return *text;
-        }
 
         Vec<2> offset_of_child(size_t child_i) const;
         bool update_root(
-            Scene& scene, const Window& window, f64 unit
+            const Window& window, f64 unit
         );
         void render_root(
             Manager& manager, Scene& scene, const Window& window, f64 unit
@@ -200,14 +177,14 @@ namespace houseofatmos::engine::ui {
         // may be called by sizing functions to force computation of the
         // child size first 
         // (note that sizing function of child may not depend on parent element)
-        void force_size_compute(Scene& scene, const Window& window, f64 unit);
+        void force_size_compute(const Window& window, f64 unit);
 
         Element& with_padding(f64 amount);
 
 
         private:
         void update_size(
-            const Element* parent, Scene& scene, const Window& window, f64 unit
+            const Element* parent, const Window& window, f64 unit
         );
         void update_position(
             std::optional<ChildRef> parent, const Window& window, f64 unit
@@ -235,11 +212,11 @@ namespace houseofatmos::engine::ui {
 
 
     namespace size {
-        Vec<2> units(Element& self, const Element* parent, Scene& scene, const Window& window, f64 unit);
-        Vec<2> parent_fract(Element& self, const Element* parent, Scene& scene, const Window& window, f64 unit);
-        Vec<2> window_fract(Element& self, const Element* parent, Scene& scene, const Window& window, f64 unit);
-        Vec<2> units_with_children(Element& self, const Element* parent, Scene& scene, const Window& window, f64 unit);
-        Vec<2> unwrapped_text(Element& self, const Element* parent, Scene& scene, const Window& window, f64 unit);
+        Vec<2> units(Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> parent_fract(Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> window_fract(Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> units_with_children(Element& self, const Element* parent, const Window& window, f64 unit);
+        Vec<2> unwrapped_text(Element& self, const Element* parent, const Window& window, f64 unit);
     }
 
 
@@ -281,7 +258,7 @@ namespace houseofatmos::engine::ui {
         const engine::Texture& output() const { return this->target; }
         bool was_clicked() const { return this->clicked; }
 
-        void update(Scene& scene, const Window& window);
+        void update(const Window& window);
 
         void render(Scene& scene, const Window& window);
 
