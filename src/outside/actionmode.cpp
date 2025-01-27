@@ -587,49 +587,6 @@ namespace houseofatmos::outside {
         );
     }
 
-    // // <cost> = (100 + 5 ^ <minimum elevation difference>) coins
-    // static u64 compute_terrain_modification_cost(
-    //     u64 tile_x, u64 tile_z, i64 elevation, const Terrain& terrain
-    // ) {
-    //     u64 min_elev_diff = UINT64_MAX;
-    //     for(i64 offset_x = -1; offset_x <= 1; offset_x += 1) {
-    //         for(i64 offset_z = -1; offset_z <= 1; offset_z += 1) {
-    //             if(offset_x == 0 && offset_z == 0) { continue; }
-    //             if((i64) tile_x + offset_x < 0) { continue; }
-    //             if((i64) tile_z + offset_z < 0) { continue; }
-    //             i64 elev = terrain.elevation_at(
-    //                 (u64) ((i64) tile_x + offset_x), 
-    //                 (u64) ((i64) tile_z + offset_z)
-    //             );
-    //             u64 diff = (u64) abs(elevation - elev);
-    //             min_elev_diff = std::min(min_elev_diff, diff);
-    //         }
-    //     }
-    //     return 100 + (u64) pow(5, (min_elev_diff + 1));
-    // }
-
-    // static bool modified_terrain_occupied(
-    //     i64 tile_x, i64 tile_z, Terrain& terrain
-    // ) {
-    //     return terrain.building_at(tile_x - 1, tile_z - 1) != nullptr
-    //         || terrain.building_at(tile_x - 1, tile_z) != nullptr
-    //         || terrain.building_at(tile_x, tile_z - 1) != nullptr
-    //         || terrain.building_at(tile_x, tile_z) != nullptr;
-    // }
-
-    // static void modify_terrain_height(
-    //     u64 tile_x, u64 tile_z, Terrain& terrain, i16 modification
-    // ) {
-    //     terrain.elevation_at(tile_x, tile_z) += modification;
-    //     for(i64 offset_x = -1; offset_x <= 0; offset_x += 1) {
-    //         for(i64 offset_z = -1; offset_z <= 0; offset_z += 1) {
-    //             terrain.remove_foliage_at(
-    //                 (i64) tile_x + offset_x, (i64) tile_z + offset_z
-    //             );
-    //         }
-    //     }
-    // }
-
     static bool terrain_modification_is_valid(
         const Terrain& terrain,
         u64 min_x, u64 min_z, u64 max_x, u64 max_z
@@ -779,39 +736,6 @@ namespace houseofatmos::outside {
                 );
             }
         }
-
-
-
-
-
-
-        // this->selected_x = tile_x;
-        // this->selected_z = tile_z;
-        // this->modification_valid = !modified_terrain_occupied(
-        //     (i64) tile_x, (i64) tile_z, this->terrain
-        // );
-        // bool modified_terrain = window.was_pressed(engine::Button::Left)
-        //     || window.was_pressed(engine::Button::Right);
-        // if(modified_terrain) {
-        //     i16 elevation = this->terrain.elevation_at(tile_x, tile_z);
-        //     i16 modification = 0;
-        //     if(window.was_pressed(engine::Button::Left)) {
-        //         modification += 1;
-        //     }
-        //     if(window.was_pressed(engine::Button::Right)) {
-        //         modification -= 1;
-        //     }
-        //     u64 cost = compute_terrain_modification_cost(
-        //         tile_x, tile_z, elevation, this->terrain
-        //     );
-        //     bool modified = this->modification_valid 
-        //         && this->balance.pay_coins(cost, this->toasts);
-        //     if(modified) {
-        //         modify_terrain_height(
-        //             tile_x, tile_z, this->terrain, modification
-        //         );
-        //     }
-        // }
     }
 
 
