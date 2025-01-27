@@ -41,7 +41,7 @@ namespace houseofatmos::outside {
         static inline const u64 units_per_tile = 5;
         static inline const u64 tiles_per_chunk = 8;
         static inline const i64 draw_distance_ch = 1;
-        static inline const i64 draw_distance_un 
+        static inline const i64 draw_distance_un    
             = draw_distance_ch * tiles_per_chunk * units_per_tile;
         static inline const f64 ui_unit_size = 1 / 250.0;
 

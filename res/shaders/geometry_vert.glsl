@@ -7,7 +7,7 @@ layout(location = 2) in vec3 v_norm;
 layout(location = 3) in uvec4 v_joints;
 layout(location = 4) in vec4 v_weights;
 
-uniform mat4 u_view_projection;
+uniform mat4 u_view_proj;
 uniform mat4 u_model_transfs[128];
 uniform mat4 u_local_transf;
 uniform mat4 u_joint_transfs[32];
@@ -26,7 +26,7 @@ void main() {
         + (u_joint_transfs[v_joints.z] * h_pos) * v_weights.z
         + (u_joint_transfs[v_joints.w] * h_pos) * v_weights.w;
     vec4 w_pos = u_model_transfs[gl_InstanceID] * u_local_transf * s_pos;
-    vec4 f_pos = u_view_projection * w_pos;
+    vec4 f_pos = u_view_proj * w_pos;
     gl_Position = f_pos;
     // apply skinning and rotations to normal
     vec3 s_norm = normalize(

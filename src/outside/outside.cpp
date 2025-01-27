@@ -381,7 +381,7 @@ namespace houseofatmos::outside {
     static const f64 min_cam_angle_height = 10.0;
     static const f64 min_cam_angle = 45.0 / 180.0 * pi;
     static const f64 max_cam_angle_height = 40.0;
-    static const f64 max_cam_angle = 80.0 / 180.0 * pi;
+    static const f64 max_cam_angle = 75.0 / 180.0 * pi;
 
     static void update_camera(
         engine::Window& window, Player& player, Camera& camera,
@@ -394,12 +394,9 @@ namespace houseofatmos::outside {
             std::max(distance, Outside::min_camera_dist), 
             Outside::max_camera_dist
         );
-        f64 cam_angle_height = std::min(
-            std::max(player.position.y(), min_cam_angle_height), 
-            max_cam_angle_height
-        );
-        f64 angle = (cam_angle_height - min_cam_angle_height)
-            / (max_cam_angle_height - min_cam_angle_height)
+        f64 angle_height = (player.position.y() - min_cam_angle_height)
+            / (max_cam_angle_height - min_cam_angle_height);
+        f64 angle = std::min(std::max(angle_height, 0.0), 1.0)
             * (max_cam_angle - min_cam_angle)
             + min_cam_angle;
         camera.look_at = player.position;
@@ -415,6 +412,9 @@ namespace houseofatmos::outside {
         }
         if(window.was_pressed(engine::Key::M)) {
             map->hidden = !map->hidden;
+            if(!map->hidden) {
+                terrain_map.render_map();
+            }
         }
     }
 
@@ -434,13 +434,13 @@ namespace houseofatmos::outside {
             save_game(this->serialize());
         }
         update_map(window, this->terrain_map, this->map_elem);
+        engine::debug(std::to_string(1.0 / window.delta_time()));
     }
 
 
 
     static void render_map(TerrainMap& terrain_map, ui::Element*& map) {
         terrain_map.output_size = map->final_size();
-        terrain_map.render_map();
         terrain_map.render_view();
         map->texture = &terrain_map.output();
     }
@@ -455,7 +455,9 @@ namespace houseofatmos::outside {
         );
         this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
-        render_map(this->terrain_map, this->map_elem);
+        if(!this->map_elem->hidden) {
+            render_map(this->terrain_map, this->map_elem);
+        }
         this->ui.render(*this, window);
         window.show_texture(this->ui.output());
     }

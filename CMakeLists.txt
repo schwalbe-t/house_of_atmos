@@ -40,6 +40,7 @@ target_compile_features(house_of_atmos PRIVATE cxx_std_20)
 
 set(MODE "debug" CACHE STRING "Build mode: debug or release")
 string(TOLOWER "${MODE}" MODE)
+message(MODE="${MODE}")
 if(MODE STREQUAL "debug")
     target_compile_options(house_of_atmos PRIVATE -g -Wall -Wextra -O0)
 elseif(MODE STREQUAL "release")
