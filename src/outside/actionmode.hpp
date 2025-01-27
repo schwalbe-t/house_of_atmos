@@ -124,14 +124,35 @@ namespace houseofatmos::outside {
 
     struct TerraformMode: ActionMode {
 
-        u64 selected_x, selected_z;
-        bool modification_valid;
+        struct Selection {
+            u64 start_x, start_z;
+            u64 end_x, end_z;
+        };
+
+        enum Mode {
+            Flatten = 0, Raise = 1, Lower = 2,
+            TotalCount = 3
+        };
+
+        static inline const std::vector<const ui::Background*> mode_icons = {
+            &ui_icon::terrain_flatten, 
+            &ui_icon::terrain_raise, 
+            &ui_icon::terrain_lower
+        };
+
+        bool has_selection;
+        Selection selection;
+        std::unique_ptr<Mode> mode;
+
+        std::unique_ptr<std::array<ui::Element*, (size_t) Mode::TotalCount>> mode_buttons;
+        ui::Element* vertex_markers = nullptr;
+
 
         TerraformMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {}
+        );
 
         void update(
             const engine::Window& window, engine::Scene& scene, 
@@ -140,7 +161,11 @@ namespace houseofatmos::outside {
         void render(
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
-        ) override;
+        ) override {
+            (void) window;
+            (void) scene;
+            (void) renderer;
+        }
 
     };
 

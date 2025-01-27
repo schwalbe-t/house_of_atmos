@@ -92,7 +92,7 @@ namespace houseofatmos::engine::ui {
         bool wrap_text;
 
         bool hidden;
-        bool clickable;
+        bool phantom;
 
         Element** handle;
 
@@ -133,7 +133,7 @@ namespace houseofatmos::engine::ui {
             return *this;
         }
         Element& with_click_handler(std::function<void()> handler) {
-            this->clickable = true;
+            this->phantom = false;
             this->on_click = std::move(handler);
             return *this;
         }
@@ -149,8 +149,8 @@ namespace houseofatmos::engine::ui {
             this->hidden = is_hidden;
             return *this;
         }
-        Element& as_clickable(bool clickable) {
-            this->clickable = clickable;
+        Element& as_phantom(bool phantom = true) {
+            this->phantom = phantom;
             return *this;
         }
         Element& with_handle(Element** handle_ptr) {
@@ -240,12 +240,13 @@ namespace houseofatmos::engine::ui {
         Mesh quad = Mesh(Manager::mesh_attribs);
         Shader* shader;
         bool clicked = false;
+        bool hovered = false;
 
         public:
         Element root = Element()
             .with_pos(0, 0, ui::position::window_tl_units)
             .with_size(1.0, 1.0, ui::size::window_fract)
-            .as_clickable(false) // still allows children to be clicked
+            .as_phantom() // still allows children to be clicked or hovered over
             .as_movable();
         f64 unit_fract_size; // fraction of window height
 
@@ -257,6 +258,7 @@ namespace houseofatmos::engine::ui {
 
         const engine::Texture& output() const { return this->target; }
         bool was_clicked() const { return this->clicked; }
+        bool is_hovered_over() const { return this->hovered; }
 
         void update(const Window& window);
 

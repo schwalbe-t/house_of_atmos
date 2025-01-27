@@ -18,6 +18,10 @@
         "de": "Dieses Gebäude kann nicht abgerissen werden.",
         "en": "This building may not be demolished."
     },
+    "toast_terrain_occupied": {
+        "de": "Gelände unter Gebäuden kann nicht bearbeitet werden!",
+        "en": "Terrain occupied by buildings may not be modified!"
+    },
     "toast_too_expensive": {
         "de": "Zu teuer! ({} 🪙)",
         "en": "Too expensive! ({} 🪙)"

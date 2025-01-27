@@ -19,7 +19,7 @@ namespace houseofatmos::engine::ui {
         this->with_text("", nullptr, true);
         this->with_handle(nullptr);
         this->as_hidden(false);
-        this->as_clickable(true);
+        this->as_phantom(false);
     }
 
     static void inherit_element_values(Element& from, Element& to, bool to_exists) {
@@ -46,7 +46,7 @@ namespace houseofatmos::engine::ui {
         to.font = from.font;
         to.wrap_text = from.wrap_text;
         to.hidden = from.hidden;
-        to.clickable = from.clickable;
+        to.phantom = from.phantom;
         to.handle = from.handle;
         from.handle = nullptr;
         if(to.handle != nullptr) {
@@ -148,7 +148,8 @@ namespace houseofatmos::engine::ui {
             return;
         }
         Vec<2> cursor = window.cursor_pos_px();
-        this->hovering = this->position_px.x() <= cursor.x()
+        this->hovering = !this->phantom
+            && this->position_px.x() <= cursor.x()
             && cursor.x() < this->position_px.x() + this->size_px.x()
             && this->position_px.y() <= cursor.y()
             && cursor.y() < this->position_px.y() + this->size_px.y();
@@ -162,8 +163,7 @@ namespace houseofatmos::engine::ui {
         for(const Element& child: this->children) {
             if(child.update_clicked(window)) { return true; }
         }
-        bool was_clicked = this->clickable 
-            && this->hovering 
+        bool was_clicked = this->hovering 
             && window.was_pressed(Button::Left);
         if(was_clicked) { this->on_click(); }
         return was_clicked;
@@ -608,10 +608,19 @@ namespace houseofatmos::engine::ui {
         this->quad.submit();
     }
 
+    static bool is_hovered_over_rec(const Element& element) {
+        if(element.is_hovered_over()) { return true; }
+        for(const Element& child: element.children) {
+            if(is_hovered_over_rec(child)) { return true; }
+        }
+        return false;
+    }
+
     void Manager::update(const Window& window) {
         this->clicked = this->root.update_root(
             window, window.height() * this->unit_fract_size
         );
+        this->hovered = is_hovered_over_rec(this->root);
     }
 
     void Manager::render(Scene& scene, const Window& window) {

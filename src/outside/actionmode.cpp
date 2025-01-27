@@ -529,45 +529,173 @@ namespace houseofatmos::outside {
 
 
 
-    // <cost> = (100 + 5 ^ <minimum elevation difference>) coins
-    static u64 compute_terrain_modification_cost(
-        u64 tile_x, u64 tile_z, i64 elevation, const Terrain& terrain
+    TerraformMode::TerraformMode(
+        Terrain& terrain, ComplexBank& complexes, 
+        CarriageManager& carriages, Player& player, Balance& balance,
+        ui::Manager& ui, Toasts& toasts
+    ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
+        this->has_selection = false;
+        this->mode = std::make_unique<Mode>(Mode::Flatten);
+        this->mode_buttons = std::make_unique<
+            std::array<ui::Element*, (size_t) Mode::TotalCount>
+        >();
+        ui::Element mode_list = ui::Element()
+            .with_pos(0.05, 0.80, ui::position::window_fract)
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_background(&ui_background::note)
+            .with_list_dir(ui::Direction::Horizontal)
+            .as_movable();
+        for(size_t mode_i = 0; mode_i < (size_t) Mode::TotalCount; mode_i += 1) {
+            Mode* mode_ptr = this->mode.get();
+            auto buttons = this->mode_buttons.get();
+            mode_list.children.push_back(ui::Element()
+                .with_size(16, 16, ui::size::units)
+                .with_background(TerraformMode::mode_icons[mode_i])
+                .with_click_handler([mode_ptr, mode_i, buttons]() {
+                    if((size_t) (*mode_ptr) == mode_i) { return; }
+                    *mode_ptr = (Mode) mode_i;
+                    for(size_t i = 0; i < (size_t) Mode::TotalCount; i += 1) {
+                        buttons->at(i)->background = i == mode_i
+                            ? &ui_background::border_selected
+                            : &ui_background::border;
+                        buttons->at(i)->background_hover = i == mode_i
+                            ? &ui_background::border_selected
+                            : &ui_background::border_hovering;
+                    }
+                })
+                .with_padding(0)
+                .with_handle(&this->mode_buttons->at(mode_i))
+                .with_background(
+                    *mode_ptr == (Mode) mode_i
+                        ? &ui_background::border_selected
+                        : &ui_background::border,
+                    *mode_ptr == (Mode) mode_i
+                        ? &ui_background::border_selected
+                        : &ui_background::border_hovering
+                )
+                .with_padding(2)
+                .as_movable()
+            );
+        }
+        ui.root.children.push_back(std::move(mode_list));
+        ui.root.children.push_back(ui::Element()
+            .as_phantom()
+            .with_pos(0.0, 0.0, ui::position::window_tl_units)
+            .with_size(1.0, 1.0, ui::size::window_fract)
+            .with_handle(&this->vertex_markers)
+            .as_movable()
+        );
+    }
+
+    // // <cost> = (100 + 5 ^ <minimum elevation difference>) coins
+    // static u64 compute_terrain_modification_cost(
+    //     u64 tile_x, u64 tile_z, i64 elevation, const Terrain& terrain
+    // ) {
+    //     u64 min_elev_diff = UINT64_MAX;
+    //     for(i64 offset_x = -1; offset_x <= 1; offset_x += 1) {
+    //         for(i64 offset_z = -1; offset_z <= 1; offset_z += 1) {
+    //             if(offset_x == 0 && offset_z == 0) { continue; }
+    //             if((i64) tile_x + offset_x < 0) { continue; }
+    //             if((i64) tile_z + offset_z < 0) { continue; }
+    //             i64 elev = terrain.elevation_at(
+    //                 (u64) ((i64) tile_x + offset_x), 
+    //                 (u64) ((i64) tile_z + offset_z)
+    //             );
+    //             u64 diff = (u64) abs(elevation - elev);
+    //             min_elev_diff = std::min(min_elev_diff, diff);
+    //         }
+    //     }
+    //     return 100 + (u64) pow(5, (min_elev_diff + 1));
+    // }
+
+    // static bool modified_terrain_occupied(
+    //     i64 tile_x, i64 tile_z, Terrain& terrain
+    // ) {
+    //     return terrain.building_at(tile_x - 1, tile_z - 1) != nullptr
+    //         || terrain.building_at(tile_x - 1, tile_z) != nullptr
+    //         || terrain.building_at(tile_x, tile_z - 1) != nullptr
+    //         || terrain.building_at(tile_x, tile_z) != nullptr;
+    // }
+
+    // static void modify_terrain_height(
+    //     u64 tile_x, u64 tile_z, Terrain& terrain, i16 modification
+    // ) {
+    //     terrain.elevation_at(tile_x, tile_z) += modification;
+    //     for(i64 offset_x = -1; offset_x <= 0; offset_x += 1) {
+    //         for(i64 offset_z = -1; offset_z <= 0; offset_z += 1) {
+    //             terrain.remove_foliage_at(
+    //                 (i64) tile_x + offset_x, (i64) tile_z + offset_z
+    //             );
+    //         }
+    //     }
+    // }
+
+    static bool terrain_modification_is_valid(
+        const Terrain& terrain,
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z
     ) {
-        u64 min_elev_diff = UINT64_MAX;
-        for(i64 offset_x = -1; offset_x <= 1; offset_x += 1) {
-            for(i64 offset_z = -1; offset_z <= 1; offset_z += 1) {
-                if(offset_x == 0 && offset_z == 0) { continue; }
-                if((i64) tile_x + offset_x < 0) { continue; }
-                if((i64) tile_z + offset_z < 0) { continue; }
-                i64 elev = terrain.elevation_at(
-                    (u64) ((i64) tile_x + offset_x), 
-                    (u64) ((i64) tile_z + offset_z)
-                );
-                u64 diff = (u64) abs(elevation - elev);
-                min_elev_diff = std::min(min_elev_diff, diff);
+        u64 start_x = min_x >= 1? min_x - 1 : 0;
+        u64 start_z = min_z >= 1? min_z - 1 : 0;
+        u64 end_x = std::min(max_x, terrain.width_in_tiles() - 1);
+        u64 end_z = std::min(max_z, terrain.height_in_tiles() - 1);
+        for(u64 x = start_x; x <= end_x; x += 1) {
+            for(u64 z = start_z; z <= end_z; z += 1) {
+                if(terrain.building_at((i64) x, (i64) z) != nullptr) {  
+                    return false; 
+                }
             }
         }
-        return 100 + (u64) pow(5, (min_elev_diff + 1));
+        return true;
     }
 
-    static bool modified_terrain_occupied(
-        i64 tile_x, i64 tile_z, Terrain& terrain
+    static const u64 terrain_mod_cost_per_vertex = 50;
+
+    static u64 terrain_modification_cost(
+        const Terrain& terrain, TerraformMode::Mode mode,
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z, i16 start_elev
     ) {
-        return terrain.building_at(tile_x - 1, tile_z - 1) != nullptr
-            || terrain.building_at(tile_x - 1, tile_z) != nullptr
-            || terrain.building_at(tile_x, tile_z - 1) != nullptr
-            || terrain.building_at(tile_x, tile_z) != nullptr;
+        u64 cost = 0;
+        for(u64 x = min_x; x <= max_x; x += 1) {
+            for(u64 z = min_z; z <= max_z; z += 1) {
+                i16 elev = terrain.elevation_at(x, z);
+                switch(mode) {
+                    case TerraformMode::Flatten: 
+                        cost += (u64) std::abs((i64) start_elev - (i64) elev);
+                        break;
+                    case TerraformMode::Raise:
+                    case TerraformMode::Lower:
+                        cost += 1; 
+                        break;
+                    default:;
+                }
+            }
+        }
+        return cost * terrain_mod_cost_per_vertex;
     }
 
-    static void modify_terrain_height(
-        u64 tile_x, u64 tile_z, Terrain& terrain, i16 modification
+    static void apply_terrain_modification(
+        Terrain& terrain, TerraformMode::Mode mode,
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z, i16 start_elev
     ) {
-        terrain.elevation_at(tile_x, tile_z) += modification;
-        for(i64 offset_x = -1; offset_x <= 0; offset_x += 1) {
-            for(i64 offset_z = -1; offset_z <= 0; offset_z += 1) {
-                terrain.remove_foliage_at(
-                    (i64) tile_x + offset_x, (i64) tile_z + offset_z
-                );
+        for(u64 x = min_x; x <= max_x; x += 1) {
+            for(u64 z = min_z; z <= max_z; z += 1) {
+                auto& e = terrain.elevation_at(x, z);
+                switch(mode) {
+                    case TerraformMode::Flatten: e = start_elev; break;
+                    case TerraformMode::Raise: e += 1; break;
+                    case TerraformMode::Lower: e -= 1; break;
+                    default:;
+                }
+            }
+        }
+    }
+
+    static void clear_area_foliage(
+        Terrain& terrain, i64 start_x, i64 start_z, i64 end_x, i64 end_z
+    ) {
+        for(i64 x = start_x; x < end_x; x += 1) {
+            for(i64 z = start_z; z < end_z; z += 1) {
+                terrain.remove_foliage_at(x, z);
             }
         }
     }
@@ -578,73 +706,112 @@ namespace houseofatmos::outside {
     ) {
         (void) scene;
         (void) renderer;
+        // figure out the selection area
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0, 0, 0)
         );
-        this->selected_x = tile_x;
-        this->selected_z = tile_z;
-        this->modification_valid = !modified_terrain_occupied(
-            (i64) tile_x, (i64) tile_z, this->terrain
-        );
-        bool modified_terrain = window.was_pressed(engine::Button::Left)
-            || window.was_pressed(engine::Button::Right);
-        if(modified_terrain) {
-            i16 elevation = this->terrain.elevation_at(tile_x, tile_z);
-            i16 modification = 0;
-            if(window.was_pressed(engine::Button::Left)) {
-                modification += 1;
-            }
-            if(window.was_pressed(engine::Button::Right)) {
-                modification -= 1;
-            }
-            u64 cost = compute_terrain_modification_cost(
-                tile_x, tile_z, elevation, this->terrain
+        if(!this->has_selection) {
+            this->selection = (Selection) { tile_x, tile_z, tile_x, tile_z };
+        }
+        if(window.is_down(engine::Button::Left)) {
+            this->has_selection = true;
+        }
+        if(this->has_selection) {
+            this->selection.end_x = tile_x;
+            this->selection.end_z = tile_z;
+        }
+        // get selection bounds
+        u64 min_x = std::min(this->selection.start_x, this->selection.end_x);
+        u64 min_z = std::min(this->selection.start_z, this->selection.end_z);
+        u64 max_x = std::max(this->selection.start_x, this->selection.end_x);
+        u64 max_z = std::max(this->selection.start_z, this->selection.end_z);
+        // do terrain manipulation operation if needed
+        bool attempt_operation = this->has_selection
+            && !window.is_down(engine::Button::Left);
+        if(attempt_operation && !this->ui.is_hovered_over()) {
+            // compute cost
+            i16 start_elev = this->terrain
+                .elevation_at(this->selection.start_x, this->selection.start_z);
+            u64 cost = terrain_modification_cost(
+                this->terrain, 
+                *this->mode, min_x, min_z, max_x, max_z, start_elev
             );
-            bool modified = this->modification_valid 
-                && this->balance.pay_coins(cost, this->toasts);
-            if(modified) {
-                modify_terrain_height(
-                    tile_x, tile_z, this->terrain, modification
+            bool is_valid = terrain_modification_is_valid(
+                this->terrain, min_x, min_z, max_x, max_z
+            );
+            if(is_valid && this->balance.pay_coins(cost, this->toasts)) {
+                apply_terrain_modification(
+                    this->terrain, 
+                    *this->mode, min_x, min_z, max_x, max_z, start_elev
+                );
+                clear_area_foliage(
+                    this->terrain, min_x - 1, min_z - 1, max_x + 1, max_z + 1
+                );
+            }
+            if(!is_valid) {
+                this->toasts.add_error("toast_terrain_occupied", {});
+            }
+        }
+        if(attempt_operation) {
+            this->has_selection = false;
+        }
+        // display the manipulated vertices
+        this->vertex_markers->children.clear();
+        for(u64 x = min_x; x <= max_x; x += 1) {
+            for(u64 z = min_z; z <= max_z; z += 1) {
+                f64 elev = (f64) this->terrain.elevation_at(x, z);
+                Vec<3> world = Vec<3>(
+                    x * this->terrain.units_per_tile(), elev,
+                    z * this->terrain.units_per_tile()
+                );
+                Vec<2> ndc = renderer.world_to_ndc(world);
+                this->vertex_markers->children.push_back(ui::Element()
+                    .as_phantom()
+                    .with_pos(ndc.x(), ndc.y(), ui::position::window_ndc)
+                    .with_child(ui::Element()
+                        .as_phantom()
+                        .with_pos(-4, -4, ui::position::parent_units)
+                        .with_size(8, 8, ui::size::units)
+                        .with_background(&ui_icon::terrain_vertex)
+                        .as_movable()
+                    )
+                    .as_movable()
                 );
             }
         }
-    }
 
-    void TerraformMode::render(
-        const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer
-    ) {
-        (void) window;
-        i16& elevation = this->terrain.elevation_at(
-            this->selected_x, this->selected_z
-        );
-        u64 chunk_x = this->selected_x / this->terrain.tiles_per_chunk();
-        u64 chunk_z = this->selected_z / this->terrain.tiles_per_chunk();
-        Vec<3> offset = Vec<3>(chunk_x, 0, chunk_z) 
-            * this->terrain.tiles_per_chunk()
-            * this->terrain.units_per_tile();
-        Mat<4> transform = Mat<4>::translate(offset);
-        const engine::Texture& wireframe_add_texture = this->modification_valid
-            ? scene.get<engine::Texture>(ActionMode::wireframe_add_texture)
-            : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
-        elevation += 1;
-        engine::Mesh add_geometry = this->terrain
-            .build_chunk_geometry(chunk_x, chunk_z);
-        renderer.render(
-            add_geometry, wireframe_add_texture, 
-            Mat<4>(), std::array { transform }, true
-        );
-        elevation -= 1;
-        const engine::Texture& wireframe_sub_texture = scene
-            .get<engine::Texture>(ActionMode::wireframe_sub_texture);
-        elevation -= 1;
-        engine::Mesh sub_geometry = this->terrain
-            .build_chunk_geometry(chunk_x, chunk_z);
-        renderer.render(
-            sub_geometry, wireframe_sub_texture, 
-            Mat<4>(), std::array { transform }, true
-        );
-        elevation += 1;     
+
+
+
+
+
+        // this->selected_x = tile_x;
+        // this->selected_z = tile_z;
+        // this->modification_valid = !modified_terrain_occupied(
+        //     (i64) tile_x, (i64) tile_z, this->terrain
+        // );
+        // bool modified_terrain = window.was_pressed(engine::Button::Left)
+        //     || window.was_pressed(engine::Button::Right);
+        // if(modified_terrain) {
+        //     i16 elevation = this->terrain.elevation_at(tile_x, tile_z);
+        //     i16 modification = 0;
+        //     if(window.was_pressed(engine::Button::Left)) {
+        //         modification += 1;
+        //     }
+        //     if(window.was_pressed(engine::Button::Right)) {
+        //         modification -= 1;
+        //     }
+        //     u64 cost = compute_terrain_modification_cost(
+        //         tile_x, tile_z, elevation, this->terrain
+        //     );
+        //     bool modified = this->modification_valid 
+        //         && this->balance.pay_coins(cost, this->toasts);
+        //     if(modified) {
+        //         modify_terrain_height(
+        //             tile_x, tile_z, this->terrain, modification
+        //         );
+        //     }
+        // }
     }
 
 

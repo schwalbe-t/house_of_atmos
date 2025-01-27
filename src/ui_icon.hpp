@@ -25,6 +25,15 @@ namespace houseofatmos::ui_icon {
     static inline const ui::Background pathing 
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(64, 64), Vec<2>(16, 16));
 
+    static inline const ui::Background terrain_flatten 
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(88, 64), Vec<2>(16, 16));
+    static inline const ui::Background terrain_raise 
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(104, 64), Vec<2>(16, 16));
+    static inline const ui::Background terrain_lower
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(120, 64), Vec<2>(16, 16));
+    static inline const ui::Background terrain_vertex
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(136, 64), Vec<2>(8, 8));
+
     static inline const ui::Background barley 
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 88), Vec<2>(8, 8));
     static inline const ui::Background malt 

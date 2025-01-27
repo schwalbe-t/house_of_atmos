@@ -23,14 +23,15 @@ namespace houseofatmos::outside {
 
     static void set_base_ui(Outside& scene, u64 selected);
 
+    using ActionModeBuilder = std::unique_ptr<ActionMode> (*)(Outside& scene);
+
     static void set_action_mode(
-        Outside& scene, std::unique_ptr<ActionMode>&& mode, u64 selected
+        Outside& scene, ActionModeBuilder builder, u64 selected
     ) {
         set_base_ui(scene, selected);
-        scene.action_mode = std::move(mode);
+        scene.action_mode = builder(scene);
     }
 
-    using ActionModeBuilder = std::unique_ptr<ActionMode> (*)(Outside& scene);
     static const ActionModeBuilder default_mode_const = [](Outside& s) {
         return (std::unique_ptr<ActionMode>) std::make_unique<DefaultMode>(
             s.terrain, s.complexes, s.carriages, s.player, s.balance,
@@ -83,10 +84,10 @@ namespace houseofatmos::outside {
                 .with_background(mode_bkg)
                 .with_click_handler([mode_i, &scene, selected, mode_const]() {
                     if(selected != mode_i) {
-                        set_action_mode(scene, mode_const(scene), mode_i);
+                        set_action_mode(scene, mode_const, mode_i);
                         return;
                     }
-                    set_action_mode(scene, default_mode_const(scene), UINT64_MAX);
+                    set_action_mode(scene, default_mode_const, UINT64_MAX);
                 })
                 .with_padding(0)
                 .with_background(
@@ -344,7 +345,7 @@ namespace houseofatmos::outside {
             random_init(), 
             this->terrain, this->player, this->balance, this->complexes
         );
-        set_action_mode(*this, default_mode_const(*this), UINT64_MAX);
+        set_action_mode(*this, default_mode_const, UINT64_MAX);
     }
 
 
@@ -423,7 +424,6 @@ namespace houseofatmos::outside {
             save_game(this->serialize(), this->toasts);
         }
         update_map(window, this->terrain_map, this->map_elem);
-        engine::debug(std::to_string(1.0 / window.delta_time()));
     }
 
 
@@ -467,7 +467,7 @@ namespace houseofatmos::outside {
         this->carriages = CarriageManager(
             outside.carriages, buffer, this->terrain, Outside::draw_distance_un
         );
-        set_action_mode(*this, default_mode_const(*this), UINT64_MAX);
+        set_action_mode(*this, default_mode_const, UINT64_MAX);
     }
 
     engine::Arena Outside::serialize() const {
