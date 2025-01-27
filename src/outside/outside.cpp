@@ -278,7 +278,7 @@ namespace houseofatmos::outside {
             Conversion({ { 1, Item::Tools } }, { { 30, Item::Coins } }, 0.1)
         }));
         place_building(
-            Building::Palace, plaza_x, plaza_z, plaza_complex_i, terrain
+            Building::Plaza, plaza_x, plaza_z, plaza_complex_i, terrain
         );
         // generate houses
         for(u64 x = min_x; x < max_x; x += 1) {
@@ -377,11 +377,6 @@ namespace houseofatmos::outside {
         player.in_water = player.position.y() <= -1.5;
     }
 
-    static const f64 min_cam_angle_height = 10.0;
-    static const f64 min_cam_angle = 45.0 / 180.0 * pi;
-    static const f64 max_cam_angle_height = 40.0;
-    static const f64 max_cam_angle = 75.0 / 180.0 * pi;
-
     static void update_camera(
         engine::Window& window, Player& player, Camera& camera,
         f64& distance, ui::Element*& map
@@ -393,14 +388,9 @@ namespace houseofatmos::outside {
             std::max(distance, Outside::min_camera_dist), 
             Outside::max_camera_dist
         );
-        f64 angle_height = (player.position.y() - min_cam_angle_height)
-            / (max_cam_angle_height - min_cam_angle_height);
-        f64 angle = std::min(std::max(angle_height, 0.0), 1.0)
-            * (max_cam_angle - min_cam_angle)
-            + min_cam_angle;
         camera.look_at = player.position;
         camera.position = player.position 
-            + Vec<3>(0, sin(angle), cos(angle)).normalized() * distance;
+            + Vec<3>(0, 1, 1).normalized() * distance;
     }
 
     static void update_map(

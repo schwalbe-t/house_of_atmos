@@ -925,7 +925,9 @@ namespace houseofatmos::outside {
         bool attempted = this->selected != nullptr
             && window.was_pressed(engine::Button::Left)
             && !this->ui.was_clicked();
-        if(attempted) {
+        if(attempted && !this->selected->get_type_info().destructible) {
+            this->toasts.add_error("toast_indestructible", {});
+        } else if(attempted) {
             const Building::TypeInfo& type_info = this->selected->get_type_info();
             i64 unemployment = this->terrain.compute_unemployment();
             bool allowed = unemployment >= (i64) type_info.residents;

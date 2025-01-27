@@ -14,6 +14,10 @@
         "de": "💾 Spiel gespeichert.",
         "en": "💾 Progress saved."
     },
+    "toast_indestructible": {
+        "de": "Dieses Gebäude kann nicht abgerissen werden.",
+        "en": "This building may not be demolished."
+    },
     "toast_too_expensive": {
         "de": "Zu teuer! ({} 🪙)",
         "en": "Too expensive! ({} 🪙)"
