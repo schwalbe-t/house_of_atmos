@@ -1,6 +1,7 @@
 
 #include "actionmode.hpp"
 #include <iostream>
+#include <format>
 
 namespace houseofatmos::outside {
 
@@ -8,7 +9,7 @@ namespace houseofatmos::outside {
 
 
 
-    static std::string get_item_name(Item item) {
+    static std::string get_item_name(Item::Type item) {
         switch(item) {
             case Item::Barley: return "Barley";
             case Item::Malt: return "Malt";
@@ -29,7 +30,7 @@ namespace houseofatmos::outside {
     static void print_complex_info(ComplexId id, const Complex& complex) {
         std::string output;
         output += "===== Complex #" + std::to_string(id.index) + " =====";
-        std::unordered_map<Item, f64> throughput = complex.compute_throughput();
+        std::unordered_map<Item::Type, f64> throughput = complex.compute_throughput();
         output += "\n     inputs [/s]: ";
         bool had_input = false;
         for(const auto& [item, freq]: throughput) {
@@ -756,159 +757,384 @@ namespace houseofatmos::outside {
 
 
 
-    static void choose_building_type(
-        const engine::Window& window, 
-        Building::Type& type,
-        std::vector<Conversion>& conversions
+    static ui::Element create_item_stack_info(
+        const Item::Stack& stack, const engine::Localization* local,
+        f64& text_v_pad
     ) {
-        if(window.was_pressed(engine::Key::Enter)) {
-            engine::info(
-                "Enter a building type to build "
-                "(one of: 'house', 'farmland', 'mineshaft', 'windmill', 'factory', 'stable')"
-            );
-            std::string type_name = get_text_input();
-            if(type_name == "house") {
-                type = Building::House;
-                conversions.clear();
-                return;
-            }
-            if(type_name == "farmland") {
-                engine::info("Enter what the farmland should produce (one of: 'wheat', 'barley')");
-                std::string produce_name = get_text_input();
-                if(produce_name == "wheat") {
-                    type = Building::Farmland;
-                    conversions = { Conversion(
-                        {}, 
-                        { { 10, Item::Wheat } }, 
-                        10.0
-                    ) };
-                    engine::info("Selected farmland (-> 40 Wheat / 10 s)");
-                    return;
-                }
-                if(produce_name == "barley") {
-                    type = Building::Farmland;
-                    conversions = { Conversion(
-                        {}, 
-                        { { 10, Item::Barley } }, 
-                        10.0
-                    ) };
-                    engine::info("Selected farmland (-> 40 Barley / 10 s)");
-                    return;
-                }
-            }
-            if(type_name == "mineshaft") {
-                engine::info("Enter what the mineshaft should produce (one of: 'hematite', 'coal')");
-                std::string produce_name = get_text_input();
-                if(produce_name == "hematite") {
-                    type = Building::Mineshaft;
-                    conversions = { Conversion(
-                        {}, 
-                        { { 1, Item::Hematite } }, 
-                        1.0
-                    ) };
-                    engine::info("Selected mineshaft (-> 1 Hematite / 1 s)");
-                    return;
-                }
-                if(produce_name == "coal") {
-                    type = Building::Mineshaft;
-                    conversions = { Conversion(
-                        {}, 
-                        { { 1, Item::Coal } }, 
-                        1.0
-                    ) };
-                    engine::info("Selected coal (-> 1 Coal / 1 s)");
-                    return;
-                }
-            }
-            if(type_name == "windmill") {
-                engine::info("Enter what the windmill should produce (one of: 'malt', 'flour')");
-                std::string produce_name = get_text_input();
-                if(produce_name == "malt") {
-                    type = Building::Windmill;
-                    conversions = { Conversion(
-                        { { 4, Item::Barley } }, 
-                        { { 1, Item::Malt } },
-                        1.0
-                    ) };
-                    engine::info("Selected windmill (4 Barley -> 1 Malt / 1 s)");
-                    return;
-                }
-                if(produce_name == "flour") {
-                    type = Building::Windmill;
-                    conversions = { Conversion(
-                        { { 4, Item::Wheat } }, 
-                        { { 1, Item::Flour } }, 
-                        1.0
-                    ) };
-                    engine::info("Selected windmill (4 Wheat -> 1 Flour / 1 s)");
-                    return;
-                }
-            }
-            if(type_name == "factory") {
-                type = Building::House;
-                engine::info(
-                    "Enter what the factory should produce "
-                    "(one of: 'beer', 'bread', 'steel', 'armor', 'tools')"    
+        const Item::TypeInfo& item = Item::items.at((size_t) stack.item);
+        std::string text = std::to_string(stack.count) + " "
+            + local->text(item.local_name) + " ";
+        text_v_pad = (item.icon->edge_size.y() - ui_font::standard.height) / 2;
+        ui::Element info = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .with_child(ui::Element()
+                .with_pos(0, text_v_pad, ui::position::parent_units)
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(text, &ui_font::standard)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .with_size(
+                    item.icon->edge_size.x(), item.icon->edge_size.y(), 
+                    ui::size::units
+                )
+                .with_background(item.icon)
+                .as_movable()
+            )
+            .as_movable();
+        return info;
+    }
+
+    static ui::Element create_item_stack_list(
+        const std::vector<Item::Stack>& stacks, 
+        const engine::Localization* local, f64& text_v_pad
+    ) {
+        ui::Element list = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .as_movable();
+        bool had_item = false;
+        for(const Item::Stack& stack: stacks) {
+            if(had_item) {
+                list.children.push_back(ui::Element()
+                    .with_size(0, 0, ui::size::units_with_children)
+                    .with_child(ui::Element()
+                        .with_pos(0, text_v_pad, ui::position::parent_units)
+                        .with_size(0, 0, ui::size::unwrapped_text)
+                        .with_text(" + ", &ui_font::standard)
+                        .as_movable()
+                    )
+                    .as_movable()
                 );
-                std::string produce_name = get_text_input();
-                if(produce_name == "beer") {
-                    type = Building::Factory;
-                    conversions = { Conversion(
-                        { { 1, Item::Malt } }, 
-                        { { 4, Item::Beer } }, 
-                        4.0
-                    ) };
-                    engine::info("Selected factory (1 Malt -> 4 Beer / 4 s)");
-                    return;
-                }
-                if(produce_name == "bread") {
-                    type = Building::Factory;
-                    conversions = { Conversion(
-                        { { 1, Item::Flour } }, 
-                        { { 2, Item::Bread } }, 
-                        2.0
-                    ) };
-                    engine::info("Selected factory (1 Flour -> 2 Bread / 2 s)");
-                    return;
-                }
-                if(produce_name == "steel") {
-                    type = Building::Factory;
-                    conversions = { Conversion(
-                        { { 2, Item::Hematite }, { 1, Item::Coal } }, 
-                        { { 2, Item::Steel } }, 
-                        5.0
-                    ) };
-                    engine::info("Selected factory (2 Hematite + 1 Coal -> 2 Steel / 5 s)");
-                    return;
-                }
-                if(produce_name == "armor") {
-                    type = Building::Factory;
-                    conversions = { Conversion(
-                        { { 3, Item::Steel } }, 
-                        { { 1, Item::Armor } }, 
-                        10.0
-                    ) };
-                    engine::info("Selected factory (3 Steel -> 1 Armor / 10 s)");
-                    return;
-                }
-                if(produce_name == "tools") {
-                    type = Building::Factory;
-                    conversions = { Conversion(
-                        { { 2, Item::Steel } }, 
-                        { { 1, Item::Tools } }, 
-                        5.0
-                    ) };
-                    engine::info("Selected factory (2 Steel -> 1 Tools / 5 s)");
-                    return;
-                }
             }
-            if(type_name == "stable") {
-                type = Building::Stable;
-                conversions.clear();
-                return;
-            }
-            engine::info("Invalid input, cancelled. Press enter to try again.");
+            list.children.push_back(
+                create_item_stack_info(stack, local, text_v_pad)
+            );
+            had_item = true;
         }
+        return list;
+    }
+
+    static ui::Element create_conversion_info(
+        const Conversion& conv, const engine::Localization* local
+    ) {
+        std::string period_str = std::format(" ({}s)", conv.period);
+        f64 text_v_pad = 0;
+        ui::Element info = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .with_child(create_item_stack_list(conv.inputs, local, text_v_pad))
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::units_with_children)
+                .with_child(ui::Element()
+                    .with_pos(0, text_v_pad, ui::position::parent_units)
+                    .with_size(0, 0, ui::size::unwrapped_text)
+                    .with_text(" → ", &ui_font::standard)
+                    .as_movable()
+                )
+                .as_movable()
+            )
+            .with_child(create_item_stack_list(conv.outputs, local, text_v_pad))
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::units_with_children)
+                .with_child(ui::Element()
+                    .with_pos(0, text_v_pad, ui::position::parent_units)
+                    .with_size(0, 0, ui::size::unwrapped_text)
+                    .with_text(period_str, &ui_font::standard)
+                    .as_movable()
+                )
+                .as_movable()
+            )
+            .as_movable();
+        return info;
+    }
+
+    static ui::Element create_selected_building_info(
+        Building::Type type, const std::vector<Conversion>& conversions,
+        const engine::Localization* local
+    ) {
+        const Building::TypeInfo& building = Building::types.at((size_t) type);
+        std::string worker_info = building.residents > building.workers
+            ? local->pattern(
+                "ui_provided_workers", 
+                { std::to_string(building.residents - building.workers) }
+            )
+            : local->pattern(
+                "ui_required_workers",
+                { std::to_string(building.workers - building.residents) }
+            );
+        ui::Element info = ui::Element()
+            .with_pos(0.5, 0.95, ui::position::window_fract)
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_background(&ui_background::note)
+            .with_list_dir(ui::Direction::Vertical)
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::units_with_children)
+                .with_list_dir(ui::Direction::Horizontal)
+                .with_child(ui::Element()
+                    .with_size(
+                        building.icon->edge_size.x(), building.icon->edge_size.y(),
+                        ui::size::units
+                    )
+                    .with_background(building.icon)
+                    .as_movable()
+                )
+                .with_child(ui::Element()
+                    .with_size(0, 0, ui::size::units_with_children)
+                    .with_list_dir(ui::Direction::Vertical)
+                    .with_child(ui::Element()
+                        .with_size(0, 0, ui::size::unwrapped_text)
+                        .with_text(
+                            local->text(building.local_name), &ui_font::standard
+                        )
+                        .with_padding(1)
+                        .as_movable()
+                    )
+                    .with_child(ui::Element()
+                        .with_size(0, 0, ui::size::unwrapped_text)
+                        .with_text(worker_info, &ui_font::standard)
+                        .with_padding(1)
+                        .as_movable()
+                    )
+                    .with_padding(1)
+                    .as_movable()
+                )
+                .as_movable()
+            )
+            .as_movable();
+        for(const Conversion& conv: conversions) {
+            info.children.push_back(create_conversion_info(conv, local));
+        }
+        return info;
+    }
+
+    static ui::Element create_selector_container(std::string title) {
+        ui::Element selector = ui::Element()
+            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_background(&ui_background::note)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        selector.children.push_back(ui::Element()
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(title, &ui_font::standard)
+            .with_padding(2)
+            .as_movable()
+        );
+        return selector;
+    }
+
+    static ui::Element create_selector_item(
+        const ui::Background* icon, std::string text, bool selected,
+        std::function<void ()>&& handler
+    ) {
+        ui::Element item = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .with_child(ui::Element()
+                .as_phantom()
+                .with_size(
+                    icon->edge_size.x(), icon->edge_size.y(), ui::size::units
+                )
+                .with_background(icon)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .as_phantom()
+                .with_pos(
+                    0, 
+                    (icon->edge_size.y() - ui_font::standard.height) / 2.0 - 2.0, 
+                    ui::position::parent_units
+                )
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(text, &ui_font::standard)
+                .with_padding(2)
+                .as_phantom()
+                .as_movable()
+            )
+            .with_background(
+                selected
+                    ? &ui_background::border_selected
+                    : &ui_background::border,
+                selected
+                    ? &ui_background::border_selected
+                    : &ui_background::border_hovering
+            )
+            .with_click_handler(std::move(handler))
+            .with_padding(2)
+            .as_movable();
+        return item;
+    }
+
+    using BuildingVariant = std::vector<Conversion>;
+    using BuildingGroup = std::pair<Building::Type, std::vector<BuildingVariant>>;
+    static const std::vector<BuildingGroup> buildable = {
+        (BuildingGroup) { Building::House, {} },
+        (BuildingGroup) { Building::Farmland, {
+            { (Conversion) { 
+                {}, 
+                { { 10, Item::Wheat } }, 
+                10.0 
+            } },
+            { (Conversion) { 
+                {}, 
+                { { 10, Item::Barley } }, 
+                10.0 
+            } }
+        } },
+        (BuildingGroup) { Building::Mineshaft, {
+            { (Conversion) { 
+                {}, 
+                { { 1, Item::Hematite } }, 
+                1.0 
+            } },
+            { (Conversion) { 
+                {}, 
+                { { 1, Item::Coal } }, 
+                1.0 
+            } }
+        } },
+        (BuildingGroup) { Building::Windmill, {
+            { (Conversion) { 
+                { { 4, Item::Barley } }, 
+                { { 1, Item::Malt } }, 
+                1.0 
+            } },
+            { (Conversion) { 
+                { { 4, Item::Wheat } }, 
+                { { 1, Item::Flour } }, 
+                1.0 
+            } }
+        } },
+        (BuildingGroup) { Building::Factory, {
+            { (Conversion) { 
+                { { 1, Item::Malt } }, 
+                { { 4, Item::Beer } }, 
+                4.0 
+            } },
+            { (Conversion) { 
+                { { 1, Item::Flour } }, 
+                { { 2, Item::Bread } }, 
+                2.0 
+            } },
+            { (Conversion) { 
+                { { 2, Item::Hematite }, { 1, Item::Coal } }, 
+                { { 2, Item::Steel } }, 
+                5.0 
+            } },
+            { (Conversion) { 
+                { { 3, Item::Steel } }, 
+                { { 1, Item::Armor } }, 
+                10.0 
+            } },
+            { (Conversion) { 
+                { { 2, Item::Steel } }, 
+                { { 1, Item::Tools } }, 
+                5.0 
+            } }
+        } },
+        (BuildingGroup) { Building::Stable, {} }
+    };
+
+    static ui::Element create_building_selector(
+        ui::Manager* ui, ui::Element* dest, ui::Element* selected,
+        Building::Type* s_type, std::vector<Conversion>* s_conv,
+        const engine::Localization* local
+    );
+
+    static ui::Element create_variant_selector(
+        ui::Manager* ui, ui::Element* dest, ui::Element* selected,
+        const BuildingGroup& group,
+        Building::Type* s_type, std::vector<Conversion>* s_conv,
+        const engine::Localization* local
+    ) {
+        ui::Element selector = create_selector_container(
+            local->text("ui_product_selection")
+        );
+        for(const BuildingVariant& variant: group.second) {
+            if(variant.size() == 0) { continue; }
+            if(variant.at(0).outputs.size() == 0) { continue; }
+            const Item::TypeInfo& result = Item::items
+                .at((size_t) variant.at(0).outputs.at(0).item);
+            std::vector<Conversion> conversions = std::vector(variant);
+            selector.children.push_back(create_selector_item(
+                result.icon, local->text(result.local_name), false,
+                [
+                    ui, dest, selected, s_type, s_conv, local, 
+                    type = group.first, conversions
+                ]() {
+                    *s_type = type;
+                    *s_conv = std::move(conversions);
+                    *dest = create_building_selector(
+                        ui, dest, selected, s_type, s_conv, local
+                    );
+                    *selected = create_selected_building_info(
+                        *s_type, *s_conv, local
+                    );
+                }
+            ));
+        }
+        return selector;
+    }   
+
+    static ui::Element create_building_selector(
+        ui::Manager* ui, ui::Element* dest, ui::Element* selected,
+        Building::Type* s_type, std::vector<Conversion>* s_conv,
+        const engine::Localization* local
+    ) {
+        ui::Element selector = create_selector_container(
+            local->text("ui_building_selection")
+        );
+        for(const BuildingGroup& group: buildable) {
+            const BuildingGroup* group_ptr = &group;
+            const Building::TypeInfo& type = Building::types
+                .at((size_t) group.first);
+            selector.children.push_back(create_selector_item(
+                type.icon, local->text(type.local_name), *s_type == group.first,
+                [ui, dest, selected, s_type, s_conv, local, group_ptr]() {
+                    if(group_ptr->second.size() == 0) {
+                        *s_type = group_ptr->first;
+                        s_conv->clear();
+                        *dest = create_building_selector(
+                            ui, dest, selected, s_type, s_conv, local
+                        );
+                        *selected = create_selected_building_info(
+                            *s_type, *s_conv, local
+                        );
+                        return;
+                    }
+                    *dest = create_variant_selector(
+                        ui, dest, selected, *group_ptr, s_type, s_conv, local
+                    );
+                }
+            ));
+        }
+        return selector;
+    }
+
+    ConstructionMode::ConstructionMode(
+        Terrain& terrain, ComplexBank& complexes, 
+        CarriageManager& carriages, Player& player, Balance& balance,
+        ui::Manager& ui, Toasts& toasts
+    ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
+        this->selected_x = 0;
+        this->selected_z = 0;
+        this->selected_type = std::make_unique<Building::Type>(Building::House);
+        this->selected_conversion = std::make_unique<std::vector<Conversion>>();
+        this->placement_valid = false;
+        this->ui.root.children.push_back(ui::Element());
+        ui::Element* selector = &this->ui.root.children.back();
+        this->ui.root.children.push_back(ui::Element());
+        ui::Element* selected = &this->ui.root.children.back();
+        *selector = create_building_selector(
+            &this->ui, selector, selected,
+            this->selected_type.get(), this->selected_conversion.get(),
+            this->local
+        );
+        *selected = create_selected_building_info(
+            *this->selected_type, *this->selected_conversion, local
+        );
     }
 
     static void place_building(
@@ -955,9 +1181,8 @@ namespace houseofatmos::outside {
     ) {
         (void) scene;
         (void) renderer;
-        choose_building_type(window, this->selected_type, this->selected_conversion);
         const Building::TypeInfo& type_info = Building::types
-            .at((size_t) this->selected_type);
+            .at((size_t) *this->selected_type);
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer,
             Vec<3>(type_info.width / 2.0, 0, type_info.height / 2.0)
@@ -967,22 +1192,27 @@ namespace houseofatmos::outside {
         this->placement_valid = this->terrain.valid_building_location(
             (i64) tile_x, (i64) tile_z, this->player.position, type_info
         );
-        if(this->placement_valid && window.was_pressed(engine::Button::Left)) {
+        bool attempted = window.was_pressed(engine::Button::Left)
+            && !this->ui.was_clicked();
+        if(attempted && this->placement_valid) {
             i64 unemployment = this->terrain.compute_unemployment();
             bool allowed = unemployment >= (i64) type_info.workers
                 && this->balance.pay_coins(type_info.cost, this->toasts);
             if(allowed) {
                 place_building(
                     tile_x, tile_z, this->terrain, this->complexes,
-                    this->selected_type, type_info, this->selected_conversion
+                    *this->selected_type, type_info, *this->selected_conversion
                 );
                 this->carriages.refind_all_paths(this->complexes, this->terrain);
             } else if(unemployment < (i64) type_info.workers) {
-                engine::info("Not enough unemployed workers available! ("
-                    + std::to_string(unemployment) + "/"
-                    + std::to_string(type_info.workers) + ")"
-                );
+                this->toasts.add_error("toast_missing_unemployment", {
+                    std::to_string(unemployment), 
+                    std::to_string(type_info.workers)
+                });
             }
+        }
+        if(attempted && !this->placement_valid) {
+            this->toasts.add_error("toast_invalid_building_placement", {});
         }
     }
 
@@ -998,7 +1228,7 @@ namespace houseofatmos::outside {
         u64 chunk_rel_x = this->selected_x % this->terrain.tiles_per_chunk();
         u64 chunk_rel_z = this->selected_z % this->terrain.tiles_per_chunk();
         Building building = (Building) { 
-            this->selected_type, 
+            *this->selected_type, 
             (u8) chunk_rel_x, (u8) chunk_rel_z, 
             std::nullopt 
         };

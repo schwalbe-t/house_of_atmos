@@ -42,7 +42,7 @@ namespace houseofatmos::outside {
         std::pair<const ui::Background*, ActionModeBuilder>, 4
     > action_modes = {
         (std::pair<const ui::Background*, ActionModeBuilder>) 
-        { &ui_icon::terrain, [](Outside& s) {
+        { &ui_icon::terraforming, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<TerraformMode>(
                 s.terrain, s.complexes, s.carriages, s.player, s.balance, 
                 s.ui, s.toasts
@@ -97,7 +97,7 @@ namespace houseofatmos::outside {
                     selected == mode_i
                         ? &ui_background::border_selected
                         : &ui_background::border_hovering
-                )
+                )                
                 .with_padding(2)
                 .as_movable()
             );

@@ -101,14 +101,14 @@ namespace houseofatmos::outside {
                 u32 fixed;
                 f32 percentage;
             } amount;
-            Item item;
+            Item::Type item;
         };
 
 
         private:
         CarriageType type;
         std::vector<HorseType> horses;
-        std::unordered_map<Item, u64> items;
+        std::unordered_map<Item::Type, u64> items;
         u64 curr_target_i;
         State state;
 
@@ -142,15 +142,15 @@ namespace houseofatmos::outside {
         bool is_lost() const { return this->state == State::Lost; }
         void make_lost() { this->state = State::Lost; }
 
-        u64 stored_count(Item item) const {
+        u64 stored_count(Item::Type item) const {
             auto count = this->items.find(item);
             if(count == this->items.end()) { return 0; }
             return count->second;
         }
-        void add_stored(Item item, u64 amount) { this->items[item] += amount; }
-        void remove_stored(Item item, u64 amount) { this->items[item] -= amount; }
-        void set_stored(Item item, u64 amount) { this->items[item] = amount; }
-        const std::unordered_map<Item, u64>& stored_items() const {
+        void add_stored(Item::Type item, u64 amount) { this->items[item] += amount; }
+        void remove_stored(Item::Type item, u64 amount) { this->items[item] -= amount; }
+        void set_stored(Item::Type item, u64 amount) { this->items[item] = amount; }
+        const std::unordered_map<Item::Type, u64>& stored_items() const {
             return this->items;
         }
 

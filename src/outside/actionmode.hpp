@@ -57,13 +57,16 @@ namespace houseofatmos::outside {
         Balance& balance;
         ui::Manager& ui;
         Toasts& toasts;
+        const engine::Localization* local;
 
         ActionMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
         ): terrain(terrain), complexes(complexes), carriages(carriages),
-            player(player), balance(balance), ui(ui), toasts(toasts) {}
+            player(player), balance(balance), ui(ui), toasts(toasts) {
+            this->local = &toasts.localization();
+        }
 
         virtual ~ActionMode() = default;
 
@@ -173,20 +176,15 @@ namespace houseofatmos::outside {
     struct ConstructionMode: ActionMode {
 
         u64 selected_x, selected_z;
-        Building::Type selected_type;
-        std::vector<Conversion> selected_conversion;
+        std::unique_ptr<Building::Type> selected_type;
+        std::unique_ptr<std::vector<Conversion>> selected_conversion;
         bool placement_valid;
 
         ConstructionMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
-            this->selected_x = 0;
-            this->selected_z = 0;
-            this->selected_type = Building::House;
-            this->placement_valid = false;
-        }
+        );
 
         void update(
             const engine::Window& window, engine::Scene& scene, 

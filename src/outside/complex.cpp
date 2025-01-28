@@ -169,30 +169,30 @@ namespace houseofatmos::outside {
     std::span<const std::pair<std::pair<u64, u64>, Complex::Member>>
         Complex::get_members() const { return this->members; }
 
-    u64 Complex::stored_count(Item item) const {
+    u64 Complex::stored_count(Item::Type item) const {
         auto count = this->storage.find(item);
         if(count == this->storage.end()) { return 0; }
         return count->second;
     }
 
-    void Complex::add_stored(Item item, u64 amount) {
+    void Complex::add_stored(Item::Type item, u64 amount) {
         this->storage[item] += amount;
     }
 
-    void Complex::remove_stored(Item item, u64 amount) {
+    void Complex::remove_stored(Item::Type item, u64 amount) {
         this->storage[item] -= amount;
     }
 
-    void Complex::set_stored(Item item, u64 amount) {
+    void Complex::set_stored(Item::Type item, u64 amount) {
         this->storage[item] = amount;
     }
 
-    const std::unordered_map<Item, u64>& Complex::stored_items() const {
+    const std::unordered_map<Item::Type, u64>& Complex::stored_items() const {
         return this->storage;
     }
 
-    std::unordered_map<Item, f64> Complex::compute_throughput() const {
-        auto result = std::unordered_map<Item, f64>();
+    std::unordered_map<Item::Type, f64> Complex::compute_throughput() const {
+        auto result = std::unordered_map<Item::Type, f64>();
         for(const auto& member: this->members) {
             for(const Conversion& conversion: member.second.conversions) {
                 for(const auto& [count, item]: conversion.inputs) {

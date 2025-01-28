@@ -31,8 +31,13 @@ namespace houseofatmos {
         public:
         Toasts(const engine::Localization::LoadArgs& l): local_ref(l) {}
 
+        const engine::Localization& localization() const { 
+            return *this->local; 
+        }
+
         ui::Element create_container() {
             ui::Element container = ui::Element()
+                .as_phantom()
                 .with_handle(&this->toasts_container)
                 .with_pos(10, 10, ui::position::window_tl_units)
                 .with_size(0, 0, ui::size::units_with_children)

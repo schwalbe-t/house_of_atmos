@@ -4,6 +4,7 @@
 #include <engine/arena.hpp>
 #include <engine/window.hpp>
 #include "../player.hpp"
+#include "item.hpp"
 #include <vector>
 #include <utility>
 #include <unordered_map>
@@ -14,15 +15,6 @@ namespace houseofatmos::outside {
     using namespace houseofatmos;
 
 
-    enum struct Item {
-        Barley, /* -> */ Malt, /* -> */ Beer,
-        Wheat, /* -> */ Flour, /* -> */ Bread,
-        Hematite, /* and */ Coal, /* -> */ Steel, /* -> */ Armor,
-                                                  /* or */ Tools,
-        Coins
-    };
-
-
     struct Conversion {
         struct Serialized {
             u64 inputs_count, inputs_offset;
@@ -31,8 +23,8 @@ namespace houseofatmos::outside {
         };
 
         Conversion(
-            std::vector<std::pair<u8, Item>> inputs, 
-            std::vector<std::pair<u8, Item>> outputs, 
+            std::vector<Item::Stack> inputs, 
+            std::vector<Item::Stack> outputs, 
             f64 period
         ) {
             this->inputs = std::move(inputs);
@@ -42,8 +34,8 @@ namespace houseofatmos::outside {
         }
         Conversion(const Serialized& serialized, const engine::Arena& buffer);
 
-        std::vector<std::pair<u8, Item>> inputs;
-        std::vector<std::pair<u8, Item>> outputs;
+        std::vector<Item::Stack> inputs;
+        std::vector<Item::Stack> outputs;
         f64 period, passed;
 
         Serialized serialize(engine::Arena& arena) const;
@@ -79,7 +71,7 @@ namespace houseofatmos::outside {
 
         private:
         std::vector<std::pair<std::pair<u64, u64>, Member>> members;
-        std::unordered_map<Item, u64> storage;
+        std::unordered_map<Item::Type, u64> storage;
         bool free;
 
         public:
@@ -100,13 +92,13 @@ namespace houseofatmos::outside {
         const Member& member_at(u64 tile_x, u64 tile_z) const;
         size_t member_count() const;
         std::span<const std::pair<std::pair<u64, u64>, Member>> get_members() const;
-        u64 stored_count(Item item) const;
-        void add_stored(Item item, u64 amount);
-        void remove_stored(Item item, u64 amount);
-        void set_stored(Item item, u64 amount);
-        const std::unordered_map<Item, u64>& stored_items() const;
+        u64 stored_count(Item::Type item) const;
+        void add_stored(Item::Type item, u64 amount);
+        void remove_stored(Item::Type item, u64 amount);
+        void set_stored(Item::Type item, u64 amount);
+        const std::unordered_map<Item::Type, u64>& stored_items() const;
 
-        std::unordered_map<Item, f64> compute_throughput() const;
+        std::unordered_map<Item::Type, f64> compute_throughput() const;
 
         void update(const engine::Window& window, Balance& balance);
 

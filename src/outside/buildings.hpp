@@ -4,6 +4,7 @@
 #include "complex.hpp"
 #include "../renderer.hpp"
 #include "../collider.hpp"
+#include "../ui_icon.hpp"
 
 namespace houseofatmos::outside {
 
@@ -12,6 +13,8 @@ namespace houseofatmos::outside {
     struct Building {
 
         struct TypeInfo {
+            std::string local_name;
+            const ui::Background* icon;
             engine::Model::LoadArgs model;
             std::optional<std::string> animation;
             f64 animation_speed;
@@ -51,6 +54,8 @@ namespace houseofatmos::outside {
 
         static inline const std::vector<TypeInfo> types = {
             /* Type::Farmland */ {
+                "building_name_farmland",
+                &ui_icon::farmland,
                 { "res/buildings/farmland.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 {
@@ -67,6 +72,8 @@ namespace houseofatmos::outside {
                 0 // residents
             },
             /* Type::Mineshaft */ {
+                "building_name_mineshaft",
+                &ui_icon::mineshaft,
                 { "res/buildings/mineshaft.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -5 }, { 10, 1, 10 }) },
@@ -77,6 +84,8 @@ namespace houseofatmos::outside {
                 0 // residents
             },
             /* Type::Windmill */ {
+                "building_name_windmill",
+                &ui_icon::windmill,
                 { "res/buildings/windmill.glb", Renderer::model_attribs },
                 "blades", 1.0,
                 { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
@@ -87,6 +96,8 @@ namespace houseofatmos::outside {
                 0 // residents
             },
             /* Type::Factory */ {
+                "building_name_factory",
+                &ui_icon::factory,
                 { "res/buildings/factory.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
@@ -97,6 +108,8 @@ namespace houseofatmos::outside {
                 0 // residents
             },
             /* Type::House */ {
+                "building_name_house",
+                &ui_icon::house,
                 { "res/buildings/house.glb", Renderer::model_attribs },
                 "door", 0.0, // speed = 0 -> will always be the first frame
                 { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
@@ -107,6 +120,8 @@ namespace houseofatmos::outside {
                 5 // residents
             },
             /* Type::Stable */ {
+                "building_name_stable",
+                &ui_icon::stable,
                 { "res/buildings/stable.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { 
@@ -127,6 +142,8 @@ namespace houseofatmos::outside {
                 0 // residents
             },
             /* Type::Plaza */ {
+                "building_name_plaza",
+                &ui_icon::plaza,
                 { "res/buildings/plaza.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { 
@@ -153,8 +170,10 @@ namespace houseofatmos::outside {
                 0, // workers
                 0 // residents
             },
-            /* Type::Palace */ {
-                { "res/buildings/palace.glb", Renderer::model_attribs },
+            /* Type::Mansion */ {
+                "building_name_mansion",
+                &ui_icon::mansion,
+                { "res/buildings/mansion.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { 
                     // colliders
@@ -182,7 +201,7 @@ namespace houseofatmos::outside {
             House = 4,
             Stable = 5,
             Plaza = 6,
-            Palace = 7
+            Mansion = 7
         };
 
         Type type;

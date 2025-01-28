@@ -8,6 +8,14 @@
         "de": "Produktauswahl",
         "en": "Product Selection"
     },
+    "ui_required_workers": {
+        "de": "Benötigt {} Arbeiter",
+        "en": "Requires {} worker(s)"
+    },
+    "ui_provided_workers": {
+        "de": "Stellt {} Arbeiter bereit",
+        "en": "Provides {} worker(s)"
+    },
 
 
     "toast_saved_game": {
@@ -21,6 +29,10 @@
     "toast_terrain_occupied": {
         "de": "Gelände unter Gebäuden kann nicht bearbeitet werden!",
         "en": "Terrain occupied by buildings may not be modified!"
+    },
+    "toast_invalid_building_placement": {
+        "de": "Gebäude müssen auf flachem, freiem Bodem plaziert werden!",
+        "en": "Buildings must be placed on flat, unoccupied ground!"
     },
     "toast_too_expensive": {
         "de": "Zu teuer! ({} 🪙)",
@@ -121,6 +133,10 @@
     "building_name_plaza": {
         "de": "Marktplatz",
         "en": "Plaza"
+    },
+    "building_name_mansion": {
+        "de": "Villa",
+        "en": "Mansion"
     }
 
 }

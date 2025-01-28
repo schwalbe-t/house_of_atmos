@@ -16,7 +16,7 @@ namespace houseofatmos::ui_icon {
     }
 
 
-    static inline const ui::Background terrain 
+    static inline const ui::Background terraforming 
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 64), Vec<2>(16, 16));
     static inline const ui::Background construction 
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 64), Vec<2>(16, 16));
@@ -59,25 +59,27 @@ namespace houseofatmos::ui_icon {
     static inline const ui::Background coins
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 112), Vec<2>(8, 8));
 
+    static inline const ui::Background farmland
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 128), Vec<2>(16, 16));
+    static inline const ui::Background mineshaft
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 128), Vec<2>(16, 16));
+    static inline const ui::Background windmill
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(48, 128), Vec<2>(16, 16));
+    static inline const ui::Background factory
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(64, 128), Vec<2>(16, 16));
+    static inline const ui::Background house
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(80, 128), Vec<2>(16, 16));
+    static inline const ui::Background stable
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(96, 128), Vec<2>(16, 16));
+    static inline const ui::Background plaza
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(112, 128), Vec<2>(16, 16));
+    static inline const ui::Background mansion
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(128, 128), Vec<2>(16, 16));
+
 
     inline void load_textures(engine::Scene& scene) {
-        scene.load(engine::Texture::Loader(terrain.texture));
-        scene.load(engine::Texture::Loader(construction.texture));
-        scene.load(engine::Texture::Loader(demolition.texture));
-        scene.load(engine::Texture::Loader(pathing.texture));
-        
-        scene.load(engine::Texture::Loader(barley.texture));
-        scene.load(engine::Texture::Loader(malt.texture));
-        scene.load(engine::Texture::Loader(beer.texture));
-        scene.load(engine::Texture::Loader(wheat.texture));
-        scene.load(engine::Texture::Loader(flour.texture));
-        scene.load(engine::Texture::Loader(bread.texture));
-        scene.load(engine::Texture::Loader(hematite.texture));
-        scene.load(engine::Texture::Loader(coal.texture));
-        scene.load(engine::Texture::Loader(steel.texture));
-        scene.load(engine::Texture::Loader(armor.texture));
-        scene.load(engine::Texture::Loader(tools.texture));
-        scene.load(engine::Texture::Loader(coins.texture));
+        scene.load(engine::Texture::Loader(terraforming.texture)); // 'res/ui.png'
+        // others also use the same texture ('res/ui.png')
     }
 
 }

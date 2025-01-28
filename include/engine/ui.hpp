@@ -132,7 +132,7 @@ namespace houseofatmos::engine::ui {
             this->texture = texture;
             return *this;
         }
-        Element& with_click_handler(std::function<void()> handler) {
+        Element& with_click_handler(std::function<void()>&& handler) {
             this->phantom = false;
             this->on_click = std::move(handler);
             return *this;
