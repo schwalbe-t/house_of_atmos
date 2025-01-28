@@ -587,9 +587,28 @@ namespace houseofatmos::outside {
         );
     }
 
+    static i64 terrain_mod_amount(
+        const Terrain& terrain, u64 x, u64 z,
+        TerraformMode::Mode mode, i16 start_elev
+    ) {
+        switch(mode) {
+            case TerraformMode::Flatten: {
+                i16 elev = terrain.elevation_at(x, z);
+                return (i64) start_elev - (i64) elev;
+            }
+            case TerraformMode::Raise:
+                return 1;
+            case TerraformMode::Lower:
+                return -1;
+            default:
+                return 0;
+        }
+    }
+
     static bool terrain_modification_is_valid(
         const Terrain& terrain,
-        u64 min_x, u64 min_z, u64 max_x, u64 max_z
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z,
+        TerraformMode::Mode mode, i16 s_elev
     ) {
         u64 start_x = min_x >= 1? min_x - 1 : 0;
         u64 start_z = min_z >= 1? min_z - 1 : 0;
@@ -597,9 +616,17 @@ namespace houseofatmos::outside {
         u64 end_z = std::min(max_z, terrain.height_in_tiles() - 1);
         for(u64 x = start_x; x <= end_x; x += 1) {
             for(u64 z = start_z; z <= end_z; z += 1) {
-                if(terrain.building_at((i64) x, (i64) z) != nullptr) {  
-                    return false; 
-                }
+                bool has_building = (bool) terrain.building_at((i64) x, (i64) z);
+                u64 lx = std::max(x, start_x + 1); // left x
+                u64 rx = std::min(lx + 1, end_x); // right x
+                u64 tz = std::max(z, start_z + 1); // top z
+                u64 bz = std::min(tz + 1, end_z); // bottom z
+                bool is_modified 
+                    = terrain_mod_amount(terrain, lx, tz, mode, s_elev) != 0
+                    || terrain_mod_amount(terrain, lx, bz, mode, s_elev) != 0
+                    || terrain_mod_amount(terrain, rx, tz, mode, s_elev) != 0
+                    || terrain_mod_amount(terrain, rx, bz, mode, s_elev) != 0;
+                if(has_building && is_modified) { return false; }
             }
         }
         return true;
@@ -614,17 +641,9 @@ namespace houseofatmos::outside {
         u64 cost = 0;
         for(u64 x = min_x; x <= max_x; x += 1) {
             for(u64 z = min_z; z <= max_z; z += 1) {
-                i16 elev = terrain.elevation_at(x, z);
-                switch(mode) {
-                    case TerraformMode::Flatten: 
-                        cost += (u64) std::abs((i64) start_elev - (i64) elev);
-                        break;
-                    case TerraformMode::Raise:
-                    case TerraformMode::Lower:
-                        cost += 1; 
-                        break;
-                    default:;
-                }
+                cost += (u64) std::abs(terrain_mod_amount(
+                    terrain, x, z, mode, start_elev
+                ));
             }
         }
         return cost * terrain_mod_cost_per_vertex;
@@ -637,12 +656,8 @@ namespace houseofatmos::outside {
         for(u64 x = min_x; x <= max_x; x += 1) {
             for(u64 z = min_z; z <= max_z; z += 1) {
                 auto& e = terrain.elevation_at(x, z);
-                switch(mode) {
-                    case TerraformMode::Flatten: e = start_elev; break;
-                    case TerraformMode::Raise: e += 1; break;
-                    case TerraformMode::Lower: e -= 1; break;
-                    default:;
-                }
+                i64 mod = terrain_mod_amount(terrain, x, z, mode, start_elev);
+                e = (i16) ((i64) e + mod);
             }
         }
     }
@@ -694,7 +709,8 @@ namespace houseofatmos::outside {
                 *this->mode, min_x, min_z, max_x, max_z, start_elev
             );
             bool is_valid = terrain_modification_is_valid(
-                this->terrain, min_x, min_z, max_x, max_z
+                this->terrain, min_x, min_z, max_x, max_z, 
+                *this->mode, start_elev
             );
             if(is_valid && this->balance.pay_coins(cost, this->toasts)) {
                 apply_terrain_modification(
