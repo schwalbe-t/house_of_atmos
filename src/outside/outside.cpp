@@ -117,14 +117,7 @@ namespace houseofatmos::outside {
         );
         scene.ui.root.children.push_back(scene.toasts.create_container());
         scene.toasts.put_states(std::move(toast_states));
-        scene.ui.root.children.push_back(ui::Element()
-            .with_pos(0.5, 0.5, ui::position::window_fract)
-            .with_size(0.9, 0.9, ui::size::window_fract)
-            .with_background(&ui_background::scroll_horizontal)
-            .with_handle(&scene.map_elem)
-            .as_hidden(true)
-            .as_movable()
-        );
+        scene.ui.root.children.push_back(scene.terrain_map.create_container());
     }
 
 
@@ -380,9 +373,9 @@ namespace houseofatmos::outside {
 
     static void update_camera(
         engine::Window& window, Player& player, Camera& camera,
-        f64& distance, ui::Element*& map
+        f64& distance, const ui::Element* map
     ) {
-        if(map->hidden) {
+        if(!map->is_hovered_over()) {
             distance += window.scrolled().y() * -5.0;
         }
         distance = std::min(
@@ -392,20 +385,6 @@ namespace houseofatmos::outside {
         camera.look_at = player.position;
         camera.position = player.position 
             + Vec<3>(0, 1, 1).normalized() * distance;
-    }
-
-    static void update_map(
-        engine::Window& window, TerrainMap& terrain_map, ui::Element*& map
-    ) {
-        if(map->is_hovered_over()) {
-            terrain_map.adjust_view(window, map->final_pos());
-        }
-        if(window.was_pressed(engine::Key::M)) {
-            map->hidden = !map->hidden;
-            if(!map->hidden) {
-                terrain_map.render_map();
-            }
-        }
     }
 
     void Outside::update(engine::Window& window) {
@@ -418,21 +397,19 @@ namespace houseofatmos::outside {
         update_player(window, this->terrain, this->player);
         update_camera(
             window, this->player, this->renderer.camera, this->camera_distance, 
-            this->map_elem
+            this->terrain_map.element()
         );
         if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
             save_game(this->serialize(), this->toasts);
         }
-        update_map(window, this->terrain_map, this->map_elem);
+        if(this->terrain_map.toggle_with_key(engine::Key::M, window)) {
+            set_action_mode(*this, default_mode_const, UINT64_MAX);
+            this->terrain_map.element()->hidden = false;
+        }
+        this->terrain_map.update(window);
     }
 
 
-
-    static void render_map(TerrainMap& terrain_map, ui::Element*& map) {
-        terrain_map.output_size = map->final_size();
-        terrain_map.render_view();
-        map->texture = &terrain_map.output();
-    }
 
     void Outside::render(engine::Window& window) {
         this->renderer.configure(window, *this);
@@ -444,9 +421,7 @@ namespace houseofatmos::outside {
         );
         this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
-        if(!this->map_elem->hidden) {
-            render_map(this->terrain_map, this->map_elem);
-        }
+        this->terrain_map.render_view();
         this->ui.render(*this, window);
         window.show_texture(this->ui.output());
     }

@@ -61,7 +61,6 @@ namespace houseofatmos::outside {
         std::unique_ptr<ActionMode> action_mode;
         TerrainMap terrain_map = TerrainMap(this->terrain);
         ui::Element* coins_elem = nullptr;
-        ui::Element* map_elem = nullptr;
         ui::Manager ui = ui::Manager(ui_unit_size);
         Toasts toasts = Toasts(local);
 

@@ -16,6 +16,10 @@
         "de": "Stellt {} Arbeiter bereit",
         "en": "Provides {} worker(s)"
     },
+    "ui_create_carriage": {
+        "de": "Kutsche erstellen",
+        "en": "Create carriage"
+    },
 
 
     "toast_saved_game": {
@@ -49,6 +53,10 @@
     "toast_missing_unemployment": {
         "de": "Keine verfügbaren Arbeiter! ({}/{})",
         "en": "Missing unemployed workers! ({}/{})"
+    },
+    "toast_no_valid_carriage_location": {
+        "de": "Kein gültiger Ort für eine Kutsche in der Nähe!",
+        "en": "There is no valid location for a carriage nearby!"
     },
 
 

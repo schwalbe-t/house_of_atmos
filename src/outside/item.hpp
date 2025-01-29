@@ -70,7 +70,7 @@ namespace houseofatmos::outside {
             Barley = 0, /* -> */ Malt = 1, /* -> */ Beer = 2,
             Wheat = 3, /* -> */ Flour = 4, /* -> */ Bread = 5,
             Hematite = 6, /* and */ Coal = 7, /* -> */ Steel = 8, /* -> */ Armor = 9,
-                                                                /* or */ Tools = 10,
+                                                                  /* or */ Tools = 10,
             Coins = 11
         };
 

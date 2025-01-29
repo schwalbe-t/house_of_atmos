@@ -84,32 +84,17 @@ namespace houseofatmos::outside {
 
     struct DefaultMode: ActionMode {
 
-        struct Selection {
-            enum Type {
-                None,
-                Complex,
-                Building,
-                Carriage
-            };
-            union Value {
-                ComplexId complex;
-                struct {
-                    u64 x, z;
-                } building;
-                u64 carriage;
-            };
-            Type type;
-            Value value;
-        };
-
-        Selection selected;
+        ui::Element* button = nullptr;
 
         DefaultMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
         ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
-            this->selected.type = Selection::None;
+            this->ui.root.children.push_back(
+                ui::Element().as_phantom().as_movable()
+            );
+            this->button = &this->ui.root.children.back();
         }
 
         void update(
@@ -120,7 +105,11 @@ namespace houseofatmos::outside {
         void render(
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
-        ) override;
+        ) override {
+            (void) window;
+            (void) scene;
+            (void) renderer;
+        }
 
     };
 
