@@ -303,6 +303,8 @@ namespace houseofatmos::outside {
             && s_building->type == Building::Stable
             && clicked_world;
         if(clicked_stable) {
+            u64 asx = s_chunk_x * this->terrain.tiles_per_chunk() + s_building->x;
+            u64 asz = s_chunk_z * this->terrain.tiles_per_chunk() + s_building->z;
             *this->button = ui::Element()
                 .as_phantom()
                 .with_pos(0.5, 0.95, ui::position::window_fract)
@@ -314,9 +316,9 @@ namespace houseofatmos::outside {
                 .with_background(
                     &ui_background::button, &ui_background::button_select
                 )
-                .with_click_handler([this, s_tile_x, s_tile_z]() {
+                .with_click_handler([this, asx, asz]() {
                     summon_carriage(
-                        this->terrain, s_tile_x, s_tile_z, 
+                        this->terrain, asx, asz, 
                         this->balance, this->toasts, this->carriages
                     );
                 })

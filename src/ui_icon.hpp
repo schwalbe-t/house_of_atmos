@@ -76,6 +76,13 @@ namespace houseofatmos::ui_icon {
     static inline const ui::Background mansion
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(128, 128), Vec<2>(16, 16));
 
+    static inline const ui::Background map_marker_player
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 168), Vec<2>(5, 6));
+    static inline const ui::Background map_marker_carriage
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 168), Vec<2>(5, 6));
+    static inline const ui::Background map_marker_carriage_lost
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 168), Vec<2>(5, 6));
+
 
     inline void load_textures(engine::Scene& scene) {
         scene.load(engine::Texture::Loader(terraforming.texture)); // 'res/ui.png'

@@ -34,15 +34,19 @@ namespace houseofatmos::outside {
         );
     }
 
-    ui::Element TerrainMap::create_container() {
-        ui::Element container = ui::Element()
+    void TerrainMap::create_container() {
+        this->ui.root.children.push_back(ui::Element()
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .with_size(0.9, 0.9, ui::size::window_fract)
             .with_background(&ui_background::scroll_horizontal)
             .with_handle(&this->container)
             .as_hidden(true)
-            .as_movable();
-        return container;
+            .as_movable()
+        );
+        this->ui.root.children.push_back(
+            ui::Element().as_phantom().as_movable()
+        );
+        this->selected = &this->ui.root.children.back();
     }
 
     void TerrainMap::render_map() {
@@ -98,6 +102,7 @@ namespace houseofatmos::outside {
     ) {
         if(window.was_pressed(key)) {
             this->container->hidden = !this->container->hidden;
+            this->selected->hidden = this->container->hidden;
             if(!this->container->hidden) {
                 this->render_map();
             }
@@ -106,9 +111,18 @@ namespace houseofatmos::outside {
         return false;
     }
 
-    void TerrainMap::update(const engine::Window& window) {
-        if(this->container == nullptr) { return; }
-        if(this->container->hidden) { return; }
+    bool TerrainMap::hovering_marker() {
+        for(const ui::Element& element: this->container->children) {
+            if(element.is_hovered_over()) { return true; }
+        }
+        return false;
+    }
+
+    static const f64 min_zoom = 0.5;
+    static const f64 max_zoom = 4.0;
+    static const f64 zoom_step = 0.5;
+
+    void TerrainMap::update_view(const engine::Window& window) {
         f64 view_h = (f64) this->container->final_size().y() * this->view_scale;
         f64 view_w = (f64) this->t_width / this->t_height * view_h;
         Vec<2> view_size = Vec<2>(view_w, view_h);
@@ -118,13 +132,15 @@ namespace houseofatmos::outside {
                 - this->container->final_pos() 
                 - (this->container->final_size() / 2)
             ) / view_size;
-            f64 new_scale = this->view_scale + window.scrolled().y() * 0.1;
-            new_scale = std::min(std::max(new_scale, 0.5), 2.0);
+            f64 new_scale = this->view_scale + window.scrolled().y() * zoom_step;
+            new_scale = std::min(std::max(new_scale, min_zoom), max_zoom);
             this->view_pos += cursor_diff * (1.0 - this->view_scale / new_scale);
             this->view_scale = new_scale;
         }
         // move camera
-        if(window.is_down(engine::Button::Left)) {
+        bool move_down = window.is_down(engine::Button::Right)
+            || window.is_down(engine::Button::Middle);
+        if(move_down) {
             if(this->view_anchor.has_value()) {
                 Vec<2> diff = *this->view_anchor - window.cursor_pos_px();
                 this->view_pos += diff / view_size;
@@ -137,6 +153,46 @@ namespace houseofatmos::outside {
         this->view_pos.y() = std::min(std::max(this->view_pos.y(), 0.0), 1.0);
     }
 
+    void TerrainMap::update_click(const engine::Window& window) {
+        if(!window.was_pressed(engine::Button::Left)) { return; }
+        if(this->hovering_marker()) { return; }
+        Vec<2> rel_pos_px = window.cursor_pos_px() 
+            - this->container->final_pos()
+            - this->view_pos_px;
+        Vec<2> pos = rel_pos_px 
+            / this->view_size_px
+            * Vec<2>(this->t_width, this->t_height);
+        i64 x = (i64) pos.x();
+        i64 z = (i64) pos.y();
+        u64 b_chunk_x, b_chunk_z;
+        const Building* building = this->terrain
+            .building_at(x, z, &b_chunk_x, &b_chunk_z);
+        if(building != nullptr) {
+            std::span<const Conversion> conversions;
+            if(building->complex.has_value()) {
+                u64 ax = b_chunk_x * this->terrain.tiles_per_chunk() + building->x;
+                u64 az = b_chunk_z * this->terrain.tiles_per_chunk() + building->z;
+                const Complex& complex = this->complexes.get(*building->complex);
+                const Complex::Member& member = complex.member_at(ax, az);
+                conversions = member.conversions;
+            }
+            *this->selected = ui::Element()
+                .as_phantom()
+                .with_child(TerrainMap::display_building_info(
+                    building->type, conversions, *this->local
+                ))
+                .as_movable();
+        }
+    }
+
+    void TerrainMap::update(const engine::Window& window, engine::Scene& scene) {
+        this->local = &scene.get<engine::Localization>(this->local_ref);
+        if(this->container == nullptr) { return; }
+        if(this->container->hidden) { return; }
+        this->update_view(window);
+        this->update_click(window);
+    }
+
     void TerrainMap::render_view() {
         if(this->container == nullptr) { return; }
         if(this->container->hidden) { return; }
@@ -146,14 +202,67 @@ namespace houseofatmos::outside {
             (u64) this->container->final_size().y()
         );
         this->output_tex.clear_color(Vec<4>(0, 0, 0, 0));
-        f64 view_h = (f64) this->output_tex.height() * this->view_scale;
-        f64 view_w = (f64) this->t_width / this->t_height * view_h;
-        f64 view_x = this->output_tex.width() / 2 
-            - view_w * this->view_pos.x();
-        f64 view_y = this->output_tex.height() / 2 
-            - view_h * this->view_pos.y();
-        this->rendered_tex.blit(this->output_tex, view_x, view_y, view_w, view_h);
+        this->view_size_px.x() = (f64) this->output_tex.height() 
+            * this->view_scale;
+        this->view_size_px.y() = (f64) this->t_width / this->t_height 
+            * this->view_size_px.x();
+        this->view_pos_px = Vec<2>(this->output_tex.width(), this->output_tex.height()) / 2
+            - this->view_size_px * this->view_pos;
+        this->rendered_tex.blit(
+            this->output_tex, 
+            this->view_pos_px.x(), this->view_pos_px.y(), 
+            this->view_size_px.x(), this->view_size_px.y()
+        );
         this->container->texture = &this->output_tex;
+    }
+
+    void TerrainMap::add_marker(
+        Vec<2> pos, const ui::Background* icon, std::function<void ()>&& handler,
+        bool is_phantom
+    ) {
+        Vec<2> pos_norm = pos 
+            / this->terrain.units_per_tile()
+            / Vec<2>(this->t_width, this->t_height);
+        Vec<2> pos_px = this->container->final_pos()
+            + this->view_pos_px 
+            + pos_norm * this->view_size_px;
+        Vec<2> pos_un = pos_px / this->ui.px_per_unit();
+        this->container->children.push_back(ui::Element()
+            .with_pos(
+                pos_un.x() - icon->edge_size.x() / 2, 
+                pos_un.y() - icon->edge_size.y(), 
+                ui::position::window_tl_units
+            )
+            .with_size(icon->edge_size.x(), icon->edge_size.y(), ui::size::units)
+            .with_background(icon)
+            .with_click_handler(std::move(handler))
+            .as_phantom(is_phantom)
+            .as_movable()
+        );
+    }
+
+    void TerrainMap::create_markers() {
+        if(this->container == nullptr) { return; }
+        if(this->container->hidden) { return; }
+        this->container->children.clear();
+        for(const Carriage& carriage: this->carriages.carriages) {
+            this->add_marker(
+                carriage.position.swizzle<2>("xz"),
+                carriage.is_lost()
+                    ? &ui_icon::map_marker_carriage_lost
+                    : &ui_icon::map_marker_carriage,
+                []() { engine::debug("not yet implemented :)"); }, false
+            );
+        }
+        this->add_marker(
+            this->player.position.swizzle<2>("xz"), &ui_icon::map_marker_player,
+            [](){}, true
+        );
+    }
+
+    void TerrainMap::render() {
+        this->render_view();
+        this->create_markers();
     }
 
 
@@ -226,12 +335,16 @@ namespace houseofatmos::outside {
     ) {
         std::string period_str = std::format(" ({}s)", conv.period);
         f64 text_v_pad = 0;
+        ui::Element inputs = TerrainMap::display_item_stack_list(
+            conv.inputs, local, &text_v_pad
+        );
+        ui::Element outputs = TerrainMap::display_item_stack_list(
+            conv.outputs, local, &text_v_pad
+        );
         ui::Element info = ui::Element()
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
-            .with_child(TerrainMap::display_item_stack_list(
-                conv.inputs, local, &text_v_pad
-            ))
+            .with_child(std::move(inputs))
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::units_with_children)
                 .with_child(ui::Element()
@@ -242,9 +355,7 @@ namespace houseofatmos::outside {
                 )
                 .as_movable()
             )
-            .with_child(TerrainMap::display_item_stack_list(
-                conv.outputs, local, &text_v_pad
-            ))
+            .with_child(std::move(outputs))
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::units_with_children)
                 .with_child(ui::Element()

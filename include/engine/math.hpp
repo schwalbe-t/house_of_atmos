@@ -131,7 +131,7 @@ namespace houseofatmos::engine::math {
         }
 
         template<size_t L>
-        Vec<L> swizzle(const char elements[L + 1]) {
+        Vec<L> swizzle(const char elements[L + 1]) const {
             static_assert(L >= 1, "Must at least have one element!");
             Vec<L> result = Vec<L>();
             for(size_t i = 0; i < L; i += 1) {

@@ -117,7 +117,7 @@ namespace houseofatmos::outside {
         );
         scene.ui.root.children.push_back(scene.toasts.create_container());
         scene.toasts.put_states(std::move(toast_states));
-        scene.ui.root.children.push_back(scene.terrain_map.create_container());
+        scene.terrain_map.create_container();
     }
 
 
@@ -406,7 +406,7 @@ namespace houseofatmos::outside {
             set_action_mode(*this, default_mode_const, UINT64_MAX);
             this->terrain_map.element()->hidden = false;
         }
-        this->terrain_map.update(window);
+        this->terrain_map.update(window, *this);
     }
 
 
@@ -421,7 +421,7 @@ namespace houseofatmos::outside {
         );
         this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
-        this->terrain_map.render_view();
+        this->terrain_map.render();
         this->ui.render(*this, window);
         window.show_texture(this->ui.output());
     }
@@ -449,6 +449,7 @@ namespace houseofatmos::outside {
         auto buffer = engine::Arena();
         // we need to allocate the base struct first so that it's always at offset 0
         size_t outside_offset = buffer.alloc_array<Outside::Serialized>(nullptr, 1);
+        assert(outside_offset == 0);
         Terrain::Serialized terrain = this->terrain.serialize(buffer);
         ComplexBank::Serialized complexes = this->complexes.serialize(buffer);
         Player::Serialized player = this->player.serialize(buffer);

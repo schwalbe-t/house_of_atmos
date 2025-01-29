@@ -33,7 +33,7 @@ namespace houseofatmos::outside {
 
 
         static inline const engine::Localization::LoadArgs local = {
-            "res/localization.json", "en"
+            "res/localization.json", "de"
         };
 
         static inline const char* const save_location = "savegame.bin"; 
@@ -59,9 +59,12 @@ namespace houseofatmos::outside {
 
         f64 camera_distance = min_camera_dist;
         std::unique_ptr<ActionMode> action_mode;
-        TerrainMap terrain_map = TerrainMap(this->terrain);
         ui::Element* coins_elem = nullptr;
         ui::Manager ui = ui::Manager(ui_unit_size);
+        TerrainMap terrain_map = TerrainMap(
+            Outside::local, this->terrain, this->complexes, this->player, 
+            this->carriages, this->ui
+        );
         Toasts toasts = Toasts(local);
 
         Outside();

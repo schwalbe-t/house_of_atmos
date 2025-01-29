@@ -617,9 +617,8 @@ namespace houseofatmos::engine::ui {
     }
 
     void Manager::update(const Window& window) {
-        this->clicked = this->root.update_root(
-            window, window.height() * this->unit_fract_size
-        );
+        this->unit_size_px = window.height() * this->unit_fract_size;
+        this->clicked = this->root.update_root(window, this->unit_size_px);
         this->hovered = is_hovered_over_rec(this->root);
     }
 
@@ -629,9 +628,8 @@ namespace houseofatmos::engine::ui {
         }
         this->target.clear_color(Vec<4>(0.0, 0.0, 0.0, 0.0));
         this->shader = &scene.get<Shader>(Manager::shader_args);
-        this->root.render_root(
-            *this, scene, window, window.height() * this->unit_fract_size
-        );
+        this->unit_size_px = window.height() * this->unit_fract_size;
+        this->root.render_root(*this, scene, window, this->unit_size_px);
     }
 
     static const size_t max_batch_size = 128;

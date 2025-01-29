@@ -133,7 +133,6 @@ namespace houseofatmos::engine::ui {
             return *this;
         }
         Element& with_click_handler(std::function<void()>&& handler) {
-            this->phantom = false;
             this->on_click = std::move(handler);
             return *this;
         }
@@ -241,6 +240,7 @@ namespace houseofatmos::engine::ui {
         Shader* shader;
         bool clicked = false;
         bool hovered = false;
+        f64 unit_size_px = 0;
 
         public:
         Element root = Element()
@@ -259,6 +259,7 @@ namespace houseofatmos::engine::ui {
         const engine::Texture& output() const { return this->target; }
         bool was_clicked() const { return this->clicked; }
         bool is_hovered_over() const { return this->hovered; }
+        f64 px_per_unit() const { return this->unit_size_px; }
 
         void update(const Window& window);
 
