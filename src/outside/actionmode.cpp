@@ -661,6 +661,21 @@ namespace houseofatmos::outside {
                 e = (i16) ((i64) e + mod);
             }
         }
+        for(u64 x = min_x > 0? min_x - 1: 0; x <= max_x; x += 1) {
+            for(u64 z = min_z > 0? min_z - 1: 0; z <= max_z; z += 1) {
+                u64 rx = std::min(x + 1, terrain.width_in_tiles());
+                u64 bz = std::min(z + 1, terrain.height_in_tiles());
+                bool allows_path = terrain.elevation_at(x, z) >= 0
+                        && terrain.elevation_at(rx, z) >= 0
+                        && terrain.elevation_at(x, bz) >= 0
+                        && terrain.elevation_at(rx, bz) >= 0;
+                if(!allows_path) {
+                    u64 tpc = terrain.tiles_per_chunk();
+                    terrain.chunk_at(x / tpc, z / tpc)
+                        .set_path_at(x % tpc, z % tpc, false);
+                }
+            }
+        }
     }
 
     static void clear_area_foliage(
@@ -878,6 +893,7 @@ namespace houseofatmos::outside {
                         ui::size::units
                     )
                     .with_background(building.icon)
+                    .with_padding(2)
                     .as_movable()
                 )
                 .with_child(ui::Element()
