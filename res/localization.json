@@ -20,6 +20,22 @@
         "de": "Kutsche erstellen",
         "en": "Create carriage"
     },
+    "ui_building_complex": {
+        "de": "Gebäudekomplex",
+        "en": "Building complex"
+    },
+    "ui_inputs": {
+        "de": "Optimaler Verbrauch (/s)",
+        "en": "Optimal Inputs (/s)"
+    },
+    "ui_outputs": {
+        "de": "Optimale Ausgabe (/s)",
+        "en": "Optimal Outputs (/s)"
+    },
+    "ui_storage": {
+        "de": "Lager",
+        "en": "Storage"
+    },
 
 
     "toast_saved_game": {

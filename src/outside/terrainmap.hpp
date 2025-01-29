@@ -32,7 +32,10 @@ namespace houseofatmos::outside {
         std::optional<Vec<2>> view_anchor = std::nullopt;
 
         ui::Element* container = nullptr;
-        ui::Element* selected = nullptr;
+        ui::Element* selected_info_right = nullptr;
+        ui::Element* selected_info_bottom = nullptr;
+
+        std::optional<ComplexId> selected_complex = std::nullopt;
 
         bool hovering_marker();
         void update_view(const engine::Window& window);
@@ -71,8 +74,8 @@ namespace houseofatmos::outside {
 
 
         static ui::Element display_item_stack(
-            const Item::Stack& stack, const engine::Localization& local,
-            f64* text_v_pad_out = nullptr
+            Item::Type type, const std::string& count, 
+            const engine::Localization& local, f64* text_v_pad_out = nullptr
         );
 
         static ui::Element display_item_stack_list(
@@ -88,6 +91,10 @@ namespace houseofatmos::outside {
         static ui::Element display_building_info(
             Building::Type type, std::span<const Conversion> conversions,
             const engine::Localization& local
+        );
+
+        static ui::Element display_complex_info(
+            const Complex& complex, const engine::Localization& local
         );
 
     };

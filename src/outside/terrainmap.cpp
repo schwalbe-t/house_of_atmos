@@ -16,6 +16,7 @@ namespace houseofatmos::outside {
     static const Color path_color = Color(154, 99, 72);
     static const Color building_color = Color(157, 48, 59);
     static const Color background_color = Color(255, 202, 168);
+    static const Color selected_complex_color = Color(239, 239, 230);
 
     static const f64 step_size = 5;
     static const f64 grass_high = 25;
@@ -43,10 +44,10 @@ namespace houseofatmos::outside {
             .as_hidden(true)
             .as_movable()
         );
-        this->ui.root.children.push_back(
-            ui::Element().as_phantom().as_movable()
-        );
-        this->selected = &this->ui.root.children.back();
+        this->ui.root.children.push_back(std::move(ui::Element().as_phantom()));
+        this->selected_info_right = &this->ui.root.children.back();
+        this->ui.root.children.push_back(std::move(ui::Element().as_phantom()));
+        this->selected_info_bottom = &this->ui.root.children.back();
     }
 
     void TerrainMap::render_map() {
@@ -80,8 +81,13 @@ namespace houseofatmos::outside {
                 // if is path or building, make building
                 bool is_path = this->terrain.path_at((i64) x, (i64) z);
                 if(is_path) { color = path_color; }
-                bool is_building = this->terrain.building_at(x, z) != nullptr;
-                if(is_building) { color = building_color; }
+                const Building* building = this->terrain.building_at(x, z);
+                if(building != nullptr) { color = building_color; }
+                bool selected = building != nullptr
+                    && building->complex.has_value()
+                    && this->selected_complex.has_value()
+                    && building->complex->index == this->selected_complex->index;
+                if(selected) { color = selected_complex_color; }
                 // fade to background color towards edges (hack, should be alpha)
                 u64 edge_dist = std::min(
                     std::min(x + 1, this->t_width - x),
@@ -102,7 +108,8 @@ namespace houseofatmos::outside {
     ) {
         if(window.was_pressed(key)) {
             this->container->hidden = !this->container->hidden;
-            this->selected->hidden = this->container->hidden;
+            this->selected_info_right->hidden = this->container->hidden;
+            this->selected_info_bottom->hidden = this->container->hidden;
             if(!this->container->hidden) {
                 this->render_map();
             }
@@ -176,12 +183,21 @@ namespace houseofatmos::outside {
                 const Complex::Member& member = complex.member_at(ax, az);
                 conversions = member.conversions;
             }
-            *this->selected = ui::Element()
-                .as_phantom()
-                .with_child(TerrainMap::display_building_info(
-                    building->type, conversions, *this->local
-                ))
-                .as_movable();
+            *this->selected_info_bottom = TerrainMap::display_building_info(
+                building->type, conversions, *this->local
+            );
+            *this->selected_info_right = building->complex.has_value()
+                ? TerrainMap::display_complex_info(
+                    this->complexes.get(*building->complex), *this->local
+                )
+                : ui::Element().as_phantom().as_movable();
+            this->selected_complex = building->complex;
+            this->render_map();
+        } else {
+            this->selected_info_bottom->hidden = true;
+            this->selected_info_right->hidden = true;
+            this->selected_complex = std::nullopt;
+            this->render_map();
         }
     }
 
@@ -191,6 +207,11 @@ namespace houseofatmos::outside {
         if(this->container->hidden) { return; }
         this->update_view(window);
         this->update_click(window);
+        if(this->selected_complex.has_value()) {
+            const Complex& complex = this->complexes.get(*this->selected_complex);
+            *this->selected_info_right 
+                = TerrainMap::display_complex_info(complex, *this->local);
+        }
     }
 
     void TerrainMap::render_view() {
@@ -268,11 +289,11 @@ namespace houseofatmos::outside {
 
 
     ui::Element TerrainMap::display_item_stack(
-        const Item::Stack& stack, const engine::Localization& local,
-        f64* text_v_pad_out
+        Item::Type type, const std::string& count, 
+        const engine::Localization& local, f64* text_v_pad_out
     ) {
-        const Item::TypeInfo& item = Item::items.at((size_t) stack.item);
-        std::string text = std::to_string(stack.count) + " "
+        const Item::TypeInfo& item = Item::items.at((size_t) type);
+        std::string text = count + " "
             + local.text(item.local_name) + " ";
         f64 txt_pad = (item.icon->edge_size.y() - ui_font::standard.height) / 2;
         if(text_v_pad_out != nullptr) { *text_v_pad_out = txt_pad; }
@@ -321,9 +342,9 @@ namespace houseofatmos::outside {
                     .as_movable()
                 );
             }
-            list.children.push_back(
-                TerrainMap::display_item_stack(stack, local, &text_v_pad)
-            );
+            list.children.push_back(TerrainMap::display_item_stack(
+                stack.item, std::to_string(stack.count), local, &text_v_pad
+            ));
             had_item = true;
         }
         if(text_v_pad_out != nullptr) { *text_v_pad_out = text_v_pad; }
@@ -427,6 +448,77 @@ namespace houseofatmos::outside {
         for(const Conversion& conv: conversions) {
             info.children.push_back(TerrainMap::display_conversion(conv, local));
         }
+        return info;
+    }
+
+    ui::Element TerrainMap::display_complex_info(
+        const Complex& complex, const engine::Localization& local
+    ) {
+        std::unordered_map<Item::Type, f64> throughput 
+            = complex.compute_throughput();
+        ui::Element inputs = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        for(const auto& [item, freq]: throughput) {
+            if(freq >= 0.0) { continue; }
+            inputs.children.push_back(TerrainMap::display_item_stack(
+                item, std::format("{}", fabs(freq)), local
+            ));
+        }
+        ui::Element outputs = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        for(const auto& [item, freq]: throughput) {
+            if(freq <= 0.0) { continue; }
+            outputs.children.push_back(TerrainMap::display_item_stack(
+                item, std::format("{}", freq), local
+            ));
+        }
+        ui::Element storage = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        for(const auto& [item, count]: complex.stored_items()) {
+            if(count == 0) { continue; }
+            storage.children.push_back(TerrainMap::display_item_stack(
+                item, std::to_string(count), local
+            ));
+        }
+        ui::Element info = ui::Element()
+            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_background(&ui_background::note)
+            .with_list_dir(ui::Direction::Vertical)
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(local.text("ui_building_complex"), &ui_font::standard)
+                .with_padding(1)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(local.text("ui_inputs"), &ui_font::standard)
+                .with_padding(1)
+                .as_movable()
+            )
+            .with_child(inputs.with_padding(3.0).as_movable())
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(local.text("ui_outputs"), &ui_font::standard)
+                .with_padding(1)
+                .as_movable()
+            )
+            .with_child(outputs.with_padding(3.0).as_movable())
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(local.text("ui_storage"), &ui_font::standard)
+                .with_padding(1)
+                .as_movable()
+            )
+            .with_child(storage.with_padding(3.0).as_movable())
+            .as_movable();
         return info;
     }
 
