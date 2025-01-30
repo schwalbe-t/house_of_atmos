@@ -9,239 +9,6 @@ namespace houseofatmos::outside {
 
 
 
-    // static std::string display_scheduled_stop(
-    //     const Carriage& carriage, size_t tgt_i
-    // ) {
-    //     std::string output;
-    //     output += "[" + std::to_string(tgt_i) + "] ";
-    //     const Carriage::Target& target = carriage.targets[tgt_i];
-    //     output += "complex #" + std::to_string(target.complex.index) + ", ";
-    //     switch(target.action) {
-    //         case Carriage::LoadFixed: case Carriage::LoadPercentage:
-    //             output += "load "; break;
-    //         case Carriage::PutFixed: case Carriage::PutPercentage:
-    //             output += "unload "; break;
-    //     }
-    //     switch(target.action) {
-    //         case Carriage::LoadFixed: case Carriage::PutFixed:
-    //             output += std::to_string(target.amount.fixed) + " "; break;
-    //         case Carriage::LoadPercentage: case Carriage::PutPercentage:
-    //             output += std::to_string(target.amount.percentage * 100) + "% of "; break;
-    //     }
-    //     output += get_item_name(target.item);
-    //     return output;
-    // }
-
-    // static void manage_carriage(
-    //     CarriageManager& carriages, unsigned long long int carr_i,
-    //     const ComplexBank& complexes
-    // ) {
-    //     print_carriage_info(carriages, (size_t) carr_i);
-    //     Carriage& carriage = carriages.carriages[carr_i];
-    //     engine::info("Enter what to do with the carriage ('remove', 'manage'):");
-    //     std::string carr_action = get_text_input();
-    //     if(carr_action == "remove") {
-    //         carriages.carriages.erase(carriages.carriages.begin() + carr_i);
-    //         engine::info("Removed carriage with index ["
-    //             + std::to_string(carr_i) + "]. (Please note that this may "
-    //             "have changed the indices of other carriages.)"
-    //         );
-    //         return;
-    //     }
-    //     if(carr_action != "manage") {
-    //         engine::info("Invalid input, cancelled. Press enter to try again.");
-    //         return;
-    //     }
-    //     engine::info(
-    //         "Enter the position of a stop to manage, "
-    //         "or enter 'add' to add a new one:"
-    //     );
-    //     std::string target_i_str = get_text_input();
-    //     if(target_i_str == "add") {
-    //         Carriage::Target target;
-    //         engine::info("Enter the index of the building complex to stop at:");
-    //         std::string complex_i_str = get_text_input();
-    //         unsigned long long int complex_i = ULLONG_MAX;
-    //         sscanf(complex_i_str.c_str(), "%llu", &complex_i);
-    //         if(complexes.get_arbitrary(complex_i) == nullptr) {
-    //             engine::info("Invalid input, cancelled. Press enter to try again.");
-    //             return;
-    //         }
-    //         target.complex = (ComplexId) { (u32) complex_i };
-    //         engine::info("Enter whether to load or unload items ('load', 'unload'):");
-    //         std::string action_str = get_text_input();
-    //         if(action_str != "load" && action_str != "unload") {
-    //             engine::info("Invalid input, cancelled. Press enter to try again.");
-    //             return;
-    //         }
-    //         engine::info(
-    //             "Enter the item to transfer ('barley', 'malt', 'beer', "
-    //             "'wheat', 'flour', 'bread', 'hematite', 'coal', 'steel', "
-    //             "'armor', 'tools'):"
-    //         );
-    //         std::string item_str = get_text_input();
-    //         if(item_str == "barley") { target.item = Item::Barley; }
-    //         else if(item_str == "malt") { target.item = Item::Malt; }
-    //         else if(item_str == "beer") { target.item = Item::Beer; }
-    //         else if(item_str == "wheat") { target.item = Item::Wheat; }
-    //         else if(item_str == "flour") { target.item = Item::Flour; }
-    //         else if(item_str == "bread") { target.item = Item::Bread; }
-    //         else if(item_str == "hematite") { target.item = Item::Hematite; }
-    //         else if(item_str == "coal") { target.item = Item::Coal; }
-    //         else if(item_str == "steel") { target.item = Item::Steel; }
-    //         else if(item_str == "armor") { target.item = Item::Armor; }
-    //         else if(item_str == "tools") { target.item = Item::Tools; }
-    //         else {
-    //             engine::info("Invalid input, cancelled. Press enter to try again.");
-    //             return;
-    //         }
-    //         engine::info(
-    //             "Enter the amount of items to transfer "
-    //             "(positive, may be a percentage, e.g. '3', '4.1%'):"
-    //         );
-    //         std::string amount_str = get_text_input();
-    //         std::string amount_num_str = amount_str.ends_with("%")
-    //             ? amount_str.substr(0, amount_str.size() - 1)
-    //             : amount_str;
-    //         f64 amount = NAN;
-    //         sscanf(amount_num_str.c_str(), "%lf", &amount);
-    //         bool valid = amount != NAN && amount != INFINITY && amount > 0;
-    //         if(!valid) {
-    //             engine::info("Invalid input, cancelled. Press enter to try again.");
-    //             return;
-    //         }
-    //         target.action = action_str == "load"
-    //             ? (amount_str.ends_with("%")
-    //                 ? Carriage::LoadPercentage
-    //                 : Carriage::LoadFixed
-    //             )
-    //             : (amount_str.ends_with("%")
-    //                 ? Carriage::PutPercentage
-    //                 : Carriage::PutFixed
-    //             );
-    //         if(amount_str.ends_with("%")) {
-    //             target.amount.percentage = (f32) amount / 100.0;
-    //         } else {
-    //             target.amount.fixed = (u32) amount;
-    //         }
-    //         engine::info("Created a new stop at position [" 
-    //             + std::to_string(carriage.targets.size()) + "]"
-    //         );
-    //         carriage.targets.push_back(target);
-    //         return;
-    //     }
-    //     unsigned long long int target_i = ULLONG_MAX;
-    //     sscanf(target_i_str.c_str(), "%llu", &target_i);
-    //     if(target_i >= carriage.targets.size()) {
-    //         engine::info("Invalid input, cancelled. Press enter to try again.");
-    //         return;
-    //     }
-    //     engine::info("Enter what to do with the scheduled stop "
-    //         "('swap', 'remove'):" 
-    //     );
-    //     std::string tgt_action = get_text_input();
-    //     if(tgt_action == "remove") {
-    //         carriage.targets.erase(carriage.targets.begin() + target_i);
-    //         engine::info("Removed stop with position ["
-    //             + std::to_string(target_i) + "]. (Please note that this may "
-    //             "have changed the indices of other stops.)"
-    //         );
-    //         return;
-    //     }
-    //     if(tgt_action != "swap") {
-    //         engine::info("Invalid input, cancelled. Press enter to try again.");
-    //         return;
-    //     }
-    //     engine::info("Enter the position of a stop to swap the stop at position ["
-    //         + std::to_string(target_i) + "] with:"
-    //     );
-    //     std::string swap_target_i_str = get_text_input();
-    //     unsigned long long int swap_target_i = ULLONG_MAX;
-    //     sscanf(swap_target_i_str.c_str(), "%llu", &swap_target_i);
-    //     if(swap_target_i >= carriage.targets.size()) {
-    //         engine::info("Invalid input, cancelled. Press enter to try again.");
-    //         return;
-    //     }
-    //     std::swap(
-    //         carriage.targets[target_i], carriage.targets[swap_target_i]
-    //     );
-    //     engine::info("Swapped the stops at positions ["
-    //         + std::to_string(target_i) + "] and ["
-    //         + std::to_string(swap_target_i) + "]."
-    //     );
-    // }
-
-    // static void manage_carriages(
-    //     i64 stable_x, i64 stable_z, const Terrain& terrain,
-    //     CarriageManager& carriages, Balance& balance, 
-    //     const ComplexBank& complexes, Toasts& toasts
-    // ) {
-    //     std::string output;
-    //     output += "===== Carriages =====";
-    //     output += "\n    all carriages and their targets by their indices:";
-    //     size_t carr_c = carriages.carriages.size();
-    //     for(size_t carr_i = 0; carr_i < carr_c; carr_i += 1) {
-    //         output += "\n[" + std::to_string(carr_i) + "]";
-    //         const Carriage& carriage = carriages.carriages[carr_i];
-    //         for(const Carriage::Target& target: carriage.targets) {
-    //             output += " #" + std::to_string(target.complex.index);
-    //         }
-    //     }
-    //     engine::info(output);
-    //     engine::info(
-    //         "Enter the index of a carriage to manage, "
-    //         "or enter 'add' to create a new one:"
-    //     );
-    //     std::string carr_i_str = get_text_input();
-    //     if(carr_i_str == "add") {
-    //         Vec<3> pos;
-    //         bool found_pos = false;
-    //         const Building::TypeInfo& stable
-    //             = Building::types[(size_t) Building::Stable];
-    //         i64 start_x = stable_x - carr_spawn_d;
-    //         i64 start_z = stable_z - carr_spawn_d;
-    //         i64 end_x = stable_x + stable.width + carr_spawn_d;
-    //         i64 end_z = stable_z + stable.height + carr_spawn_d;
-    //         for(i64 x = start_x; x < end_x; x += 1) {
-    //             for(i64 z = start_z; z < end_z; z += 1) {
-    //                 if(x < 0 || (u64) x >= terrain.width_in_tiles()) { continue; }
-    //                 if(z < 0 || (u64) z >= terrain.height_in_tiles()) { continue; }
-    //                 u64 chunk_x = (u64) x / terrain.tiles_per_chunk();
-    //                 u64 chunk_z = (u64) z / terrain.tiles_per_chunk();
-    //                 const Terrain::ChunkData& chunk = terrain
-    //                     .chunk_at(chunk_x, chunk_z);
-    //                 u64 rel_x = (u64) x % terrain.tiles_per_chunk();
-    //                 u64 rel_z = (u64) z % terrain.tiles_per_chunk();
-    //                 bool is_obstacle = !chunk.path_at(rel_x, rel_z)
-    //                     || terrain.building_at(x, z) != nullptr;
-    //                 if(is_obstacle) { continue; }
-    //                 pos = Vec<3>(x + 0.5, 0, z + 0.5) * terrain.units_per_tile();
-    //                 found_pos = true;
-    //                 break;
-    //             }
-    //         }
-    //         if(!found_pos) {
-    //             engine::info(
-    //                 "There is no valid location for a carriage nearby."
-    //             );
-    //             return;
-    //         }
-    //         if(!balance.pay_coins(carriage_buy_cost, toasts)) { return; }
-    //         engine::info("Created a new carriage with index [" 
-    //             + std::to_string(carriages.carriages.size()) + "]"
-    //         );
-    //         carriages.carriages.push_back((Carriage) { Carriage::Round, pos });
-    //         return;
-    //     }
-    //     unsigned long long int carr_i = ULLONG_MAX;
-    //     sscanf(carr_i_str.c_str(), "%llu", &carr_i);
-    //     if(carr_i >= carriages.carriages.size()) {
-    //         engine::info("Invalid input, cancelled. Press enter to try again.");
-    //         return;
-    //     }
-    //     manage_carriage(carriages, carr_i, complexes);
-    // }
-
     static const u64 carriage_buy_cost = 1000;
     static const u64 carr_spawn_d = 1;
 
@@ -572,64 +339,6 @@ namespace houseofatmos::outside {
 
 
 
-    static ui::Element create_selector_container(std::string title) {
-        ui::Element selector = ui::Element()
-            .with_pos(0.95, 0.5, ui::position::window_fract)
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_background(&ui_background::note)
-            .with_list_dir(ui::Direction::Vertical)
-            .as_movable();
-        selector.children.push_back(ui::Element()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(title, &ui_font::standard)
-            .with_padding(2)
-            .as_movable()
-        );
-        return selector;
-    }
-
-    static ui::Element create_selector_item(
-        const ui::Background* icon, std::string text, bool selected,
-        std::function<void ()>&& handler
-    ) {
-        ui::Element item = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Horizontal)
-            .with_child(ui::Element()
-                .as_phantom()
-                .with_size(
-                    icon->edge_size.x(), icon->edge_size.y(), ui::size::units
-                )
-                .with_background(icon)
-                .as_movable()
-            )
-            .with_child(ui::Element()
-                .as_phantom()
-                .with_pos(
-                    0, 
-                    (icon->edge_size.y() - ui_font::standard.height) / 2.0 - 2.0, 
-                    ui::position::parent_units
-                )
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(text, &ui_font::standard)
-                .with_padding(2)
-                .as_phantom()
-                .as_movable()
-            )
-            .with_background(
-                selected
-                    ? &ui_background::border_selected
-                    : &ui_background::border,
-                selected
-                    ? &ui_background::border_selected
-                    : &ui_background::border_hovering
-            )
-            .with_click_handler(std::move(handler))
-            .with_padding(2)
-            .as_movable();
-        return item;
-    }
-
     using BuildingVariant = std::vector<Conversion>;
     using BuildingGroup = std::pair<Building::Type, std::vector<BuildingVariant>>;
     static const std::vector<BuildingGroup> buildable = {
@@ -712,16 +421,19 @@ namespace houseofatmos::outside {
         Building::Type* s_type, std::vector<Conversion>* s_conv,
         const engine::Localization* local
     ) {
-        ui::Element selector = create_selector_container(
-            local->text("ui_product_selection")
-        );
+        ui::Element selector 
+            = TerrainMap::create_selection_container(
+                local->text("ui_product_selection")
+            )
+            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .as_movable();
         for(const BuildingVariant& variant: group.second) {
             if(variant.size() == 0) { continue; }
             if(variant.at(0).outputs.size() == 0) { continue; }
             const Item::TypeInfo& result = Item::items
                 .at((size_t) variant.at(0).outputs.at(0).item);
             std::vector<Conversion> conversions = std::vector(variant);
-            selector.children.push_back(create_selector_item(
+            selector.children.push_back(TerrainMap::create_selection_item(
                 result.icon, local->text(result.local_name), false,
                 [
                     ui, dest, selected, s_type, s_conv, local, 
@@ -746,14 +458,17 @@ namespace houseofatmos::outside {
         Building::Type* s_type, std::vector<Conversion>* s_conv,
         const engine::Localization* local
     ) {
-        ui::Element selector = create_selector_container(
-            local->text("ui_building_selection")
-        );
+        ui::Element selector 
+            = TerrainMap::create_selection_container(
+                local->text("ui_building_selection")
+            )
+            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .as_movable();
         for(const BuildingGroup& group: buildable) {
             const BuildingGroup* group_ptr = &group;
             const Building::TypeInfo& type = Building::types
                 .at((size_t) group.first);
-            selector.children.push_back(create_selector_item(
+            selector.children.push_back(TerrainMap::create_selection_item(
                 type.icon, local->text(type.local_name), *s_type == group.first,
                 [ui, dest, selected, s_type, s_conv, local, group_ptr]() {
                     if(group_ptr->second.size() == 0) {
@@ -866,7 +581,9 @@ namespace houseofatmos::outside {
                     tile_x, tile_z, this->terrain, this->complexes,
                     *this->selected_type, type_info, *this->selected_conversion
                 );
-                this->carriages.refind_all_paths(this->complexes, this->terrain);
+                this->carriages.refind_all_paths(
+                    this->complexes, this->terrain, this->toasts
+                );
             } else if(unemployment < (i64) type_info.workers) {
                 this->toasts.add_error("toast_missing_unemployment", {
                     std::to_string(unemployment), 
@@ -953,7 +670,9 @@ namespace houseofatmos::outside {
                 this->terrain.reload_chunk_at(
                     this->selected_chunk_x, this->selected_chunk_z
                 );
-                this->carriages.refind_all_paths(this->complexes, this->terrain);
+                this->carriages.refind_all_paths(
+                    this->complexes, this->terrain, this->toasts
+                );
             } else {
                 this->toasts.add_error("toast_missing_unemployment", {
                     std::to_string(unemployment), 
@@ -1019,11 +738,15 @@ namespace houseofatmos::outside {
             chunk.set_path_at(rel_x, rel_z, true);
             this->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
             this->terrain.reload_chunk_at(chunk_x, chunk_z);
-            this->carriages.refind_all_paths(this->complexes, this->terrain);
+            this->carriages.refind_all_paths(
+                this->complexes, this->terrain, this->toasts
+            );
         } else if(has_path && window.was_pressed(engine::Button::Right)) {
             chunk.set_path_at(rel_x, rel_z, false);
             this->terrain.reload_chunk_at(chunk_x, chunk_z);
-            this->carriages.refind_all_paths(this->complexes, this->terrain);
+            this->carriages.refind_all_paths(
+                this->complexes, this->terrain, this->toasts
+            );
             this->balance.add_coins(path_removal_refund, this->toasts);
         }
     }

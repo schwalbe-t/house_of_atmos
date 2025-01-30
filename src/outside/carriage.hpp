@@ -139,8 +139,16 @@ namespace houseofatmos::outside {
             }
         }
 
-        bool is_lost() const { return this->state == State::Lost; }
+        bool is_lost() const {
+            return this->state == State::Lost
+                && this->target() != nullptr; 
+        }
         void make_lost() { this->state = State::Lost; }
+        void try_find_path() {
+            this->state = State::Travelling;
+            this->clear_path();
+        }
+        State current_state() const { return this->state; }
 
         u64 stored_count(Item::Type item) const {
             auto count = this->items.find(item);
@@ -161,6 +169,10 @@ namespace houseofatmos::outside {
         std::optional<u64> target_i() const {
             if(this->targets.size() == 0) { return std::nullopt; }
             return this->curr_target_i; 
+        }
+        void wrap_around_target_i() {
+            if(this->targets.size() == 0) { return; }
+            this->curr_target_i %= this->targets.size();
         }
 
         void update(
@@ -211,15 +223,15 @@ namespace houseofatmos::outside {
 
         void find_carriage_path(
             Carriage& carriage, 
-            const ComplexBank& complexes, const Terrain& terrain
+            const ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
         );
         void refind_all_paths(
-            const ComplexBank& complexes, const Terrain& terrain
+            const ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
         );
         
         void update_all(
             const engine::Window& window, 
-            ComplexBank& complexes, const Terrain& terrain   
+            ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
         );
 
         void render_all_around(

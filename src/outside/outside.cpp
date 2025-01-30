@@ -103,6 +103,7 @@ namespace houseofatmos::outside {
             );
         }
         scene.ui.root.children.push_back(std::move(mode_list));
+        scene.terrain_map.create_container();
         scene.ui.root.children.push_back(ui::Element()
             .with_handle(&scene.coins_elem)
             .with_size(0, 0, ui::size::unwrapped_text)
@@ -117,7 +118,6 @@ namespace houseofatmos::outside {
         );
         scene.ui.root.children.push_back(scene.toasts.create_container());
         scene.toasts.put_states(std::move(toast_states));
-        scene.terrain_map.create_container();
     }
 
 
@@ -375,7 +375,7 @@ namespace houseofatmos::outside {
         engine::Window& window, Player& player, Camera& camera,
         f64& distance, const ui::Element* map
     ) {
-        if(!map->is_hovered_over()) {
+        if(map->hidden) {
             distance += window.scrolled().y() * -5.0;
         }
         distance = std::min(
@@ -391,9 +391,13 @@ namespace houseofatmos::outside {
         this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
         this->toasts.update(window, *this);
         this->ui.update(window);
-        this->carriages.update_all(window, this->complexes, this->terrain);
+        this->carriages.update_all(
+            window, this->complexes, this->terrain, this->toasts
+        );
         this->complexes.update(window, this->balance);
-        this->action_mode->update(window, *this, this->renderer);
+        if(this->terrain_map.element()->hidden) {
+            this->action_mode->update(window, *this, this->renderer);
+        }
         update_player(window, this->terrain, this->player);
         update_camera(
             window, this->player, this->renderer.camera, this->camera_distance, 

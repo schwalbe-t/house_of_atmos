@@ -459,7 +459,8 @@ namespace houseofatmos::outside {
 
     void CarriageManager::find_carriage_path(
         Carriage& carriage, 
-        const ComplexBank& complexes, const Terrain& terrain
+        const ComplexBank& complexes, const Terrain& terrain,
+        Toasts& toasts
     ) {
         const Carriage::Target* target = carriage.target();
         if(target == nullptr) { return; }
@@ -468,7 +469,7 @@ namespace houseofatmos::outside {
         if(path.has_value()) {
             carriage.set_path(*path);
         } else if(!carriage.is_lost()) {
-            engine::warning("Carriage is lost!");
+            toasts.add_error("toast_carriage_lost", {});
             carriage.make_lost();
         }
     }
@@ -511,22 +512,22 @@ namespace houseofatmos::outside {
     }
 
     void CarriageManager::refind_all_paths(
-        const ComplexBank& complexes, const Terrain& terrain
+        const ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
     ) {
         this->fill_obstacle_data(terrain);
         for(Carriage& carriage: this->carriages) {
-            this->find_carriage_path(carriage, complexes, terrain);
+            this->find_carriage_path(carriage, complexes, terrain, toasts);
         }
     }
 
 
     void CarriageManager::update_all(
         const engine::Window& window, 
-        ComplexBank& complexes, const Terrain& terrain 
+        ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
     ) {
         for(Carriage& carriage: this->carriages) {
             if(!carriage.is_lost() && !carriage.has_path()) {
-                this->find_carriage_path(carriage, complexes, terrain);
+                this->find_carriage_path(carriage, complexes, terrain, toasts);
             }
             carriage.update(window, complexes, terrain);
         }

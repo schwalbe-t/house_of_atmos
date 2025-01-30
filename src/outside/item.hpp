@@ -74,6 +74,12 @@ namespace houseofatmos::outside {
             Coins = 11
         };
 
+        static inline const std::vector<Item::Type> transferrable = {
+            Item::Barley, Item::Malt, Item::Beer,
+            Item::Wheat, Item::Flour, Item::Bread,
+            Item::Hematite, Item::Coal, Item::Steel, Item::Armor, Item::Tools
+        };
+
         struct Stack {
             u8 count;
             Type item;

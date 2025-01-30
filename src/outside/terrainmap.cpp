@@ -37,6 +37,7 @@ namespace houseofatmos::outside {
 
     void TerrainMap::create_container() {
         this->ui.root.children.push_back(ui::Element()
+            .as_phantom()
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .with_size(0.9, 0.9, ui::size::window_fract)
             .with_background(&ui_background::scroll_horizontal)
@@ -48,6 +49,10 @@ namespace houseofatmos::outside {
         this->selected_info_right = &this->ui.root.children.back();
         this->ui.root.children.push_back(std::move(ui::Element().as_phantom()));
         this->selected_info_bottom = &this->ui.root.children.back();
+        this->selected_complex = std::nullopt;
+        this->selected_carriage = std::nullopt;
+        this->adding_stop = false;
+        this->render_map();
     }
 
     void TerrainMap::render_map() {
@@ -118,13 +123,6 @@ namespace houseofatmos::outside {
         return false;
     }
 
-    bool TerrainMap::hovering_marker() {
-        for(const ui::Element& element: this->container->children) {
-            if(element.is_hovered_over()) { return true; }
-        }
-        return false;
-    }
-
     static const f64 min_zoom = 0.5;
     static const f64 max_zoom = 4.0;
     static const f64 zoom_step = 0.5;
@@ -162,7 +160,7 @@ namespace houseofatmos::outside {
 
     void TerrainMap::update_click(const engine::Window& window) {
         if(!window.was_pressed(engine::Button::Left)) { return; }
-        if(this->hovering_marker()) { return; }
+        if(this->ui.is_hovered_over()) { return; }
         Vec<2> rel_pos_px = window.cursor_pos_px() 
             - this->container->final_pos()
             - this->view_pos_px;
@@ -174,6 +172,27 @@ namespace houseofatmos::outside {
         u64 b_chunk_x, b_chunk_z;
         const Building* building = this->terrain
             .building_at(x, z, &b_chunk_x, &b_chunk_z);
+        bool add_to_carriage = this->selected_carriage.has_value()
+            && this->adding_stop
+            && building != nullptr
+            && building->complex.has_value();
+        if(add_to_carriage) {
+            Carriage& carriage = this->carriages
+                .carriages[*this->selected_carriage];
+            Carriage::Target target;
+            target.complex = *building->complex;
+            target.action = Carriage::LoadFixed;
+            target.amount.fixed = 0;
+            target.item = (Item::Type) 0;
+            carriage.targets.push_back(target);
+            this->adding_stop = false;
+            return;
+        } 
+        this->selected_info_bottom->hidden = true;
+        this->selected_info_right->hidden = true;
+        this->selected_complex = std::nullopt;
+        this->selected_carriage = std::nullopt;
+        this->adding_stop = false;
         if(building != nullptr) {
             std::span<const Conversion> conversions;
             if(building->complex.has_value()) {
@@ -192,13 +211,8 @@ namespace houseofatmos::outside {
                 )
                 : ui::Element().as_phantom().as_movable();
             this->selected_complex = building->complex;
-            this->render_map();
-        } else {
-            this->selected_info_bottom->hidden = true;
-            this->selected_info_right->hidden = true;
-            this->selected_complex = std::nullopt;
-            this->render_map();
         }
+        this->render_map();
     }
 
     void TerrainMap::update(const engine::Window& window, engine::Scene& scene) {
@@ -211,6 +225,11 @@ namespace houseofatmos::outside {
             const Complex& complex = this->complexes.get(*this->selected_complex);
             *this->selected_info_right 
                 = TerrainMap::display_complex_info(complex, *this->local);
+        }
+        if(this->selected_carriage.has_value()) {
+            Carriage& carriage = this->carriages
+                .carriages[*this->selected_carriage];
+            *this->selected_info_right = this->display_carriage_info(carriage);
         }
     }
 
@@ -237,10 +256,54 @@ namespace houseofatmos::outside {
         this->container->texture = &this->output_tex;
     }
 
-    void TerrainMap::add_marker(
-        Vec<2> pos, const ui::Background* icon, std::function<void ()>&& handler,
-        bool is_phantom
+    static ui::Element create_single_marker_info(
+        const ui::Background* icon, std::string text
     ) {
+        Vec<2> icon_size = icon->edge_size;
+        ui::Element info = ui::Element()
+            .as_phantom()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .with_child(ui::Element()
+                .as_phantom()
+                .with_size(icon_size.x(), icon_size.y(), ui::size::units)
+                .with_background(icon)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .as_phantom()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_pos(
+                    0, (icon_size.y() - ui_font::standard.height) / 2 - 2.0, 
+                    ui::position::parent_units
+                )
+                .with_text(text, &ui_font::standard)
+                .with_padding(2)
+                .as_movable()
+            )
+            .as_movable();
+        return info;
+    }
+
+    void TerrainMap::create_marker_info() {
+        this->container->children.push_back(ui::Element()
+            .as_phantom()
+            .with_pos(0.05, 0.95, ui::position::parent_fract)
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .with_child(create_single_marker_info(
+                &ui_icon::map_marker_player, 
+                this->local->text("ui_current_position")
+            ))
+            .with_child(create_single_marker_info(
+                &ui_icon::map_marker_carriage, 
+                this->local->text("ui_carriage")
+            ))
+            .as_movable()
+        );
+    }
+
+    void TerrainMap::add_marker(Vec<2> pos, ui::Element&& element) {
         Vec<2> pos_norm = pos 
             / this->terrain.units_per_tile()
             / Vec<2>(this->t_width, this->t_height);
@@ -249,13 +312,24 @@ namespace houseofatmos::outside {
             + pos_norm * this->view_size_px;
         Vec<2> pos_un = pos_px / this->ui.px_per_unit();
         this->container->children.push_back(ui::Element()
-            .with_pos(
-                pos_un.x() - icon->edge_size.x() / 2, 
-                pos_un.y() - icon->edge_size.y(), 
-                ui::position::window_tl_units
+            .as_phantom()
+            .with_pos(pos_un.x(), pos_un.y(), ui::position::window_tl_units)
+            .with_size(0, 0, ui::size::units)
+            .with_child(element
+                .with_pos(0.5, 1.0, ui::position::parent_fract)
+                .as_movable()
             )
+            .as_movable()
+        );
+    }
+
+    void TerrainMap::add_icon_marker(
+        Vec<2> pos, const ui::Background* icon, std::function<void ()>&& handler,
+        bool is_phantom
+    ) {
+        this->add_marker(pos, ui::Element()
             .with_size(icon->edge_size.x(), icon->edge_size.y(), ui::size::units)
-            .with_background(icon)
+            .with_background(icon, &ui_icon::map_marker_selected)
             .with_click_handler(std::move(handler))
             .as_phantom(is_phantom)
             .as_movable()
@@ -266,16 +340,60 @@ namespace houseofatmos::outside {
         if(this->container == nullptr) { return; }
         if(this->container->hidden) { return; }
         this->container->children.clear();
-        for(const Carriage& carriage: this->carriages.carriages) {
-            this->add_marker(
-                carriage.position.swizzle<2>("xz"),
-                carriage.is_lost()
+        for(u64 carr_i = 0; carr_i < this->carriages.carriages.size(); carr_i += 1) {
+            Carriage* carriage = &this->carriages.carriages[carr_i];
+            bool is_selected = this->selected_carriage.has_value()
+                && *this->selected_carriage == carr_i;
+            this->add_icon_marker(
+                carriage->position.swizzle<2>("xz"),
+                carriage->is_lost()
                     ? &ui_icon::map_marker_carriage_lost
-                    : &ui_icon::map_marker_carriage,
-                []() { engine::debug("not yet implemented :)"); }, false
+                    : is_selected
+                        ? &ui_icon::map_marker_selected
+                        : &ui_icon::map_marker_carriage,
+                [this, carriage, carr_i]() {
+                    this->selected_info_bottom->hidden = true;
+                    *this->selected_info_right = this->display_carriage_info(
+                        *carriage
+                    );
+                    this->selected_complex = std::nullopt;
+                    this->selected_carriage = carr_i;
+                    this->render_map();
+                }, false
             );
         }
-        this->add_marker(
+        if(this->selected_carriage.has_value()) {
+            const Carriage& carriage = this->carriages
+                .carriages[*this->selected_carriage];
+            u64 carr_x = (u64) (
+                carriage.position.x() / this->terrain.units_per_tile()
+            );
+            u64 carr_z = (u64) (
+                carriage.position.z() / this->terrain.units_per_tile()
+            );
+            for(size_t tgt_i = 0; tgt_i < carriage.targets.size(); tgt_i += 1) {
+                const Complex& complex = this->complexes
+                    .get(carriage.targets[tgt_i].complex);
+                const auto& [mem_x, mem_z] = complex
+                    .closest_member_to(carr_x, carr_z);
+                const Building* member = this->terrain
+                    .building_at((i64) mem_x, (i64) mem_z);
+                assert(member != nullptr);
+                const Building::TypeInfo& building = member->get_type_info();
+                Vec<2> marker_pos = Vec<2>(
+                    mem_x + building.width / 2.0, mem_z + building.height / 2.0
+                ) * this->terrain.units_per_tile();
+                this->add_marker(marker_pos, ui::Element()
+                    .as_phantom()
+                    .with_size(0, 0, ui::size::unwrapped_text)
+                    .with_text(
+                        "#" + std::to_string(tgt_i + 1), &ui_font::standard
+                    )
+                    .as_movable()
+                );
+            }
+        }
+        this->add_icon_marker(
             this->player.position.swizzle<2>("xz"), &ui_icon::map_marker_player,
             [](){}, true
         );
@@ -284,6 +402,7 @@ namespace houseofatmos::outside {
     void TerrainMap::render() {
         this->render_view();
         this->create_markers();
+        this->create_marker_info();
     }
 
 
@@ -486,6 +605,13 @@ namespace houseofatmos::outside {
                 item, std::to_string(count), local
             ));
         }
+        if(storage.children.size() == 0) {
+            storage.children.push_back(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(local.text("ui_empty"), &ui_font::standard)
+                .as_movable()
+            );
+        }
         ui::Element info = ui::Element()
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .with_size(0, 0, ui::size::units_with_children)
@@ -514,6 +640,382 @@ namespace houseofatmos::outside {
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
                 .with_text(local.text("ui_storage"), &ui_font::standard)
+                .with_padding(1)
+                .as_movable()
+            )
+            .with_child(storage.with_padding(3.0).as_movable())
+            .as_movable();
+        return info;
+    }
+
+    ui::Element TerrainMap::create_selection_container(std::string title) {
+        ui::Element selector = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_background(&ui_background::note)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        if(title.size() > 0) {
+            selector.children.push_back(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(title, &ui_font::standard)
+                .with_padding(2)
+                .as_movable()
+            );
+        }
+        return selector;
+    }
+
+    ui::Element TerrainMap::create_selection_item(
+        const ui::Background* icon, std::string text, bool selected,
+        std::function<void ()>&& handler
+    ) {
+        ui::Element item = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .with_child(ui::Element()
+                .as_phantom()
+                .with_size(
+                    icon->edge_size.x(), icon->edge_size.y(), ui::size::units
+                )
+                .with_background(icon)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .as_phantom()
+                .with_pos(
+                    0, 
+                    (icon->edge_size.y() - ui_font::standard.height) / 2.0 - 2.0, 
+                    ui::position::parent_units
+                )
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(text, &ui_font::standard)
+                .with_padding(2)
+                .as_phantom()
+                .as_movable()
+            )
+            .with_background(
+                selected
+                    ? &ui_background::border_selected
+                    : &ui_background::border,
+                selected
+                    ? &ui_background::border_selected
+                    : &ui_background::border_hovering
+            )
+            .with_click_handler(std::move(handler))
+            .with_padding(2)
+            .as_movable();
+        return item;
+    }
+
+    ui::Element TerrainMap::display_item_selector(
+        std::span<const Item::Type> items, 
+        std::function<void (Item::Type)>&& passed_handler,
+        const engine::Localization& local
+    ) {
+        std::shared_ptr<std::function<void (Item::Type)>> handler
+            = std::make_shared<std::function<void (Item::Type)>>(
+                std::move(passed_handler)
+            );
+        ui::Element container = TerrainMap::create_selection_container("")
+            .with_pos(0.5, 0.5, ui::position::window_fract)
+            .as_movable();
+        for(Item::Type item: items) {
+            const Item::TypeInfo& item_info = Item::items.at((size_t) item);
+            container.children.push_back(TerrainMap::create_selection_item(
+                item_info.icon, local.text(item_info.local_name), false,
+                [item, handler]() { (*handler)(item); }
+            ));
+        }
+        return container;
+    }
+
+    static ui::Element make_ui_button(std::string text) {
+        ui::Element button = ui::Element()
+            .as_phantom()
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(text, &ui_font::standard)
+            .with_padding(1)
+            .with_background(
+                &ui_background::button, &ui_background::button_select
+            )
+            .as_movable();
+        return button;
+    }
+
+    ui::Element TerrainMap::display_carriage_target(
+        Carriage* carriage, size_t target_i
+    ) {
+        Carriage::Target* target = &carriage->targets[target_i];
+        std::string local_action = "";
+        switch(target->action) {
+            case Carriage::LoadFixed: case Carriage::LoadPercentage:
+                local_action = "ui_pick_up"; break;
+            case Carriage::PutFixed: case Carriage::PutPercentage:
+                local_action = "ui_drop_off"; break;
+        }
+        std::string amount = "";
+        std::string unit = "";
+        switch(target->action) {
+            case Carriage::LoadFixed: case Carriage::PutFixed:
+                amount = std::to_string(target->amount.fixed);
+                unit = "x";
+                break;
+            case Carriage::LoadPercentage: case Carriage::PutPercentage:
+                amount = std::to_string(
+                    (u64) round(target->amount.percentage * 100.0)
+                );
+                unit = "%";
+                break;
+        }
+        std::string local_item = Item::items
+            .at((size_t) target->item).local_name;
+        ui::Element info = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .with_child(make_ui_button("🗑")
+                .with_click_handler([carriage, target_i, this]() {
+                    carriage->targets.erase(carriage->targets.begin() + target_i);
+                    carriage->wrap_around_target_i();
+                    carriage->try_find_path();
+                })
+                .with_padding(2)
+                .as_movable()
+            )
+            .with_child(make_ui_button("↑")
+                .with_click_handler([carriage, target_i]() {
+                    size_t swapped_with_i = target_i == 0
+                        ? carriage->targets.size() - 1
+                        : target_i - 1;
+                    std::swap(
+                        carriage->targets[swapped_with_i],
+                        carriage->targets[target_i]
+                    );
+                    carriage->clear_path();
+                })
+                .with_padding(2)
+                .as_movable()
+            )
+            .with_child(make_ui_button("↓")
+                .with_click_handler([carriage, target_i]() {
+                    size_t swapped_with_i = (target_i + 1)
+                        % carriage->targets.size();
+                    std::swap(
+                        carriage->targets[swapped_with_i],
+                        carriage->targets[target_i]
+                    );
+                    carriage->clear_path();
+                })
+                .with_padding(2)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(
+                    "#" + std::to_string(target_i + 1), &ui_font::standard
+                )
+                .with_padding(3)
+                .as_movable()
+            )
+            .with_child(make_ui_button(this->local->text(local_action))
+                .with_click_handler([target]() {
+                    switch(target->action) {
+                        case Carriage::LoadFixed:
+                            target->action = Carriage::PutFixed; break;
+                        case Carriage::PutFixed:
+                            target->action = Carriage::LoadFixed; break;
+                        case Carriage::LoadPercentage:
+                            target->action = Carriage::PutPercentage; break;
+                        case Carriage::PutPercentage:
+                            target->action = Carriage::LoadPercentage; break;
+                    }
+                })
+                .with_padding(2)
+                .as_movable()
+            )
+            .with_child(make_ui_button("+")
+                .with_click_handler([target]() {
+                    switch(target->action) {
+                        case Carriage::LoadFixed: case Carriage::PutFixed:
+                            target->amount.fixed += 1;
+                            break;
+                        case Carriage::LoadPercentage: case Carriage::PutPercentage:
+                            target->amount.percentage = std::min(
+                                (i64) round(target->amount.percentage / 0.05) + 1, 
+                                (i64) round(100.0 / 0.05)
+                            ) * 0.05;
+                            break;
+                    }
+                })
+                .with_padding(2)
+                .as_movable()
+            )
+            .with_child(make_ui_button("-")
+                .with_click_handler([target]() {
+                    switch(target->action) {
+                        case Carriage::LoadFixed: case Carriage::PutFixed:
+                            if(target->amount.fixed > 0) {
+                                target->amount.fixed -= 1;
+                            }
+                            break;
+                        case Carriage::LoadPercentage: case Carriage::PutPercentage:
+                            target->amount.percentage = std::max(
+                                (i64) round(target->amount.percentage / 0.05) - 1, 
+                                (i64) 0
+                            ) * 0.05;
+                            break;
+                    }
+                })
+                .with_padding(2)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(amount, &ui_font::standard)
+                .with_padding(3)
+                .as_movable()
+            )
+            .with_child(make_ui_button(unit)
+                .with_click_handler([target]() {
+                    target->amount.fixed = 0; // also sets percentage to 0
+                    switch(target->action) {
+                        case Carriage::LoadFixed:
+                            target->action = Carriage::LoadPercentage; break;
+                        case Carriage::PutFixed:
+                            target->action = Carriage::PutPercentage; break;
+                        case Carriage::LoadPercentage:
+                            target->action = Carriage::LoadFixed; break;
+                        case Carriage::PutPercentage:
+                            target->action = Carriage::PutFixed; break;
+                    }
+                })
+                .with_padding(2)
+                .as_movable()
+            )
+            .with_child(make_ui_button(this->local->text(local_item))
+                .with_click_handler([this, target]() {
+                    this->adding_stop = false;
+                    *this->selected_info_bottom 
+                        = TerrainMap::display_item_selector(
+                            Item::transferrable, [this, target](auto selected) {
+                                target->item = selected;
+                                *this->selected_info_bottom = ui::Element()
+                                    .as_phantom().as_movable();
+                            }, *this->local
+                        )
+                        .with_pos(0.5, 0.5, ui::position::window_fract)
+                        .as_movable();
+                })
+                .with_padding(2)
+                .as_movable()
+            )
+            .as_movable();
+        return info;
+    }
+
+    ui::Element TerrainMap::display_carriage_info(Carriage& carriage) {
+        std::string status = "ui_status_no_instructions";
+        if(carriage.target_i().has_value()) {
+            switch(carriage.current_state()) {
+                case Carriage::State::Loading: 
+                    status = "ui_status_transferring"; break;
+                case Carriage::State::Travelling: 
+                    status = "ui_status_travelling"; break;
+                case Carriage::State::Lost: 
+                    status = "ui_status_lost"; break;
+            }
+        }
+        std::string status_text = this->local->pattern(
+            status, { std::to_string(*carriage.target_i() + 1) }
+        );
+        ui::Element storage = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        for(const auto& [item, count]: carriage.stored_items()) {
+            if(count == 0) { continue; }
+            storage.children.push_back(TerrainMap::display_item_stack(
+                item, std::to_string(count), *this->local
+            ));
+        }
+        if(storage.children.size() == 0) {
+            storage.children.push_back(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(this->local->text("ui_empty"), &ui_font::standard)
+                .as_movable()
+            );
+        }
+        ui::Element schedule = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        for(u64 target_i = 0; target_i < carriage.targets.size(); target_i += 1) {
+            schedule.children.push_back(
+                this->display_carriage_target(&carriage, target_i)
+            );
+        }
+        if(schedule.children.size() == 0) {
+            schedule.children.push_back(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(this->local->text("ui_empty"), &ui_font::standard)
+                .as_movable()
+            );
+        }
+        ui::Element add_stop = this->adding_stop
+            ? ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(
+                    this->local->text("ui_click_target_complex"), 
+                    &ui_font::standard
+                )
+                .with_padding(4)
+                .as_movable()
+            : make_ui_button(this->local->text("ui_add_stop"))
+                .with_click_handler([this]() {
+                    this->adding_stop = true;
+                })
+                .with_padding(4)
+                .as_movable();
+        ui::Element info = ui::Element()
+            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_background(&ui_background::note)
+            .with_list_dir(ui::Direction::Vertical)
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(this->local->text("ui_carriage"), &ui_font::standard)
+                .with_padding(1)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(status_text, &ui_font::standard)
+                .with_padding(3)
+                .as_movable()
+            )
+            .with_child(make_ui_button(this->local->text("ui_remove_carriage"))
+                .with_click_handler([this]() {
+                    auto selected = this->carriages.carriages.begin() 
+                        + *this->selected_carriage;
+                    this->carriages.carriages.erase(selected);
+                    this->selected_info_right->hidden = true;
+                    this->selected_info_bottom->hidden = true;
+                    this->selected_carriage = std::nullopt;
+                    this->adding_stop = false;
+                })
+                .with_padding(4)
+                .as_movable()
+            )
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(this->local->text("ui_schedule"), &ui_font::standard)
+                .with_padding(1)
+                .as_movable()
+            )
+            .with_child(schedule.with_padding(3.0).as_movable())
+            .with_child(std::move(add_stop))
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(this->local->text("ui_on_board"), &ui_font::standard)
                 .with_padding(1)
                 .as_movable()
             )

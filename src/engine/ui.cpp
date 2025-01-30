@@ -365,10 +365,13 @@ namespace houseofatmos::engine::ui {
         size_t c_len = 0;
         f64 width = 0.0;
         for(size_t o = 0; o < text.size(); o += c_len) {
+            if(o > 0) {
+                width += font.char_padding;
+            }
             c_len = utf8_char_length(text.substr(o));
             std::string_view c = text.substr(o, c_len);
             size_t idx = utf8_find_char_pos(font.chars, c);
-            width += font.char_padding + font.char_widths[idx];
+            width += font.char_widths[idx];
         }
         return width;
     }
@@ -387,7 +390,10 @@ namespace houseofatmos::engine::ui {
             if(d > 0 && sc_len == 1 && (c[0] == ' ' || c[0] == '\n')) {
                 break;
             }
-            ns_dist += font.char_padding + font.char_widths[idx];
+            if(d > 0) {
+                ns_dist += font.char_padding;
+            }
+            ns_dist += font.char_widths[idx];
         }
         return ns_dist;
     }
@@ -519,7 +525,6 @@ namespace houseofatmos::engine::ui {
             engine::error("Cannot use 'position::parent_fract' with root element!");
         }
         return parent->element.final_pos()
-            + parent->element.offset_of_child(parent->child_i)
             + (parent->element.final_size() - self.final_size()) * self.position;
     }
 
@@ -609,6 +614,7 @@ namespace houseofatmos::engine::ui {
     }
 
     static bool is_hovered_over_rec(const Element& element) {
+        if(element.hidden) { return false; }
         if(element.is_hovered_over()) { return true; }
         for(const Element& child: element.children) {
             if(is_hovered_over_rec(child)) { return true; }

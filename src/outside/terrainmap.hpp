@@ -36,13 +36,16 @@ namespace houseofatmos::outside {
         ui::Element* selected_info_bottom = nullptr;
 
         std::optional<ComplexId> selected_complex = std::nullopt;
+        std::optional<u64> selected_carriage = std::nullopt;
+        bool adding_stop = false;
 
-        bool hovering_marker();
         void update_view(const engine::Window& window);
         void update_click(const engine::Window& window);
 
         void render_view();
-        void add_marker(
+        void create_marker_info();
+        void add_marker(Vec<2> pos, ui::Element&& element);
+        void add_icon_marker(
             Vec<2> pos, const ui::Background* icon, 
             std::function<void ()>&& handler, bool is_phantom = false
         );
@@ -96,6 +99,23 @@ namespace houseofatmos::outside {
         static ui::Element display_complex_info(
             const Complex& complex, const engine::Localization& local
         );
+
+        static ui::Element create_selection_container(std::string title);
+
+        static ui::Element create_selection_item(
+            const ui::Background* icon, std::string text, bool selected,
+            std::function<void ()>&& handler
+        );
+
+        static ui::Element display_item_selector(
+            std::span<const Item::Type> items, 
+            std::function<void (Item::Type)>&& handler,
+            const engine::Localization& local
+        );
+
+        ui::Element display_carriage_target(Carriage* carriage, size_t target_i);
+
+        ui::Element display_carriage_info(Carriage& carriage);
 
     };
 

@@ -78,10 +78,12 @@ namespace houseofatmos::ui_icon {
 
     static inline const ui::Background map_marker_player
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 168), Vec<2>(5, 6));
-    static inline const ui::Background map_marker_carriage
+    static inline const ui::Background map_marker_selected
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 168), Vec<2>(5, 6));
-    static inline const ui::Background map_marker_carriage_lost
+    static inline const ui::Background map_marker_carriage
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 168), Vec<2>(5, 6));
+    static inline const ui::Background map_marker_carriage_lost
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(40, 168), Vec<2>(5, 6));
 
 
     inline void load_textures(engine::Scene& scene) {

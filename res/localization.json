@@ -36,6 +36,62 @@
         "de": "Lager",
         "en": "Storage"
     },
+    "ui_empty": {
+        "de": "(Leer)",
+        "en": "(Empty)"
+    },
+    "ui_current_position": {
+        "de": "Aktueller Standort",
+        "en": "Current position"
+    },
+    "ui_carriage": {
+        "de": "Kutsche",
+        "en": "Carriage"
+    },
+    "ui_status_no_instructions": {
+        "de": "Ohne Anweisungen",
+        "en": "Without instructions"
+    },
+    "ui_status_transferring": {
+        "de": "Im Transferprozess",
+        "en": "Transferring"
+    },
+    "ui_status_travelling": {
+        "de": "Reist zu Stopp #{}",
+        "en": "Travelling to stop #{}"
+    },
+    "ui_status_lost": {
+        "de": "Verloren (kein Weg zu Stopp #{})",
+        "en": "Lost (no path to stop #{})"
+    },
+    "ui_remove_carriage": {
+        "de": "Kutsche entfernen",
+        "en": "Remove carriage"
+    },
+    "ui_schedule": {
+        "de": "Fahrplan",
+        "en": "Schedule"
+    },
+    "ui_pick_up": {
+        "de": "Belade",
+        "en": "Pick up"
+    },
+    "ui_drop_off": {
+        "de": "Entlade",
+        "en": "Drop off"
+    },
+    "ui_add_stop": {
+        "de": "Stopp hinzufügen",
+        "en": "Add stop"
+    },
+    "ui_click_target_complex": {
+        "de": "Klicke den Zielkomplex an.",
+        "en": "Click the target complex."
+    },
+    "ui_on_board": {
+        "de": "An Bord",
+        "en": "On board"
+    },
 
 
     "toast_saved_game": {
@@ -73,6 +129,10 @@
     "toast_no_valid_carriage_location": {
         "de": "Kein gültiger Ort für eine Kutsche in der Nähe!",
         "en": "There is no valid location for a carriage nearby!"
+    },
+    "toast_carriage_lost": {
+        "de": "Eine Kutsche ist verloren!",
+        "en": "A carriage is lost!"
     },
 
 
