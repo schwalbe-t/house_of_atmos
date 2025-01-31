@@ -1,5 +1,5 @@
 
-#include "../ui_font.hpp"
+#include "../ui_const.hpp"
 #include "terrainmap.hpp"
 #include <format>
 
@@ -107,6 +107,12 @@ namespace houseofatmos::outside {
         this->rendered_tex = std::move(engine::Texture(this->rendered_img));
     }
 
+
+    void TerrainMap::hide() {
+        this->container->hidden = true;
+        this->selected_info_right->hidden = true;
+        this->selected_info_bottom->hidden = true;
+    }
 
     bool TerrainMap::toggle_with_key(
         engine::Key key, const engine::Window& window
@@ -274,10 +280,10 @@ namespace houseofatmos::outside {
                 .as_phantom()
                 .with_size(0, 0, ui::size::unwrapped_text)
                 .with_pos(
-                    0, (icon_size.y() - ui_font::standard.height) / 2 - 2.0, 
-                    ui::position::parent_units
+                    0, (icon_size.y() - ui_font::bright.height) / 2 - 2.0, 
+                    ui::position::parent_list_units
                 )
-                .with_text(text, &ui_font::standard)
+                .with_text(text, &ui_font::dark)
                 .with_padding(2)
                 .as_movable()
             )
@@ -288,7 +294,7 @@ namespace houseofatmos::outside {
     void TerrainMap::create_marker_info() {
         this->container->children.push_back(ui::Element()
             .as_phantom()
-            .with_pos(0.05, 0.95, ui::position::parent_fract)
+            .with_pos(0.05, 0.95, ui::position::parent_offset_fract)
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .with_child(create_single_marker_info(
@@ -316,7 +322,7 @@ namespace houseofatmos::outside {
             .with_pos(pos_un.x(), pos_un.y(), ui::position::window_tl_units)
             .with_size(0, 0, ui::size::units)
             .with_child(element
-                .with_pos(0.5, 1.0, ui::position::parent_fract)
+                .with_pos(0.5, 1.0, ui::position::parent_offset_fract)
                 .as_movable()
             )
             .as_movable()
@@ -387,7 +393,7 @@ namespace houseofatmos::outside {
                     .as_phantom()
                     .with_size(0, 0, ui::size::unwrapped_text)
                     .with_text(
-                        "#" + std::to_string(tgt_i + 1), &ui_font::standard
+                        "#" + std::to_string(tgt_i + 1), &ui_font::dark
                     )
                     .as_movable()
                 );
@@ -414,15 +420,15 @@ namespace houseofatmos::outside {
         const Item::TypeInfo& item = Item::items.at((size_t) type);
         std::string text = count + " "
             + local.text(item.local_name) + " ";
-        f64 txt_pad = (item.icon->edge_size.y() - ui_font::standard.height) / 2;
+        f64 txt_pad = (item.icon->edge_size.y() - ui_font::dark.height) / 2;
         if(text_v_pad_out != nullptr) { *text_v_pad_out = txt_pad; }
         ui::Element info = ui::Element()
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .with_child(ui::Element()
-                .with_pos(0, txt_pad, ui::position::parent_units)
+                .with_pos(0, txt_pad, ui::position::parent_list_units)
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(text, &ui_font::standard)
+                .with_text(text, &ui_font::dark)
                 .as_movable()
             )
             .with_child(ui::Element()
@@ -453,9 +459,9 @@ namespace houseofatmos::outside {
                 list.children.push_back(ui::Element()
                     .with_size(0, 0, ui::size::units_with_children)
                     .with_child(ui::Element()
-                        .with_pos(0, text_v_pad, ui::position::parent_units)
+                        .with_pos(0, text_v_pad, ui::position::parent_list_units)
                         .with_size(0, 0, ui::size::unwrapped_text)
-                        .with_text(" + ", &ui_font::standard)
+                        .with_text(" + ", &ui_font::dark)
                         .as_movable()
                     )
                     .as_movable()
@@ -488,9 +494,9 @@ namespace houseofatmos::outside {
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::units_with_children)
                 .with_child(ui::Element()
-                    .with_pos(0, text_v_pad, ui::position::parent_units)
+                    .with_pos(0, text_v_pad, ui::position::parent_list_units)
                     .with_size(0, 0, ui::size::unwrapped_text)
-                    .with_text(" → ", &ui_font::standard)
+                    .with_text(" → ", &ui_font::dark)
                     .as_movable()
                 )
                 .as_movable()
@@ -499,9 +505,9 @@ namespace houseofatmos::outside {
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::units_with_children)
                 .with_child(ui::Element()
-                    .with_pos(0, text_v_pad, ui::position::parent_units)
+                    .with_pos(0, text_v_pad, ui::position::parent_list_units)
                     .with_size(0, 0, ui::size::unwrapped_text)
-                    .with_text(period_str, &ui_font::standard)
+                    .with_text(period_str, &ui_font::dark)
                     .as_movable()
                 )
                 .as_movable()
@@ -547,14 +553,14 @@ namespace houseofatmos::outside {
                     .with_child(ui::Element()
                         .with_size(0, 0, ui::size::unwrapped_text)
                         .with_text(
-                            local.text(building.local_name), &ui_font::standard
+                            local.text(building.local_name), &ui_font::dark
                         )
                         .with_padding(1)
                         .as_movable()
                     )
                     .with_child(ui::Element()
                         .with_size(0, 0, ui::size::unwrapped_text)
-                        .with_text(worker_info, &ui_font::standard)
+                        .with_text(worker_info, &ui_font::dark)
                         .with_padding(1)
                         .as_movable()
                     )
@@ -608,7 +614,7 @@ namespace houseofatmos::outside {
         if(storage.children.size() == 0) {
             storage.children.push_back(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_empty"), &ui_font::standard)
+                .with_text(local.text("ui_empty"), &ui_font::dark)
                 .as_movable()
             );
         }
@@ -619,27 +625,27 @@ namespace houseofatmos::outside {
             .with_list_dir(ui::Direction::Vertical)
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_building_complex"), &ui_font::standard)
+                .with_text(local.text("ui_building_complex"), &ui_font::dark)
                 .with_padding(1)
                 .as_movable()
             )
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_inputs"), &ui_font::standard)
+                .with_text(local.text("ui_inputs"), &ui_font::dark)
                 .with_padding(1)
                 .as_movable()
             )
             .with_child(inputs.with_padding(3.0).as_movable())
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_outputs"), &ui_font::standard)
+                .with_text(local.text("ui_outputs"), &ui_font::dark)
                 .with_padding(1)
                 .as_movable()
             )
             .with_child(outputs.with_padding(3.0).as_movable())
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_storage"), &ui_font::standard)
+                .with_text(local.text("ui_storage"), &ui_font::dark)
                 .with_padding(1)
                 .as_movable()
             )
@@ -657,7 +663,7 @@ namespace houseofatmos::outside {
         if(title.size() > 0) {
             selector.children.push_back(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(title, &ui_font::standard)
+                .with_text(title, &ui_font::dark)
                 .with_padding(2)
                 .as_movable()
             );
@@ -684,11 +690,11 @@ namespace houseofatmos::outside {
                 .as_phantom()
                 .with_pos(
                     0, 
-                    (icon->edge_size.y() - ui_font::standard.height) / 2.0 - 2.0, 
-                    ui::position::parent_units
+                    (icon->edge_size.y() - ui_font::dark.height) / 2.0 - 2.0, 
+                    ui::position::parent_list_units
                 )
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(text, &ui_font::standard)
+                .with_text(text, &ui_font::dark)
                 .with_padding(2)
                 .as_phantom()
                 .as_movable()
@@ -733,7 +739,7 @@ namespace houseofatmos::outside {
         ui::Element button = ui::Element()
             .as_phantom()
             .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, &ui_font::standard)
+            .with_text(text, &ui_font::bright)
             .with_padding(1)
             .with_background(
                 &ui_background::button, &ui_background::button_select
@@ -811,7 +817,7 @@ namespace houseofatmos::outside {
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
                 .with_text(
-                    "#" + std::to_string(target_i + 1), &ui_font::standard
+                    "#" + std::to_string(target_i + 1), &ui_font::dark
                 )
                 .with_padding(3)
                 .as_movable()
@@ -870,7 +876,7 @@ namespace houseofatmos::outside {
             )
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(amount, &ui_font::standard)
+                .with_text(amount, &ui_font::dark)
                 .with_padding(3)
                 .as_movable()
             )
@@ -940,7 +946,7 @@ namespace houseofatmos::outside {
         if(storage.children.size() == 0) {
             storage.children.push_back(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_empty"), &ui_font::standard)
+                .with_text(this->local->text("ui_empty"), &ui_font::dark)
                 .as_movable()
             );
         }
@@ -956,7 +962,7 @@ namespace houseofatmos::outside {
         if(schedule.children.size() == 0) {
             schedule.children.push_back(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_empty"), &ui_font::standard)
+                .with_text(this->local->text("ui_empty"), &ui_font::dark)
                 .as_movable()
             );
         }
@@ -965,7 +971,7 @@ namespace houseofatmos::outside {
                 .with_size(0, 0, ui::size::unwrapped_text)
                 .with_text(
                     this->local->text("ui_click_target_complex"), 
-                    &ui_font::standard
+                    &ui_font::dark
                 )
                 .with_padding(4)
                 .as_movable()
@@ -982,13 +988,13 @@ namespace houseofatmos::outside {
             .with_list_dir(ui::Direction::Vertical)
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_carriage"), &ui_font::standard)
+                .with_text(this->local->text("ui_carriage"), &ui_font::dark)
                 .with_padding(1)
                 .as_movable()
             )
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(status_text, &ui_font::standard)
+                .with_text(status_text, &ui_font::dark)
                 .with_padding(3)
                 .as_movable()
             )
@@ -1007,7 +1013,7 @@ namespace houseofatmos::outside {
             )
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_schedule"), &ui_font::standard)
+                .with_text(this->local->text("ui_schedule"), &ui_font::dark)
                 .with_padding(1)
                 .as_movable()
             )
@@ -1015,7 +1021,7 @@ namespace houseofatmos::outside {
             .with_child(std::move(add_stop))
             .with_child(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_on_board"), &ui_font::standard)
+                .with_text(this->local->text("ui_on_board"), &ui_font::dark)
                 .with_padding(1)
                 .as_movable()
             )

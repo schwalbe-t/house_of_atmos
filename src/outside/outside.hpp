@@ -6,9 +6,7 @@
 #include <engine/window.hpp>
 #include <engine/model.hpp>
 #include <engine/ui.hpp>
-#include "../ui_background.hpp"
-#include "../ui_font.hpp"
-#include "../ui_icon.hpp"
+#include "../ui_const.hpp"
 #include "../renderer.hpp"
 #include "../player.hpp"
 #include "terrain.hpp"
@@ -24,6 +22,8 @@ namespace houseofatmos::outside {
     struct Outside: engine::Scene {
 
         struct Serialized {
+            u64 save_path_len;
+            u64 save_path_offset;
             Terrain::Serialized terrain;
             ComplexBank::Serialized complexes;
             Player::Serialized player;
@@ -32,21 +32,17 @@ namespace houseofatmos::outside {
         };
 
 
-        static inline const engine::Localization::LoadArgs local = {
-            "res/localization.json", "en"
-        };
-
-        static inline const char* const save_location = "savegame.bin"; 
-
         static inline const u64 units_per_tile = 5;
         static inline const u64 tiles_per_chunk = 8;
         static inline const i64 draw_distance_ch = 1;
         static inline const i64 draw_distance_un    
             = draw_distance_ch * tiles_per_chunk * units_per_tile;
-        static inline const f64 ui_unit_size = 1 / 250.0;
 
         static inline const f64 min_camera_dist = 15.0;
         static inline const f64 max_camera_dist = 50.0;
+
+        std::string save_path;
+        engine::Localization::LoadArgs local;
 
         Renderer renderer;
         Terrain terrain = Terrain(
@@ -60,15 +56,21 @@ namespace houseofatmos::outside {
         f64 camera_distance = min_camera_dist;
         std::unique_ptr<ActionMode> action_mode;
         ui::Element* coins_elem = nullptr;
-        ui::Manager ui = ui::Manager(ui_unit_size);
+        ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
         TerrainMap terrain_map = TerrainMap(
             Outside::local, this->terrain, this->complexes, this->player, 
             this->carriages, this->ui
         );
-        Toasts toasts = Toasts(local);
+        Toasts toasts = Toasts(this->local);
 
-        Outside();
-        Outside(const engine::Arena& buffer);
+        Outside(
+            engine::Localization::LoadArgs local
+        );
+        Outside(
+            engine::Localization::LoadArgs local, 
+            const engine::Arena& buffer
+        );
+        void load_resources();
 
         void update(engine::Window& window) override;
         void render(engine::Window& window) override;

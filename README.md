@@ -21,6 +21,7 @@ Additionally, this project uses these dependencies directly (install not needed)
 - `nlohmann/json`
 - `syoyo/tinygltf`
 - `Reputeless/PerlinNoise`
+- `samhocevar/portable-file-dialogs`
 
 ### Cross-Compilation to Windows
 

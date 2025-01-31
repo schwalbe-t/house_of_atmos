@@ -6,9 +6,7 @@
 #include "../renderer.hpp"
 #include "../player.hpp"
 #include "../toasts.hpp"
-#include "../ui_background.hpp"
-#include "../ui_font.hpp"
-#include "../ui_icon.hpp"
+#include "../ui_const.hpp"
 #include "carriage.hpp"
 #include "terrain.hpp"
 

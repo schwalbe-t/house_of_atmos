@@ -92,11 +92,42 @@
         "de": "An Bord",
         "en": "On board"
     },
-
+    "ui_game_paused": {
+        "de": "Spiel pausiert",
+        "en": "Game paused"
+    },
+    "ui_resume_game": {
+        "de": "Spiel fortsetzen",
+        "en": "Resume game"
+    },
+    "ui_save_game": {
+        "de": "Spiel speichern",
+        "en": "Save game"   
+    },
+    "ui_save_game_as": {
+        "de": "Spiel speichern als...",
+        "en": "Save game as..."
+    },
+    "ui_choose_save_location": {
+        "de": "Speicherort wählen",
+        "en": "Choose save location"
+    },
+    "ui_save_file": {
+        "de": "Spielstand",
+        "en": "Save file"
+    },
+    "ui_to_main_menu": {
+        "de": "Zurück zum Hauptmenü",
+        "en": "Return to main menu"
+    },
 
     "toast_saved_game": {
-        "de": "💾 Spiel gespeichert.",
-        "en": "💾 Progress saved."
+        "de": "💾 Spiel gespeichert als '{}'.",
+        "en": "💾 Game saved as '{}'."
+    },
+    "toast_failed_to_save_game": {
+        "de": "💾 Spiel konnte nicht gespeichert werden.",
+        "en": "💾 Game was unable to be saved."
     },
     "toast_indestructible": {
         "de": "Dieses Gebäude kann nicht abgerissen werden.",

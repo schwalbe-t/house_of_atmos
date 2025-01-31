@@ -69,6 +69,7 @@ namespace houseofatmos::outside {
         void create_container();
         ui::Element* element() const { return this->container; }
 
+        void hide();
         bool toggle_with_key(engine::Key key, const engine::Window& window);
         void update(const engine::Window& window, engine::Scene& scene);
         void render_map();

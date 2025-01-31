@@ -3,8 +3,8 @@
 
 #include <engine/ui.hpp>
 #include <engine/localization.hpp>
-#include "ui_background.hpp"
-#include "ui_font.hpp"
+#include "ui_const.hpp"
+#include <chrono>
 
 namespace houseofatmos {
 
@@ -27,6 +27,12 @@ namespace houseofatmos {
         const engine::Localization* local = nullptr;
         ui::Element* toasts_container = nullptr;
         std::vector<f64> toast_timers;
+
+        static f64 current_time() {
+            return std::chrono::duration<f64>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()
+            ).count();
+        }
 
         public:
         Toasts(const engine::Localization::LoadArgs& l): local_ref(l) {}
@@ -55,24 +61,26 @@ namespace houseofatmos {
 
         void add_toast(
             std::string name, std::span<const std::string> values, 
-            f64 time = 5.0, 
-            const ui::Background* background = &ui_background::note
+            f64 duration = 5.0, 
+            const ui::Background* background = &ui_background::note,
+            const ui::Font* font = &ui_font::dark
         ) {
-            if(this->local == nullptr) { return; }
+            if(this->local == nullptr) {
+                return; 
+            }
             if(this->toasts_container == nullptr) {
                 this->toast_timers.clear();
+                return;
             }
             if(this->toast_timers.size() == Toasts::max_toast_count) {
                 this->toast_timers.erase(this->toast_timers.begin());
                 this->elements().erase(this->elements().begin());
             }
-            toast_timers.push_back(time);
+            f64 death_time = Toasts::current_time() + duration;
+            toast_timers.push_back(death_time);
             this->elements().push_back(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(
-                    this->local->pattern(name, values), 
-                    &ui_font::standard
-                )
+                .with_text(this->local->pattern(name, values), font)
                 .with_background(background)
                 .with_padding(5.0)
                 .as_movable()
@@ -81,17 +89,18 @@ namespace houseofatmos {
 
         void add_toast(
             std::string name, std::initializer_list<const std::string> values, 
-            f64 time = 5.0
+            f64 duration = 5.0
         ) {
-            this->add_toast(name, std::span(values), time);
+            this->add_toast(name, std::span(values), duration);
         }
 
         void add_error(
             std::string name, std::initializer_list<const std::string> values, 
-            f64 time = 5.0
+            f64 duration = 5.0
         ) {
             this->add_toast(
-                name, std::span(values), time, &ui_background::note_error
+                name, std::span(values), duration, 
+                &ui_background::note_error, &ui_font::bright
             );
         }
 
@@ -110,15 +119,15 @@ namespace houseofatmos {
             this->toast_timers = std::move(states.timers);
         }
 
-        void update(const engine::Window& window, engine::Scene& scene) {
+        void update(engine::Scene& scene) {
             this->local = &scene.get<engine::Localization>(this->local_ref);
             if(this->toasts_container == nullptr) {
                 this->toast_timers.clear();
             }
+            f64 curr_time = Toasts::current_time();
             for(size_t i = 0; i < this->toast_timers.size();) {
-                f64& time = this->toast_timers[i];
-                time -= window.delta_time();
-                if(time >= 0.0) {
+                const f64& death_time = this->toast_timers[i];
+                if(curr_time < death_time) {
                     i += 1;
                     continue;
                 }

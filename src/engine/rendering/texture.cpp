@@ -275,5 +275,14 @@ namespace houseofatmos::engine {
         );
     }
 
+    void Texture::blit(const Texture& dest, Shader& shader) const {
+        if(this->moved) {
+            error("Attempted to use a moved 'Texture'");
+        }
+        if(!blit_quad) { init_blit_resources(); }
+        shader.set_uniform("u_texture", *this);
+        blit_quad.value().render(shader, dest, 1, false, false);
+    }
+
 }
 

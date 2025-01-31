@@ -4,7 +4,7 @@
 #include "complex.hpp"
 #include "../renderer.hpp"
 #include "../collider.hpp"
-#include "../ui_icon.hpp"
+#include "../ui_const.hpp"
 
 namespace houseofatmos::outside {
 

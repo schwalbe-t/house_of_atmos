@@ -73,6 +73,9 @@ namespace houseofatmos::engine {
     };
 
 
+    struct Shader;
+
+
     struct Texture {
         struct LoadArgs {
             std::string path;
@@ -129,6 +132,7 @@ namespace houseofatmos::engine {
             u64 dest_fbo_id, u32 dest_width, u32 dest_height,
             f64 x, f64 y, f64 w, f64 h
         ) const;
+        void blit(const Texture& dest, Shader& shader) const;
 
     };
 

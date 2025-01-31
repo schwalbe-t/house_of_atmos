@@ -1,24 +1,24 @@
 
 #include "outside.hpp"
-#include <fstream>
+#include "../pause_menu.hpp"
 
 #include "terrainmap.hpp"
 
 namespace houseofatmos::outside {
 
-    static void load_resources(engine::Scene& scene) {
-        Renderer::load_shaders(scene);
-        Terrain::load_resources(scene);
-        Building::load_models(scene);
-        Foliage::load_models(scene);
-        Player::load_model(scene);
-        ActionMode::load_resources(scene);
-        Carriage::load_resources(scene);
-        ui::Manager::load_shaders(scene);
-        ui_background::load_textures(scene);
-        ui_font::load_textures(scene);
-        ui_icon::load_textures(scene);
-        scene.load(engine::Localization::Loader(Outside::local));
+    void Outside::load_resources() {
+        Renderer::load_shaders(*this);
+        Terrain::load_resources(*this);
+        Building::load_models(*this);
+        Foliage::load_models(*this);
+        Player::load_model(*this);
+        ActionMode::load_resources(*this);
+        Carriage::load_resources(*this);
+        ui::Manager::load_shaders(*this);
+        ui_background::load_textures(*this);
+        ui_font::load_textures(*this);
+        ui_icon::load_textures(*this);
+        this->load(engine::Localization::Loader(this->local));
     }
 
     static void set_base_ui(Outside& scene, u64 selected);
@@ -109,7 +109,7 @@ namespace houseofatmos::outside {
             .with_size(0, 0, ui::size::unwrapped_text)
             .with_text(
                 std::to_string(scene.balance.coins) + " 🪙",
-                &ui_font::standard
+                &ui_font::dark
             )
             .with_padding(1.0)
             .with_pos(0.95, 0.05, ui::position::window_fract)
@@ -329,8 +329,9 @@ namespace houseofatmos::outside {
         balance.coins = 20000;
     }
 
-    Outside::Outside() {
-        load_resources(*this);
+    Outside::Outside(engine::Localization::LoadArgs local) {
+        this->local = local;
+        this->load_resources();
         this->carriages = CarriageManager(
             this->terrain, Outside::draw_distance_un
         );
@@ -342,16 +343,6 @@ namespace houseofatmos::outside {
     }
 
 
-
-    static void save_game(engine::Arena buffer, Toasts& toasts) {
-        std::ofstream fout;
-        fout.open(Outside::save_location, std::ios::binary | std::ios::out);
-        fout.write((const char*) buffer.data().data(), buffer.data().size());
-        fout.close();
-        toasts.add_toast(
-            "toast_saved_game", { std::string(Outside::save_location) }
-        );
-    }
 
     static void update_player(
         engine::Window& window, Terrain& terrain, Player& player
@@ -388,8 +379,16 @@ namespace houseofatmos::outside {
     }
 
     void Outside::update(engine::Window& window) {
+        if(window.was_pressed(engine::Key::Escape)) {
+            this->terrain_map.hide();
+            window.set_scene(std::make_shared<PauseMenu>(
+                window.scene(), this->renderer.output(), 
+                this->save_path, Outside::local,
+                [this]() { return this->serialize(); }
+            ));
+        }
         this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
-        this->toasts.update(window, *this);
+        this->toasts.update(*this);
         this->ui.update(window);
         this->carriages.update_all(
             window, this->complexes, this->terrain, this->toasts
@@ -403,9 +402,6 @@ namespace houseofatmos::outside {
             window, this->player, this->renderer.camera, this->camera_distance, 
             this->terrain_map.element()
         );
-        if(window.is_down(engine::Key::LeftControl) && window.was_pressed(engine::Key::S)) {
-            save_game(this->serialize(), this->toasts);
-        }
         if(this->terrain_map.toggle_with_key(engine::Key::M, window)) {
             set_action_mode(*this, default_mode_const, UINT64_MAX);
             this->terrain_map.element()->hidden = false;
@@ -432,9 +428,18 @@ namespace houseofatmos::outside {
 
 
 
-    Outside::Outside(const engine::Arena& buffer) {
-        load_resources(*this);
+    Outside::Outside(
+        engine::Localization::LoadArgs local, const engine::Arena& buffer
+    ) {
+        this->local = local;
+        this->load_resources();
         const auto& outside = buffer.value_at<Outside::Serialized>(0);
+        this->save_path = std::string(std::string_view(
+            buffer.array_at<char>(
+                outside.save_path_offset, outside.save_path_len
+            ).data(), 
+            (size_t) outside.save_path_len
+        ));
         this->terrain = Terrain(
             outside.terrain, 
             Outside::draw_distance_ch, Outside::units_per_tile, Outside::tiles_per_chunk,
@@ -459,6 +464,10 @@ namespace houseofatmos::outside {
         Player::Serialized player = this->player.serialize(buffer);
         CarriageManager::Serialized carriages = this->carriages.serialize(buffer);
         auto& outside = buffer.value_at<Outside::Serialized>(outside_offset);
+        outside.save_path_len = this->save_path.size();
+        outside.save_path_offset = buffer.alloc_array<char>(
+            this->save_path.data(), this->save_path.size()
+        );
         outside.terrain = terrain;
         outside.complexes = complexes;
         outside.player = player;

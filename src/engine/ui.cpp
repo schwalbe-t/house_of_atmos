@@ -11,7 +11,7 @@ namespace houseofatmos::engine::ui {
         this->position_px = Vec<2>();
         this->hovering = false;
         this->with_size(10, 10, size::units);
-        this->with_pos(0, 0, position::parent_units);
+        this->with_pos(0, 0, position::parent_list_units);
         this->with_list_dir(Direction::Vertical);
         this->with_background(nullptr, nullptr);
         this->with_texture(nullptr);
@@ -82,7 +82,9 @@ namespace houseofatmos::engine::ui {
             .with_size(amount * 2, amount * 2, size::units_with_children)
             .as_movable();
         padding.children.push_back(
-            std::move(this->with_pos(amount, amount, position::parent_units))
+            std::move(this->with_pos(
+                amount, amount, position::parent_list_units
+            ))
         );
         *this = std::move(padding);
         return *this;
@@ -502,7 +504,7 @@ namespace houseofatmos::engine::ui {
         );
     }
 
-    Vec<2> position::parent_units(
+    Vec<2> position::parent_list_units(
         Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {
@@ -515,7 +517,33 @@ namespace houseofatmos::engine::ui {
             + (self.position * unit);
     }
 
-    Vec<2> position::parent_fract(
+    Vec<2> position::parent_list_fract(
+        Element& self, std::optional<ChildRef> parent, 
+        const Window& window, f64 unit
+    ) {
+        (void) window;
+        (void) unit;
+        if(!parent.has_value()) {
+            engine::error("Cannot use 'position::parent_fract' with root element!");
+        }
+        return parent->element.final_pos()
+            + parent->element.offset_of_child(parent->child_i)
+            + (parent->element.final_size() - self.final_size()) * self.position;
+    }
+
+    Vec<2> position::parent_offset_units(
+        Element& self, std::optional<ChildRef> parent, 
+        const Window& window, f64 unit
+    ) {
+        (void) window;
+        if(!parent.has_value()) {
+            engine::error("Cannot use 'position::parent_units' with root element!");
+        }
+        return parent->element.final_pos()
+            + (self.position * unit);
+    }
+
+    Vec<2> position::parent_offset_fract(
         Element& self, std::optional<ChildRef> parent, 
         const Window& window, f64 unit
     ) {

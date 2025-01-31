@@ -205,8 +205,10 @@ namespace houseofatmos::engine::ui {
         Vec<2> window_br_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
         Vec<2> window_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
         Vec<2> window_ndc(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> parent_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> parent_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> parent_list_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> parent_list_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> parent_offset_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
+        Vec<2> parent_offset_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
     }
 
 

@@ -77,7 +77,7 @@ namespace houseofatmos::outside {
                 .with_pos(0.5, 0.95, ui::position::window_fract)
                 .with_size(0, 0, ui::size::unwrapped_text)
                 .with_text(
-                    this->local->text("ui_create_carriage"), &ui_font::standard
+                    this->local->text("ui_create_carriage"), &ui_font::bright
                 )
                 .with_padding(3)
                 .with_background(
@@ -326,7 +326,7 @@ namespace houseofatmos::outside {
                     .with_pos(ndc.x(), ndc.y(), ui::position::window_ndc)
                     .with_child(ui::Element()
                         .as_phantom()
-                        .with_pos(-4, -4, ui::position::parent_units)
+                        .with_pos(-4, -4, ui::position::parent_offset_units)
                         .with_size(8, 8, ui::size::units)
                         .with_background(&ui_icon::terrain_vertex)
                         .as_movable()

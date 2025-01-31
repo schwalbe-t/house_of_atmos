@@ -14,6 +14,5 @@ CMakeUserPresets.json
 house_of_atmos
 house_of_atmos.exe
 .vscode
-savegame.bin
 build
 windows_libs
