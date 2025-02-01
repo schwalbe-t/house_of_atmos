@@ -500,14 +500,14 @@ namespace houseofatmos::engine::math {
 
         static Mat<4> orthographic(
             f64 left, f64 right, f64 top, f64 bottom,
-            f64 near, f64 far
+            f64 near_plane, f64 far_plane
         ) {
             f64 m00 = 2.0 / (right - left);
             f64 m11 = 2.0 / (top - bottom);
-            f64 m22 = 2.0 / (near - far);
+            f64 m22 = 2.0 / (near_plane - far_plane);
             f64 m03 = (right + left) / (left - right);
             f64 m13 = (top + bottom) / (bottom - top);
-            f64 m23 = (far + near) / (near - far);
+            f64 m23 = (far_plane + near_plane) / (near_plane - far_plane);
             return Mat<4>(
                 m00, 0.0, 0.0, m03,
                 0.0, m11, 0.0, m13,
@@ -517,14 +517,14 @@ namespace houseofatmos::engine::math {
         }
 
         static Mat<4> perspective(
-            f64 fov, i64 width, i64 height, f64 near, f64 far
+            f64 fov, i64 width, i64 height, f64 near_plane, f64 far_plane
         ) {
             f64 aspect_ratio = (f64) width / height;
             f64 focal_length = 1.0 / tan(fov / 2.0);
             f64 m00 = focal_length / aspect_ratio;
             f64 m11 = focal_length;
-            f64 m22 = (far + near) / (near - far);
-            f64 m23 = (2.0 * far * near) / (near - far);
+            f64 m22 = (far_plane + near_plane) / (near_plane - far_plane);
+            f64 m23 = (2.0 * far_plane * near_plane) / (near_plane - far_plane);
             return Mat<4>(
                 m00, 0.0,  0.0, 0.0,
                 0.0, m11,  0.0, 0.0,
