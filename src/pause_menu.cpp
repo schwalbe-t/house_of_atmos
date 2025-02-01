@@ -2,6 +2,7 @@
 #include <samhocevar/portable-file-dialogs.h>
 #include "pause_menu.hpp"
 #include <fstream>
+#include <filesystem>
 
 namespace houseofatmos {
 
@@ -28,7 +29,15 @@ namespace houseofatmos {
         fout.close();
     }
 
-    void PauseMenu::save_game() {
+    void PauseMenu::save_game(engine::Window& window, bool is_new_save) {
+        bool existing_path_invalid = !is_new_save
+            && !std::filesystem::exists(this->save_path);
+        if(existing_path_invalid) {
+            this->save_path = "";
+            this->toasts.add_error("toast_failed_to_save_game", {});
+            this->refresh_ui_elements(window);
+            return;
+        }
         engine::Arena serialized = this->serialize();
         write_to_file(serialized, this->save_path);
         this->toasts.add_toast("toast_saved_game", { this->save_path });
@@ -75,8 +84,8 @@ namespace houseofatmos {
         if(this->save_path.size() > 0) {
             buttons.children.push_back(make_button(
                 local.text("ui_save_game"),
-                [this]() {
-                    this->save_game(); 
+                [this, window = &window]() {
+                    this->save_game(*window); 
                 }
             ));
         }
@@ -93,7 +102,7 @@ namespace houseofatmos {
                     return;
                 }
                 this->save_path = std::move(new_path); 
-                this->save_game();
+                this->save_game(*window, true /* = new save location */);
                 this->refresh_ui_elements(*window);
             }
         ));

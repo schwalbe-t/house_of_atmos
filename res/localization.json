@@ -1,220 +1,284 @@
 {
 
     "ui_building_selection": {
+        "_context": "Title of the building selection UI (when building a building)",
         "de": "Gebäudeauswahl",
         "en": "Building Selection"
     },
     "ui_product_selection": {
+        "_context": "Title of the product selection UI (of a building when selecting it)",
         "de": "Produktauswahl",
         "en": "Product Selection"
     },
     "ui_required_workers": {
+        "_context": "The number of workers needed by a building",
+        "_placeholders": "Number of workers",
         "de": "Benötigt {} Arbeiter",
         "en": "Requires {} worker(s)"
     },
     "ui_provided_workers": {
+        "_context": "The number of workers provided by a building",
+        "_placeholders": "Number of workers",
         "de": "Stellt {} Arbeiter bereit",
         "en": "Provides {} worker(s)"
     },
     "ui_create_carriage": {
+        "_context": "Text of the button used to create/buy a carriage",
         "de": "Kutsche erstellen",
         "en": "Create carriage"
     },
     "ui_building_complex": {
+        "_context": "Title of the building complex (a collection of buildings) information UI",
         "de": "Gebäudekomplex",
         "en": "Building complex"
     },
     "ui_inputs": {
+        "_context": "The optimal consumption / inputs of a building complex",
         "de": "Optimaler Verbrauch (/s)",
         "en": "Optimal Inputs (/s)"
     },
     "ui_outputs": {
+        "_context": "The optimal outputs / products of a building complex (given the optimal inputs are met)",
         "de": "Optimale Ausgabe (/s)",
         "en": "Optimal Outputs (/s)"
     },
     "ui_storage": {
+        "_context": "Lists the stored items of a building complex underneath",
         "de": "Lager",
         "en": "Storage"
     },
     "ui_empty": {
+        "_context": "Displayed when a building complex or carriage does not hold any items, or when the schedule of a carriage is empty",
         "de": "(Leer)",
         "en": "(Empty)"
     },
     "ui_current_position": {
+        "_context": "The current position of the player, used in the map legend for the player marker",
         "de": "Aktueller Standort",
         "en": "Current position"
     },
     "ui_carriage": {
+        "_context": "Used as the title of the carriage info UI and the current position of a carriage in the map legend for the carriage markers",
         "de": "Kutsche",
         "en": "Carriage"
     },
     "ui_status_no_instructions": {
+        "_context": "Displayed as the status of a carriage (or other agent like a train) when its schedule (list of places to go to) is empty",
         "de": "Ohne Anweisungen",
         "en": "Without instructions"
     },
     "ui_status_transferring": {
+        "_context": "Displayed as the status of a carriage (or other agent like a train) when it is currently in the process of transferring items at one of its scheduled stops",
         "de": "Im Transferprozess",
         "en": "Transferring"
     },
     "ui_status_travelling": {
+        "_context": "Displayed as the status of a carriage (or other agent like a train) when it is currently travelling to one of its scheduled stops",
+        "_placeholders": "The number of the stop the carriage is currently travelling to",
         "de": "Reist zu Stopp #{}",
         "en": "Travelling to stop #{}"
     },
     "ui_status_lost": {
+        "_context": "Displayed as the status of a carriage (or other agent like a train) when it has no valid path to its next scheduled stop (it is 'lost')",
+        "_placeholders": "The number of the stop the carriage is trying to travel to",
         "de": "Verloren (kein Weg zu Stopp #{})",
         "en": "Lost (no path to stop #{})"
     },
     "ui_remove_carriage": {
+        "_context": "Text of the button used to remove / scrap (no refund) the carriage",
         "de": "Kutsche entfernen",
         "en": "Remove carriage"
     },
     "ui_schedule": {
+        "_context": "The schedule (list of stops the carriage is scheduled to go to, and what to do once there) of a carriage (or other agent like a train)",
         "de": "Fahrplan",
         "en": "Schedule"
     },
     "ui_pick_up": {
+        "_context": "Schedule item can be set to 'Pick up' items (move items from carriage to buildings) at some set building complex (or other location)",
         "de": "Belade",
         "en": "Pick up"
     },
     "ui_drop_off": {
+        "_context": "Schedule item can be set to 'Drop off' items (move items from buildings to carriage) at some set building complex (or other location)",
         "de": "Entlade",
         "en": "Drop off"
     },
     "ui_add_stop": {
+        "_context": "Button used to add a building complex as a stop to a carriage's schedule",
         "de": "Stopp hinzufügen",
         "en": "Add stop"
     },
     "ui_click_target_complex": {
+        "_context": "Prompts the user to click the building complex the carriage should stop at on the map",
         "de": "Klicke den Zielkomplex an.",
         "en": "Click the target complex."
     },
     "ui_on_board": {
+        "_context": "Same as 'ui_storage', but for carriages (and later possibly trains) - Lists the stored items on board of a carriage underneath",
         "de": "An Bord",
         "en": "On board"
     },
     "ui_game_paused": {
+        "_context": "Displayed at the top of the game paused menu",
         "de": "Spiel pausiert",
         "en": "Game paused"
     },
     "ui_resume_game": {
+        "_context": "Text of the button that closes the paused menu and resumes the game",
         "de": "Spiel fortsetzen",
         "en": "Resume game"
     },
     "ui_save_game": {
+        "_context": "Text of the button that saves the game as a file at its previous save location",
         "de": "Spiel speichern",
         "en": "Save game"   
     },
     "ui_save_game_as": {
+        "_context": "Text of the button that prompts the user for a save location and then saves the game as a file at that location",
         "de": "Spiel speichern als...",
         "en": "Save game as..."
     },
     "ui_choose_save_location": {
+        "_context": "Title of the window that prompts the user for a save location",
         "de": "Speicherort wählen",
         "en": "Choose save location"
     },
     "ui_save_file": {
-        "de": "Spielstand",
+        "_context": "Name of the file format ('.bin') used to store a save file (storing game progress)",
+        "de": "Spielstand-Datei",
         "en": "Save file"
     },
     "ui_to_main_menu": {
+        "_context": "Text of the button that returns the user to the main menu",
         "de": "Zurück zum Hauptmenü",
         "en": "Return to main menu"
     },
 
     "toast_saved_game": {
+        "_context": "Pop-up that notifies the user that the game has been saved",
+        "_placeholders": "The location that the game has been saved at",
         "de": "💾 Spiel gespeichert als '{}'.",
         "en": "💾 Game saved as '{}'."
     },
     "toast_failed_to_save_game": {
+        "_context": "Pop-up that notifies the user that the game could not be saved",
         "de": "💾 Spiel konnte nicht gespeichert werden.",
         "en": "💾 Game was unable to be saved."
     },
     "toast_indestructible": {
+        "_context": "Pop-up that notifies the user when they try to demolish buildings they aren't allowed to (note: localized text should be why they can't do it, not what they did)",
         "de": "Dieses Gebäude kann nicht abgerissen werden.",
         "en": "This building may not be demolished."
     },
     "toast_terrain_occupied": {
+        "_context": "Pop-up that notifies the user when they try to modify terrain under a building (note: localized text should be why they can't do it, not what they did)",
         "de": "Gelände unter Gebäuden kann nicht bearbeitet werden!",
         "en": "Terrain occupied by buildings may not be modified!"
     },
     "toast_invalid_building_placement": {
+        "_context": "Pop-up that notifies the user when they try to place a building on uneven terrain (note: localized text should be why they can't do it, not what they did)",
         "de": "Gebäude müssen auf flachem, freiem Bodem plaziert werden!",
         "en": "Buildings must be placed on flat, unoccupied ground!"
     },
     "toast_too_expensive": {
+        "_context": "Pop-up that notifies the user when they try to do something they cannot afford",
+        "_placeholders": "The number of coins the operation would cost if they could afford it",
         "de": "Zu teuer! ({} 🪙)",
         "en": "Too expensive! ({} 🪙)"
     },
     "toast_added_coins": {
+        "_context": "Pop-up that notifies the user that coins have been added to their balance",
+        "_placeholders": "The number of coins added",
         "de": "+ {} 🪙",
-        "en": "+ {} 🪙"
+        "en": "+ {} 🪙",
+        "bg": "+ {} 🪙"
     },
     "toast_removed_coins": {
+        "_context": "Pop-up that notifies the user that coins have been removed from their balance",
+        "_placeholders": "The number of coins removed",
         "de": "- {} 🪙",
-        "en": "- {} 🪙"
+        "en": "- {} 🪙",
+        "bg": "- {} 🪙"
     },
     "toast_missing_unemployment": {
+        "_context": "Pop-up that notifies the user that the operation was cancelled because not enough workers are or would be available",
+        "_placeholders": "#1: number of workers that are or would be available; #2: number of workers required after the operation",
         "de": "Keine verfügbaren Arbeiter! ({}/{})",
         "en": "Missing unemployed workers! ({}/{})"
     },
     "toast_no_valid_carriage_location": {
+        "_context": "Pop-up that informs the user when they try to create a carriage at a stable, but the stable is not adjacent to any paths",
         "de": "Kein gültiger Ort für eine Kutsche in der Nähe!",
         "en": "There is no valid location for a carriage nearby!"
     },
     "toast_carriage_lost": {
+        "_context": "Pop-up that informs that a carriage has now become lost (meaning the carriage can't find a path to its next scheduled stop, related to 'ui_status_lost')",
         "de": "Eine Kutsche ist verloren!",
         "en": "A carriage is lost!"
     },
 
 
     "item_name_barley": {
+        "_context": "Name of the barley item",
         "de": "Gerste", 
         "en": "Barley"
     },
     "item_name_malt": {
+        "_context": "Name of the malt item, which is a 'cereal grain that has been made to germinate by soaking in water'",
         "de": "Malz", 
         "en": "Malt"
     },
     "item_name_beer": {
+        "_context": "Name of the beer item",
         "de": "Bier", 
         "en": "Beer",
         "bg": "Бира"
     },
     "item_name_wheat": {
+        "_context": "Name of the wheat item",
         "de": "Weizen", 
         "en": "Wheat"
     },
     "item_name_flour": {
+        "_context": "Name of the flour item",
         "de": "Mehl", 
         "en": "Flour"
     },
     "item_name_bread": {
+        "_context": "Name of the bread item",
         "de": "Brot", 
         "en": "Bread", 
         "bg": "Хляб"
     },
     "item_name_hematite": {
+        "_context": "Name of the hematite item (a type of iron ore)",
         "de": "Hematit",
         "en": "Hematite"
     },
     "item_name_coal": {
+        "_context": "Name of the coal item",
         "de": "Kohle",
         "en": "Coal",
         "bg": "Въглища"
     },
     "item_name_steel": {
+        "_context": "Name of the steel item (the iron + carbon alloy)",
         "de": "Stahl",
         "en": "Steel"
     },
     "item_name_armor": {
+        "_context": "Name of the armor item (armor for humans made of metal)",
         "de": "Rüstung",
         "en": "Armor"
     },
     "item_name_tools": {
+        "_context": "Name of the tools item (tools made of metal, like a pickaxe or axe)",
         "de": "Werkzeug",
         "en": "Tools"
     },
     "item_name_coins": {
+        "_context": "Name of the coins item (once produced they are added to the player's balance, so they never exist stored as an item somewhere)",
         "de": "Münzen",
         "en": "Coins",
         "bg": "Монети"
@@ -222,34 +286,43 @@
 
 
     "building_name_farmland": {
+        "_context": "Name of the 'building' that is a simple field used to grow crops",
         "de": "Ackerland",
         "en": "Farmland"
     },
     "building_name_mineshaft": {
+        "_context": "Name of the 'building' that is used to dig up goods from under the ground",
         "de": "Minenschacht",
-        "en": "Mineshaft"
+        "en": "Mineshaft",
+        "bg": "Рудник"
     },
     "building_name_windmill": {
+        "_context": "Name of the building that converts wind power into rotational energy to process goods",
         "de": "Windmühle",
         "en": "Windmill"
     },
     "building_name_factory": {
+        "_context": "Name of the industrial brick building with large chimneys that contains machines to process goods",
         "de": "Fabrik",
         "en": "Factory"
     },
     "building_name_house": {
+        "_context": "Name of the building that people live in",
         "de": "Haus",
         "en": "House"
     },
     "building_name_stable": {
+        "_context": "Name of the building that horses are kept in",
         "de": "Pferdestall",
         "en": "Stable"
     },
     "building_name_plaza": {
+        "_context": "Name of the 'building' that is a market square where merchants can sell goods",
         "de": "Marktplatz",
         "en": "Plaza"
     },
     "building_name_mansion": {
+        "_context": "Name of the building that is the villa / mansion the player lives in",
         "de": "Villa",
         "en": "Mansion"
     }
