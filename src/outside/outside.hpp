@@ -6,6 +6,7 @@
 #include <engine/window.hpp>
 #include <engine/model.hpp>
 #include <engine/ui.hpp>
+#include "../settings.hpp"
 #include "../ui_const.hpp"
 #include "../renderer.hpp"
 #include "../player.hpp"
@@ -41,8 +42,9 @@ namespace houseofatmos::outside {
         static inline const f64 min_camera_dist = 15.0;
         static inline const f64 max_camera_dist = 50.0;
 
-        std::string save_path;
+        Settings settings;
         engine::Localization::LoadArgs local;
+        std::string save_path;
 
         Renderer renderer;
         Terrain terrain = Terrain(
@@ -58,18 +60,13 @@ namespace houseofatmos::outside {
         ui::Element* coins_elem = nullptr;
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
         TerrainMap terrain_map = TerrainMap(
-            Outside::local, this->terrain, this->complexes, this->player, 
+            this->local, this->terrain, this->complexes, this->player, 
             this->carriages, this->ui
         );
         Toasts toasts = Toasts(this->local);
 
-        Outside(
-            engine::Localization::LoadArgs local
-        );
-        Outside(
-            engine::Localization::LoadArgs local, 
-            const engine::Arena& buffer
-        );
+        Outside(Settings settings);
+        Outside(Settings settings, const engine::Arena& buffer);
         void load_resources();
 
         void update(engine::Window& window) override;

@@ -16,8 +16,8 @@ namespace houseofatmos::outside {
 
         private:
         u64 t_width, t_height;
-        const ui::Localization::LoadArgs& local_ref;
-        const ui::Localization* local = nullptr;
+        const engine::Localization::LoadArgs& local_ref;
+        const engine::Localization* local = nullptr;
         const Terrain& terrain;
         const ComplexBank& complexes;
         const Player& player;
@@ -56,7 +56,7 @@ namespace houseofatmos::outside {
         f64 view_scale = 1.0;
 
         TerrainMap(
-            const ui::Localization::LoadArgs& local,
+            const engine::Localization::LoadArgs& local,
             const Terrain& terrain, const ComplexBank& complexes,
             const Player& player, CarriageManager& carriages, ui::Manager& ui
         ): local_ref(local), terrain(terrain), complexes(complexes), 

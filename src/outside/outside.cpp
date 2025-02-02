@@ -1,6 +1,6 @@
 
 #include "outside.hpp"
-#include "../pause_menu.hpp"
+#include "../pause_menu/pause_menu.hpp"
 
 #include "terrainmap.hpp"
 
@@ -329,8 +329,9 @@ namespace houseofatmos::outside {
         balance.coins = 20000;
     }
 
-    Outside::Outside(engine::Localization::LoadArgs local) {
-        this->local = local;
+    Outside::Outside(Settings settings) {
+        this->settings = settings;
+        this->local = settings.localization();
         this->load_resources();
         this->carriages = CarriageManager(
             this->terrain, Outside::draw_distance_un
@@ -382,9 +383,8 @@ namespace houseofatmos::outside {
         if(window.was_pressed(engine::Key::Escape)) {
             this->terrain_map.hide();
             window.set_scene(std::make_shared<PauseMenu>(
-                window.scene(), this->renderer.output(), 
-                this->save_path, Outside::local,
-                [this]() { return this->serialize(); }
+                this->settings, window.scene(), this->renderer.output(), 
+                this->save_path, [this]() { return this->serialize(); }
             ));
         }
         this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
@@ -429,9 +429,10 @@ namespace houseofatmos::outside {
 
 
     Outside::Outside(
-        engine::Localization::LoadArgs local, const engine::Arena& buffer
+        Settings settings, const engine::Arena& buffer
     ) {
-        this->local = local;
+        this->settings = settings;
+        this->local = settings.localization();
         this->load_resources();
         const auto& outside = buffer.value_at<Outside::Serialized>(0);
         this->save_path = std::string(std::string_view(

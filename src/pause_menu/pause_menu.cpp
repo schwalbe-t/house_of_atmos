@@ -3,21 +3,24 @@
 #include "pause_menu.hpp"
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
 
 namespace houseofatmos {
 
     PauseMenu::PauseMenu(
+        Settings settings,
         std::shared_ptr<Scene> previous, const engine::Texture& last_frame,
-        std::string& save_path, engine::Localization::LoadArgs locale,
+        std::string& save_path,
         std::function<engine::Arena ()>&& serialize_impl
     ): last_frame(last_frame), save_path(save_path) {
+        this->settings = settings;
+        this->local_ref = settings.localization();
+        this->previous = std::move(previous);
+        this->serialize = std::move(serialize_impl);
         ui::Manager::load_shaders(*this);
         ui_const::load_all_textures(*this);
-        this->load(engine::Localization::Loader(locale));
+        this->load(engine::Localization::Loader(this->local_ref));
         this->load(engine::Shader::Loader(PauseMenu::blur_shader));
-        this->previous = std::move(previous);
-        this->local_ref = locale;
-        this->serialize = std::move(serialize_impl);
     }
 
     static void write_to_file(
@@ -41,6 +44,9 @@ namespace houseofatmos {
         engine::Arena serialized = this->serialize();
         write_to_file(serialized, this->save_path);
         this->toasts.add_toast("toast_saved_game", { this->save_path });
+        std::erase(this->settings.last_games, this->save_path);
+        this->settings.last_games.push_back(this->save_path);
+        this->settings.save_to(Settings::default_path);
     }
 
     static ui::Element make_button(
