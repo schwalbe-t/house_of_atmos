@@ -292,7 +292,7 @@ namespace houseofatmos::outside {
     static const u64 max_settlement_count = 30;
     static const u64 max_settlement_attempts = 2000;
 
-    static void generate_map(
+    void generate_map(
         u32 seed, Terrain& terrain, Player& player, Balance& balance, 
         ComplexBank& complexes
     ) {
@@ -329,9 +329,9 @@ namespace houseofatmos::outside {
         balance.coins = 20000;
     }
 
-    Outside::Outside(Settings settings) {
-        this->settings = settings;
-        this->local = settings.localization();
+    Outside::Outside(Settings&& settings) {
+        this->settings = std::move(settings);
+        this->local = this->settings.localization();
         this->load_resources();
         this->carriages = CarriageManager(
             this->terrain, Outside::draw_distance_un
@@ -429,10 +429,10 @@ namespace houseofatmos::outside {
 
 
     Outside::Outside(
-        Settings settings, const engine::Arena& buffer
+        Settings&& settings, const engine::Arena& buffer
     ) {
-        this->settings = settings;
-        this->local = settings.localization();
+        this->settings = std::move(settings);
+        this->local = this->settings.localization();
         this->load_resources();
         const auto& outside = buffer.value_at<Outside::Serialized>(0);
         this->save_path = std::string(std::string_view(

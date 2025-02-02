@@ -12,6 +12,9 @@ namespace houseofatmos::engine {
         json parsed = json::parse(raw);
         Localization result;
         result.locale = args.locale;
+        if(args.locale == Localization::no_locale) {
+            return result;
+        }
         for(auto& [name, values]: parsed.items()) {
             if(name.size() == 0) { continue; }
             auto value = values.find(args.locale);

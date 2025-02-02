@@ -22,7 +22,7 @@ namespace houseofatmos {
         };
 
 
-        Settings settings;
+        Settings& settings;
         engine::Localization::LoadArgs local_ref;
         std::shared_ptr<Scene> previous;
         const engine::Texture& last_frame;
@@ -34,7 +34,7 @@ namespace houseofatmos {
         Toasts toasts = Toasts(this->local_ref);
 
         PauseMenu(
-            Settings settings,
+            Settings& settings,
             std::shared_ptr<Scene> previous, const engine::Texture& last_frame,
             std::string& save_path, std::function<engine::Arena ()>&& serialize
         );

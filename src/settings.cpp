@@ -8,13 +8,13 @@ namespace houseofatmos {
 
     using json = nlohmann::json;
 
-    Settings Settings::from_resource(const LoadArgs& args) {
-        if(!std::filesystem::exists(args.path)) { return Settings(); }
-        std::string text = engine::GenericResource::read_string(args.path);
+    Settings Settings::read_from_path(const std::string& path) {
+        if(!std::filesystem::exists(path)) { return Settings(); }
+        std::string text = engine::GenericResource::read_string(path);
         json json = json::parse(text);
         Settings settings;
         settings.locale = json.at("locale");
-        for(const auto& path: json.at("last_games").array()) {
+        for(const auto& path: json.at("last_games")) {
             settings.last_games.push_back(path);
         }
         return settings;
@@ -31,6 +31,11 @@ namespace houseofatmos {
         auto fout = std::ofstream(path);
         fout << serialized.dump(4);
         fout.close();
+    }
+
+    void Settings::add_recent_game(std::string&& path) {
+        std::erase(this->last_games, path);
+        this->last_games.insert(this->last_games.begin(), std::move(path));
     }
 
 }

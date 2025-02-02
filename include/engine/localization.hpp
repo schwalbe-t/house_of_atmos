@@ -8,6 +8,9 @@
 namespace houseofatmos::engine {
 
     struct Localization {
+        
+        static inline const std::string no_locale = "";
+
         struct LoadArgs {
             std::string path;
             std::string locale;

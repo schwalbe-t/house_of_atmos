@@ -200,8 +200,8 @@ namespace houseofatmos::engine {
     }
 
 
-    void Window::set_scene(std::shared_ptr<Scene> scene) {
-        this->next_scene = scene;
+    void Window::set_scene(std::shared_ptr<Scene>&& scene) {
+        this->next_scene = std::move(scene);
     }
 
     std::shared_ptr<Scene> Window::scene() {

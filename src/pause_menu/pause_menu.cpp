@@ -1,6 +1,7 @@
 
 #include <samhocevar/portable-file-dialogs.h>
 #include "pause_menu.hpp"
+#include "../main_menu/main_menu.hpp"
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
@@ -8,12 +9,11 @@
 namespace houseofatmos {
 
     PauseMenu::PauseMenu(
-        Settings settings,
+        Settings& settings,
         std::shared_ptr<Scene> previous, const engine::Texture& last_frame,
         std::string& save_path,
         std::function<engine::Arena ()>&& serialize_impl
-    ): last_frame(last_frame), save_path(save_path) {
-        this->settings = settings;
+    ): settings(settings), last_frame(last_frame), save_path(save_path) {
         this->local_ref = settings.localization();
         this->previous = std::move(previous);
         this->serialize = std::move(serialize_impl);
@@ -44,8 +44,7 @@ namespace houseofatmos {
         engine::Arena serialized = this->serialize();
         write_to_file(serialized, this->save_path);
         this->toasts.add_toast("toast_saved_game", { this->save_path });
-        std::erase(this->settings.last_games, this->save_path);
-        this->settings.last_games.push_back(this->save_path);
+        this->settings.add_recent_game(std::string(this->save_path));
         this->settings.save_to(Settings::default_path);
     }
 
@@ -84,7 +83,7 @@ namespace houseofatmos {
         buttons.children.push_back(make_button(
             local.text("ui_resume_game"), 
             [window = &window, this]() {
-                window->set_scene(this->previous); 
+                window->set_scene(std::shared_ptr(this->previous)); 
             }
         ));
         if(this->save_path.size() > 0) {
@@ -114,8 +113,10 @@ namespace houseofatmos {
         ));
         buttons.children.push_back(make_button(
             local.text("ui_to_main_menu"),
-            []() {
-                engine::debug("not yet implemented! :)");
+            [window = &window, this]() {
+                window->set_scene(std::make_shared<MainMenu>(
+                    Settings(this->settings)
+                ));
             }
         ));
         this->ui.with_element(ui::Element()
@@ -135,7 +136,7 @@ namespace houseofatmos {
             this->refresh_ui_elements(window);
         }
         if(window.was_pressed(engine::Key::Escape)) {
-            window.set_scene(this->previous);
+            window.set_scene(std::shared_ptr(this->previous));
         }
         this->toasts.update(*this);
         this->ui.update(window);
@@ -150,7 +151,8 @@ namespace houseofatmos {
                 ->get<engine::Shader>(PauseMenu::blur_shader);
             blur.set_uniform("u_texture_w", (i64) this->background->width());
             blur.set_uniform("u_texture_h", (i64) this->background->height());
-            blur.set_uniform("u_blur_rad", (i64) (window.height() / 50.0));
+            i64 blur_rad = (i64) ((window.width() + window.height()) / 200.0);
+            blur.set_uniform("u_blur_rad", blur_rad);
             this->last_frame.blit(*this->background, blur);
         }
         window.show_texture(*this->background);

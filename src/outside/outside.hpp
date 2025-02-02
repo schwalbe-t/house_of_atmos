@@ -65,8 +65,8 @@ namespace houseofatmos::outside {
         );
         Toasts toasts = Toasts(this->local);
 
-        Outside(Settings settings);
-        Outside(Settings settings, const engine::Arena& buffer);
+        Outside(Settings&& settings);
+        Outside(Settings&& settings, const engine::Arena& buffer);
         void load_resources();
 
         void update(engine::Window& window) override;

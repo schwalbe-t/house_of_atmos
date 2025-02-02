@@ -97,7 +97,7 @@ namespace houseofatmos::engine {
         }
         const Vec<2>& scrolled() const { return this->scroll_dist; }
 
-        void set_scene(std::shared_ptr<Scene> scene);
+        void set_scene(std::shared_ptr<Scene>&& scene);
         std::shared_ptr<Scene> scene(); 
         void start();
 

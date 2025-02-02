@@ -146,13 +146,68 @@
     },
     "ui_save_file": {
         "_context": "Name of the file format ('.bin') used to store a save file (storing game progress)",
-        "de": "Spielstand-Datei",
+        "de": "Spielstands-Datei",
         "en": "Save file"
     },
     "ui_to_main_menu": {
         "_context": "Text of the button that returns the user to the main menu",
         "de": "Zurück zum Hauptmenü",
         "en": "Return to main menu"
+    },
+    "ui_new_game": {
+        "_context": "Text of the button used to start a new game",
+        "de": "Neues Spiel",
+        "en": "New game",
+        "bg": "Нова игра"
+    },
+    "ui_load_previous_game": {
+        "_context": "Text of a button used to load a previously loaded game",
+        "_placeholders": "The path (or part of it) of the previously loaded game",
+        "de": "Lade '{}'",
+        "en": "Load '{}'",
+        "bg": "Зареди '{}'"
+    },
+    "ui_load_game": {
+        "_context": "Text of the button used to load a specific file",
+        "de": "Lade...",
+        "en": "Load...",
+        "bg": "Зареди..."
+    },
+    "ui_choose_load_location": {
+        "_context": "Title of the window that prompts the user for a load location",
+        "de": "Spielstandsdatei wählen",
+        "en": "Choose save location",
+        "bg": "Избeрете файлa за зареждане"
+    },
+    "ui_credits": {
+        "_context": "Text of the button used to show (and title of) the credits screen",
+        "de": "Credits",
+        "en": "Credits",
+        "bg": "Надписи"
+    },
+    "ui_close_game": {
+        "_context": "Text of the button used to close the game",
+        "de": "Spiel schließen",
+        "en": "Close game",
+        "bg": "Затвори играта"
+    },
+    "ui_loading": {
+        "_context": "Shown when the game is loading for a longer amount of time",
+        "de": "Lädt...",
+        "en": "Loading...",
+        "bg": "Зареждане..."
+    },
+    "ui_copyright_notice": {
+        "_context": "The copyright notice text as displayed in the main menu",
+        "de": "(C) schwalbe_t 2024",
+        "en": "(C) schwalbe_t 2024",
+        "bg": "(C) schwalbe_t 2024"
+    },
+    "ui_credit_text": {
+        "_context": "The full credit text as displayed on the credits screen (this text is an exception in that it allows new line characters)",
+        "en": "Programming, 3D models and textures:\nschwalbe_t\n\nTranslation:\nschwalbe_t (English and German)\nGalahad and Mitko0012 (Bulgarian)\n\nTesting:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nLicensed under GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html",
+        "de": "Programmierung, 3D-Modelle und Texturen:\nschwalbe_t\n\nÜbersetzung:\nschwalbe_t (Englisch und Deutsch)\nGalahad und Mitko0012 (Bulgarisch)\n\nTesting:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nLizensiert unter GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html",
+        "bg": "Програмиране, 3D модели и текстури:\nschwalbe_t\n\nПревод:\nschwalbe_t (английски и немски)\nGalahad и Mitko0012 (български)\n\nТестване:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nЛицензиран под GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html"
     },
 
     "toast_saved_game": {

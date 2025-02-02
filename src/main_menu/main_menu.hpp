@@ -1,0 +1,62 @@
+
+#pragma once
+
+#include <engine/scene.hpp>
+#include <engine/window.hpp>
+#include <engine/ui.hpp>
+#include <engine/localization.hpp>
+#include "../settings.hpp"
+#include "../ui_const.hpp"
+#include "../renderer.hpp"
+#include "../outside/terrain.hpp"
+
+namespace houseofatmos {
+
+    namespace ui = houseofatmos::engine::ui;
+
+
+    struct MainMenu: engine::Scene {
+
+        static const inline ui::Background title_sprite
+            = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 240), Vec<2>(76, 26));
+
+        static inline const engine::Shader::LoadArgs blur_shader = {
+            "res/shaders/blur_vert.glsl", "res/shaders/blur_frag.glsl"
+        };
+
+
+        Settings settings;
+        engine::Localization::LoadArgs local_ref;
+
+        static inline const u64 units_per_tile = 5;
+        static inline const u64 tiles_per_chunk = 6;
+        static inline const i64 draw_distance_ch = 1;
+
+        Renderer renderer;
+        engine::Texture background = engine::Texture(16, 16);
+        outside::Terrain terrain = outside::Terrain(
+            32, 32, draw_distance_ch, units_per_tile, tiles_per_chunk
+        );
+        ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
+
+        std::function<void ()> before_next_frame = []() {};
+
+        MainMenu(Settings&& settings);
+        void load_resources();
+
+        void show_title_screen(
+            const engine::Localization& local, engine::Window& window
+        );
+        void show_loading_screen(const engine::Localization& local);
+        void show_language_selection(engine::Window& window);
+        void show_credits(
+            const engine::Localization& local, engine::Window& window
+        );
+
+        void update(engine::Window& window) override;
+        void render(engine::Window& window) override;
+        void render_background(engine::Window& window);
+
+    };
+
+}

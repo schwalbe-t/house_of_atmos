@@ -197,6 +197,9 @@ namespace houseofatmos::ui_icon {
     static inline const ui::Background map_marker_carriage_lost
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(40, 168), Vec<2>(5, 6));
 
+    static inline const ui::Background earth
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(96, 240), Vec<2>(16, 16));
+
 
     inline void load_textures(engine::Scene& scene) {
         scene.load(engine::Texture::Loader(terraforming.texture)); // 'res/ui.png'

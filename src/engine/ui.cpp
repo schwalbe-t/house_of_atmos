@@ -459,7 +459,7 @@ namespace houseofatmos::engine::ui {
     ) {
         (void) parent;
         return Vec<2>(
-            window.width() - self.position.x() * unit,
+            window.width() - (self.position.x() * unit) - self.final_size().x(),
             self.position.y() * unit
         );
     }
@@ -471,7 +471,7 @@ namespace houseofatmos::engine::ui {
         (void) parent;
         return Vec<2>(
             self.position.x() * unit,
-            window.height() - self.position.y() * unit
+            window.height() - (self.position.y() * unit) - self.final_size().y()
         );
     }
 
