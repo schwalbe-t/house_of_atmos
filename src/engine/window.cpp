@@ -223,11 +223,9 @@ namespace houseofatmos::engine {
                 this->current_scene->render(*this);
             }
             if(this->next_scene) {
-                if(this->current_scene) {
-                    this->current_scene->internal_forget_all();
-                }
                 this->current_scene = this->next_scene;
                 this->current_scene->internal_load_all();
+                Scene::clean_cached_resources();
                 this->next_scene = nullptr;
             }
             glfwSwapBuffers((GLFWwindow*) this->ptr);

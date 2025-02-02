@@ -18,10 +18,13 @@ namespace houseofatmos::engine {
         if(compile_status != GL_TRUE) {
             GLint message_len;
             glGetShaderiv(id, GL_INFO_LOG_LENGTH, &message_len);
-            char* message_cstr = new char[message_len];
-            glGetShaderInfoLog(id, message_len, &message_len, message_cstr);
-            auto message = std::string(message_cstr);
-            delete[] message_cstr;
+            if(message_len == 0) {
+                glDeleteShader(id);
+                error("Unable to compile shader (no log available)");
+            }
+            auto message = std::string(message_len, '\0');
+            glGetShaderInfoLog(id, message_len, &message_len, message.data());
+            message.resize(message_len);
             glDeleteShader(id);
             error("Unable to compile shader:\n" + message);
         }
@@ -41,10 +44,15 @@ namespace houseofatmos::engine {
         if(link_status != GL_TRUE) {
             GLint message_len;
             glGetProgramiv(id, GL_INFO_LOG_LENGTH, &message_len);
-            char* message_cstr = new char[message_len];
-            glGetProgramInfoLog(id, message_len, &message_len, message_cstr);
-            auto message = std::string(message_cstr);
-            delete[] message_cstr;
+            if(message_len == 0) {
+                glDeleteShader(vert_id);
+                glDeleteShader(frag_id);
+                glDeleteProgram(id);
+                error("Unable to link shaders (no log available)");
+            }
+            auto message = std::string(message_len, '\0');
+            glGetProgramInfoLog(id, message_len, &message_len, message.data());
+            message.resize(message_len);
             glDeleteShader(vert_id);
             glDeleteShader(frag_id);
             glDeleteProgram(id);

@@ -7,6 +7,7 @@
 #include <optional>
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace houseofatmos::engine {
 
@@ -21,7 +22,6 @@ namespace houseofatmos::engine {
         virtual ~GenericResource() = default;
 
         virtual void load() = 0;
-        virtual void forget() = 0;
         bool loaded() const { return this->has_value; }
     
         static std::vector<char> read_bytes(const std::string& path);
@@ -53,10 +53,6 @@ namespace houseofatmos::engine {
             this->has_value = true;
             this->loaded_value = T::from_resource(this->args);
         }
-        void forget() override {
-            this->has_value = false;
-            this->loaded_value = std::nullopt;
-        }
         const A& arg() const { return this->args; }
         T& value() { return this->loaded_value.value(); }
     };
@@ -66,7 +62,7 @@ namespace houseofatmos::engine {
     struct Scene {
 
         private:
-        std::unordered_map<std::string, GenericResource*> resources;
+        std::unordered_map<std::string, std::shared_ptr<GenericResource>> resources;
 
 
         public:
@@ -75,35 +71,52 @@ namespace houseofatmos::engine {
         Scene(Scene&& other) = delete;
         Scene& operator=(const Scene& other) = delete;
         Scene& operator=(Scene&& other) = delete;
-        virtual ~Scene();
+        virtual ~Scene() = default;
+
+        static std::shared_ptr<GenericResource> get_cached_resource(
+            const std::string& iden
+        );
+
+        static void put_cached_resource(
+            std::string iden, std::shared_ptr<GenericResource>& resource
+        );
+
+        static void clean_cached_resources();
 
         template<typename T, typename A>
-        void load(Resource<T, A>&& resource) {
-            Resource<T, A>* hr = new Resource<T, A>(std::move(resource));
-            this->resources[hr->arg().identifier()] = hr;
+        void load(Resource<T, A>&& res) {
+            std::string iden = res.arg().identifier();
+            std::shared_ptr<GenericResource> generic_res 
+                = Scene::get_cached_resource(iden);
+            if(generic_res == nullptr) {
+                generic_res = std::make_shared<Resource<T, A>>(std::move(res));
+                Scene::put_cached_resource(iden, generic_res);
+            }
+            this->resources[iden] = std::move(generic_res);
         }
+
         template<typename T, typename A>
         T& get(const A& arg) {
-            std::string identifier = arg.identifier();
-            if(!this->resources.contains(identifier)) {
+            std::string iden = arg.identifier();
+            auto res_ref = this->resources.find(iden);
+            if(res_ref == this->resources.end()) {
                 error("Resource "
                     + arg.pretty_identifier()
                     + " has not been registered, but access was attempted"
                 );
             }
-            GenericResource* dr = this->resources[identifier];
-            auto r = dynamic_cast<Resource<T, A>*>(dr);
-            if(!r->loaded()) {
+            GenericResource* dr = res_ref->second.get();
+            auto res = dynamic_cast<Resource<T, A>*>(dr);
+            if(!res->loaded()) {
                 error("Resource "
                     + arg.pretty_identifier()
                     + " has not yet been loaded, but access was attempted"
                 );
             }
-            return r->value();
+            return res->value();
         }
 
         void internal_load_all();
-        void internal_forget_all();
 
         virtual void update(Window& window) = 0;
         virtual void render(Window& window) = 0;
