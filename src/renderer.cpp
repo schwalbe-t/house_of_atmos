@@ -33,7 +33,7 @@ namespace houseofatmos {
         return Mat<4>::perspective(
             this->camera.fov, 
             this->target.width(), this->target.height(), 
-            this->camera.near, this->camera.far 
+            this->camera.near_plane, this->camera.far_plane
         );
     }
 

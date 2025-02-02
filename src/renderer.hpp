@@ -15,8 +15,8 @@ namespace houseofatmos {
         Vec<3> look_at = { 0, 0, 0 };
         Vec<3> up = { 0, 1, 0 };
         f64 fov = pi / 6; // 30 degrees
-        f64 near = 0.1;
-        f64 far = 1000;
+        f64 near_plane = 0.1;
+        f64 far_plane = 1000;
     };
 
 
