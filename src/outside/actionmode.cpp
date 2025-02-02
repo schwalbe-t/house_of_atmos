@@ -474,11 +474,11 @@ namespace houseofatmos::outside {
                     if(group_ptr->second.size() == 0) {
                         *s_type = group_ptr->first;
                         s_conv->clear();
-                        *dest = create_building_selector(
-                            ui, dest, selected, s_type, s_conv, local
-                        );
                         *selected = TerrainMap::display_building_info(
                             *s_type, *s_conv, *local
+                        );
+                        *dest = create_building_selector(
+                            ui, dest, selected, s_type, s_conv, local
                         );
                         return;
                     }

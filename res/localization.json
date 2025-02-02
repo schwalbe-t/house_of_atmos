@@ -329,7 +329,7 @@
         "_context": "Name of the beer item",
         "de": "Bier", 
         "en": "Beer",
-        "bg": "Бира"
+        "bg": "Бири"
     },
     "item_name_wheat": {
         "_context": "Name of the wheat item",
@@ -347,7 +347,7 @@
         "_context": "Name of the bread item",
         "de": "Brot", 
         "en": "Bread", 
-        "bg": "Хляб"
+        "bg": "Хляба"
     },
     "item_name_hematite": {
         "_context": "Name of the hematite item (a type of iron ore)",
@@ -377,7 +377,7 @@
         "_context": "Name of the tools item (tools made of metal, like a pickaxe or axe)",
         "de": "Werkzeug",
         "en": "Tools",
-        "bg": "Инструмент(и)"
+        "bg": "Инструменти"
     },
     "item_name_coins": {
         "_context": "Name of the coins item (once produced they are added to the player's balance, so they never exist stored as an item somewhere)",
