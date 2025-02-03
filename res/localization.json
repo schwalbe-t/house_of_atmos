@@ -68,6 +68,12 @@
         "en": "Current position",
         "bg": "Текуща позиция"
     },
+    "ui_personal_horse": {
+        "_context": "The current position of the player's personal horse, used in the map legend for its marker",
+        "de": "Persönliches Pferd",
+        "en": "Personal horse",
+        "bg": "Личен кон"
+    },
     "ui_carriage": {
         "_context": "Used as the title of the carriage info UI and the current position of a carriage in the map legend for the carriage markers",
         "de": "Kutsche",
@@ -132,7 +138,7 @@
     },
     "ui_click_target_complex": {
         "_context": "Prompts the user to click the building complex the carriage should stop at on the map",
-        "de": "Klicke den Zielkomplex an.",
+        "de": "Klicken Sie den Zielkomplex an.",
         "en": "Click the target complex.",
         "bg": "Цъкнете целевия комплекс"
     },
@@ -310,6 +316,12 @@
         "de": "Eine Kutsche ist verloren!",
         "en": "A carriage is lost!",
         "bg": "Каруца е изгубена!"
+    },
+    "toast_personal_horse_travelling": {
+        "_context": "Shown when the personal horse is instructed to come to the player usign the [H] button.",
+        "de": "Ihr Pferd ist auf dem Weg zu ihnen.",
+        "en": "Your horse is on its way to you.",
+        "bg": "Конят ви отива към вас."
     },
 
 

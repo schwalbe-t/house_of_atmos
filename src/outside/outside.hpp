@@ -6,6 +6,7 @@
 #include <engine/window.hpp>
 #include <engine/model.hpp>
 #include <engine/ui.hpp>
+#include "../interactable.hpp"
 #include "../settings.hpp"
 #include "../ui_const.hpp"
 #include "../renderer.hpp"
@@ -14,6 +15,7 @@
 #include "actionmode.hpp"
 #include "carriage.hpp"
 #include "terrainmap.hpp"
+#include "personal_horse.hpp"
 
 namespace houseofatmos::outside {
 
@@ -30,6 +32,7 @@ namespace houseofatmos::outside {
             Player::Serialized player;
             Balance balance;
             CarriageManager::Serialized carriages;
+            PersonalHorse::Serialized personal_horse;
         };
 
 
@@ -54,6 +57,10 @@ namespace houseofatmos::outside {
         Player player;
         Balance balance;
         CarriageManager carriages;
+        Interactables interactables = Interactables();
+        PersonalHorse personal_horse = PersonalHorse(
+            Vec<3>(), &this->player, &this->interactables
+        );
 
         f64 camera_distance = min_camera_dist;
         std::unique_ptr<ActionMode> action_mode;
@@ -61,7 +68,7 @@ namespace houseofatmos::outside {
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
         TerrainMap terrain_map = TerrainMap(
             this->local, this->terrain, this->complexes, this->player, 
-            this->carriages, this->ui
+            this->carriages, this->personal_horse, this->ui
         );
         Toasts toasts = Toasts(this->local);
 

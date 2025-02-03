@@ -9,7 +9,10 @@ namespace houseofatmos::outside {
 
 
     f64 Terrain::elevation_at(const Vec<3>& pos) const {
-        if(pos.x() < 0 || pos.z() < 0) { return 0.0; }
+        bool out_of_bounds = pos.x() < 0 || pos.z() < 0
+            || pos.x() >= this->width_in_tiles() * this->units_per_tile()
+            || pos.z() >= this->height_in_tiles() * this->units_per_tile();
+        if(out_of_bounds) { return -INFINITY; }
         u64 left = (u64) (pos.x() / this->tile_size);
         u64 top = (u64) (pos.z() / this->tile_size);
         u64 right = left + 1;
@@ -158,12 +161,12 @@ namespace houseofatmos::outside {
         f64 max_height = std::max(pos_a.y(), std::max(pos_b.y(), pos_c.y()));
         f64 height_diff = max_height - min_height;
         Vec<2> uv_offset = is_path
-            ? Vec<2>(0.5, 0.0)
+            ? Vec<2>(0.505, 0.000)
             : min_height < sand_max_height
-            ? Vec<2>(0.0, 0.0)
+            ? Vec<2>(0.000, 0.000)
             : height_diff > stone_min_height_diff
-            ? Vec<2>(0.5, 0.5)
-            : Vec<2>(0.0, 0.5);
+            ? Vec<2>(0.505, 0.505)
+            : Vec<2>(0.000, 0.505);
         Vec<3> normal = compute_normal_ccw(pos_a, pos_b, pos_c);
         dest.add_element(
             put_terrain_vertex(pos_a, uv_a + uv_offset, normal, dest),
@@ -208,10 +211,10 @@ namespace houseofatmos::outside {
                 f64 tl_br_height_diff = fabs(pos_tl.y() - pos_br.y());
                 f64 tr_bl_height_diff = fabs(pos_tr.y() - pos_bl.y());
                 bool is_path = chunk_data.path_at(left, top);
-                Vec<2> uv_bl = { 0.0, 0.0 };
-                Vec<2> uv_br = { 0.5, 0.0 };
-                Vec<2> uv_tl = { 0.0, 0.5 };
-                Vec<2> uv_tr = { 0.5, 0.5 };
+                Vec<2> uv_bl = { 0.00, 0.00 };
+                Vec<2> uv_br = { 0.49, 0.00 };
+                Vec<2> uv_tl = { 0.00, 0.49 };
+                Vec<2> uv_tr = { 0.49, 0.49 };
                 if(tr_bl_height_diff > tl_br_height_diff) {
                     // tl---tr
                     //  | \ |
@@ -427,7 +430,16 @@ namespace houseofatmos::outside {
 
     static const i64 collision_test_dist = 1;
 
-    bool Terrain::valid_player_position(const AbsCollider& player_collider) const {
+    bool Terrain::valid_player_position(
+        const AbsCollider& player_collider, bool water_is_obstacle
+    ) const {
+        if(water_is_obstacle) {
+            f64 min_elev = std::min(
+                this->elevation_at(player_collider.start),
+                this->elevation_at(player_collider.end)
+            );
+            if(min_elev + 0.5 <= water_height) { return false; }
+        }
         u64 start_x = (u64) std::max(this->view_chunk_x - collision_test_dist, (i64) 0);
         u64 end_x = std::min((u64) (this->view_chunk_x + collision_test_dist), this->width_chunks - 1);
         u64 start_z = (u64) std::max(this->view_chunk_z - collision_test_dist, (i64) 0);

@@ -65,16 +65,20 @@ namespace houseofatmos {
         void set_anim_idle();
         void set_anim_walk();
         void set_anim_swim();
+        void set_anim_ride_idle();
+        void set_anim_ride();
 
         public:
         Vec<3> position;
         Vec<3> next_step;
         bool in_water;
+        bool is_riding;
 
         Player() {
             this->position = { 0, 0, 0 };
             this->angle = 0;
             this->in_water = false;
+            this->is_riding = false;
             this->set_anim_idle();
         }
 
@@ -83,12 +87,15 @@ namespace houseofatmos {
             this->position = serialized.position;
             this->angle = serialized.angle;
             this->in_water = false;
+            this->is_riding = false;
             this->set_anim_idle();
         }
 
         static void load_model(engine::Scene& scene) {
             scene.load(engine::Model::Loader(Player::player_model));
         }
+
+        f64 current_angle() const { return this->angle; }
 
         void update(engine::Window& window);
         Vec<3> next_x() {

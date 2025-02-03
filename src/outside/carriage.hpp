@@ -30,12 +30,28 @@ namespace houseofatmos::outside {
             // The 'true' in each texture loader is there to flip the loaded
             // texture vertically - this is needed since GLTF uses them flipped
             /* White */ {
-                (engine::Texture::LoadArgs) { "res/entities/horse.png", true }
+                (engine::Texture::LoadArgs) { "res/entities/horse_white.png", true }
+            },
+            /* WhiteSpotted */ {
+                (engine::Texture::LoadArgs) { "res/entities/horse_white_spotted.png", true }
+            },
+            /* Brown */ {
+                (engine::Texture::LoadArgs) { "res/entities/horse_brown.png", true }
+            },
+            /* BrownSpotted */ {
+                (engine::Texture::LoadArgs) { "res/entities/horse_brown_spotted.png", true }
+            },
+            /* BlackSpotted */ {
+                (engine::Texture::LoadArgs) { "res/entities/horse_black_spotted.png", true }
             }
         };
 
         enum struct HorseType {
-            White = 0
+            White = 0,
+            WhiteSpotted = 1,
+            Brown = 2,
+            BrownSpotted = 3,
+            BlackSpotted = 4
         };
 
 

@@ -302,6 +302,10 @@ namespace houseofatmos::outside {
                 this->local->text("ui_current_position")
             ))
             .with_child(create_single_marker_info(
+                &ui_icon::map_marker_personal_horse,
+                this->local->text("ui_personal_horse")
+            ))
+            .with_child(create_single_marker_info(
                 &ui_icon::map_marker_carriage, 
                 this->local->text("ui_carriage")
             ))
@@ -353,7 +357,7 @@ namespace houseofatmos::outside {
             this->add_icon_marker(
                 carriage->position.swizzle<2>("xz"),
                 carriage->is_lost()
-                    ? &ui_icon::map_marker_carriage_lost
+                    ? &ui_icon::map_marker_agent_lost
                     : is_selected
                         ? &ui_icon::map_marker_selected
                         : &ui_icon::map_marker_carriage,
@@ -400,7 +404,13 @@ namespace houseofatmos::outside {
             }
         }
         this->add_icon_marker(
-            this->player.position.swizzle<2>("xz"), &ui_icon::map_marker_player,
+            this->personal_horse.position().swizzle<2>("xz"), 
+            &ui_icon::map_marker_personal_horse,
+            [](){}, true
+        );
+        this->add_icon_marker(
+            this->player.position.swizzle<2>("xz"), 
+            &ui_icon::map_marker_player,
             [](){}, true
         );
     }

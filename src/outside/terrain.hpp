@@ -202,7 +202,9 @@ namespace houseofatmos::outside {
             i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
             const Building::TypeInfo& building_type
         ) const;
-        bool valid_player_position(const AbsCollider& player_collider) const;
+        bool valid_player_position(
+            const AbsCollider& player_collider, bool water_is_obstacle
+        ) const;
         void remove_foliage_at(i64 tile_x, i64 tile_z);
         std::pair<u64, u64> find_selected_terrain_tile(
             Vec<2> cursor_pos_ndc, const Renderer& renderer, Vec<3> tile_offset

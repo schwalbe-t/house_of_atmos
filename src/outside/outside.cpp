@@ -14,6 +14,7 @@ namespace houseofatmos::outside {
         Player::load_model(*this);
         ActionMode::load_resources(*this);
         Carriage::load_resources(*this);
+        PersonalHorse::load_resources(*this);
         ui::Manager::load_shaders(*this);
         ui_background::load_textures(*this);
         ui_font::load_textures(*this);
@@ -102,6 +103,7 @@ namespace houseofatmos::outside {
                 .as_movable()
             );
         }
+        scene.ui.root.children.push_back(scene.interactables.create_container());
         scene.ui.root.children.push_back(std::move(mode_list));
         scene.terrain_map.create_container();
         scene.ui.root.children.push_back(ui::Element()
@@ -294,7 +296,7 @@ namespace houseofatmos::outside {
 
     void generate_map(
         u32 seed, Terrain& terrain, Player& player, Balance& balance, 
-        ComplexBank& complexes
+        ComplexBank& complexes, PersonalHorse& personal_horse
     ) {
         terrain.generate_elevation((u32) seed);
         terrain.generate_foliage((u32) seed);
@@ -322,11 +324,15 @@ namespace houseofatmos::outside {
             // just generate a new one
             // (this is recursive, but should be fine without a base case
             //  since this should happen very very rarely)
-            // (seed incremented by one to make an new map, still deterministic)
-            generate_map(seed + 1, terrain, player, balance, complexes);
+            // (seed incremented by one to make a new map, still deterministic)
+            generate_map(
+                seed + 1, terrain, player, balance, complexes, personal_horse
+            );
         }
         player.position = created_settlements.at(0) * terrain.units_per_tile();
         balance.coins = 20000;
+        //personal_horse.set_free(player.position + Vec<3>(-5.0, 0.0, 5.0));
+        personal_horse.set_free(Vec<3>());
     }
 
     Outside::Outside(Settings&& settings) {
@@ -338,7 +344,8 @@ namespace houseofatmos::outside {
         );
         generate_map(
             random_init(), 
-            this->terrain, this->player, this->balance, this->complexes
+            this->terrain, this->player, this->balance, this->complexes,
+            this->personal_horse
         );
         set_action_mode(*this, default_mode_const, UINT64_MAX);
     }
@@ -349,13 +356,17 @@ namespace houseofatmos::outside {
         engine::Window& window, Terrain& terrain, Player& player
     ) {
         player.update(window);
-        bool in_coll = !terrain.valid_player_position(Player::collider.at(player.position));
-        if(in_coll || terrain.valid_player_position(Player::collider.at(player.next_x()))) {
-            player.proceed_x();
-        }
-        if(in_coll || terrain.valid_player_position(Player::collider.at(player.next_z()))) {
-            player.proceed_z();
-        }
+        bool in_coll = !terrain.valid_player_position(
+            Player::collider.at(player.position), player.is_riding
+        );
+        bool next_x_coll = terrain.valid_player_position(
+            Player::collider.at(player.next_x()), player.is_riding
+        );
+        if(in_coll || next_x_coll) { player.proceed_x(); }
+        bool next_z_coll = terrain.valid_player_position(
+            Player::collider.at(player.next_z()), player.is_riding
+        );
+        if(in_coll || next_z_coll) { player.proceed_z(); }
         player.position.y() = std::max(
             terrain.elevation_at(player.position),
             -1.7
@@ -388,15 +399,22 @@ namespace houseofatmos::outside {
             ));
         }
         this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
+        this->interactables.observe_from(
+            this->player.position, this->renderer, window
+        );
         this->toasts.update(*this);
         this->ui.update(window);
         this->carriages.update_all(
             window, this->complexes, this->terrain, this->toasts
         );
         this->complexes.update(window, this->balance);
-        if(this->terrain_map.element()->hidden) {
+        bool update_action_modes = !this->player.in_water
+            && !this->player.is_riding
+            && this->terrain_map.element()->hidden;
+        if(update_action_modes) {
             this->action_mode->update(window, *this, this->renderer);
         }
+        this->personal_horse.update(window, this->terrain, this->toasts);
         update_player(window, this->terrain, this->player);
         update_camera(
             window, this->player, this->renderer.camera, this->camera_distance, 
@@ -419,6 +437,7 @@ namespace houseofatmos::outside {
         this->carriages.render_all_around(
             this->player.position, this->renderer, *this, window
         );
+        this->personal_horse.render(this->renderer, *this, window);
         this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
         this->terrain_map.render();
@@ -452,6 +471,9 @@ namespace houseofatmos::outside {
         this->carriages = CarriageManager(
             outside.carriages, buffer, this->terrain, Outside::draw_distance_un
         );
+        this->personal_horse = PersonalHorse(
+            outside.personal_horse, &this->player, &this->interactables
+        );
         set_action_mode(*this, default_mode_const, UINT64_MAX);
     }
 
@@ -474,6 +496,7 @@ namespace houseofatmos::outside {
         outside.player = player;
         outside.balance = this->balance;
         outside.carriages = carriages;
+        outside.personal_horse = this->personal_horse.serialize();
         return buffer;
     }
 

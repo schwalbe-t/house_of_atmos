@@ -6,6 +6,7 @@
 #include <engine/localization.hpp>
 #include "terrain.hpp"
 #include "carriage.hpp"
+#include "personal_horse.hpp"
 
 namespace houseofatmos::outside {
 
@@ -22,6 +23,7 @@ namespace houseofatmos::outside {
         const ComplexBank& complexes;
         const Player& player;
         CarriageManager& carriages;
+        const PersonalHorse& personal_horse;
         ui::Manager& ui;
         engine::Image rendered_img = engine::Image(0, 0);
         engine::Texture rendered_tex = engine::Texture(1, 1);
@@ -58,9 +60,11 @@ namespace houseofatmos::outside {
         TerrainMap(
             const engine::Localization::LoadArgs& local,
             const Terrain& terrain, const ComplexBank& complexes,
-            const Player& player, CarriageManager& carriages, ui::Manager& ui
+            const Player& player, CarriageManager& carriages, 
+            const PersonalHorse& personal_horse, ui::Manager& ui
         ): local_ref(local), terrain(terrain), complexes(complexes), 
-            player(player), carriages(carriages), ui(ui) {
+            player(player), carriages(carriages), personal_horse(personal_horse), 
+            ui(ui) {
             this->t_width = terrain.width_in_tiles();
             this->t_height = terrain.height_in_tiles();
             this->rendered_img = engine::Image(this->t_width, this->t_height);

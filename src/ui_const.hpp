@@ -194,8 +194,14 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 168), Vec<2>(5, 6));
     static inline const ui::Background map_marker_carriage
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 168), Vec<2>(5, 6));
-    static inline const ui::Background map_marker_carriage_lost
+    static inline const ui::Background map_marker_boat
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(40, 168), Vec<2>(5, 6));
+    static inline const ui::Background map_marker_train
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(48, 168), Vec<2>(5, 6));
+    static inline const ui::Background map_marker_agent_lost
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(56, 168), Vec<2>(5, 6));
+    static inline const ui::Background map_marker_personal_horse
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(64, 168), Vec<2>(5, 6));
 
     static inline const ui::Background earth
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(96, 240), Vec<2>(16, 16));
