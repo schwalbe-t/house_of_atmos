@@ -347,6 +347,7 @@ namespace houseofatmos::outside {
         StatefulRNG rng;
         std::vector<Vec<3>> result;
         i64 current_i = target_tile_i;
+        f64 last_elev = 0;
         for(;;) {
             const SearchedTile& current = explorable[current_i];
             if(!current.parent.has_value()) { break; }
@@ -354,8 +355,11 @@ namespace houseofatmos::outside {
             f64 oz = 0.5 + (rng.next_f64() * 2 - 1) * max_path_var;
             Vec<3> position = Vec<3>(current.x + ox, 0, current.z + oz)
                 * terrain.units_per_tile();
+            position.y() = last_elev;
+            position.y() = terrain.elevation_at(position);
             result.insert(result.begin(), position);
             current_i = *current.parent;
+            last_elev = position.y();
         }
         result.insert(result.begin(), start);
         return result;
@@ -485,8 +489,9 @@ namespace houseofatmos::outside {
                 bool has_path = chunk.path_at(
                     x % terrain.tiles_per_chunk(), z % terrain.tiles_per_chunk()
                 );
+                bool is_bridge = terrain.bridge_at((i64) x, (i64) z) != nullptr;
                 size_t offset = x + terrain.width_in_tiles() * z;
-                this->obstacle_tiles[offset] = !has_path;
+                this->obstacle_tiles[offset] = !has_path && !is_bridge;
             }
         }
         for(u64 chunk_x = 0; chunk_x < terrain.width_in_chunks(); chunk_x += 1) {

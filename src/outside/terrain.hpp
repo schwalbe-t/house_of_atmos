@@ -6,6 +6,7 @@
 #include "complex.hpp"
 #include "buildings.hpp"
 #include "foliage.hpp"
+#include "bridge.hpp"
 
 namespace houseofatmos::outside {
 
@@ -19,6 +20,7 @@ namespace houseofatmos::outside {
             u64 width, height;
             u64 elevation_count, elevation_offset;
             u64 chunk_count, chunk_offset;
+            u64 bridge_count, bridge_offset;
         };
 
 
@@ -104,6 +106,7 @@ namespace houseofatmos::outside {
 
 
         public:
+        std::vector<Bridge> bridges;
 
 
         static void load_resources(engine::Scene& scene) {
@@ -198,6 +201,9 @@ namespace houseofatmos::outside {
             u64 rel_z = (u64) tile_z % this->chunk_tiles;
             return chunk.path_at(rel_x, rel_z);
         }
+        const Bridge* bridge_at(
+            i64 tile_x, i64 tile_z, f64 closest_to_height = 0.0
+        ) const;
         bool valid_building_location(
             i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
             const Building::TypeInfo& building_type
@@ -238,6 +244,9 @@ namespace houseofatmos::outside {
             const LoadedChunk& loaded_chunk,
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
+        );
+        void render_bridges(
+            engine::Scene& scene, const Renderer& renderer
         );
         void render_water(
             engine::Scene& scene, const Renderer& renderer,

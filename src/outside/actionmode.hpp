@@ -185,6 +185,45 @@ namespace houseofatmos::outside {
     };
 
 
+    struct BridgingMode: ActionMode {
+
+        struct Selection {
+            u64 start_x, start_z;
+            u64 end_x, end_z;
+        };
+
+        bool has_selection;
+        Selection selection;
+        std::unique_ptr<Bridge::Type> selected_type;
+
+        Bridge planned;
+        bool placement_valid;
+
+        BridgingMode(
+            Terrain& terrain, ComplexBank& complexes, 
+            CarriageManager& carriages, Player& player, Balance& balance,
+            ui::Manager& ui, Toasts& toasts
+        );
+
+        Bridge get_planned() const;
+        i64 get_reduced_planned_height(
+            i64 start, i64 (*reduce)(i64 acc, i64 height)
+        ) const;
+        bool planned_ends_match() const;
+        bool planned_is_occupied() const;
+
+        void update(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override;
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override;
+
+    };
+
+
     struct DemolitionMode: ActionMode {
 
         u64 selected_tile_x, selected_tile_z;

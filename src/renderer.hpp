@@ -52,7 +52,7 @@ namespace houseofatmos {
         Camera camera;
         u64 resolution = 360;
         Vec<3> light_direction = { -2, -5, -1 };
-        f64 ambient_light = 0.75; 
+        f64 ambient_light = 0.8; 
         engine::Shader* shader = nullptr;
 
         static void load_shaders(engine::Scene& scene) {
@@ -72,13 +72,15 @@ namespace houseofatmos {
             const Mat<4>& local_transform = Mat<4>(),
             std::span<const Mat<4>> model_transforms
                 = std::array<Mat<4>, 1> { Mat<4>() },
-            bool wireframe = false
+            bool wireframe = false,
+            bool depth_test = true
         ) const;
         void render(
             engine::Model& model,
             std::span<const Mat<4>> model_transforms,
             bool wireframe = false,
-            const engine::Texture* override_texture = nullptr
+            const engine::Texture* override_texture = nullptr,
+            bool depth_test = true
         ) const;
         void render(
             engine::Model& model,
@@ -86,7 +88,8 @@ namespace houseofatmos {
             const engine::Animation& animation,
             f64 timestamp,
             bool wireframe = false,
-            const engine::Texture* override_texture = nullptr
+            const engine::Texture* override_texture = nullptr,
+            bool depth_test = true
         ) const;
 
         const engine::Texture& output() const { return this->target; }

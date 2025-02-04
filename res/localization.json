@@ -26,6 +26,11 @@
         "en": "Provides {} worker(s)",
         "bg": "Предоставя {} работни(к/ци)"
     },
+    "ui_bridge_selection": {
+        "_context": "Title of the bridge type selection UI (when building a bridge)",
+        "de": "Brückenauswahl",
+        "en": "Bridge Selection"
+    },
     "ui_create_carriage": {
         "_context": "Text of the button used to create/buy a carriage",
         "de": "Kutsche erstellen",
@@ -323,6 +328,21 @@
         "en": "Your horse is on its way to you.",
         "bg": "Конят ви отива към вас."
     },
+    "toast_bridge_too_short": {
+        "_context": "Pop-up that notifies the user that the bridge they attempted to build is too short",
+        "de": "Brücke zu kurz!",
+        "en": "Bridge too short!"
+    },
+    "toast_bridge_too_high": {
+        "_context": "Pop-up that notifies the user that the bridge they attempted to build is too high up",
+        "de": "Brücke zu hoch!",
+        "en": "Bridge too high up!"
+    },
+    "toast_bridge_ends_dont_match": {
+        "_context": "Pop-up that notifies the user that the ends of the bridge they attempted to build are not on the same height",
+        "de": "Brückenenden sind nicht auf der selben Höhe!",
+        "en": "Bridge ends are not on the same height!"
+    },
 
 
     "item_name_barley": {
@@ -446,6 +466,22 @@
         "de": "Villa",
         "en": "Mansion",
         "bg": "Мение"
+    },
+
+    "bridge_name_wooden": {
+        "_context": "Name for a bridge made out of wood",
+        "de": "Holzbrücke",
+        "en": "Wooden bridge"
+    },
+    "bridge_name_stone": {
+        "_context": "Name for a bridge made out of stone",
+        "de": "Steinbrücke",
+        "en": "Stone bridge"
+    },
+    "bridge_name_metal": {
+        "_context": "Name for a bridge made out metal (iron, steel, ...)",
+        "de": "Stahlbrücke",
+        "en": "Steel bridge"
     }
 
 }

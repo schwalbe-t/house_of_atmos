@@ -66,7 +66,7 @@ namespace houseofatmos {
         const engine::Texture& texture,
         const Mat<4>& local_transform,
         std::span<const Mat<4>> model_transforms,
-        bool wireframe
+        bool wireframe, bool depth_test
     ) const {
         this->shader->set_uniform("u_local_transf", local_transform);
         this->shader->set_uniform("u_joint_transfs", std::array { Mat<4>() });
@@ -79,7 +79,7 @@ namespace houseofatmos {
                 model_transforms.subspan(completed, count)
             );
             mesh.render(
-                *this->shader, this->target, count, wireframe, !wireframe
+                *this->shader, this->target, count, wireframe, depth_test
             );
             completed += count;
         }
@@ -89,7 +89,8 @@ namespace houseofatmos {
         engine::Model& model,
         std::span<const Mat<4>> model_transforms,
         bool wireframe,
-        const engine::Texture* override_texture
+        const engine::Texture* override_texture,
+        bool depth_test
     ) const {
         if(override_texture != nullptr) {
             this->shader->set_uniform("u_texture", *override_texture);
@@ -107,7 +108,7 @@ namespace houseofatmos {
                 override_texture == nullptr
                     ? std::optional("u_texture") : std::nullopt, 
                 "u_joint_transfs",
-                count, wireframe, !wireframe
+                count, wireframe, depth_test
             );
             completed += count;
         }
@@ -119,7 +120,8 @@ namespace houseofatmos {
         const engine::Animation& animation,
         f64 timestamp,
         bool wireframe,
-        const engine::Texture* override_texture
+        const engine::Texture* override_texture,
+        bool depth_test
     ) const {
         if(override_texture != nullptr) {
             this->shader->set_uniform("u_texture", *override_texture);
@@ -138,7 +140,7 @@ namespace houseofatmos {
                 "u_local_transf",
                 override_texture == nullptr
                     ? std::optional("u_texture") : std::nullopt, 
-                count, wireframe, !wireframe
+                count, wireframe, depth_test
             );
             completed += count;
         }

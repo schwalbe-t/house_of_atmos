@@ -136,15 +136,17 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(48, 64), Vec<2>(16, 16));
     static inline const ui::Background pathing 
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(64, 64), Vec<2>(16, 16));
+    static inline const ui::Background bridging 
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(80, 64), Vec<2>(16, 16));
 
     static inline const ui::Background terrain_flatten 
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(88, 64), Vec<2>(16, 16));
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(128, 64), Vec<2>(16, 16));
     static inline const ui::Background terrain_raise 
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(104, 64), Vec<2>(16, 16));
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(144, 64), Vec<2>(16, 16));
     static inline const ui::Background terrain_lower
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(120, 64), Vec<2>(16, 16));
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(160, 64), Vec<2>(16, 16));
     static inline const ui::Background terrain_vertex
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(136, 64), Vec<2>(8, 8));
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(176, 64), Vec<2>(8, 8));
 
     static inline const ui::Background barley 
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 88), Vec<2>(8, 8));
@@ -187,6 +189,13 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(112, 128), Vec<2>(16, 16));
     static inline const ui::Background mansion
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(128, 128), Vec<2>(16, 16));
+
+    static inline const ui::Background wooden_bridge
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 144), Vec<2>(16, 16));
+    static inline const ui::Background stone_bridge
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 144), Vec<2>(16, 16));
+    static inline const ui::Background metal_bridge
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(48, 144), Vec<2>(16, 16));
 
     static inline const ui::Background map_marker_player
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 168), Vec<2>(5, 6));

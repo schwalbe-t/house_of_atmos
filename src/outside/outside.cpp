@@ -11,6 +11,7 @@ namespace houseofatmos::outside {
         Terrain::load_resources(*this);
         Building::load_models(*this);
         Foliage::load_models(*this);
+        Bridge::load_models(*this);
         Player::load_model(*this);
         ActionMode::load_resources(*this);
         Carriage::load_resources(*this);
@@ -40,7 +41,7 @@ namespace houseofatmos::outside {
         );
     };
     static const std::array<
-        std::pair<const ui::Background*, ActionModeBuilder>, 4
+        std::pair<const ui::Background*, ActionModeBuilder>, 5
     > action_modes = {
         (std::pair<const ui::Background*, ActionModeBuilder>) 
         { &ui_icon::terraforming, [](Outside& s) {
@@ -51,6 +52,12 @@ namespace houseofatmos::outside {
         } },
         { &ui_icon::construction, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<ConstructionMode>(
+                s.terrain, s.complexes, s.carriages, s.player, s.balance, 
+                s.ui, s.toasts
+            );
+        } },
+        { &ui_icon::bridging, [](Outside& s) {
+            return (std::unique_ptr<ActionMode>) std::make_unique<BridgingMode>(
                 s.terrain, s.complexes, s.carriages, s.player, s.balance, 
                 s.ui, s.toasts
             );
@@ -331,7 +338,6 @@ namespace houseofatmos::outside {
         }
         player.position = created_settlements.at(0) * terrain.units_per_tile();
         balance.coins = 20000;
-        //personal_horse.set_free(player.position + Vec<3>(-5.0, 0.0, 5.0));
         personal_horse.set_free(Vec<3>());
     }
 

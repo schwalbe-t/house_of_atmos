@@ -15,6 +15,13 @@ namespace houseofatmos::outside {
         if(out_of_bounds) { return -INFINITY; }
         u64 left = (u64) (pos.x() / this->tile_size);
         u64 top = (u64) (pos.z() / this->tile_size);
+        const Bridge* on_bridge = this->bridge_at((i64) left, (i64) top, pos.y());
+        if(on_bridge != nullptr) {
+            f64 bridge_floor = (f64) on_bridge->floor_y;
+            f64 min_bridge_height = bridge_floor
+                - (f64) on_bridge->get_type_info().min_height;
+            if(pos.y() > min_bridge_height) { return bridge_floor; }
+        }
         u64 right = left + 1;
         u64 bottom = top + 1;
         if(left >= this->width * this->tile_size) { return 0.0; }
@@ -401,6 +408,25 @@ namespace houseofatmos::outside {
         );
     }
 
+    const Bridge* Terrain::bridge_at(
+        i64 tile_x_s, i64 tile_z_s, f64 closest_to_height
+    ) const {
+        if(tile_x_s < 0 || tile_z_s < 0) { return nullptr; }
+        u64 tile_x = (u64) tile_x_s;
+        u64 tile_z = (u64) tile_z_s;
+        const Bridge* closest = nullptr;
+        f64 clostest_height_diff = INFINITY;
+        for(const Bridge& bridge: this->bridges) {
+            if(tile_x < bridge.start_x || bridge.end_x < tile_x) { continue; }
+            if(tile_z < bridge.start_z || bridge.end_z < tile_z) { continue; }
+            f64 height_diff = fabs((f64) bridge.floor_y - closest_to_height);
+            if(height_diff > clostest_height_diff) { continue; }
+            closest = &bridge;
+            clostest_height_diff = height_diff;
+        }
+        return closest;
+    }
+
     bool Terrain::valid_building_location(
         i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
         const Building::TypeInfo& building_type
@@ -571,6 +597,7 @@ namespace houseofatmos::outside {
                 chunk, window, scene, renderer
             );
         }
+        this->render_bridges(scene, renderer);
     }
 
     void Terrain::render_chunk_ground(
@@ -601,6 +628,41 @@ namespace houseofatmos::outside {
             const Building::TypeInfo& type_info
                 = Building::types[(size_t) building_type];
             type_info.render_buildings(window, scene, renderer, instances);
+        }
+    }
+
+    void Terrain::render_bridges(
+        engine::Scene& scene, const Renderer& renderer
+    ) {
+        i64 view_start_x = (this->viewed_chunk_x() - tile_selection_range_chunks) 
+            * (i64) this->tiles_per_chunk();
+        i64 view_end_x = (this->viewed_chunk_x() + tile_selection_range_chunks) 
+            * (i64) this->tiles_per_chunk();
+        i64 view_start_z = (this->viewed_chunk_z() - tile_selection_range_chunks) 
+            * (i64) this->tiles_per_chunk();
+        i64 view_end_z = (this->viewed_chunk_z() + tile_selection_range_chunks) 
+            * (i64) this->tiles_per_chunk();
+        std::vector<std::vector<Mat<4>>> instances;
+        instances.resize(Bridge::types.size());
+        for(const Bridge& bridge: this->bridges) {
+            bool not_visible = (i64) bridge.end_x < view_start_x
+                || (i64) bridge.start_x > view_end_x
+                || (i64) bridge.end_z < view_start_z
+                || (i64) bridge.start_z > view_end_z;
+            if(not_visible) { continue; }
+            size_t type_id = (size_t) bridge.type;
+            std::vector<Mat<4>> bridge_instances = bridge
+                .get_instances(this->units_per_tile());
+            instances[type_id].insert(
+                instances[type_id].end(), 
+                bridge_instances.begin(), bridge_instances.end()
+            );
+        }
+        for(size_t type_id = 0; type_id < instances.size(); type_id += 1) {
+            if(instances[type_id].size() == 0) { continue; }
+            const Bridge::TypeInfo& type = Bridge::types[type_id];
+            engine::Model& model = scene.get<engine::Model>(type.model);
+            renderer.render(model, instances[type_id]);
         }
     }
 
@@ -662,6 +724,10 @@ namespace houseofatmos::outside {
         for(const ChunkData::Serialized& chunk: chunks) {
             this->chunks.push_back(ChunkData(this->chunk_tiles, chunk, buffer));
         }
+        buffer.copy_array_at_into(
+            serialized.bridge_offset, serialized.bridge_count,
+            this->bridges
+        );
         this->build_water_plane();
     }
 
@@ -703,7 +769,8 @@ namespace houseofatmos::outside {
         return {
             this->width, this->height,
             this->elevation.size(), buffer.alloc_array(this->elevation),
-            this->chunks.size(), buffer.alloc_array(chunk_data)
+            this->chunks.size(), buffer.alloc_array(chunk_data),
+            this->bridges.size(), buffer.alloc_array(this->bridges)
         };
     }
 
