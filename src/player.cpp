@@ -28,14 +28,14 @@ namespace houseofatmos {
         if(this->anim_name == "ride_idle") { return; }
         this->anim_name = "ride_idle";
         this->anim_time = 0;
-        this->anim_speed = 1;
+        this->anim_speed = 0;
     }
 
     void Player::set_anim_ride() {
         if(this->anim_name == "ride") { return; }
         this->anim_name = "ride";
         this->anim_time = 0;
-        this->anim_speed = 1;
+        this->anim_speed = 3.1;
     }
 
 

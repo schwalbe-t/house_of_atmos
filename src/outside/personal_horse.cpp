@@ -95,9 +95,23 @@ namespace houseofatmos::outside {
         Mat<4> transform = Mat<4>::translate(this->position())
             * Mat<4>::rotate_y(this->angle);
         const engine::Animation& animation = model.animation(
-            moved_dist > 0? "walk" : "idle"
+            this->state == State::Ridden
+                ? (moved_dist > 0? "trot" : "idle")
+                : (moved_dist > 0? "walk" : "idle")
         );
-        f64 anim_speed = moved_dist > 0? 4.0 : 0.5;
+        f64 anim_speed = this->state == State::Ridden
+            ? (moved_dist > 0? 3.1 : 0.5)
+            : (moved_dist > 0? 3.0 : 0.5);
+        if(!this->was_moving && moved_dist > 0) {
+            // this synchronizes the horse animation with the player animation
+            // the value determines how far the two animations should be apart
+            // (larger values make the horse earlier)
+            // this can be used to simulate the intertia of the player
+            // as a result of the horse moving up and down
+            // (larger value makes the player respond later = more inertia)
+            this->anim_timer = 0.15; // 0.15 looks good
+        }
+        this->was_moving = moved_dist > 0;
         this->anim_timer = fmod(
             this->anim_timer + window.delta_time() * anim_speed, 
             animation.length()

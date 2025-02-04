@@ -41,6 +41,7 @@ namespace houseofatmos::outside {
         Vec<3> last_pos = Vec<3>(0.0, 0.0, 0.0);
         f64 angle = 0.0;
         f64 anim_timer = 0.0;
+        bool was_moving = false;
 
         Player* player;
         Interactables* interactables;
