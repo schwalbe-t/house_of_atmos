@@ -358,6 +358,14 @@ namespace houseofatmos::outside {
 
 
 
+    static Vec<3> player_position(Vec<3> pos, const Terrain& terrain) {
+        pos.y() = std::max(
+            terrain.elevation_at(pos),
+            -1.7
+        );
+        return pos;
+    }
+
     static void update_player(
         engine::Window& window, Terrain& terrain, Player& player
     ) {
@@ -365,18 +373,21 @@ namespace houseofatmos::outside {
         bool in_coll = !terrain.valid_player_position(
             Player::collider.at(player.position), player.is_riding
         );
-        bool next_x_coll = terrain.valid_player_position(
+        bool next_x_free = terrain.valid_player_position(
             Player::collider.at(player.next_x()), player.is_riding
+        ) && terrain.valid_player_position(
+            Player::collider.at(player_position(player.next_x(), terrain)), 
+            player.is_riding
         );
-        if(in_coll || next_x_coll) { player.proceed_x(); }
-        bool next_z_coll = terrain.valid_player_position(
+        if(in_coll || next_x_free) { player.proceed_x(); }
+        bool next_z_free = terrain.valid_player_position(
             Player::collider.at(player.next_z()), player.is_riding
+        ) && terrain.valid_player_position(
+            Player::collider.at(player_position(player.next_z(), terrain)), 
+            player.is_riding
         );
-        if(in_coll || next_z_coll) { player.proceed_z(); }
-        player.position.y() = std::max(
-            terrain.elevation_at(player.position),
-            -1.7
-        );
+        if(in_coll || next_z_free) { player.proceed_z(); }
+        player.position = player_position(player.position, terrain);
         player.in_water = player.position.y() <= -1.5;
     }
 
@@ -444,7 +455,12 @@ namespace houseofatmos::outside {
             this->player.position, this->renderer, *this, window
         );
         this->personal_horse.render(this->renderer, *this, window);
-        this->action_mode->render(window, *this, this->renderer);
+        bool render_action_modes = !this->player.in_water
+            && !this->player.is_riding
+            && this->terrain_map.element()->hidden;
+        if(render_action_modes) {
+            this->action_mode->render(window, *this, this->renderer);
+        }
         window.show_texture(this->renderer.output());
         this->terrain_map.render();
         this->ui.render(*this, window);

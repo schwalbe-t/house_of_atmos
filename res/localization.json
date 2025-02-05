@@ -29,7 +29,8 @@
     "ui_bridge_selection": {
         "_context": "Title of the bridge type selection UI (when building a bridge)",
         "de": "Brückenauswahl",
-        "en": "Bridge Selection"
+        "en": "Bridge Selection",
+        "bg": "Избиране на мост"
     },
     "ui_create_carriage": {
         "_context": "Text of the button used to create/buy a carriage",
@@ -271,10 +272,10 @@
         "bg": "Тази сграда не може да бъде унищожена."
     },
     "toast_terrain_occupied": {
-        "_context": "Pop-up that notifies the user when they try to modify terrain under a building (note: localized text should be why they can't do it, not what they did)",
-        "de": "Gelände unter Gebäuden kann nicht bearbeitet werden!",
-        "en": "Terrain occupied by buildings may not be modified!",
-        "bg": "Земя, която състой сгради не може да се променя."
+        "_context": "Pop-up that notifies the user when they try to modify terrain under a building or bridge (note: localized text should be why they can't do it, not what they did)",
+        "de": "Gelände unter Gebäuden und Brücken kann nicht bearbeitet werden!",
+        "en": "Terrain occupied by buildings or bridges may not be modified!",
+        "bg": "Земя, която състой сгради или мости не може да се променя."
     },
     "toast_invalid_building_placement": {
         "_context": "Pop-up that notifies the user when they try to place a building on uneven terrain (note: localized text should be why they can't do it, not what they did)",
@@ -331,17 +332,20 @@
     "toast_bridge_too_short": {
         "_context": "Pop-up that notifies the user that the bridge they attempted to build is too short",
         "de": "Brücke zu kurz!",
-        "en": "Bridge too short!"
+        "en": "Bridge too short!",
+        "bg": "Моста е твърде къс!"
     },
     "toast_bridge_too_high": {
         "_context": "Pop-up that notifies the user that the bridge they attempted to build is too high up",
         "de": "Brücke zu hoch!",
-        "en": "Bridge too high up!"
+        "en": "Bridge too high up!",
+        "bg": "Моста е твърде на високо!"
     },
     "toast_bridge_ends_dont_match": {
         "_context": "Pop-up that notifies the user that the ends of the bridge they attempted to build are not on the same height",
         "de": "Brückenenden sind nicht auf der selben Höhe!",
-        "en": "Bridge ends are not on the same height!"
+        "en": "Bridge ends are not on the same height!",
+        "bg": "Краищата на моста не са на един и същ ръст!"
     },
 
 
@@ -471,17 +475,20 @@
     "bridge_name_wooden": {
         "_context": "Name for a bridge made out of wood",
         "de": "Holzbrücke",
-        "en": "Wooden bridge"
+        "en": "Wooden bridge",
+        "bg": "Дървен мост"
     },
     "bridge_name_stone": {
         "_context": "Name for a bridge made out of stone",
         "de": "Steinbrücke",
-        "en": "Stone bridge"
+        "en": "Stone bridge",
+        "bg": "Каменен мост"
     },
     "bridge_name_metal": {
         "_context": "Name for a bridge made out metal (iron, steel, ...)",
         "de": "Stahlbrücke",
-        "en": "Steel bridge"
+        "en": "Steel bridge",
+        "bg": "Железен мост"
     }
 
 }

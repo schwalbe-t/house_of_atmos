@@ -53,7 +53,7 @@ namespace houseofatmos {
         };
 
         static const inline RelCollider collider
-            = RelCollider({ -0.25, -1, -0.25 }, { 0.5, 1, 0.5 });
+            = RelCollider({ -0.25, 0, -0.25 }, { 0.5, 2, 0.5 });
 
 
         private:

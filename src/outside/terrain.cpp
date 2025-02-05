@@ -448,6 +448,7 @@ namespace houseofatmos::outside {
             for(i64 z = tile_z; z < end_z; z += 1) {
                 if(x == player_tile_x && z == player_tile_z) { return false; }
                 if(this->building_at(x, z) != nullptr) { return false; }
+                if(this->bridge_at(x, z) != nullptr) { return false; }
             }
         }
         if(target < 0) { return false; }
@@ -465,6 +466,41 @@ namespace houseofatmos::outside {
                 this->elevation_at(player_collider.end)
             );
             if(min_elev + 0.5 <= water_height) { return false; }
+        }
+        for(const Bridge& bridge: this->bridges) {
+            bridge.report_malformed();
+            // "move" the start and end tiles of the bridge 
+            // to the start and ends of the player collider
+            // this minimizes the number of tiles we need to check
+            u64 x = std::max(
+                (u64) (player_collider.start.x() / this->tile_size),
+                bridge.start_x
+            );
+            u64 z = std::max(
+                (u64) (player_collider.start.z() / this->tile_size),
+                bridge.start_z
+            );
+            u64 end_x = std::min(
+                (u64) (player_collider.end.x() / this->tile_size),
+                bridge.end_x
+            );
+            u64 end_z = std::min(
+                (u64) (player_collider.end.z() / this->tile_size),
+                bridge.end_z
+            );
+            if(end_x < x || end_z < z) { continue; }
+            for(;;) {
+                for(const RelCollider& collider: bridge.colliders()) {
+                    Vec<3> segment_pos = Vec<3>(x, 0, z) * this->tile_size
+                        + Vec<3>(2.5, (f64) bridge.floor_y, 2.5);
+                    bool collides = player_collider
+                        .collides_with(collider.at(segment_pos));
+                    if(collides) { return false; }
+                }
+                if(x < end_x) { x += 1; }
+                else if(z < end_z) { z += 1; }
+                else { break; }
+            }
         }
         u64 start_x = (u64) std::max(this->view_chunk_x - collision_test_dist, (i64) 0);
         u64 end_x = std::min((u64) (this->view_chunk_x + collision_test_dist), this->width_chunks - 1);

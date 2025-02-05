@@ -84,7 +84,8 @@ namespace houseofatmos::outside {
                     && elev_bl < 0 && elev_br < 0;
                 if(is_water) { color = water_color; }
                 // if is path or building, make building
-                bool is_path = this->terrain.path_at((i64) x, (i64) z);
+                bool is_path = this->terrain.path_at((i64) x, (i64) z)
+                    || this->terrain.bridge_at((i64) x, (i64) z) != nullptr;
                 if(is_path) { color = path_color; }
                 const Building* building = this->terrain.building_at(x, z);
                 if(building != nullptr) { color = building_color; }

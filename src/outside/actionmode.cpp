@@ -184,7 +184,8 @@ namespace houseofatmos::outside {
         u64 end_z = std::min(max_z, terrain.height_in_tiles() - 1);
         for(u64 x = start_x; x <= end_x; x += 1) {
             for(u64 z = start_z; z <= end_z; z += 1) {
-                bool has_building = (bool) terrain.building_at((i64) x, (i64) z);
+                bool is_occupied = (bool) terrain.building_at((i64) x, (i64) z)
+                    || (bool) terrain.bridge_at((i64) x, (i64) z);
                 u64 lx = std::max(x, start_x + 1); // left x
                 u64 rx = std::min(lx + 1, end_x); // right x
                 u64 tz = std::max(z, start_z + 1); // top z
@@ -194,7 +195,7 @@ namespace houseofatmos::outside {
                     || terrain_mod_amount(terrain, lx, bz, mode, s_elev) != 0
                     || terrain_mod_amount(terrain, rx, tz, mode, s_elev) != 0
                     || terrain_mod_amount(terrain, rx, bz, mode, s_elev) != 0;
-                if(has_building && is_modified) { return false; }
+                if(is_occupied && is_modified) { return false; }
             }
         }
         return true;
@@ -740,6 +741,7 @@ namespace houseofatmos::outside {
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
     ) {
+        (void) scene;
         // update the selection area
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0, 0, 0)
@@ -803,6 +805,8 @@ namespace houseofatmos::outside {
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
     ) {
+        (void) window;
+        this->planned = this->get_planned();
         const engine::Texture& wireframe_texture = !this->has_selection
             ? scene.get<engine::Texture>(ActionMode::wireframe_info_texture)
             : this->placement_valid
@@ -821,60 +825,107 @@ namespace houseofatmos::outside {
 
     static const f64 demolition_refund_factor = 0.25;
 
+    void DemolitionMode::attempt_demolition() {
+        switch(this->selection.type) {
+            case Selection::None: return;
+            case Selection::Building: {
+                const Selection::BuildingSelection& building 
+                    = this->selection.value.building;
+                const Building::TypeInfo& b_type 
+                    = building.selected->get_type_info();
+                if(!b_type.destructible) {
+                    this->toasts.add_error("toast_indestructible", {});
+                    return;
+                }
+                i64 unemployment = this->terrain.compute_unemployment();
+                bool enough_people = unemployment >= (i64) b_type.residents;
+                if(!enough_people) {
+                    this->toasts.add_error("toast_missing_unemployment", {
+                        std::to_string(unemployment), 
+                        std::to_string(b_type.residents)
+                    });
+                    return;
+                }
+                Terrain::ChunkData& chunk = this->terrain
+                    .chunk_at(building.chunk_x, building.chunk_z);
+                if(building.selected->complex.has_value()) {
+                    u64 actual_x = building.selected->x
+                        + building.chunk_x * this->terrain.tiles_per_chunk();
+                    u64 actual_z = building.selected->z
+                        + building.chunk_z * this->terrain.tiles_per_chunk();
+                    ComplexId complex_id = *building.selected->complex;
+                    Complex& complex = this->complexes.get(complex_id);
+                    complex.remove_member(actual_x, actual_z);
+                    if(complex.member_count() == 0) {
+                        this->complexes.delete_complex(complex_id);
+                    }
+                }
+                size_t building_idx = building.selected - chunk.buildings.data();
+                chunk.buildings.erase(chunk.buildings.begin() + building_idx);
+                u64 refunded = (u64) ((f64) b_type.cost * demolition_refund_factor);
+                this->balance.add_coins(refunded, this->toasts);
+                this->terrain.reload_chunk_at(building.chunk_x, building.chunk_z);
+                this->carriages.refind_all_paths(
+                    this->complexes, this->terrain, this->toasts
+                );
+                this->selection.type = Selection::None;
+                return;
+            }
+            case Selection::Bridge: {
+                const Bridge* bridge = this->selection.value.bridge;
+                const Bridge::TypeInfo& b_type = bridge->get_type_info();
+                u64 build_cost = bridge->length() * b_type.cost_per_tile;
+                u64 refunded = (u64) ((f64) build_cost * demolition_refund_factor);
+                size_t bridge_idx = bridge - this->terrain.bridges.data();
+                this->terrain.bridges.erase(
+                    this->terrain.bridges.begin() + bridge_idx
+                );
+                this->balance.add_coins(refunded, this->toasts);
+                this->carriages.refind_all_paths(
+                    this->complexes, this->terrain, this->toasts
+                );
+                this->selection.type = Selection::None;
+                return;
+            }
+        }
+    }
+
     void DemolitionMode::update(
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
     ) {
         (void) scene;
+        this->selection.type = Selection::None;
         auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
-        this->selected_tile_x = tile_x;
-        this->selected_tile_z = tile_z;
-        this->selected = terrain.building_at(
-            (i64) tile_x, (i64) tile_z, 
-            &this->selected_chunk_x, &this->selected_chunk_z
+        // check for selected building
+        u64 hover_building_ch_x, hover_building_ch_z;
+        const Building* hover_building = this->terrain.building_at(
+            (i64) tile_x, (i64) tile_z,
+            &hover_building_ch_x, &hover_building_ch_z
         );
-        bool attempted = this->selected != nullptr
+        if(hover_building != nullptr) {
+            this->selection.type = Selection::Building;
+            this->selection.value.building = {
+                tile_x, tile_z,
+                hover_building_ch_x, hover_building_ch_z,
+                hover_building
+            };
+        }
+        // check for selected brige
+        const Bridge* hover_bridge = this->terrain
+            .bridge_at((i64) tile_x, (i64) tile_z);
+        if(hover_bridge != nullptr) {
+            this->selection.type = Selection::Bridge;
+            this->selection.value.bridge = hover_bridge;
+        }
+        // do demolition
+        bool attempted = this->selection.type != Selection::None
             && window.was_pressed(engine::Button::Left)
-            && !this->ui.was_clicked();
-        if(attempted && !this->selected->get_type_info().destructible) {
-            this->toasts.add_error("toast_indestructible", {});
-        } else if(attempted) {
-            const Building::TypeInfo& type_info = this->selected->get_type_info();
-            i64 unemployment = this->terrain.compute_unemployment();
-            bool allowed = unemployment >= (i64) type_info.residents;
-            if(allowed) {
-                Terrain::ChunkData& chunk = this->terrain
-                .chunk_at(this->selected_chunk_x, this->selected_chunk_z);
-                if(this->selected->complex.has_value()) {
-                    u64 actual_x = this->selected->x
-                        + this->selected_chunk_x * this->terrain.tiles_per_chunk();
-                    u64 actual_z = this->selected->z
-                        + this->selected_chunk_z * this->terrain.tiles_per_chunk();
-                    Complex& complex = this->complexes.get(*selected->complex);
-                    complex.remove_member(actual_x, actual_z);
-                    if(complex.member_count() == 0) {
-                        this->complexes.delete_complex(*selected->complex);
-                    }
-                }
-                size_t index = this->selected - chunk.buildings.data();
-                chunk.buildings.erase(chunk.buildings.begin() + index);
-                this->selected = nullptr;
-                u64 refunded = (u64) ((f64) type_info.cost * demolition_refund_factor);
-                this->balance.add_coins(refunded, this->toasts);
-                this->terrain.reload_chunk_at(
-                    this->selected_chunk_x, this->selected_chunk_z
-                );
-                this->carriages.refind_all_paths(
-                    this->complexes, this->terrain, this->toasts
-                );
-            } else {
-                this->toasts.add_error("toast_missing_unemployment", {
-                    std::to_string(unemployment), 
-                    std::to_string(type_info.residents)
-                });
-            }
+            && !this->ui.is_hovered_over();
+        if(attempted) {
+            this->attempt_demolition();
         }
     }
 
@@ -882,17 +933,35 @@ namespace houseofatmos::outside {
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
     ) {
-        if(this->selected == nullptr) { return; }
         const engine::Texture& wireframe_texture = scene
             .get<engine::Texture>(ActionMode::wireframe_error_texture);
-        const Building::TypeInfo& type_info = this->selected->get_type_info();
-        Mat<4> transform = this->terrain.building_transform(
-            *this->selected, this->selected_chunk_x, this->selected_chunk_z
-        );
-        type_info.render_buildings(
-            window, scene, renderer,
-            std::array { transform }, true, &wireframe_texture
-        );
+        switch(this->selection.type) {
+            case Selection::None: return;
+            case Selection::Building: {
+                const Selection::BuildingSelection& building 
+                    = this->selection.value.building;
+                const Building::TypeInfo& b_type 
+                    = building.selected->get_type_info();
+                Mat<4> transform = this->terrain.building_transform(
+                    *building.selected, building.chunk_x, building.chunk_z
+                );
+                b_type.render_buildings(
+                    window, scene, renderer,
+                    std::array { transform }, true, &wireframe_texture
+                );
+                return;
+            }
+            case Selection::Bridge: {
+                const Bridge* bridge = this->selection.value.bridge;
+                const Bridge::TypeInfo& b_type = bridge->get_type_info();
+                engine::Model& model = scene.get<engine::Model>(b_type.model);
+                renderer.render(
+                    model, bridge->get_instances(this->terrain.units_per_tile()),
+                    true, &wireframe_texture
+                );
+                return;
+            }
+        }
     }
 
 

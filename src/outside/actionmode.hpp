@@ -193,7 +193,7 @@ namespace houseofatmos::outside {
         };
 
         bool has_selection;
-        Selection selection;
+        Selection selection = { 0, 0, 0, 0 };
         std::unique_ptr<Bridge::Type> selected_type;
 
         Bridge planned;
@@ -226,21 +226,32 @@ namespace houseofatmos::outside {
 
     struct DemolitionMode: ActionMode {
 
-        u64 selected_tile_x, selected_tile_z;
-        u64 selected_chunk_x, selected_chunk_z;
-        const Building* selected;
+        struct Selection {
+            enum Type { None, Building, Bridge };
+            Type type;
+            struct BuildingSelection {
+                u64 tile_x, tile_z;
+                u64 chunk_x, chunk_z;
+                const outside::Building* selected;
+            };
+            union {
+                BuildingSelection building;
+                const outside::Bridge* bridge; 
+            } value;
+        };
+
+        Selection selection;
+
 
         DemolitionMode(
             Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
         ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
-            this->selected_tile_x = 0;
-            this->selected_tile_z = 0;
-            this->selected_chunk_x = 0;
-            this->selected_chunk_z = 0;
-            this->selected = nullptr;
+            this->selection.type = Selection::None;
         }
+
+        void attempt_demolition();
 
         void update(
             const engine::Window& window, engine::Scene& scene, 
