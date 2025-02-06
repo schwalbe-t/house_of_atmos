@@ -383,18 +383,7 @@ namespace houseofatmos::engine {
     }
 
     void Mesh::render(
-        const Shader& shader, const Texture& dest, size_t count, 
-        bool wireframe, bool depth_test
-    ) {
-        this->internal_render(
-            shader, dest.internal_fbo_id(), dest.width(), dest.height(),
-            count, wireframe, depth_test
-        );
-    }
-
-    void Mesh::internal_render(
-        const Shader& shader, u64 dest_fbo_id, 
-        i32 dest_width, i32 dest_height, 
+        const Shader& shader, RenderTarget dest,
         size_t count, bool wireframe, bool depth_test
     ) {
         if(count == 0) { return; }
@@ -404,8 +393,8 @@ namespace houseofatmos::engine {
         if(this->modified) { this->submit(); }
         if(wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); }
         if(depth_test) { glEnable(GL_DEPTH_TEST); }
-        glBindFramebuffer(GL_FRAMEBUFFER, dest_fbo_id);
-        glViewport(0, 0, dest_width, dest_height);
+        glBindFramebuffer(GL_FRAMEBUFFER, dest.fbo_id);
+        glViewport(0, 0, dest.width(), dest.height());
         shader.internal_bind();
         glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);

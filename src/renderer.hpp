@@ -28,7 +28,6 @@ namespace houseofatmos {
         f64 far_plane = 700.0;
         f64 radius;
         f64 distance_factor = 5.0;
-        engine::Texture shadow_texture = engine::Texture(4096, 4096);
 
         DirectionalLight(
             Vec<3> focus_point, Vec<3> direction, 
@@ -96,6 +95,8 @@ namespace houseofatmos {
 
         private:
         engine::Texture target = engine::Texture(100, 100);
+        engine::TextureArray shadow_maps
+            = engine::TextureArray(std::span<const engine::Texture>()); 
         bool rendering_shadow_maps = false;
 
         public:
@@ -133,7 +134,7 @@ namespace houseofatmos {
                 = std::array<Mat<4>, 1> { Mat<4>() },
             bool wireframe = false,
             bool depth_test = true,
-            const DirectionalLight* light = nullptr
+            std::optional<size_t> light_i = std::nullopt
         ) const;
         void render(
             engine::Model& model,
@@ -141,7 +142,7 @@ namespace houseofatmos {
             bool wireframe = false,
             const engine::Texture* override_texture = nullptr,
             bool depth_test = true,
-            const DirectionalLight* light = nullptr
+            std::optional<size_t> light_i = std::nullopt
         ) const;
         void render(
             engine::Model& model,
@@ -151,7 +152,7 @@ namespace houseofatmos {
             bool wireframe = false,
             const engine::Texture* override_texture = nullptr,
             bool depth_test = true,
-            const DirectionalLight* light = nullptr
+            std::optional<size_t> light_i = std::nullopt
         ) const;
 
         const engine::Texture& output() const { return this->target; }

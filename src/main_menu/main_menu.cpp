@@ -305,7 +305,7 @@ namespace houseofatmos {
         blur.set_uniform("u_texture_h", (i64) this->background.height());
         i64 blur_rad = (i64) ((window.width() + window.height()) / 200.0);
         blur.set_uniform("u_blur_rad", blur_rad);
-        this->renderer.output().blit(this->background, blur);
+        this->renderer.output().blit(this->background.as_target(), blur);
     }
 
     void MainMenu::render(engine::Window& window) {

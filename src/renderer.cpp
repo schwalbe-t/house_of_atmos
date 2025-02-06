@@ -19,7 +19,7 @@ namespace houseofatmos {
     }
 
     static void clear_output_texture(
-        engine::Texture& output, const Vec<4>& color
+        engine::RenderTarget output, const Vec<4>& color
     ) {
         output.clear_color(color);
         output.clear_depth(1.0);
@@ -47,7 +47,7 @@ namespace houseofatmos {
         const engine::Window& window, engine::Scene& scene
     ) {
         resize_output_texture(this->target, window, this->resolution);
-        clear_output_texture(this->target, this->fog_color);
+        clear_output_texture(this->target.as_target(), this->fog_color);
         this->shadow_shader = &scene
             .get<engine::Shader>(Renderer::shadow_shader_args);
         this->geometry_shader = &scene
@@ -71,9 +71,16 @@ namespace houseofatmos {
 
     void Renderer::render_to_shadow_maps() {
         this->rendering_shadow_maps = true;
-        for(const DirectionalLight& light: this->lights) {
-            light.shadow_texture.clear_color({ 1.0, 1.0, 1.0, 1.0 });
-            light.shadow_texture.clear_depth(1.0);
+        if(this->shadow_maps.size() != this->lights.size()) {
+            this->shadow_maps = engine::TextureArray(
+                4096, 4096, this->lights.size()
+            );
+        }
+        for(size_t light_i = 0; light_i < this->lights.size(); light_i += 1) {
+            clear_output_texture(
+                this->shadow_maps.as_target(light_i),
+                { 1.0, 1.0, 1.0, 1.0 }
+            );
         }
     }
 
@@ -87,14 +94,11 @@ namespace houseofatmos {
         );
         std::vector<Mat<4>> light_view_proj;
         light_view_proj.reserve(this->lights.size());
-        std::vector<const engine::Texture*> shadow_maps;
-        shadow_maps.reserve(this->lights.size());
         for(const DirectionalLight& light: this->lights) {
             light_view_proj.push_back(light.compute_view_proj());
-            shadow_maps.push_back(&light.shadow_texture);
         }
         this->geometry_shader->set_uniform("u_light_view_proj", light_view_proj);
-        this->geometry_shader->set_uniform("u_shadow_maps", shadow_maps);
+        this->geometry_shader->set_uniform("u_shadow_maps", this->shadow_maps);
     }
 
     void Renderer::render(
@@ -103,29 +107,30 @@ namespace houseofatmos {
         const Mat<4>& local_transform,
         std::span<const Mat<4>> model_transforms,
         bool wireframe, bool depth_test,
-        const DirectionalLight* light
+        std::optional<size_t> light_i
     ) const {
         bool render_all_light_maps = this->rendering_shadow_maps
-            && light == nullptr && !wireframe && depth_test; 
+            && !light_i.has_value() && !wireframe && depth_test; 
         if(render_all_light_maps) {
-            for(const DirectionalLight& light: this->lights) {
+            for(size_t light_i = 0; light_i < this->lights.size(); light_i += 1) {
                 this->render(
                     mesh, texture, local_transform, model_transforms,
-                    false, true, &light
+                    false, true, light_i
                 );
             }
             return;
         }
-        engine::Shader& shader = light != nullptr
+        engine::Shader& shader = light_i.has_value()
             ? *this->shadow_shader : *this->geometry_shader;
-        shader.set_uniform("u_view_proj", light != nullptr
-            ? light->compute_view_proj() : this->compute_view_proj()
+        shader.set_uniform("u_view_proj", light_i.has_value()
+            ? this->lights[*light_i].compute_view_proj() 
+            : this->compute_view_proj()
         );
         shader.set_uniform("u_local_transf", local_transform);
         shader.set_uniform("u_joint_transfs", std::array { Mat<4>() });
         shader.set_uniform("u_texture", texture);
-        const engine::Texture& dest = light != nullptr
-            ? light->shadow_texture : this->target;
+        engine::RenderTarget dest = light_i.has_value()
+            ? this->shadow_maps.as_target(*light_i) : this->target.as_target();
         for(size_t completed = 0; completed < model_transforms.size();) {
             size_t remaining = model_transforms.size() - completed;
             size_t count = std::min(remaining, Renderer::max_inst_c);
@@ -144,29 +149,30 @@ namespace houseofatmos {
         bool wireframe,
         const engine::Texture* override_texture,
         bool depth_test,
-        const DirectionalLight* light
+        std::optional<size_t> light_i
     ) const {
         bool render_all_light_maps = this->rendering_shadow_maps
-            && light == nullptr && !wireframe && depth_test; 
+            && !light_i.has_value() && !wireframe && depth_test; 
         if(render_all_light_maps) {
-            for(const DirectionalLight& light: this->lights) {
+            for(size_t light_i = 0; light_i < this->lights.size(); light_i += 1) {
                 this->render(
                     model, model_transforms, 
-                    false, override_texture, true, &light
+                    false, override_texture, true, light_i
                 );
             }
             return;
         }
-        engine::Shader& shader = light != nullptr
+        engine::Shader& shader = light_i.has_value()
             ? *this->shadow_shader : *this->geometry_shader;
-        shader.set_uniform("u_view_proj", light != nullptr
-            ? light->compute_view_proj() : this->compute_view_proj()
+        shader.set_uniform("u_view_proj", light_i.has_value()
+            ? this->lights[*light_i].compute_view_proj() 
+            : this->compute_view_proj()
         );
         if(override_texture != nullptr) {
             shader.set_uniform("u_texture", *override_texture);
         }
-        const engine::Texture& dest = light != nullptr
-            ? light->shadow_texture : this->target;
+        engine::RenderTarget dest = light_i.has_value()
+            ? this->shadow_maps.as_target(*light_i) : this->target.as_target();
         for(size_t completed = 0; completed < model_transforms.size();) {
             size_t remaining = model_transforms.size() - completed;
             size_t count = std::min(remaining, Renderer::max_inst_c);
@@ -194,29 +200,30 @@ namespace houseofatmos {
         bool wireframe,
         const engine::Texture* override_texture,
         bool depth_test,
-        const DirectionalLight* light
+        std::optional<size_t> light_i
     ) const {
         bool render_all_light_maps = this->rendering_shadow_maps
-            && light == nullptr && !wireframe && depth_test; 
+            && !light_i.has_value() && !wireframe && depth_test; 
         if(render_all_light_maps) {
-            for(const DirectionalLight& light: this->lights) {
+            for(size_t light_i = 0; light_i < this->lights.size(); light_i += 1) {
                 this->render(
                     model, model_transforms, animation, timestamp,
-                    false, override_texture, true, &light
+                    false, override_texture, true, light_i
                 );
             }
             return;
         }
-        engine::Shader& shader = light != nullptr
+        engine::Shader& shader = light_i.has_value()
             ? *this->shadow_shader : *this->geometry_shader;
-        shader.set_uniform("u_view_proj", light != nullptr
-            ? light->compute_view_proj() : this->compute_view_proj()
+        shader.set_uniform("u_view_proj", light_i.has_value()
+            ? this->lights[*light_i].compute_view_proj() 
+            : this->compute_view_proj()
         );
         if(override_texture != nullptr) {
             shader.set_uniform("u_texture", *override_texture);
         }
-        const engine::Texture& dest = light != nullptr
-            ? light->shadow_texture : this->target;
+        engine::RenderTarget dest = light_i.has_value()
+            ? this->shadow_maps.as_target(*light_i) : this->target.as_target();
         for(size_t completed = 0; completed < model_transforms.size();) {
             size_t remaining = model_transforms.size() - completed;
             size_t count = std::min(remaining, Renderer::max_inst_c);

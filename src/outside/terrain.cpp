@@ -736,7 +736,7 @@ namespace houseofatmos::outside {
         shader.set_uniform("u_fog_origin", renderer.fog_origin);
         shader.set_uniform("u_fog_dist_scale", renderer.fog_dist_scale);
         shader.set_uniform("u_fog_color", renderer.fog_color);
-        this->water_plane.render(shader, renderer.output());
+        this->water_plane.render(shader, renderer.output().as_target());
     }
 
 

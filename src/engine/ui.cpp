@@ -660,7 +660,7 @@ namespace houseofatmos::engine::ui {
         if(window.width() > 0 && window.height() > 0) {
             this->target.resize_fast(window.width(), window.height());
         }
-        this->target.clear_color(Vec<4>(0.0, 0.0, 0.0, 0.0));
+        this->target.as_target().clear_color(Vec<4>(0.0, 0.0, 0.0, 0.0));
         this->shader = &scene.get<Shader>(Manager::shader_args);
         this->unit_size_px = window.height() * this->unit_fract_size;
         this->root.render_root(*this, scene, window, this->unit_size_px);
@@ -713,7 +713,9 @@ namespace houseofatmos::engine::ui {
             this->shader->set_uniform("u_src_offsets", src_o);
             this->shader->set_uniform("u_dest_scales", dest_s);
             this->shader->set_uniform("u_dest_offsets", dest_o);
-            this->quad.render(*this->shader, this->target, count, false, false);
+            this->quad.render(
+                *this->shader, this->target.as_target(), count, false, false
+            );
             completed += count;
         }
     }
