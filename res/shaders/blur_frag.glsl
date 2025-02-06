@@ -1,6 +1,9 @@
 
 #version 330
 
+const float E = 2.71828182845904523536028747135266250;
+const float PI = 3.14159265358979323846264338327950288;
+
 in vec2 f_uv;
 
 uniform sampler2D u_texture;
@@ -9,9 +12,6 @@ uniform int u_texture_h;
 uniform int u_blur_rad;
 
 out vec4 o_color;
-
-const float E = 2.71828182845904523536028747135266250;
-const float PI = 3.14159265358979323846264338327950288;
 
 void main() {
     vec2 px = vec2(1.0 / float(u_texture_w), 1.0 / float(u_texture_h));

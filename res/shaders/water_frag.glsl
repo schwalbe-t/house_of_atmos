@@ -1,6 +1,8 @@
 
 #version 330
 
+#include "common/fog.glsl"
+
 in vec2 f_uv;
 in vec3 f_w_pos;
 
@@ -11,11 +13,6 @@ uniform sampler2D u_nmap;
 uniform float u_nmap_scale;
 uniform vec2 u_nmap_offset;
 uniform float u_time;
-uniform float u_fog_start_dist;
-uniform float u_fog_gradiant_range;
-uniform vec3 u_fog_origin;
-uniform vec3 u_fog_dist_scale;
-uniform vec4 u_fog_color;
 
 out vec4 o_color;
 
@@ -34,11 +31,6 @@ void main() {
     if(normal.y > light_min_y) { o_color = u_light_color; }
     if(normal.y < dark_max_y) { o_color = u_dark_color; }
     // apply fog
-    float fog_distance = length((f_w_pos - u_fog_origin) * u_fog_dist_scale);
-    float fog_strength = clamp(
-        (fog_distance - u_fog_start_dist) / u_fog_gradiant_range,
-        0.0, 1.0
-    );
-    o_color = mix(o_color, u_fog_color, fog_strength);
+    o_color = blend_fog(o_color, f_w_pos);
 }
 

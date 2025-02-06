@@ -171,7 +171,11 @@ namespace houseofatmos::engine {
 
 
         public:
-        Shader(const std::string& vertex_src, const std::string& fragment_src);
+        Shader(
+            const std::string& vertex_src, const std::string& fragment_src,
+            const std::string& vertex_file = "<unknown>",
+            const std::string& fragment_file = "<unknown>"
+        );
         static Shader from_resource(const LoadArgs& args);
         Shader(const Shader& other) = delete;
         Shader(Shader&& other) noexcept;

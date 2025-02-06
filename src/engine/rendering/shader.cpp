@@ -3,15 +3,63 @@
 #include <engine/logging.hpp>
 #include <engine/scene.hpp>
 #include <glad/gl.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace houseofatmos::engine {
 
-    static GLint compile_shader(const char* source, GLenum type) {
+    static std::string expand_shader_includes(
+        const std::string& source, const std::string& source_path
+    ) {
+        const std::string include_start = "#include ";
+        std::string result = source;
+        for(;;) {
+            // can be one of
+            // - '#include <SOME_FILE>'
+            // - '#include "SOME_FILE"'
+            size_t macro_start_p = result.find(include_start);
+            if(macro_start_p == std::string::npos) { break; }
+            size_t open_p = macro_start_p + include_start.size();
+            if(open_p + 2 >= result.size()) { break; }
+            char open_c = result[open_p];
+            char close_c = open_c;
+            if(open_c == '<') { close_c = '>'; }
+            else if(open_c != '\"') { break; }
+            size_t close_p = result.find(close_c, open_p + 1);
+            if(close_p == std::string::npos) { break; }
+            std::string path = result.substr(open_p + 1, close_p - open_p - 1);
+            // '#include <SOME_FILE>' => relative to working directory
+            // '#include "SOME_FILE"' => relative to 'source_path'
+            if(open_c == '\"') {
+                fs::path source_dir = fs::path(source_path).parent_path();
+                fs::path include_path = source_dir / path;
+                path = include_path.string();
+            }
+            if(!fs::exists(path)) {
+                info("While expanding include from '" + source_path + "':");
+            }
+            std::string contents = GenericResource::read_string(path);
+            std::string expanded = expand_shader_includes(contents, path);
+            result = result.substr(0, macro_start_p)
+                + expanded
+                + result.substr(close_p + 1);
+        }
+        return result;
+    }
+
+    static GLint compile_shader(
+        std::string raw_source, const std::string& source_path, GLenum type
+    ) {
         GLint id = glCreateShader(type);
         if(id == 0) {
             error("Unable to initialize shader");
         }
-        glShaderSource(id, 1, &source, NULL);
+        std::string expanded_source = expand_shader_includes(
+            raw_source, source_path
+        );
+        const char* expanded_source_cstr = expanded_source.c_str();
+        glShaderSource(id, 1, &expanded_source_cstr, NULL);
         glCompileShader(id);
         GLint compile_status;
         glGetShaderiv(id, GL_COMPILE_STATUS, &compile_status);
@@ -20,18 +68,27 @@ namespace houseofatmos::engine {
             glGetShaderiv(id, GL_INFO_LOG_LENGTH, &message_len);
             if(message_len == 0) {
                 glDeleteShader(id);
+                std::string type_str = type == GL_VERTEX_SHADER
+                    ? "vertex shader" : "fragment shader";
+                info("While compiling "+type_str+" at '"+source_path+"':");
                 error("Unable to compile shader (no log available)");
             }
             auto message = std::string(message_len, '\0');
             glGetShaderInfoLog(id, message_len, &message_len, message.data());
             message.resize(message_len);
             glDeleteShader(id);
+            std::string type_str = type == GL_VERTEX_SHADER
+                ? "vertex shader" : "fragment shader";
+            info("While compiling "+type_str+" at '"+source_path+"':");
             error("Unable to compile shader:\n" + message);
         }
         return id;
     }
 
-    static GLint link_shaders(GLint vert_id, GLint frag_id) {
+    static GLint link_shaders(
+        GLint vert_id, GLint frag_id,
+        const std::string& vertex_path, const std::string& fragment_path
+    ) {
         GLint id = glCreateProgram();
         if(id == 0) {
             error("Unable to initialize shader program");
@@ -48,6 +105,9 @@ namespace houseofatmos::engine {
                 glDeleteShader(vert_id);
                 glDeleteShader(frag_id);
                 glDeleteProgram(id);
+                info("While linking program from '" + vertex_path
+                    + "' and '" + fragment_path + "':"
+                );
                 error("Unable to link shaders (no log available)");
             }
             auto message = std::string(message_len, '\0');
@@ -56,23 +116,37 @@ namespace houseofatmos::engine {
             glDeleteShader(vert_id);
             glDeleteShader(frag_id);
             glDeleteProgram(id);
+            info("While linking program from '" + vertex_path
+                + "' and '" + fragment_path + "':"
+            );
             error("Unable to link shaders:\n" + message);
         }
         return id;
     }
 
-    Shader::Shader(const std::string& vertex_src, const std::string& fragment_src) {
+    Shader::Shader(
+        const std::string& vertex_src, const std::string& fragment_src,
+        const std::string& vertex_file, const std::string& fragment_file
+    ) {
         this->next_slot = 0;
-        this->vert_id = compile_shader(vertex_src.data(), GL_VERTEX_SHADER);
-        this->frag_id = compile_shader(fragment_src.data(), GL_FRAGMENT_SHADER);
-        this->prog_id = link_shaders(this->vert_id, this->frag_id);
+        this->vert_id = compile_shader(
+            vertex_src.data(), vertex_file, GL_VERTEX_SHADER
+        );
+        this->frag_id = compile_shader(
+            fragment_src.data(), fragment_file, GL_FRAGMENT_SHADER
+        );
+        this->prog_id = link_shaders(
+            this->vert_id, this->frag_id, vertex_file, fragment_file
+        );
         this->moved = false;
     }
 
     Shader Shader::from_resource(const Shader::LoadArgs& args) {
         std::string vertex_src = GenericResource::read_string(args.vertex_path);
         std::string fragment_src = GenericResource::read_string(args.fragment_path);
-        return Shader(vertex_src, fragment_src);
+        return Shader(
+            vertex_src, fragment_src, args.vertex_path, args.fragment_path
+        );
     }
 
     Shader::Shader(Shader&& other) noexcept {
