@@ -703,8 +703,8 @@ namespace houseofatmos::outside {
     }
 
     static Vec<4> water_light_color = Vec<4>(245, 237, 186, 255) / 255;
-    static Vec<4> water_base_color = Vec<4>(126, 196, 193, 215) / 255;
-    static Vec<4> water_dark_color = Vec<4>(52, 133, 157, 180) / 255;
+    static Vec<4> water_base_color = Vec<4>(126, 196, 193, 255) / 255;
+    static Vec<4> water_dark_color = Vec<4>(52, 133, 157, 255) / 255;
 
     void Terrain::render_water(
         engine::Scene& scene, const Renderer& renderer, 
@@ -725,11 +725,17 @@ namespace houseofatmos::outside {
         shader.set_uniform("u_base_color", water_base_color);
         shader.set_uniform("u_dark_color", water_dark_color);
         shader.set_uniform("u_nmap", normal_map);
-        f64 nmap_scale = scale_xz / normal_map.width() * 16; // 16 pixels per tile
-        Vec<2> nmap_offset = offset.swizzle<2>("xz") / scale_xz;
+        f64 units_to_nmap = 1.0 / normal_map.width() * 16; // 16 pixels per unit
+        f64 nmap_scale = scale_xz * units_to_nmap;
+        Vec<2> nmap_offset = offset.swizzle<2>("xz") * units_to_nmap;
         shader.set_uniform("u_nmap_scale", nmap_scale);
         shader.set_uniform("u_nmap_offset", nmap_offset);
         shader.set_uniform("u_time", window.time());
+        shader.set_uniform("u_fog_start_dist", renderer.fog_start_dist);
+        shader.set_uniform("u_fog_gradiant_range", renderer.fog_gradiant_range);
+        shader.set_uniform("u_fog_origin", renderer.fog_origin);
+        shader.set_uniform("u_fog_dist_scale", renderer.fog_dist_scale);
+        shader.set_uniform("u_fog_color", renderer.fog_color);
         this->water_plane.render(shader, renderer.output());
     }
 

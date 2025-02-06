@@ -69,19 +69,18 @@ namespace houseofatmos::outside {
         if(this->interactable != nullptr) {
             this->interactable->pos = pos + Vec<3>(0, 1.0, 0.0);
         }
+        // update animation
+        this->update_animation(window);
     }
 
     static inline const Vec<3> horse_model_heading = Vec<3>(0, 0, -1);
 
-    void PersonalHorse::render(
-        const Renderer& renderer, engine::Scene& scene, 
-        const engine::Window& window
-    ) {
+    void PersonalHorse::update_animation(const engine::Window& window) {
         Vec<3> pos = this->position();
         Vec<3> moved = pos - this->last_pos;
-        f64 moved_dist = moved.len();
+        this->is_moving = moved.len() > 0;
         this->last_pos = pos;
-        if(moved_dist > 0) {
+        if(this->is_moving) {
             Vec<3> heading = moved.normalized();
             f64 angle_cross = horse_model_heading.x() * heading.z()
                 - horse_model_heading.z() * heading.x();
@@ -90,19 +89,10 @@ namespace houseofatmos::outside {
         if(this->state == State::Ridden) {
             this->angle = this->player->current_angle() + pi;
         }
-        engine::Model& model = scene
-            .get<engine::Model>(PersonalHorse::horse_model);
-        Mat<4> transform = Mat<4>::translate(this->position())
-            * Mat<4>::rotate_y(this->angle);
-        const engine::Animation& animation = model.animation(
-            this->state == State::Ridden
-                ? (moved_dist > 0? "trot" : "idle")
-                : (moved_dist > 0? "walk" : "idle")
-        );
         f64 anim_speed = this->state == State::Ridden
-            ? (moved_dist > 0? 3.1 : 0.5)
-            : (moved_dist > 0? 3.0 : 0.5);
-        if(!this->was_moving && moved_dist > 0) {
+            ? (this->is_moving > 0? 3.1 : 0.5)
+            : (this->is_moving > 0? 3.0 : 0.5);
+        if(!this->was_moving && this->is_moving) {
             // this synchronizes the horse animation with the player animation
             // the value determines how far the two animations should be apart
             // (larger values make the horse earlier)
@@ -111,11 +101,21 @@ namespace houseofatmos::outside {
             // (larger value makes the player respond later = more inertia)
             this->anim_timer = 0.15; // 0.15 looks good
         }
-        this->was_moving = moved_dist > 0;
-        this->anim_timer = fmod(
-            this->anim_timer + window.delta_time() * anim_speed, 
-            animation.length()
+        this->was_moving = this->is_moving;
+        this->anim_timer += window.delta_time() * anim_speed;
+    }
+
+    void PersonalHorse::render(const Renderer& renderer, engine::Scene& scene) {
+        engine::Model& model = scene
+            .get<engine::Model>(PersonalHorse::horse_model);
+        Mat<4> transform = Mat<4>::translate(this->position())
+            * Mat<4>::rotate_y(this->angle);
+        const engine::Animation& animation = model.animation(
+            this->state == State::Ridden
+                ? (this->is_moving? "trot" : "idle")
+                : (this->is_moving? "walk" : "idle")
         );
+        this->anim_timer = fmod(this->anim_timer, animation.length());
         const engine::Texture& texture = scene
             .get<engine::Texture>(PersonalHorse::horse_texture);
         renderer.render(

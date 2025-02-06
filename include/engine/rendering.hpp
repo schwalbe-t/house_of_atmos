@@ -157,7 +157,7 @@ namespace houseofatmos::engine {
         // <tex id> -> <count of uniforms using it>
         std::unordered_map<u64, u64> texture_uniform_count;
         // <tex id> -> <tex slot>
-        std::unordered_map<u64, u64> texture_slots;
+        std::unordered_map<u64, std::pair<u64, bool>> texture_slots;
         // free tex slots
         std::vector<u64> free_tex_slots;
         u64 next_slot;
@@ -166,6 +166,8 @@ namespace houseofatmos::engine {
         u64 frag_id;
         u64 prog_id;
         bool moved;
+
+        u64 allocate_texture_slot(std::string name, u64 tex_id, bool is_array);
 
 
         public:
@@ -183,6 +185,8 @@ namespace houseofatmos::engine {
         static size_t max_textures();
 
         void set_uniform(std::string_view name, const Texture& texture);
+        void set_uniform(std::string_view name, std::span<const Texture*> textures);
+        void set_uniform(std::string_view name, std::span<const Texture> textures);
 
         void set_uniform(std::string_view name, f64 value);
         void set_uniform(std::string_view name, Vec<2> value);

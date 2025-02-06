@@ -42,6 +42,7 @@ namespace houseofatmos::outside {
         f64 angle = 0.0;
         f64 anim_timer = 0.0;
         bool was_moving = false;
+        bool is_moving = false;
 
         Player* player;
         Interactables* interactables;
@@ -84,14 +85,16 @@ namespace houseofatmos::outside {
             }
         }
 
+        private: 
+        void update_animation(const engine::Window& window);
+
+        public:
+
         void update(
             const engine::Window& window, const Terrain& terrain, Toasts& toasts
         );
 
-        void render(
-            const Renderer& renderer, engine::Scene& scene, 
-            const engine::Window& window
-        );
+        void render(const Renderer& renderer, engine::Scene& scene);
 
         Serialized serialize() const;
 

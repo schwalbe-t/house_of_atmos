@@ -35,7 +35,7 @@ namespace houseofatmos::engine {
         glGenRenderbuffers(1, &dbo_id);
         glBindRenderbuffer(GL_RENDERBUFFER, dbo_id);
         glRenderbufferStorage(
-            GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height
+            GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height
         );
         return dbo_id;
     }

@@ -37,19 +37,20 @@ namespace houseofatmos::outside {
 
 
         static inline const u64 units_per_tile = 5;
-        static inline const u64 tiles_per_chunk = 8;
-        static inline const i64 draw_distance_ch = 1;
+        static inline const u64 tiles_per_chunk = 6;
+        static inline const i64 draw_distance_ch = 2;
         static inline const i64 draw_distance_un    
             = draw_distance_ch * tiles_per_chunk * units_per_tile;
 
         static inline const f64 min_camera_dist = 15.0;
-        static inline const f64 max_camera_dist = 50.0;
+        static inline const f64 max_camera_dist = 60.0;
 
         Settings settings;
         engine::Localization::LoadArgs local;
         std::string save_path;
 
         Renderer renderer;
+        DirectionalLight* sun;
         Terrain terrain = Terrain(
             256, 256, draw_distance_ch, units_per_tile, tiles_per_chunk
         );
@@ -75,6 +76,8 @@ namespace houseofatmos::outside {
         Outside(Settings&& settings);
         Outside(Settings&& settings, const engine::Arena& buffer);
         void load_resources();
+        static DirectionalLight create_sun();
+        static void configure_renderer(Renderer& renderer);
 
         void update(engine::Window& window) override;
         void render(engine::Window& window) override;

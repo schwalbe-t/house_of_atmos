@@ -105,9 +105,9 @@ namespace houseofatmos::engine {
         return { ptr, stride, acc.count };
     }
 
-    static u8 gltf_default_joints_u8[4] = { 0, 0, 0, 0 };
-    static u16 gltf_default_joints_u16[4] = { 0, 0, 0, 0 };
-    static f64 gltf_default_weights_f32[4] = { 1.0, 0.0, 0.0, 0.0 };
+    static std::array<u8, 4> gltf_default_joints_u8 = { 0, 0, 0, 0 };
+    static std::array<u16, 4> gltf_default_joints_u16 = { 0, 0, 0, 0 };
+    static std::array<f32, 4> gltf_default_weights_f32 = { 1.0, 0.0, 0.0, 0.0 };
 
     static GltfBufferView gltf_get_default_mesh_attrib(
         size_t mesh_id, size_t pmt_i,
@@ -119,10 +119,10 @@ namespace houseofatmos::engine {
                 if(attrib.second.count != 4) { break; }
                 switch(attrib.second.type) {
                     case Mesh::U8: return {
-                        (u8*) gltf_default_joints_u8, 0, SIZE_MAX
+                        (const u8*) gltf_default_joints_u8.data(), 0, SIZE_MAX
                     };
                     case Mesh::U16: return {
-                        (u8*) gltf_default_joints_u16, 0, SIZE_MAX
+                        (const u8*) gltf_default_joints_u16.data(), 0, SIZE_MAX
                     };
                     default:;
                 }
@@ -130,7 +130,9 @@ namespace houseofatmos::engine {
             case Model::Weights: {
                 if(attrib.second.count != 4) { break; }
                 if(attrib.second.type != Mesh::F32) { break; }
-                return { (u8*) gltf_default_weights_f32, 0, SIZE_MAX };
+                return {
+                    (const u8*) gltf_default_weights_f32.data(), 0, SIZE_MAX 
+                };
             }
             default:;
         }

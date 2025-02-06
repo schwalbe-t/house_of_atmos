@@ -97,6 +97,12 @@ namespace houseofatmos::engine {
             error("Attempted to move an already moved 'Shader'");
         }
         if(!this->moved) {
+            for(const auto& [tex_id, slot_info]: this->texture_slots) {
+                bool is_array = slot_info.second;
+                if(!is_array) { continue; }
+                GLuint tex_gid = tex_id;
+                glDeleteTextures(1, &tex_gid);
+            }
             glDeleteShader(this->vert_id);
             glDeleteShader(this->frag_id);
             glDeleteProgram(this->prog_id);
@@ -116,6 +122,12 @@ namespace houseofatmos::engine {
 
     Shader::~Shader() {
         if(this->moved) { return; }
+        for(const auto& [tex_id, slot_info]: this->texture_slots) {
+            bool is_array = slot_info.second;
+            if(!is_array) { continue; }
+            GLuint tex_gid = tex_id;
+            glDeleteTextures(1, &tex_gid);
+        }
         glDeleteShader(this->vert_id);
         glDeleteShader(this->frag_id);
         glDeleteProgram(this->prog_id);
@@ -127,9 +139,10 @@ namespace houseofatmos::engine {
             error("Attempted to use a moved 'Shader'");
         }
         glUseProgram(this->prog_id);
-        for(const auto& [tex_id, slot]: this->texture_slots) {
+        for(const auto& [tex_id, slot_info]: this->texture_slots) {
+            const auto& [slot, is_array] = slot_info;
             glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, tex_id);
+            glBindTexture(is_array? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, tex_id);
         }
     }
 
@@ -137,9 +150,10 @@ namespace houseofatmos::engine {
         if(this->moved) {
             error("Attempted to use a moved 'Shader'");
         }
-        for(const auto& [tex_id, slot]: this->texture_slots) {
+        for(const auto& [tex_id, slot_info]: this->texture_slots) {
+            const auto& [slot, is_array] = slot_info;
             glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, 0);
+            glBindTexture(is_array? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, 0);
         }
         glUseProgram(0);
     }
@@ -173,12 +187,9 @@ namespace houseofatmos::engine {
         return location;
     }
 
-    void Shader::set_uniform(std::string_view name_v, const Texture& texture) {
-        if(this->moved) {
-            error("Attempted to use a moved 'Shader'");
-        }
-        auto name = std::string(name_v);
-        u64 tex_id = texture.internal_tex_id();
+    u64 Shader::allocate_texture_slot(
+        std::string name, u64 tex_id, bool is_array
+    ) {
         // if this variable already had a texture, get rid of it
         if(this->uniform_textures.contains(name)) {
             u64 old_tex_id = this->uniform_textures[name];
@@ -190,17 +201,23 @@ namespace houseofatmos::engine {
                 this->texture_uniform_count[old_tex_id] = old_tex_count;
             } else {
                 // else get rid of the texture and mark the slot as free
-                u64 old_slot = this->texture_slots[old_tex_id];
+                const auto& [old_slot, old_was_array] 
+                    = this->texture_slots[old_tex_id];
                 this->texture_uniform_count.erase(old_tex_id);
                 this->texture_slots.erase(old_tex_id);
                 this->free_tex_slots.push_back(old_slot);
+                if(old_was_array) {
+                    GLuint old_tex_gid = old_tex_id;
+                    glDeleteTextures(1, &old_tex_gid);
+                }
             }
         }
+        // determine the slot
         u64 slot;
         if(this->texture_uniform_count.contains(tex_id)) {
             // if there are other uniforms already using the texture
             // use the same slot
-            slot = this->texture_slots[tex_id];
+            slot = this->texture_slots[tex_id].first;
         } else if(this->free_tex_slots.size() > 0) {
             // if there are slots that are to be reused reuse them
             slot = this->free_tex_slots.back();
@@ -217,14 +234,80 @@ namespace houseofatmos::engine {
             }
             this->next_slot += 1;
         }
-        // actually assign the texture to the slot
+        // use the slot
+        this->texture_uniform_count[tex_id] += 1; 
         this->uniform_textures[name] = tex_id;
-        this->texture_uniform_count[tex_id] += 1;
-        this->texture_slots[tex_id] = slot;
+        this->texture_slots[tex_id] = { slot, is_array };
+        return slot;
+    }
+
+    void Shader::set_uniform(std::string_view name_v, const Texture& texture) {
+        if(this->moved) {
+            error("Attempted to use a moved 'Shader'");
+        }
+        auto name = std::string(name_v);
+        u64 tex_id = texture.internal_tex_id();
+        u64 slot = this->allocate_texture_slot(name, tex_id, false /* not tex array */);
         GLint location = binded_uniform_loc(this->moved, this->prog_id, name);
         glActiveTexture(GL_TEXTURE0 + slot);
-        glBindTexture(GL_TEXTURE_2D, texture.internal_tex_id());
+        glBindTexture(GL_TEXTURE_2D, tex_id);
         glUniform1i(location, slot);
+    }
+
+    void Shader::set_uniform(
+        std::string_view name_v, std::span<const Texture*> textures
+    ) {
+        if(this->moved) {
+            error("Attempted to use a moved 'Shader'");
+        }
+        if(textures.size() == 0) { return; }
+        const Texture& first_texture = *textures[0];
+        auto name = std::string(name_v);
+        GLuint array_id;
+        glGenTextures(1, &array_id);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, array_id);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
+        glTexImage3D(
+            GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 
+            first_texture.width(), first_texture.height(), textures.size(), 
+            0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr
+        );
+        for(size_t i = 0; i < textures.size(); i += 1) {
+            const Texture& texture = *textures[i];
+            bool size_valid = texture.width() == first_texture.width()
+                && texture.height() == first_texture.height();
+            if(!size_valid) {
+                engine::error("Texture sizes don't match!"
+                    " (while setting uniform '" + name + "')"
+                );
+            }
+            glBindFramebuffer(GL_FRAMEBUFFER, texture.internal_fbo_id());
+            glCopyTexSubImage3D(
+                GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, 
+                0, 0, texture.width(), texture.height()
+            );
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        u64 slot = this->allocate_texture_slot(name, array_id, true /* is tex array */);
+        GLint location = binded_uniform_loc(this->moved, this->prog_id, name);
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, array_id);
+        glUniform1i(location, slot);
+    }
+
+    void Shader::set_uniform(
+        std::string_view name_v, std::span<const Texture> textures
+    ) {
+        std::vector<const Texture*> texture_ptrs;
+        texture_ptrs.reserve(textures.size());
+        for(const Texture& texture: textures) {
+            texture_ptrs.push_back(&texture);
+        }
+        this->set_uniform(name_v, texture_ptrs);
     }
 
 

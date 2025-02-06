@@ -119,7 +119,7 @@ namespace houseofatmos::outside {
             u64 width, u64 height, 
             i64 draw_distance, u64 tile_size, u64 chunk_tiles
         ) {
-            if(tile_size * chunk_tiles > UINT8_MAX + 1) {
+            if(tile_size * chunk_tiles > UINT8_MAX) {
                 engine::warning("The product of tile_size and chunk_tiles must "
                     "not exceed 256, as this may result in incosistent foliage "
                     "placement. Given values are tile_size=" + std::to_string(tile_size)

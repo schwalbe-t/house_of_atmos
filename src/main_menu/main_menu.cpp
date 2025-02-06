@@ -20,6 +20,7 @@ namespace houseofatmos {
             + Vec<3>(0, 0, 35);
         this->renderer.camera.position.y()
             = this->terrain.elevation_at(this->renderer.camera.look_at) + 35;
+        this->renderer.lights.push_back(outside::Outside::create_sun());
         this->load_resources();
     }
 
@@ -292,6 +293,9 @@ namespace houseofatmos {
     void MainMenu::render_background(engine::Window& window) {
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(this->renderer.camera.look_at);
+        this->renderer.render_to_shadow_maps();
+        this->terrain.render_loaded_chunks(*this, this->renderer, window);
+        this->renderer.render_to_output();
         this->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->background.resize_fast(
             this->renderer.output().width(), this->renderer.output().height()

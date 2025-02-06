@@ -23,6 +23,21 @@ namespace houseofatmos::outside {
         this->load(engine::Localization::Loader(this->local));
     }
 
+    DirectionalLight Outside::create_sun() {
+        return DirectionalLight(
+            Vec<3>(0, 0, 0), // focus point 
+            Vec<3>(1, -1.3, 1.2), // direction
+            80.0 // radius
+        );
+    }
+
+    void Outside::configure_renderer(Renderer& renderer) {
+        renderer.fog_start_dist = 50.0;
+        renderer.fog_gradiant_range = 10.0;
+        renderer.fog_dist_scale = Vec<3>(1.0, 0.0, 1.0); // only take Y axis into account
+        renderer.fog_color = Vec<4>(239, 239, 230, 255) / 255.0;
+    }
+
     static void set_base_ui(Outside& scene, u64 selected);
 
     using ActionModeBuilder = std::unique_ptr<ActionMode> (*)(Outside& scene);
@@ -354,6 +369,9 @@ namespace houseofatmos::outside {
             this->personal_horse
         );
         set_action_mode(*this, default_mode_const, UINT64_MAX);
+        this->configure_renderer(this->renderer);
+        this->renderer.lights.push_back(Outside::create_sun());
+        this->sun = &this->renderer.lights.back();
     }
 
 
@@ -446,15 +464,24 @@ namespace houseofatmos::outside {
 
 
 
+    static void render_geometry(Outside& scene, engine::Window& window) {
+        scene.terrain.render_loaded_chunks(scene, scene.renderer, window);
+        scene.player.render(scene, scene.renderer);
+        scene.carriages.render_all_around(
+            scene.player.position, scene.renderer, scene, window
+        );
+        scene.personal_horse.render(scene.renderer, scene);
+    }
+
     void Outside::render(engine::Window& window) {
+        this->sun->focus_point = this->player.position;
+        this->renderer.fog_origin = this->player.position;
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(this->player.position);
-        this->terrain.render_loaded_chunks(*this, this->renderer, window);
-        this->player.render(*this, this->renderer);
-        this->carriages.render_all_around(
-            this->player.position, this->renderer, *this, window
-        );
-        this->personal_horse.render(this->renderer, *this, window);
+        this->renderer.render_to_shadow_maps();
+        render_geometry(*this, window);
+        this->renderer.render_to_output();
+        render_geometry(*this, window);
         bool render_action_modes = !this->player.in_water
             && !this->player.is_riding
             && this->terrain_map.element()->hidden;
@@ -497,6 +524,9 @@ namespace houseofatmos::outside {
             outside.personal_horse, &this->player, &this->interactables
         );
         set_action_mode(*this, default_mode_const, UINT64_MAX);
+        this->configure_renderer(this->renderer);
+        this->renderer.lights.push_back(Outside::create_sun());
+        this->sun = &this->renderer.lights.back();
     }
 
     engine::Arena Outside::serialize() const {
