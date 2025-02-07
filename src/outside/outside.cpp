@@ -460,6 +460,7 @@ namespace houseofatmos::outside {
             this->terrain_map.element()->hidden = false;
         }
         this->terrain_map.update(window, *this);
+        engine::debug(std::to_string(1.0 / window.delta_time()));
     }
 
 
@@ -482,6 +483,7 @@ namespace houseofatmos::outside {
         render_geometry(*this, window);
         this->renderer.render_to_output();
         render_geometry(*this, window);
+        this->terrain.render_water(*this, this->renderer, window);
         bool render_action_modes = !this->player.in_water
             && !this->player.is_riding
             && this->terrain_map.element()->hidden;

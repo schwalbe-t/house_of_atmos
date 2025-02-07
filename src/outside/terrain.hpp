@@ -233,6 +233,10 @@ namespace houseofatmos::outside {
             engine::Scene& scene, const Renderer& renderer,
             const engine::Window& window
         );
+        void render_water(
+            engine::Scene& scene, const Renderer& renderer,
+            const engine::Window& window
+        );
         private:
         void render_chunk_ground(
             LoadedChunk& loaded_chunk,
@@ -247,10 +251,6 @@ namespace houseofatmos::outside {
         );
         void render_bridges(
             engine::Scene& scene, const Renderer& renderer
-        );
-        void render_water(
-            engine::Scene& scene, const Renderer& renderer,
-            const engine::Window& window
         );
 
         public:

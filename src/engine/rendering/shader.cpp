@@ -268,10 +268,6 @@ namespace houseofatmos::engine {
                 this->texture_uniform_count.erase(old_tex_id);
                 this->texture_slots.erase(old_tex_id);
                 this->free_tex_slots.push_back(old_slot);
-                if(old_was_array) {
-                    GLuint old_tex_gid = old_tex_id;
-                    glDeleteTextures(1, &old_tex_gid);
-                }
             }
         }
         // determine the slot

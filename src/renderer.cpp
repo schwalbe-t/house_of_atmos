@@ -52,14 +52,33 @@ namespace houseofatmos {
             .get<engine::Shader>(Renderer::shadow_shader_args);
         this->geometry_shader = &scene
             .get<engine::Shader>(Renderer::geometry_shader_args);
-        this->geometry_shader
-            ->set_uniform("u_fog_start_dist", this->fog_start_dist);
-        this->geometry_shader
-            ->set_uniform("u_fog_gradiant_range", this->fog_gradiant_range);
-        this->geometry_shader->set_uniform("u_fog_origin", this->fog_origin);
-        this->geometry_shader
-            ->set_uniform("u_fog_dist_scale", this->fog_dist_scale);
-        this->geometry_shader->set_uniform("u_fog_color", this->fog_color);
+        this->set_fog_uniforms(*this->geometry_shader);
+    }
+
+    std::vector<Mat<4>> Renderer::collect_light_view_proj() const {
+        std::vector<Mat<4>> light_view_proj;
+        light_view_proj.reserve(this->lights.size());
+        for(const DirectionalLight& light: this->lights) {
+            light_view_proj.push_back(light.compute_view_proj());
+        }
+        return light_view_proj;
+    }
+
+    void Renderer::set_fog_uniforms(engine::Shader& shader) const {
+        shader.set_uniform("u_fog_start_dist", this->fog_start_dist);
+        shader.set_uniform("u_fog_gradiant_range", this->fog_gradiant_range);
+        shader.set_uniform("u_fog_origin", this->fog_origin);
+        shader.set_uniform("u_fog_dist_scale", this->fog_dist_scale);
+        shader.set_uniform("u_fog_color", this->fog_color);
+    }
+
+    void Renderer::set_shadow_uniforms(engine::Shader& shader) const {
+        if(this->lights.size() > Renderer::max_light_c) {
+            engine::debug("Scene has more lights than currently supported!");
+        }
+        shader.set_uniform("u_light_count", (i64) this->lights.size());
+        shader.set_uniform("u_light_view_proj", this->collect_light_view_proj());
+        shader.set_uniform("u_shadow_maps", this->shadow_maps);
     }
 
     Vec<2> Renderer::world_to_ndc(const Vec<3>& pos) const {
@@ -86,19 +105,7 @@ namespace houseofatmos {
 
     void Renderer::render_to_output() {
         this->rendering_shadow_maps = false;
-        if(this->lights.size() > Renderer::max_light_c) {
-            engine::debug("Scene has more lights than currently supported!");
-        }
-        this->geometry_shader->set_uniform(
-            "u_light_count", (i64) this->lights.size()
-        );
-        std::vector<Mat<4>> light_view_proj;
-        light_view_proj.reserve(this->lights.size());
-        for(const DirectionalLight& light: this->lights) {
-            light_view_proj.push_back(light.compute_view_proj());
-        }
-        this->geometry_shader->set_uniform("u_light_view_proj", light_view_proj);
-        this->geometry_shader->set_uniform("u_shadow_maps", this->shadow_maps);
+        this->set_shadow_uniforms(*this->geometry_shader);
     }
 
     void Renderer::render(

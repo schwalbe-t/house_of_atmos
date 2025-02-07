@@ -121,6 +121,10 @@ namespace houseofatmos {
         Mat<4> compute_view_proj() const;
         void configure(const engine::Window& window, engine::Scene& scene);
 
+        std::vector<Mat<4>> collect_light_view_proj() const;
+        void set_fog_uniforms(engine::Shader& shader) const;
+        void set_shadow_uniforms(engine::Shader& shader) const;
+
         Vec<2> world_to_ndc(const Vec<3>& pos) const;
 
         void render_to_shadow_maps();
