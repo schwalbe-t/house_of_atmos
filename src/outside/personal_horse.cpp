@@ -32,10 +32,10 @@ namespace houseofatmos::outside {
                 this->set_ridden();
             });
         }
-        // set to free if riding and space bar pressed
-        bool player_got_off = this->state == State::Ridden
-            && window.was_pressed(engine::Key::Space);
-        if(player_got_off) {
+        // set to free if riding and space bar pressed or in water
+        bool player_got_off = window.was_pressed(engine::Key::Space)
+            || this->player->in_water;
+        if(this->state == State::Ridden && player_got_off) {
             this->set_free(pos);
         }
         // set to called if idle and H key pressed

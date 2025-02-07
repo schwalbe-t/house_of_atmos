@@ -246,16 +246,6 @@ namespace houseofatmos::outside {
         }
     }
 
-    static void clear_area_foliage(
-        Terrain& terrain, i64 start_x, i64 start_z, i64 end_x, i64 end_z
-    ) {
-        for(i64 x = start_x; x < end_x; x += 1) {
-            for(i64 z = start_z; z < end_z; z += 1) {
-                terrain.remove_foliage_at(x, z);
-            }
-        }
-    }
-
     void TerraformMode::update(
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
@@ -304,8 +294,8 @@ namespace houseofatmos::outside {
                     this->terrain, 
                     *this->mode, min_x, min_z, max_x, max_z, start_elev
                 );
-                clear_area_foliage(
-                    this->terrain, min_x - 1, min_z - 1, max_x + 1, max_z + 1
+                this->terrain.adjust_area_foliage(
+                    min_x - 1, min_z - 1, max_x + 1, max_z + 1
                 );
             }
             if(!is_valid) {

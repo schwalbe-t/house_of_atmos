@@ -14,13 +14,15 @@ namespace houseofatmos {
         u32 background_seed = random_init();
         this->terrain.generate_elevation(background_seed);
         this->terrain.generate_foliage(background_seed);
-        this->renderer.camera.look_at = Vec<3>(16, 1, 16) 
+        outside::Outside::configure_renderer(this->renderer);
+        this->renderer.camera.look_at = Vec<3>(16, 0.0, 16) 
             * this->terrain.units_per_tile();
-        this->renderer.camera.position = this->renderer.camera.look_at
-            + Vec<3>(0, 0, 35);
-        this->renderer.camera.position.y()
-            = this->terrain.elevation_at(this->renderer.camera.look_at) + 35;
-        this->renderer.lights.push_back(outside::Outside::create_sun());
+        this->renderer.camera.look_at
+            .y() = this->terrain.elevation_at(this->renderer.camera.look_at);
+        this->renderer.fog_origin = this->renderer.camera.look_at;
+        DirectionalLight sun = outside::Outside::create_sun();
+        sun.focus_point = this->renderer.camera.look_at;
+        this->renderer.lights.push_back(std::move(sun));
         this->load_resources();
     }
 
@@ -276,6 +278,10 @@ namespace houseofatmos {
         );
     }
 
+    static const f64 camera_rotation_period = 60.0;
+    static const f64 camera_y = 1.0; // 45 degrees
+    static const f64 camera_distance = 40.0;
+
     void MainMenu::update(engine::Window& window) {
         this->before_next_frame();
         this->before_next_frame = []() {};
@@ -288,6 +294,9 @@ namespace houseofatmos {
             }
         }
         this->ui.update(window);
+        f64 cam_angle = window.time() / camera_rotation_period * (2 * pi);
+        this->renderer.camera.position = this->renderer.camera.look_at
+            + Vec<3>(cos(cam_angle), camera_y, sin(cam_angle)) * camera_distance;
     }
 
     void MainMenu::render_background(engine::Window& window) {
@@ -297,13 +306,14 @@ namespace houseofatmos {
         this->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->renderer.render_to_output();
         this->terrain.render_loaded_chunks(*this, this->renderer, window);
+        this->terrain.render_water(*this, this->renderer, window);
         this->background.resize_fast(
             this->renderer.output().width(), this->renderer.output().height()
         );
         engine::Shader& blur = this->get<engine::Shader>(MainMenu::blur_shader);
         blur.set_uniform("u_texture_w", (i64) this->background.width());
         blur.set_uniform("u_texture_h", (i64) this->background.height());
-        i64 blur_rad = (i64) ((window.width() + window.height()) / 200.0);
+        i64 blur_rad = (i64) (std::min(window.width(), window.height()) / 100.0);
         blur.set_uniform("u_blur_rad", blur_rad);
         this->renderer.output().blit(this->background.as_target(), blur);
     }

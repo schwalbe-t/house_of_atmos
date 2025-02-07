@@ -88,9 +88,12 @@ namespace houseofatmos::outside {
                 f64 height_diff = elev_max - elev_min;
                 f64 slope_factor = 1 - (height_diff / stone_min_height_diff);
                 ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+                f64 noise_val = perlin_noise(
+                    seed, Vec<2>(tile_x / 25.0, tile_z / 25.0)
+                ) * 0.5 + 0.5; // normalize to 0..1
                 for(size_t type_i = 0; type_i < Foliage::types.size(); type_i += 1) {
                     const Foliage::TypeInfo& type = Foliage::types.at(type_i);
-                    f64 chance = type.spawn_chance * slope_factor;
+                    f64 chance = type.spawn_chance(noise_val) * slope_factor;
                     for(u64 att_i = 0; att_i < type.attempt_count; att_i += 1) {
                         if(rng.next_f64() >= chance) { continue; }
                         u8 x = (u8) ((rel_tile_x + rng.next_f64()) * this->tile_size);
@@ -562,6 +565,37 @@ namespace houseofatmos::outside {
         this->reload_chunk_at(chunk_x, chunk_z);
     }
 
+    void Terrain::adjust_area_foliage(
+        i64 start_x, i64 start_z, i64 end_x, i64 end_z
+    ) {
+        u64 min_x = (u64) std::max(start_x, (i64) 0);
+        u64 min_z = (u64) std::max(start_z, (i64) 0);
+        u64 max_x = std::min((u64) end_x, this->width_in_tiles() - 1);
+        u64 max_z = std::min((u64) end_z, this->height_in_tiles() - 1);
+        u64 min_ch_x = min_x / this->tiles_per_chunk();
+        u64 min_ch_z = min_z / this->tiles_per_chunk();
+        u64 max_ch_x = max_x / this->tiles_per_chunk();
+        u64 max_ch_z = max_z / this->tiles_per_chunk();
+        for(u64 ch_x = min_ch_x; ch_x <= max_ch_x; ch_x += 1) {
+            for(u64 ch_z = min_ch_z; ch_z <= max_ch_z; ch_z += 1) {
+                Terrain::ChunkData& chunk = this->chunk_at(ch_x, ch_z);
+                for(size_t fol_i = 0; fol_i < chunk.foliage.size();) {
+                    Foliage& fol = chunk.foliage[fol_i];
+                    Vec<3> fol_pos = Vec<3>(ch_x, 0, ch_z) 
+                        * this->tiles_per_chunk() * this->units_per_tile()
+                        + Vec<3>(fol.x, 0, fol.z);
+                    fol.y = this->elevation_at(fol_pos);
+                    if(fol.y < 0.0) {
+                        chunk.foliage.erase(chunk.foliage.begin() + fol_i);
+                    } else {
+                        fol_i += 1;
+                    }
+                }
+                this->reload_chunk_at(ch_x, ch_z);
+            }
+        }
+    }
+
     static const i64 tile_selection_range_chunks = 2;
 
     std::pair<u64, u64> Terrain::find_selected_terrain_tile(
@@ -619,6 +653,8 @@ namespace houseofatmos::outside {
     ) {
         const engine::Texture& ground_texture
             = scene.get<engine::Texture>(Terrain::ground_texture);
+        std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage_instances;
+        std::unordered_map<Building::Type, std::vector<Mat<4>>> building_instances;
         for(LoadedChunk& chunk: this->loaded_chunks) {
             if(chunk.modified) {
                 chunk = this->load_chunk(chunk.x, chunk.z);
@@ -628,9 +664,25 @@ namespace houseofatmos::outside {
             this->render_chunk_ground(
                 chunk, ground_texture, chunk_offset, renderer
             );
-            this->render_chunk_features(
-                chunk, window, scene, renderer
+            for(const auto& [foliage_type, instances]: chunk.foliage) {
+                std::vector<Mat<4>>& f_inst = foliage_instances[foliage_type];
+                f_inst.insert(f_inst.end(), instances.begin(), instances.end());
+            }
+            for(const auto& [building_type, instances]: chunk.buildings) {
+                std::vector<Mat<4>>& b_inst = building_instances[building_type];
+                b_inst.insert(b_inst.end(), instances.begin(), instances.end());
+            }
+        }
+        for(const auto& [foliage_type, instances]: foliage_instances) {
+            engine::Model& model = scene.get<engine::Model>(
+                Foliage::types.at((size_t) foliage_type).model
             );
+            renderer.render(model, instances);
+        }
+        for(const auto& [building_type, instances]: building_instances) {
+            const Building::TypeInfo& type_info
+                = Building::types[(size_t) building_type];
+            type_info.render_buildings(window, scene, renderer, instances);
         }
         this->render_bridges(scene, renderer);
     }
@@ -647,23 +699,6 @@ namespace houseofatmos::outside {
             std::array { Mat<4>::translate(chunk_offset) },
             false
         );
-    }
-
-    void Terrain::render_chunk_features(
-        const LoadedChunk& loaded_chunk,
-        const engine::Window& window, engine::Scene& scene, const Renderer& renderer
-    ) {
-        for(const auto& [foliage_type, instances]: loaded_chunk.foliage) {
-            engine::Model& model = scene.get<engine::Model>(
-                Foliage::types.at((size_t) foliage_type).model
-            );
-            renderer.render(model, instances);
-        }
-        for(const auto& [building_type, instances]: loaded_chunk.buildings) {
-            const Building::TypeInfo& type_info
-                = Building::types[(size_t) building_type];
-            type_info.render_buildings(window, scene, renderer, instances);
-        }
     }
 
     void Terrain::render_bridges(

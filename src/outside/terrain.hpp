@@ -212,6 +212,8 @@ namespace houseofatmos::outside {
             const AbsCollider& player_collider, bool water_is_obstacle
         ) const;
         void remove_foliage_at(i64 tile_x, i64 tile_z);
+        void adjust_area_foliage(i64 start_x, i64 start_z, i64 end_x, i64 end_z);
+
         std::pair<u64, u64> find_selected_terrain_tile(
             Vec<2> cursor_pos_ndc, const Renderer& renderer, Vec<3> tile_offset
         ) const;
@@ -242,11 +244,6 @@ namespace houseofatmos::outside {
             LoadedChunk& loaded_chunk,
             const engine::Texture& ground_texture, 
             const Vec<3>& chunk_offset,
-            const Renderer& renderer
-        );
-        void render_chunk_features(
-            const LoadedChunk& loaded_chunk,
-            const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
         );
         void render_bridges(

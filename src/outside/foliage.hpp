@@ -10,27 +10,33 @@ namespace houseofatmos::outside {
 
     struct Foliage {
 
+        using ProbabilityFunc = f64 (*)(f64 nmap_val);
+
         struct TypeInfo {
             engine::Model::LoadArgs model;
             RelCollider collider; // in game units
             u64 attempt_count; // number of spawn attempts per tile
             // spawn chance (0-1) with 0 height difference on the tile
             // decreases to 0 on stone with higher slopes, is 0 on sand
-            f64 spawn_chance; 
+            ProbabilityFunc spawn_chance;
         };
 
         static inline const std::vector<TypeInfo> types = {
             /* Grass */ {
                 { "res/foliage/grass.glb", Renderer::model_attribs },
                 RelCollider::none(),
-                5,
-                1
+                10,
+                [](f64 n) { (void) n; return 1.0; } // chance is always 0.0
             },
             /* Tree */ {
                 { "res/foliage/tree.glb", Renderer::model_attribs },
                 RelCollider({ -5.0/16, -0.5, -5.0/16 }, { 10.0/16, 1, 10.0/16 }),
                 1,
-                0.25
+                [](f64 n) { 
+                    return n < 0.4 ? 0.05 // 40% of area =>  5% chance
+                        : n < 0.6? 0.5    // 20% of area => 50% chance
+                        : 0.8;            // 40% of area => 80% chance
+                }
             }
         };
 

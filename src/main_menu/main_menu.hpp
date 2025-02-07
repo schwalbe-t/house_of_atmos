@@ -29,8 +29,8 @@ namespace houseofatmos {
         engine::Localization::LoadArgs local_ref;
 
         static inline const u64 units_per_tile = 5;
-        static inline const u64 tiles_per_chunk = 6;
-        static inline const i64 draw_distance_ch = 1;
+        static inline const u64 tiles_per_chunk = 5;
+        static inline const i64 draw_distance_ch = 2;
 
         Renderer renderer;
         engine::Texture background = engine::Texture(16, 16);
