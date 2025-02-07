@@ -248,7 +248,7 @@ namespace houseofatmos::outside {
             (u64) this->container->final_size().x(), 
             (u64) this->container->final_size().y()
         );
-        this->output_tex.clear_color(Vec<4>(0, 0, 0, 0));
+        this->output_tex.as_target().clear_color(Vec<4>(0, 0, 0, 0));
         this->view_size_px.x() = (f64) this->output_tex.height() 
             * this->view_scale;
         this->view_size_px.y() = (f64) this->t_width / this->t_height 
@@ -256,7 +256,7 @@ namespace houseofatmos::outside {
         this->view_pos_px = Vec<2>(this->output_tex.width(), this->output_tex.height()) / 2
             - this->view_size_px * this->view_pos;
         this->rendered_tex.blit(
-            this->output_tex, 
+            this->output_tex.as_target(), 
             this->view_pos_px.x(), this->view_pos_px.y(), 
             this->view_size_px.x(), this->view_size_px.y()
         );

@@ -171,12 +171,6 @@ namespace houseofatmos::engine {
             error("Attempted to move an already moved 'Shader'");
         }
         if(!this->moved) {
-            for(const auto& [tex_id, slot_info]: this->texture_slots) {
-                bool is_array = slot_info.second;
-                if(!is_array) { continue; }
-                GLuint tex_gid = tex_id;
-                glDeleteTextures(1, &tex_gid);
-            }
             glDeleteShader(this->vert_id);
             glDeleteShader(this->frag_id);
             glDeleteProgram(this->prog_id);
@@ -196,12 +190,6 @@ namespace houseofatmos::engine {
 
     Shader::~Shader() {
         if(this->moved) { return; }
-        for(const auto& [tex_id, slot_info]: this->texture_slots) {
-            bool is_array = slot_info.second;
-            if(!is_array) { continue; }
-            GLuint tex_gid = tex_id;
-            glDeleteTextures(1, &tex_gid);
-        }
         glDeleteShader(this->vert_id);
         glDeleteShader(this->frag_id);
         glDeleteProgram(this->prog_id);
@@ -280,10 +268,6 @@ namespace houseofatmos::engine {
                 this->texture_uniform_count.erase(old_tex_id);
                 this->texture_slots.erase(old_tex_id);
                 this->free_tex_slots.push_back(old_slot);
-                if(old_was_array) {
-                    GLuint old_tex_gid = old_tex_id;
-                    glDeleteTextures(1, &old_tex_gid);
-                }
             }
         }
         // determine the slot
@@ -329,59 +313,19 @@ namespace houseofatmos::engine {
     }
 
     void Shader::set_uniform(
-        std::string_view name_v, std::span<const Texture*> textures
+        std::string_view name_v, const TextureArray& textures
     ) {
         if(this->moved) {
             error("Attempted to use a moved 'Shader'");
         }
         if(textures.size() == 0) { return; }
-        const Texture& first_texture = *textures[0];
         auto name = std::string(name_v);
-        GLuint array_id;
-        glGenTextures(1, &array_id);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, array_id);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
-        glTexImage3D(
-            GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 
-            first_texture.width(), first_texture.height(), textures.size(), 
-            0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr
-        );
-        for(size_t i = 0; i < textures.size(); i += 1) {
-            const Texture& texture = *textures[i];
-            bool size_valid = texture.width() == first_texture.width()
-                && texture.height() == first_texture.height();
-            if(!size_valid) {
-                engine::error("Texture sizes don't match!"
-                    " (while setting uniform '" + name + "')"
-                );
-            }
-            glBindFramebuffer(GL_FRAMEBUFFER, texture.internal_fbo_id());
-            glCopyTexSubImage3D(
-                GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, 
-                0, 0, texture.width(), texture.height()
-            );
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        u64 slot = this->allocate_texture_slot(name, array_id, true /* is tex array */);
+        u64 tex_id = textures.internal_tex_id();
+        u64 slot = this->allocate_texture_slot(name, tex_id, true /* is tex array */);
         GLint location = binded_uniform_loc(this->moved, this->prog_id, name);
         glActiveTexture(GL_TEXTURE0 + slot);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, array_id);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, tex_id);
         glUniform1i(location, slot);
-    }
-
-    void Shader::set_uniform(
-        std::string_view name_v, std::span<const Texture> textures
-    ) {
-        std::vector<const Texture*> texture_ptrs;
-        texture_ptrs.reserve(textures.size());
-        for(const Texture& texture: textures) {
-            texture_ptrs.push_back(&texture);
-        }
-        this->set_uniform(name_v, texture_ptrs);
     }
 
 

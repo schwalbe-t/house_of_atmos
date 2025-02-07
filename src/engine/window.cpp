@@ -237,8 +237,8 @@ namespace houseofatmos::engine {
         f64 scale = (f64) this->height() / texture.height();
         f64 dest_width = texture.width() * scale;
         i64 dest_x = (this->width() - dest_width) / 2;
-        texture.internal_blit(
-            0, this->width(), this->height(),
+        texture.blit(
+            (RenderTarget) { 0, this->width(), this->height() },
             dest_x, 0, dest_width, this->height()
         );
     }

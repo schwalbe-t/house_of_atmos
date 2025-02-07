@@ -617,7 +617,6 @@ namespace houseofatmos::outside {
         engine::Scene& scene, const Renderer& renderer,
         const engine::Window& window
     ) {
-        this->render_water(scene, renderer, window);
         const engine::Texture& ground_texture
             = scene.get<engine::Texture>(Terrain::ground_texture);
         for(LoadedChunk& chunk: this->loaded_chunks) {
@@ -731,12 +730,9 @@ namespace houseofatmos::outside {
         shader.set_uniform("u_nmap_scale", nmap_scale);
         shader.set_uniform("u_nmap_offset", nmap_offset);
         shader.set_uniform("u_time", window.time());
-        shader.set_uniform("u_fog_start_dist", renderer.fog_start_dist);
-        shader.set_uniform("u_fog_gradiant_range", renderer.fog_gradiant_range);
-        shader.set_uniform("u_fog_origin", renderer.fog_origin);
-        shader.set_uniform("u_fog_dist_scale", renderer.fog_dist_scale);
-        shader.set_uniform("u_fog_color", renderer.fog_color);
-        this->water_plane.render(shader, renderer.output());
+        renderer.set_fog_uniforms(shader);
+        renderer.set_shadow_uniforms(shader);
+        this->water_plane.render(shader, renderer.output().as_target());
     }
 
 

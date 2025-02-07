@@ -76,6 +76,21 @@ namespace houseofatmos::engine {
     struct Shader;
 
 
+    struct RenderTarget {
+
+        const u64 fbo_id;
+        const u64 width_px;
+        const u64 height_px;
+
+        u64 width() const { return this->width_px; }
+        u64 height() const { return this->height_px; }
+
+        void clear_color(Vec<4> color) const;
+        void clear_depth(f64 depth) const;
+
+    };
+
+
     struct Texture {
         struct LoadArgs {
             std::string path;
@@ -103,7 +118,6 @@ namespace houseofatmos::engine {
         u64 dbo_id;
         bool moved;
 
-
         public:
         Texture(u64 width, u64 height, const u8* data);
         Texture(u64 width, u64 height);
@@ -115,24 +129,79 @@ namespace houseofatmos::engine {
         Texture& operator=(Texture&& other) noexcept;
         ~Texture();
 
-        u64 width() const;
-        u64 height() const;
+        u64 width() const { return this->width_px; }
+        u64 height() const { return this->height_px; }
 
-        u64 internal_fbo_id() const;
-        u64 internal_tex_id() const;
-
-        void clear_color(Vec<4> color) const;
-        void clear_depth(f64 depth) const;
+        u64 internal_tex_id() const {
+            if(this->moved) {
+                error("Attempted to use a moved 'Texture'");
+            }
+            return this->tex_id; 
+        }
 
         void resize_fast(u64 width, u64 height);
         void resize(u64 width, u64 height);
 
-        void blit(const Texture& dest, f64 x, f64 y, f64 w, f64 h) const;
-        void internal_blit(
-            u64 dest_fbo_id, u32 dest_width, u32 dest_height,
-            f64 x, f64 y, f64 w, f64 h
-        ) const;
-        void blit(const Texture& dest, Shader& shader) const;
+        RenderTarget as_target() const {
+            if(this->moved) {
+                error("Attempted to use a moved 'Texture'");
+            }
+            return (RenderTarget) { 
+                this->fbo_id, this->width_px, this->height_px 
+            };
+        }
+
+        void blit(RenderTarget dest, f64 x, f64 y, f64 w, f64 h) const;
+        void blit(RenderTarget, Shader& shader) const;
+
+    };
+
+
+    struct TextureArray {
+
+        private:
+        u64 width_px;
+        u64 height_px;
+        u64 tex_id;
+        std::vector<u64> fbo_ids;
+        std::vector<u64> dbo_ids;
+        bool moved;
+
+        void init(
+            u64 width, u64 height, size_t layers, 
+            std::span<const Texture*> textures
+        );
+        void deallocate() const;
+
+        public:
+        TextureArray(u64 width, u64 height, size_t layers);
+        TextureArray(std::span<const Texture*> textures = std::span<const engine::Texture*>());
+        TextureArray(std::span<const Texture> textures);
+        TextureArray(const TextureArray& other) = delete;
+        TextureArray(TextureArray&& other) noexcept;
+        TextureArray& operator=(const TextureArray& other) = delete;
+        TextureArray& operator=(TextureArray&& other) noexcept;
+        ~TextureArray();
+
+        u64 width() const { return this->width_px; }
+        u64 height() const { return this->height_px; }
+        size_t size() const { return this->fbo_ids.size(); }
+
+        u64 internal_tex_id() const {
+            if(this->moved) {
+                error("Attempted to use a moved 'TextureArray'");
+            }
+            return this->tex_id; 
+        }
+
+        RenderTarget as_target(size_t layer_idx) const {
+            if(this->moved) {
+                error("Attempted to use a moved 'TextureArray'");
+            }
+            return (RenderTarget) {
+                this->fbo_ids.at(layer_idx), this->width_px, this->height_px
+            };
+        }
 
     };
 
@@ -189,8 +258,7 @@ namespace houseofatmos::engine {
         static size_t max_textures();
 
         void set_uniform(std::string_view name, const Texture& texture);
-        void set_uniform(std::string_view name, std::span<const Texture*> textures);
-        void set_uniform(std::string_view name, std::span<const Texture> textures);
+        void set_uniform(std::string_view name, const TextureArray& textures);
 
         void set_uniform(std::string_view name, f64 value);
         void set_uniform(std::string_view name, Vec<2> value);
@@ -316,13 +384,8 @@ namespace houseofatmos::engine {
 
         void submit();
         void render(
-            const Shader& shader, const Texture& dest,
+            const Shader& shader, RenderTarget dest,
             size_t count = 1, bool wireframe = false, bool depth_test = true
-        );
-        void internal_render(
-            const Shader& shader, u64 dest_fbo_id, 
-            i32 dest_width, i32 dest_height,
-            size_t count,  bool wireframe = false, bool depth_test = true
         );
 
         bool was_moved() {

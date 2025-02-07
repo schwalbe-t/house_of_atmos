@@ -706,7 +706,7 @@ namespace houseofatmos::engine {
 
 
     void Model::render_all(
-        Shader& shader, const Texture& dest,
+        Shader& shader, RenderTarget dest,
         std::optional<std::string_view> local_transform_uniform,
         std::optional<std::string_view> texture_uniform,
         std::optional<std::string_view> joint_transform_uniform,
@@ -733,12 +733,14 @@ namespace houseofatmos::engine {
             if(joint_transform_uniform.has_value()) {
                 shader.set_uniform(*joint_transform_uniform, std::vector { Mat<4>() });
             }
-            primitive.geometry.render(shader, dest, count, wireframe, depth_test);
+            primitive.geometry.render(
+                shader, dest, count, wireframe, depth_test
+            );
         }
     }
 
     void Model::render_all_animated(
-        Shader& shader, const Texture& dest,
+        Shader& shader, RenderTarget dest,
         const Animation& animation, f64 timestamp,
         std::string_view joint_transform_uniform,
         std::optional<std::string_view> local_transform_uniform,

@@ -153,7 +153,7 @@ namespace houseofatmos {
             blur.set_uniform("u_texture_h", (i64) this->background->height());
             i64 blur_rad = (i64) ((window.width() + window.height()) / 200.0);
             blur.set_uniform("u_blur_rad", blur_rad);
-            this->last_frame.blit(*this->background, blur);
+            this->last_frame.blit(this->background->as_target(), blur);
         }
         window.show_texture(*this->background);
         this->ui.render(*this, window);

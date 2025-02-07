@@ -142,45 +142,6 @@ namespace houseofatmos::engine {
     }
 
 
-    u64 Texture::width() const { return this->width_px; }
-    u64 Texture::height() const { return this->height_px; }
-
-
-    u64 Texture::internal_fbo_id() const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Texture'");
-        }
-        return this->fbo_id;
-    }
-    u64 Texture::internal_tex_id() const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Texture'");
-        }
-        return this->tex_id;
-    }
-
-
-    void Texture::clear_color(Vec<4> color) const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Texture'");
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, this->fbo_id);
-        glClearColor(color.r(), color.g(), color.b(), color.a());
-        glClear(GL_COLOR_BUFFER_BIT);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    void Texture::clear_depth(f64 depth) const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Texture'");
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, this->fbo_id);
-        glClearDepth(depth);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-
     void Texture::resize_fast(u64 width, u64 height) {
         if(this->width() == width && this->height() == height && !this->moved) {
             return;
@@ -196,20 +157,10 @@ namespace houseofatmos::engine {
             return;
         }
         Texture result = Texture(width, height);
-        this->blit(result, 0, 0, width, height);
+        this->blit(result.as_target(), 0, 0, width, height);
         std::swap(result, *this);
     }
 
-
-    void Texture::blit(const Texture& dest, f64 x, f64 y, f64 w, f64 h) const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Texture'");
-        }
-        this->internal_blit(
-            dest.internal_fbo_id(), dest.width(), dest.height(),
-            x, y, w, h
-        );
-    }
 
     static std::optional<Shader> blit_shader = std::nullopt;
     static std::optional<Mesh> blit_quad = std::nullopt;
@@ -251,8 +202,8 @@ namespace houseofatmos::engine {
         blit_quad = std::move(quad);
     }
 
-    void Texture::internal_blit(
-        u64 dest_fbo_id, u32 dest_width, u32 dest_height,
+    void Texture::blit(
+        RenderTarget dest,
         f64 x, f64 y, f64 w, f64 h
     ) const {
         if(this->moved) {
@@ -260,22 +211,22 @@ namespace houseofatmos::engine {
         }
         if(!blit_shader || !blit_quad) { init_blit_resources(); }
         Vec<2> scale = Vec<2>(w, h)
-            / Vec<2>(dest_width, dest_height)
+            / Vec<2>(dest.width(), dest.height())
             * 2;
-        Vec<2> offset = Vec<2>(x, dest_height - y - h)
-            / Vec<2>(dest_width, dest_height)
+        Vec<2> offset = Vec<2>(x, dest.height() - y - h)
+            / Vec<2>(dest.width(), dest.height())
             * 2
             - Vec<2>(1.0, 1.0);
         blit_shader.value().set_uniform("u_scale", scale);
         blit_shader.value().set_uniform("u_offset", offset);
         blit_shader.value().set_uniform("u_texture", *this);
-        blit_quad.value().internal_render(
-            blit_shader.value(), dest_fbo_id, dest_width, dest_height, 
+        blit_quad.value().render(
+            blit_shader.value(), dest, 
             1, false, false
         );
     }
 
-    void Texture::blit(const Texture& dest, Shader& shader) const {
+    void Texture::blit(RenderTarget dest, Shader& shader) const {
         if(this->moved) {
             error("Attempted to use a moved 'Texture'");
         }
