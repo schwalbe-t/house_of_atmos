@@ -38,7 +38,7 @@ namespace houseofatmos::engine {
     }
 
 
-    static std::string gltf_attrib_name(Model::Attrib attrib) {
+    std::string Model::gltf_attrib_name(Model::Attrib attrib) {
         switch(attrib) {
             case Model::Position: return "POSITION";
             case Model::UvMapping: return "TEXCOORD_0";
@@ -150,7 +150,7 @@ namespace houseofatmos::engine {
         std::pair<Model::Attrib, Mesh::Attrib> attrib,
         const std::string& path
     ) {
-        std::string attrib_name = gltf_attrib_name(attrib.first);
+        std::string attrib_name = Model::gltf_attrib_name(attrib.first);
         if(!primitive.attributes.contains(attrib_name)) {
             return gltf_get_default_mesh_attrib(
                 mesh_i, pmt_i, attrib, attrib_name, path
@@ -669,6 +669,7 @@ namespace houseofatmos::engine {
             error("Unable to parse '" + path + "'");
         }
         Model result;
+        result.face_culling = args.face_culling;
         gltf_collect_textures(model, result.textures, path);
         std::unordered_map<size_t, size_t> primitive_indices;
         gltf_collect_primitives(model, result.primitives, primitive_indices, attribs, path);
@@ -710,9 +711,12 @@ namespace houseofatmos::engine {
         std::optional<std::string_view> local_transform_uniform,
         std::optional<std::string_view> texture_uniform,
         std::optional<std::string_view> joint_transform_uniform,
-        size_t count,
-        bool wireframe, bool depth_test
+        size_t count, FaceCulling face_culling, Rendering rendering, 
+        DepthTesting depth_testing
     ) {
+        FaceCulling allow_culling = this->face_culling == FaceCulling::Disabled
+            ? FaceCulling::Disabled 
+            : face_culling;
         for(auto& [name, mesh]: this->meshes) {
             (void) name;
             std::optional<size_t> skeleton_id = std::get<2>(mesh);
@@ -734,7 +738,7 @@ namespace houseofatmos::engine {
                 shader.set_uniform(*joint_transform_uniform, std::vector { Mat<4>() });
             }
             primitive.geometry.render(
-                shader, dest, count, wireframe, depth_test
+                shader, dest, count, allow_culling, rendering, depth_testing
             );
         }
     }
@@ -745,8 +749,12 @@ namespace houseofatmos::engine {
         std::string_view joint_transform_uniform,
         std::optional<std::string_view> local_transform_uniform,
         std::optional<std::string_view> texture_uniform,
-        size_t count, bool wireframe, bool depth_test
+        size_t count, FaceCulling face_culling, Rendering rendering, 
+        DepthTesting depth_testing
     ) {
+        FaceCulling allow_culling = this->face_culling == FaceCulling::Disabled
+            ? FaceCulling::Disabled 
+            : face_culling;
         for(auto& [name, mesh]: this->meshes) {
             (void) name;
             std::optional<size_t> skeleton_id = std::get<2>(mesh);
@@ -767,7 +775,7 @@ namespace houseofatmos::engine {
                 shader.set_uniform(*texture_uniform, texture);
             }
             primitive.geometry.render(
-                shader, dest, count, wireframe, depth_test
+                shader, dest, count, allow_culling, rendering, depth_testing
             );
         }
     }

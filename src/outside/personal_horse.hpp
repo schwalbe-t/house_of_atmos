@@ -11,12 +11,13 @@ namespace houseofatmos::outside {
     struct PersonalHorse {
 
         static inline const engine::Model::LoadArgs horse_model = {
-            "res/entities/horse.glb", Renderer::model_attribs
+            "res/entities/horse.glb", Renderer::model_attribs,
+            engine::FaceCulling::Disabled
         };
 
         static inline const engine::Texture::LoadArgs horse_texture = {
             "res/entities/horse_black.png",
-            true // true = flipped (because used as GLTF replacement texture)
+            engine::Texture::vertical_mirror // (because used as GLTF replacement texture)
         };
 
         static void load_resources(engine::Scene& scene) {

@@ -23,13 +23,19 @@ namespace houseofatmos::outside {
 
         static inline const std::vector<TypeInfo> types = {
             /* Grass */ {
-                { "res/foliage/grass.glb", Renderer::model_attribs },
+                { 
+                    "res/foliage/grass.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
                 RelCollider::none(),
                 10,
                 [](f64 n) { (void) n; return 1.0; } // chance is always 0.0
             },
             /* Tree */ {
-                { "res/foliage/tree.glb", Renderer::model_attribs },
+                {
+                    "res/foliage/tree.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
                 RelCollider({ -5.0/16, -0.5, -5.0/16 }, { 10.0/16, 1, 10.0/16 }),
                 1,
                 [](f64 n) { 

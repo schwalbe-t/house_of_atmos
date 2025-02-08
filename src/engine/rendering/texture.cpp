@@ -221,8 +221,8 @@ namespace houseofatmos::engine {
         blit_shader.value().set_uniform("u_offset", offset);
         blit_shader.value().set_uniform("u_texture", *this);
         blit_quad.value().render(
-            blit_shader.value(), dest, 
-            1, false, false
+            blit_shader.value(), dest, 1, 
+            FaceCulling::Disabled, Rendering::Surfaces, DepthTesting::Disabled
         );
     }
 
@@ -232,7 +232,10 @@ namespace houseofatmos::engine {
         }
         if(!blit_quad) { init_blit_resources(); }
         shader.set_uniform("u_texture", *this);
-        blit_quad.value().render(shader, dest, 1, false, false);
+        blit_quad.value().render(
+            shader, dest, 1,
+            FaceCulling::Disabled, Rendering::Surfaces, DepthTesting::Disabled
+        );
     }
 
 }

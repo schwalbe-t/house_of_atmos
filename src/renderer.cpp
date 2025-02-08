@@ -113,16 +113,23 @@ namespace houseofatmos {
         const engine::Texture& texture,
         const Mat<4>& local_transform,
         std::span<const Mat<4>> model_transforms,
-        bool wireframe, bool depth_test,
+        engine::FaceCulling face_culling,
+        engine::Rendering rendering,
+        engine::DepthTesting depth_testing,
         std::optional<size_t> light_i
     ) const {
         bool render_all_light_maps = this->rendering_shadow_maps
-            && !light_i.has_value() && !wireframe && depth_test; 
+            && !light_i.has_value() 
+            && rendering == engine::Rendering::Surfaces 
+            && depth_testing == engine::DepthTesting::Enabled; 
         if(render_all_light_maps) {
             for(size_t light_i = 0; light_i < this->lights.size(); light_i += 1) {
                 this->render(
                     mesh, texture, local_transform, model_transforms,
-                    false, true, light_i
+                    engine::FaceCulling::Disabled,
+                    engine::Rendering::Surfaces,
+                    engine::DepthTesting::Enabled, 
+                    light_i
                 );
             }
             return;
@@ -145,7 +152,9 @@ namespace houseofatmos {
                 "u_model_transfs", 
                 model_transforms.subspan(completed, count)
             );
-            mesh.render(shader, dest, count, wireframe, depth_test);
+            mesh.render(
+                shader, dest, count, face_culling, rendering, depth_testing
+            );
             completed += count;
         }
     }
@@ -153,18 +162,24 @@ namespace houseofatmos {
     void Renderer::render(
         engine::Model& model,
         std::span<const Mat<4>> model_transforms,
-        bool wireframe,
+        engine::FaceCulling face_culling,
+        engine::Rendering rendering,
+        engine::DepthTesting depth_testing,
         const engine::Texture* override_texture,
-        bool depth_test,
         std::optional<size_t> light_i
     ) const {
         bool render_all_light_maps = this->rendering_shadow_maps
-            && !light_i.has_value() && !wireframe && depth_test; 
+            && !light_i.has_value() 
+            && rendering == engine::Rendering::Surfaces 
+            && depth_testing == engine::DepthTesting::Enabled; 
         if(render_all_light_maps) {
             for(size_t light_i = 0; light_i < this->lights.size(); light_i += 1) {
                 this->render(
                     model, model_transforms, 
-                    false, override_texture, true, light_i
+                    engine::FaceCulling::Disabled,
+                    engine::Rendering::Surfaces,
+                    engine::DepthTesting::Enabled, 
+                    override_texture, light_i
                 );
             }
             return;
@@ -193,7 +208,7 @@ namespace houseofatmos {
                 override_texture == nullptr
                     ? std::optional("u_texture") : std::nullopt, 
                 "u_joint_transfs",
-                count, wireframe, depth_test
+                count, face_culling, rendering, depth_testing
             );
             completed += count;
         }
@@ -204,18 +219,24 @@ namespace houseofatmos {
         std::span<const Mat<4>> model_transforms,
         const engine::Animation& animation,
         f64 timestamp,
-        bool wireframe,
+        engine::FaceCulling face_culling,
+        engine::Rendering rendering,
+        engine::DepthTesting depth_testing,
         const engine::Texture* override_texture,
-        bool depth_test,
         std::optional<size_t> light_i
     ) const {
         bool render_all_light_maps = this->rendering_shadow_maps
-            && !light_i.has_value() && !wireframe && depth_test; 
+            && !light_i.has_value() 
+            && rendering == engine::Rendering::Surfaces 
+            && depth_testing == engine::DepthTesting::Enabled; 
         if(render_all_light_maps) {
             for(size_t light_i = 0; light_i < this->lights.size(); light_i += 1) {
                 this->render(
                     model, model_transforms, animation, timestamp,
-                    false, override_texture, true, light_i
+                    engine::FaceCulling::Disabled,
+                    engine::Rendering::Surfaces,
+                    engine::DepthTesting::Enabled, 
+                    override_texture, light_i
                 );
             }
             return;
@@ -245,7 +266,7 @@ namespace houseofatmos {
                 "u_local_transf",
                 override_texture == nullptr
                     ? std::optional("u_texture") : std::nullopt, 
-                count, wireframe, depth_test
+                count, face_culling, rendering, depth_testing
             );
             completed += count;
         }

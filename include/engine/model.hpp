@@ -21,13 +21,27 @@ namespace houseofatmos::engine {
             Joints
         };
 
+        static std::string gltf_attrib_name(Model::Attrib attrib);
+
         struct LoadArgs {
             std::string path;
             std::vector<std::pair<Attrib, Mesh::Attrib>> vertex_attributes;
+            FaceCulling face_culling;
 
-            std::string identifier() const { return path; }
             std::string pretty_identifier() const { 
-                return "Model@'" + path + "'"; 
+                std::string r = "Model[";
+                for(const auto& [model_attrib, mesh_attrib]: vertex_attributes) {
+                    r += gltf_attrib_name(model_attrib);
+                    r += " = " + mesh_attrib.display();
+                    r += ", ";
+                }
+                r += ", " + std::string(face_culling == FaceCulling::Enabled
+                    ? "<culling allowed>" : "<no culling>"
+                );
+                return r + "]@'" + path + "'";
+            }
+            std::string identifier() const {
+                return this->pretty_identifier(); 
             }
         };
 
@@ -49,6 +63,8 @@ namespace houseofatmos::engine {
         Model();
 
         public:
+        FaceCulling face_culling = FaceCulling::Enabled;
+
         static Model from_resource(const LoadArgs& args);
         Model(const Model& other) = delete;
         Model(Model&& other) = default;
@@ -78,7 +94,9 @@ namespace houseofatmos::engine {
             std::optional<std::string_view> texture_uniform = std::nullopt,
             std::optional<std::string_view> joint_transform_uniform = std::nullopt,
             size_t count = 1,
-            bool wireframe = false, bool depth_test = true
+            FaceCulling face_culling = FaceCulling::Enabled,
+            Rendering rendering = Rendering::Surfaces, 
+            DepthTesting depth_testing = DepthTesting::Enabled
         );
 
         void render_all_animated(
@@ -88,7 +106,9 @@ namespace houseofatmos::engine {
             std::optional<std::string_view> local_transform_uniform = std::nullopt,
             std::optional<std::string_view> texture_uniform = std::nullopt,
             size_t count = 1,
-            bool wireframe = false, bool depth_test = true
+            FaceCulling face_culling = FaceCulling::Enabled,
+            Rendering rendering = Rendering::Surfaces, 
+            DepthTesting depth_testing = DepthTesting::Enabled
         );
 
     };

@@ -136,16 +136,18 @@ namespace houseofatmos {
             const Mat<4>& local_transform = Mat<4>(),
             std::span<const Mat<4>> model_transforms
                 = std::array<Mat<4>, 1> { Mat<4>() },
-            bool wireframe = false,
-            bool depth_test = true,
+            engine::FaceCulling face_culling = engine::FaceCulling::Enabled,
+            engine::Rendering rendering = engine::Rendering::Surfaces,
+            engine::DepthTesting depth_testing = engine::DepthTesting::Enabled,
             std::optional<size_t> light_i = std::nullopt
         ) const;
         void render(
             engine::Model& model,
             std::span<const Mat<4>> model_transforms,
-            bool wireframe = false,
+            engine::FaceCulling face_culling = engine::FaceCulling::Enabled,
+            engine::Rendering rendering = engine::Rendering::Surfaces,
+            engine::DepthTesting depth_testing = engine::DepthTesting::Enabled,
             const engine::Texture* override_texture = nullptr,
-            bool depth_test = true,
             std::optional<size_t> light_i = std::nullopt
         ) const;
         void render(
@@ -153,9 +155,10 @@ namespace houseofatmos {
             std::span<const Mat<4>> model_transforms,
             const engine::Animation& animation,
             f64 timestamp,
-            bool wireframe = false,
+            engine::FaceCulling face_culling = engine::FaceCulling::Enabled,
+            engine::Rendering rendering = engine::Rendering::Surfaces,
+            engine::DepthTesting depth_testing = engine::DepthTesting::Enabled,
             const engine::Texture* override_texture = nullptr,
-            bool depth_test = true,
             std::optional<size_t> light_i = std::nullopt
         ) const;
 

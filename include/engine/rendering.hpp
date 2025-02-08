@@ -92,6 +92,10 @@ namespace houseofatmos::engine {
 
 
     struct Texture {
+
+        static inline const bool vertical_mirror = true;
+        static inline const bool no_mirror = true;
+
         struct LoadArgs {
             std::string path;
             bool mirror_vertical = false;
@@ -309,7 +313,23 @@ namespace houseofatmos::engine {
     };
 
 
+    enum struct FaceCulling { Disabled, Enabled };
+
+    enum struct DepthTesting { Disabled, Enabled };
+    
+    enum struct Rendering { Surfaces, Wireframe };
+
+
     struct Mesh {
+
+        static inline const bool render_wireframe = true;
+        static inline const bool render_surfaces = false;
+
+        static inline const bool do_depth_testing = true;
+        static inline const bool no_depth_testing = false;
+
+        static inline const bool do_face_culling = true;
+        static inline const bool no_face_culling = false;
 
         enum AttribType {
             F32,
@@ -385,7 +405,10 @@ namespace houseofatmos::engine {
         void submit();
         void render(
             const Shader& shader, RenderTarget dest,
-            size_t count = 1, bool wireframe = false, bool depth_test = true
+            size_t count = 1, 
+            FaceCulling face_culling = FaceCulling::Enabled,
+            Rendering rendering = Rendering::Surfaces, 
+            DepthTesting depth_testing = DepthTesting::Enabled
         );
 
         bool was_moved() {

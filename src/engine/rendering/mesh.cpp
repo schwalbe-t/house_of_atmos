@@ -384,15 +384,24 @@ namespace houseofatmos::engine {
 
     void Mesh::render(
         const Shader& shader, RenderTarget dest,
-        size_t count, bool wireframe, bool depth_test
+        size_t count, FaceCulling face_culling, Rendering rendering, 
+        DepthTesting depth_testing
     ) {
         if(count == 0) { return; }
         if(this->moved) {
             error("Attempted to use a moved 'Mesh'");
         }
         if(this->modified) { this->submit(); }
-        if(wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); }
-        if(depth_test) { glEnable(GL_DEPTH_TEST); }
+        if(face_culling == FaceCulling::Enabled) {
+            glEnable(GL_CULL_FACE);
+        }
+        if(rendering == Rendering::Wireframe) { 
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
+        }
+        if(depth_testing == DepthTesting::Enabled) { 
+            glEnable(GL_DEPTH_TEST); 
+            glCullFace(GL_BACK);
+        }
         glBindFramebuffer(GL_FRAMEBUFFER, dest.fbo_id);
         glViewport(0, 0, dest.width(), dest.height());
         shader.internal_bind();
@@ -414,8 +423,15 @@ namespace houseofatmos::engine {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         shader.internal_unbind();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        if(depth_test) { glDisable(GL_DEPTH_TEST); }
-        if(wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); }
+        if(depth_testing == DepthTesting::Enabled) { 
+            glDisable(GL_DEPTH_TEST);
+        }
+        if(rendering == Rendering::Wireframe) { 
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+        if(face_culling == FaceCulling::Enabled) {
+            glDisable(GL_CULL_FACE);
+        }
     }
 
 }

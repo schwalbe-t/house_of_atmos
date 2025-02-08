@@ -718,8 +718,7 @@ namespace houseofatmos::outside {
         renderer.render(
             loaded_chunk.terrain, ground_texture, 
             Mat<4>(),
-            std::array { Mat<4>::translate(chunk_offset) },
-            false
+            std::array { Mat<4>::translate(chunk_offset) }
         );
     }
 

@@ -18,7 +18,8 @@ namespace houseofatmos::outside {
     struct Carriage {
 
         static const inline engine::Model::LoadArgs horse_model = {
-            "res/entities/horse.glb", Renderer::model_attribs
+            "res/entities/horse.glb", Renderer::model_attribs,
+            engine::FaceCulling::Disabled
         };
 
 
@@ -30,19 +31,34 @@ namespace houseofatmos::outside {
             // The 'true' in each texture loader is there to flip the loaded
             // texture vertically - this is needed since GLTF uses them flipped
             /* White */ {
-                (engine::Texture::LoadArgs) { "res/entities/horse_white.png", true }
+                (engine::Texture::LoadArgs) { 
+                    "res/entities/horse_white.png", 
+                    engine::Texture::vertical_mirror
+                }
             },
             /* WhiteSpotted */ {
-                (engine::Texture::LoadArgs) { "res/entities/horse_white_spotted.png", true }
+                (engine::Texture::LoadArgs) { 
+                    "res/entities/horse_white_spotted.png",
+                    engine::Texture::vertical_mirror
+                }
             },
             /* Brown */ {
-                (engine::Texture::LoadArgs) { "res/entities/horse_brown.png", true }
+                (engine::Texture::LoadArgs) { 
+                    "res/entities/horse_brown.png",
+                    engine::Texture::vertical_mirror
+                }
             },
             /* BrownSpotted */ {
-                (engine::Texture::LoadArgs) { "res/entities/horse_brown_spotted.png", true }
+                (engine::Texture::LoadArgs) { 
+                    "res/entities/horse_brown_spotted.png",
+                    engine::Texture::vertical_mirror
+                }
             },
             /* BlackSpotted */ {
-                (engine::Texture::LoadArgs) { "res/entities/horse_black_spotted.png", true }
+                (engine::Texture::LoadArgs) { 
+                    "res/entities/horse_black_spotted.png",
+                    engine::Texture::vertical_mirror
+                }
             }
         };
 
@@ -65,7 +81,8 @@ namespace houseofatmos::outside {
         static const inline std::vector<CarriageTypeInfo> carriage_types = {
             /* Round */ {
                 (engine::Model::LoadArgs) {
-                    "res/entities/round_carriage.glb", Renderer::model_attribs
+                    "res/entities/round_carriage.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
                 },
                 Vec<3>(0.0, 0.0, 1.5),
                 (std::vector<Vec<3>>) {
@@ -199,7 +216,7 @@ namespace houseofatmos::outside {
         void render(
             const Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window,
-            bool wireframe = false,
+            engine::Rendering rendering = engine::Rendering::Surfaces,
             const engine::Texture* override_texture = nullptr
         );
 

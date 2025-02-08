@@ -49,7 +49,8 @@ namespace houseofatmos {
 
 
         static const inline engine::Model::LoadArgs player_model = {
-            "res/entities/player.glb", Renderer::model_attribs
+            "res/entities/player.glb", Renderer::model_attribs,
+            engine::FaceCulling::Disabled
         };
 
         static const inline RelCollider collider

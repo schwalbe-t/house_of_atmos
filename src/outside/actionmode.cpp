@@ -609,7 +609,9 @@ namespace houseofatmos::outside {
             .building_transform(building, chunk_x, chunk_z);
         type_info.render_buildings(
             window, scene, renderer,
-            std::array { transform }, true, &wireframe_texture
+            std::array { transform },
+            engine::Rendering::Wireframe, 
+            &wireframe_texture
         );
     }
 
@@ -806,8 +808,12 @@ namespace houseofatmos::outside {
             Bridge::types[(size_t) *this->selected_type].model
         );
         renderer.render(
-            model, this->planned.get_instances(this->terrain.units_per_tile()),
-            true, &wireframe_texture
+            model, 
+            this->planned.get_instances(this->terrain.units_per_tile()),
+            engine::FaceCulling::Enabled,
+            engine::Rendering::Wireframe, 
+            engine::DepthTesting::Enabled,
+            &wireframe_texture
         );
     }
 
@@ -937,7 +943,9 @@ namespace houseofatmos::outside {
                 );
                 b_type.render_buildings(
                     window, scene, renderer,
-                    std::array { transform }, true, &wireframe_texture
+                    std::array { transform },
+                    engine::Rendering::Wireframe, 
+                    &wireframe_texture
                 );
                 return;
             }
@@ -947,7 +955,10 @@ namespace houseofatmos::outside {
                 engine::Model& model = scene.get<engine::Model>(b_type.model);
                 renderer.render(
                     model, bridge->get_instances(this->terrain.units_per_tile()),
-                    true, &wireframe_texture
+                    engine::FaceCulling::Enabled,
+                    engine::Rendering::Wireframe,
+                    engine::DepthTesting::Enabled, 
+                    &wireframe_texture
                 );
                 return;
             }

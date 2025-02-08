@@ -33,13 +33,17 @@ namespace houseofatmos::outside {
                 const engine::Window& window, engine::Scene& scene,
                 const Renderer& renderer,
                 std::span<const Mat<4>> instances,
-                bool wireframe = false,
+                engine::Rendering rendering = engine::Rendering::Surfaces,
                 const engine::Texture* override_texture = nullptr
             ) const {
                 engine::Model& model = scene.get<engine::Model>(this->model);
                 if(!this->animation.has_value()) {
                     renderer.render(
-                        model, instances, wireframe, override_texture
+                        model, instances, 
+                        engine::FaceCulling::Enabled,
+                        rendering, 
+                        engine::DepthTesting::Enabled,
+                        override_texture
                     );
                     return;
                 }
@@ -51,7 +55,10 @@ namespace houseofatmos::outside {
                 renderer.render(
                     model, instances, 
                     anim, timestamp, 
-                    wireframe, override_texture
+                    engine::FaceCulling::Enabled,
+                    rendering,
+                    engine::DepthTesting::Enabled, 
+                    override_texture
                 );
             }
         };
@@ -61,7 +68,10 @@ namespace houseofatmos::outside {
                 "building_name_farmland",
                 &ui_icon::farmland,
                 TypeInfo::keep_terrain,
-                { "res/buildings/farmland.glb", Renderer::model_attribs },
+                { 
+                    "res/buildings/farmland.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
                 std::nullopt, 0.0,
                 {
                     // corner fence
@@ -80,7 +90,10 @@ namespace houseofatmos::outside {
                 "building_name_mineshaft",
                 &ui_icon::mineshaft,
                 TypeInfo::keep_terrain,
-                { "res/buildings/mineshaft.glb", Renderer::model_attribs },
+                { 
+                    "res/buildings/mineshaft.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Enabled
+                },
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -5 }, { 10, 1, 10 }) },
                 2, 2, // size
@@ -93,7 +106,10 @@ namespace houseofatmos::outside {
                 "building_name_windmill",
                 &ui_icon::windmill,
                 TypeInfo::keep_terrain,
-                { "res/buildings/windmill.glb", Renderer::model_attribs },
+                { 
+                    "res/buildings/windmill.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
                 "blades", 1.0,
                 { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
                 2, 2, // size
@@ -106,7 +122,10 @@ namespace houseofatmos::outside {
                 "building_name_factory",
                 &ui_icon::factory,
                 TypeInfo::keep_terrain,
-                { "res/buildings/factory.glb", Renderer::model_attribs },
+                { 
+                    "res/buildings/factory.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
                 2, 1, // size
@@ -119,7 +138,10 @@ namespace houseofatmos::outside {
                 "building_name_house",
                 &ui_icon::house,
                 TypeInfo::keep_terrain,
-                { "res/buildings/house.glb", Renderer::model_attribs },
+                { 
+                    "res/buildings/house.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled    
+                },
                 "door", 0.0, // speed = 0 -> will always be the first frame
                 { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
                 1, 1, // size
@@ -132,7 +154,10 @@ namespace houseofatmos::outside {
                 "building_name_stable",
                 &ui_icon::stable,
                 TypeInfo::keep_terrain,
-                { "res/buildings/stable.glb", Renderer::model_attribs },
+                { 
+                    "res/buildings/stable.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
                 std::nullopt, 0.0,
                 { 
                     // building
@@ -155,7 +180,10 @@ namespace houseofatmos::outside {
                 "building_name_plaza",
                 &ui_icon::plaza,
                 TypeInfo::remove_terrain,
-                { "res/buildings/plaza.glb", Renderer::model_attribs },
+                { 
+                    "res/buildings/plaza.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Enabled    
+                },
                 std::nullopt, 0.0,
                 { 
                     // well
@@ -185,7 +213,10 @@ namespace houseofatmos::outside {
                 "building_name_mansion",
                 &ui_icon::mansion,
                 TypeInfo::keep_terrain,
-                { "res/buildings/mansion.glb", Renderer::model_attribs },
+                { 
+                    "res/buildings/mansion.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
                 std::nullopt, 0.0,
                 { 
                     // colliders

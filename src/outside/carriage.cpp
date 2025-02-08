@@ -180,7 +180,7 @@ namespace houseofatmos::outside {
     void Carriage::render(
         const Renderer& renderer, engine::Scene& scene, 
         const engine::Window& window,
-        bool wireframe,
+        engine::Rendering rendering,
         const engine::Texture* override_texture
     ) {
         CarriageTypeInfo carriage_info = Carriage::carriage_types
@@ -210,7 +210,9 @@ namespace houseofatmos::outside {
             renderer.render(
                 horse_model, std::array { horse_transform },
                 horse_animation, timestamp, 
-                wireframe, 
+                engine::FaceCulling::Enabled,
+                rendering, 
+                engine::DepthTesting::Enabled,
                 override_texture == nullptr? &horse_texture : override_texture
             );
         }
@@ -231,7 +233,10 @@ namespace houseofatmos::outside {
         renderer.render(
             carriage_model, std::array { carriage_transform },
             carriage_animation, timestamp,
-            wireframe, override_texture
+            engine::FaceCulling::Enabled,
+            rendering,
+            engine::DepthTesting::Enabled, 
+            override_texture
         );
     }
 

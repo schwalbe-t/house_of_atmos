@@ -714,7 +714,8 @@ namespace houseofatmos::engine::ui {
             this->shader->set_uniform("u_dest_scales", dest_s);
             this->shader->set_uniform("u_dest_offsets", dest_o);
             this->quad.render(
-                *this->shader, this->target.as_target(), count, false, false
+                *this->shader, this->target.as_target(), count, 
+                FaceCulling::Disabled, Rendering::Surfaces, DepthTesting::Disabled
             );
             completed += count;
         }

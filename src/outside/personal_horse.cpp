@@ -121,7 +121,10 @@ namespace houseofatmos::outside {
         renderer.render(
             model, std::array { transform },
             animation, this->anim_timer, 
-            false, &texture
+            engine::FaceCulling::Enabled,
+            engine::Rendering::Surfaces,
+            engine::DepthTesting::Enabled, 
+            &texture
         );
     }
 
