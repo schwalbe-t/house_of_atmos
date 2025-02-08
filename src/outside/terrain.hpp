@@ -37,7 +37,7 @@ namespace houseofatmos::outside {
         };
 
         static const inline std::vector<engine::Mesh::Attrib> water_plane_attribs = {
-            { engine::Mesh::F32, 3 }, { engine::Mesh::F32, 2 }
+            { engine::Mesh::F32, 3 }
         };
 
 
@@ -45,6 +45,7 @@ namespace houseofatmos::outside {
             u64 x, z; // in chunks relative to origin
             bool modified; // re-mesh in next render cycle
             engine::Mesh terrain; // terrain geometry
+            engine::Mesh water; // water geometry
             std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage;
             std::unordered_map<Building::Type, std::vector<Mat<4>>> buildings;
         };
@@ -89,7 +90,6 @@ namespace houseofatmos::outside {
         u64 width_chunks, height_chunks;
         i64 view_chunk_x, view_chunk_z;
         std::vector<LoadedChunk> loaded_chunks;
-        engine::Mesh water_plane = engine::Mesh(Terrain::water_plane_attribs);  
         // row-major 2D vector of each tile corner height
         // .size() = (width + 1) * (height + 1)
         std::vector<i16> elevation;
@@ -97,7 +97,6 @@ namespace houseofatmos::outside {
         // .size() = width_chunks * height_chunks
         std::vector<ChunkData> chunks; 
 
-        void build_water_plane();
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>>
             collect_foliage_transforms(u64 chunk_x, u64 chunk_z) const;
         std::unordered_map<Building::Type, std::vector<Mat<4>>>
@@ -139,7 +138,6 @@ namespace houseofatmos::outside {
             this->chunks = std::vector<ChunkData>(
                 width_chunks * height_chunks, ChunkData(chunk_tiles)
             );
-            this->build_water_plane();
         }
         
         Terrain(
@@ -226,7 +224,8 @@ namespace houseofatmos::outside {
         bool chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const;
         void load_chunks_around(const Vec<3>& position);
 
-        engine::Mesh build_chunk_geometry(u64 chunk_x, u64 chunk_z) const;
+        engine::Mesh build_chunk_terrain_geometry(u64 chunk_x, u64 chunk_z) const;
+        engine::Mesh build_chunk_water_geometry(u64 chunk_x, u64 chunk_z) const;
         Mat<4> building_transform(
             const Building& building, u64 chunk_x, u64 chunk_z
         ) const;    
@@ -255,4 +254,4 @@ namespace houseofatmos::outside {
 
     };
 
-}
+} 

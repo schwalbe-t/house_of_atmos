@@ -207,11 +207,16 @@ namespace houseofatmos::outside {
                 terrain.elevation_at(x, z) = (i16) average_height;
             }
         }
-        for(i64 x = (i64) tile_x - 1; (u64) x < tile_x + type_info.width + 1; x += 1) {
-            for(i64 z = (i64) tile_z - 1; (u64) z < tile_z + type_info.height + 1; z += 1) {
-                terrain.remove_foliage_at(x, z);    
+        for(u64 x = tile_x; x < tile_x + type_info.width; x += 1) {
+            for(u64 z = tile_z; z < tile_z + type_info.height; z += 1) {
+                terrain.remove_foliage_at((i64) x, (i64) z);    
             }
         }
+        terrain.adjust_area_foliage(
+            (i64) tile_x - 1, (i64) tile_z - 1, 
+            (i64) (tile_x + type_info.width + 1), 
+            (i64) (tile_z + type_info.height + 1)
+        );
         // place the building
         u64 chunk_x = tile_x / terrain.tiles_per_chunk();
         u64 chunk_z = tile_z / terrain.tiles_per_chunk();
@@ -482,6 +487,7 @@ namespace houseofatmos::outside {
         render_geometry(*this, window);
         this->renderer.render_to_output();
         render_geometry(*this, window);
+        this->terrain.render_water(*this, this->renderer, window);
         bool render_action_modes = !this->player.in_water
             && !this->player.is_riding
             && this->terrain_map.element()->hidden;

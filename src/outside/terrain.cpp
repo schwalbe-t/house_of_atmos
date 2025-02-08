@@ -114,33 +114,6 @@ namespace houseofatmos::outside {
     }
 
 
-    void Terrain::build_water_plane() {
-        engine::Mesh& p = this->water_plane;
-        // tl---tr
-        //  | \ |
-        // bl---br
-        p.start_vertex();
-            p.put_f32({ -0.5, water_height,  0.5 });
-            p.put_f32({ 0, 1 });
-        u16 tl = p.complete_vertex();
-        p.start_vertex();
-            p.put_f32({  0.5, water_height,  0.5 });
-            p.put_f32({ 1, 1 });
-        u16 tr = p.complete_vertex();
-        p.start_vertex();
-            p.put_f32({ -0.5, water_height, -0.5 });
-            p.put_f32({ 0, 0 });
-        u16 bl = p.complete_vertex();
-        p.start_vertex();
-            p.put_f32({  0.5, water_height, -0.5 });
-            p.put_f32({ 1, 0 });
-        u16 br = p.complete_vertex();
-        p.add_element(tl, bl, br);
-        p.add_element(tl, br, tr);
-        p.submit();
-    }
-
-
     static Vec<3> compute_normal_ccw(
         const Vec<3>& a, const Vec<3>& b, const Vec<3>& c
     ) {
@@ -185,7 +158,7 @@ namespace houseofatmos::outside {
         );
     }
 
-    engine::Mesh Terrain::build_chunk_geometry(u64 chunk_x, u64 chunk_z) const {
+    engine::Mesh Terrain::build_chunk_terrain_geometry(u64 chunk_x, u64 chunk_z) const {
         auto geometry = engine::Mesh(Renderer::mesh_attribs);
         const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
         u64 start_x = chunk_x * this->chunk_tiles;
@@ -194,6 +167,10 @@ namespace houseofatmos::outside {
         u64 end_z = std::min((chunk_z + 1) * this->chunk_tiles, this->height);
         for(u64 x = start_x; x < end_x; x += 1) {
             for(u64 z = start_z; z < end_z; z += 1) {
+                const Building* building = this->building_at((i64) x, (i64) z);
+                bool skip_tile = building != nullptr
+                    && !building->get_type_info().terrain_under_building;
+                if(skip_tile) { continue; }
                 u64 left = x - start_x;
                 u64 right = left + 1;
                 u64 top = z - start_z;
@@ -260,6 +237,50 @@ namespace houseofatmos::outside {
         return geometry;
     }
 
+    engine::Mesh Terrain::build_chunk_water_geometry(u64 chunk_x, u64 chunk_z) const {
+        auto geometry = engine::Mesh(Terrain::water_plane_attribs);
+        u64 start_x = chunk_x * this->chunk_tiles;
+        u64 end_x = std::min((chunk_x + 1) * this->chunk_tiles, this->width);
+        u64 start_z = chunk_z * this->chunk_tiles;
+        u64 end_z = std::min((chunk_z + 1) * this->chunk_tiles, this->height);
+        for(u64 x = start_x; x < end_x; x += 1) {
+            for(u64 z = start_z; z < end_z; z += 1) {
+                u64 abs_t_left = x;
+                u64 abs_t_right = abs_t_left + 1;
+                u64 abs_t_top = z;
+                u64 abs_t_bottom = abs_t_top + 1;
+                bool has_water = this->elevation_at(abs_t_left, abs_t_top) < 0.0
+                    || this->elevation_at(abs_t_right, abs_t_top) < 0.0
+                    || this->elevation_at(abs_t_left, abs_t_bottom) < 0.0
+                    || this->elevation_at(abs_t_right, abs_t_bottom) < 0.0;
+                if(!has_water) { continue; }
+                f32 rel_u_left = (f32) ((abs_t_left - start_x) * this->tile_size);
+                f32 rel_u_right = (f32) ((abs_t_right - start_x) * this->tile_size);
+                f32 rel_u_top = (f32) ((abs_t_top - start_z) * this->tile_size);
+                f32 rel_u_bottom = (f32) ((abs_t_bottom - start_z) * this->tile_size);
+                // tl---tr
+                //  | \ |
+                // bl---br
+                geometry.start_vertex();
+                    geometry.put_f32({ rel_u_left, water_height, rel_u_top });
+                u16 tl = geometry.complete_vertex();
+                geometry.start_vertex();
+                    geometry.put_f32({ rel_u_right, water_height, rel_u_top });
+                u16 tr = geometry.complete_vertex();
+                geometry.start_vertex();
+                    geometry.put_f32({ rel_u_left, water_height, rel_u_bottom });
+                u16 bl = geometry.complete_vertex();
+                geometry.start_vertex();
+                    geometry.put_f32({ rel_u_right, water_height, rel_u_bottom });
+                u16 br = geometry.complete_vertex();
+                geometry.add_element(tl, bl, br);
+                geometry.add_element(tl, br, tr);
+            }
+        }
+        geometry.submit();
+        return geometry;
+    }
+
     std::unordered_map<Foliage::Type, std::vector<Mat<4>>>
         Terrain::collect_foliage_transforms(u64 chunk_x, u64 chunk_z) const {
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>> instances;
@@ -307,9 +328,10 @@ namespace houseofatmos::outside {
     Terrain::LoadedChunk Terrain::load_chunk(u64 chunk_x, u64 chunk_z) const {
         return {
             chunk_x, chunk_z, false, 
-            build_chunk_geometry(chunk_x, chunk_z),
-            collect_foliage_transforms(chunk_x, chunk_z),
-            collect_building_transforms(chunk_x, chunk_z)
+            this->build_chunk_terrain_geometry(chunk_x, chunk_z),
+            this->build_chunk_water_geometry(chunk_x, chunk_z),
+            this->collect_foliage_transforms(chunk_x, chunk_z),
+            this->collect_building_transforms(chunk_x, chunk_z)
         };
     }
 
@@ -746,28 +768,28 @@ namespace houseofatmos::outside {
     ) {
         const engine::Texture& normal_map = scene.get<engine::Texture>(Terrain::water_texture);
         engine::Shader& shader = scene.get<engine::Shader>(Terrain::water_shader);
-        f64 scale_xz = 2 * (this->draw_distance + 1) * this->chunk_tiles * this->tile_size;
-        Vec<3> offset = {
-            (this->view_chunk_x + 0.5) * this->chunk_tiles * this->tile_size,
-            0,
-            (this->view_chunk_z + 0.5) * this->chunk_tiles * this->tile_size
-        };
         shader.set_uniform("u_view_projection", renderer.compute_view_proj());
-        shader.set_uniform("u_local_transf", Mat<4>::scale(Vec<3>(scale_xz, 1.0, scale_xz)));
-        shader.set_uniform("u_model_transf", Mat<4>::translate(offset));
         shader.set_uniform("u_light_color", water_light_color);
         shader.set_uniform("u_base_color", water_base_color);
         shader.set_uniform("u_dark_color", water_dark_color);
         shader.set_uniform("u_nmap", normal_map);
-        f64 units_to_nmap = 1.0 / normal_map.width() * 16; // 16 pixels per unit
-        f64 nmap_scale = scale_xz * units_to_nmap;
-        Vec<2> nmap_offset = offset.swizzle<2>("xz") * units_to_nmap;
+        // normal map is assumed to be square
+        assert(normal_map.width() == normal_map.height());
+        f64 nmap_scale = 16.0 / normal_map.width(); // 16px / unit
         shader.set_uniform("u_nmap_scale", nmap_scale);
-        shader.set_uniform("u_nmap_offset", nmap_offset);
         shader.set_uniform("u_time", window.time());
         renderer.set_fog_uniforms(shader);
         renderer.set_shadow_uniforms(shader);
-        this->water_plane.render(shader, renderer.output().as_target());
+        for(LoadedChunk& chunk: this->loaded_chunks) {
+            if(chunk.modified) {
+                chunk = this->load_chunk(chunk.x, chunk.z);
+            }
+            Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
+                * this->chunk_tiles * this->tile_size;
+            shader.set_uniform("u_local_transf", Mat<4>());
+            shader.set_uniform("u_model_transf", Mat<4>::translate(chunk_offset));
+            chunk.water.render(shader, renderer.output().as_target());
+        }
     }
 
 
@@ -801,7 +823,6 @@ namespace houseofatmos::outside {
             serialized.bridge_offset, serialized.bridge_count,
             this->bridges
         );
-        this->build_water_plane();
     }
 
     Terrain::ChunkData::ChunkData(

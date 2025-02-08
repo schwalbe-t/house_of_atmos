@@ -13,8 +13,12 @@ namespace houseofatmos::outside {
     struct Building {
 
         struct TypeInfo {
+            static inline bool remove_terrain = false;
+            static inline bool keep_terrain = true;
+
             std::string local_name;
             const ui::Background* icon;
+            bool terrain_under_building; // false = remove terrain under building
             engine::Model::LoadArgs model;
             std::optional<std::string> animation;
             f64 animation_speed;
@@ -56,6 +60,7 @@ namespace houseofatmos::outside {
             /* Type::Farmland */ {
                 "building_name_farmland",
                 &ui_icon::farmland,
+                TypeInfo::keep_terrain,
                 { "res/buildings/farmland.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 {
@@ -74,6 +79,7 @@ namespace houseofatmos::outside {
             /* Type::Mineshaft */ {
                 "building_name_mineshaft",
                 &ui_icon::mineshaft,
+                TypeInfo::keep_terrain,
                 { "res/buildings/mineshaft.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -5 }, { 10, 1, 10 }) },
@@ -86,6 +92,7 @@ namespace houseofatmos::outside {
             /* Type::Windmill */ {
                 "building_name_windmill",
                 &ui_icon::windmill,
+                TypeInfo::keep_terrain,
                 { "res/buildings/windmill.glb", Renderer::model_attribs },
                 "blades", 1.0,
                 { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
@@ -98,6 +105,7 @@ namespace houseofatmos::outside {
             /* Type::Factory */ {
                 "building_name_factory",
                 &ui_icon::factory,
+                TypeInfo::keep_terrain,
                 { "res/buildings/factory.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
@@ -110,6 +118,7 @@ namespace houseofatmos::outside {
             /* Type::House */ {
                 "building_name_house",
                 &ui_icon::house,
+                TypeInfo::keep_terrain,
                 { "res/buildings/house.glb", Renderer::model_attribs },
                 "door", 0.0, // speed = 0 -> will always be the first frame
                 { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
@@ -122,6 +131,7 @@ namespace houseofatmos::outside {
             /* Type::Stable */ {
                 "building_name_stable",
                 &ui_icon::stable,
+                TypeInfo::keep_terrain,
                 { "res/buildings/stable.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { 
@@ -144,6 +154,7 @@ namespace houseofatmos::outside {
             /* Type::Plaza */ {
                 "building_name_plaza",
                 &ui_icon::plaza,
+                TypeInfo::remove_terrain,
                 { "res/buildings/plaza.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { 
@@ -173,6 +184,7 @@ namespace houseofatmos::outside {
             /* Type::Mansion */ {
                 "building_name_mansion",
                 &ui_icon::mansion,
+                TypeInfo::keep_terrain,
                 { "res/buildings/mansion.glb", Renderer::model_attribs },
                 std::nullopt, 0.0,
                 { 

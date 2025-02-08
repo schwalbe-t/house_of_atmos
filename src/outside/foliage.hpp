@@ -33,9 +33,9 @@ namespace houseofatmos::outside {
                 RelCollider({ -5.0/16, -0.5, -5.0/16 }, { 10.0/16, 1, 10.0/16 }),
                 1,
                 [](f64 n) { 
-                    return n < 0.4 ? 0.05 // 40% of area =>  5% chance
-                        : n < 0.6? 0.5    // 20% of area => 50% chance
-                        : 0.8;            // 40% of area => 80% chance
+                    return n < 0.4? 0.05  // 40% of area =>  5% chance
+                         : n < 0.6? 0.50  // 20% of area => 50% chance
+                         :          0.80; // 40% of area => 80% chance
                 }
             }
         };

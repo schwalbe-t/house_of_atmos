@@ -5,7 +5,6 @@
 #include "common/fog.glsl"
 #include "common/shadows.glsl"
 
-in vec2 f_uv;
 in vec3 f_w_pos;
 
 uniform vec4 u_light_color;
@@ -13,7 +12,6 @@ uniform vec4 u_base_color;
 uniform vec4 u_dark_color;
 uniform sampler2D u_nmap;
 uniform float u_nmap_scale;
-uniform vec2 u_nmap_offset;
 uniform float u_time;
 
 out vec4 o_color;
@@ -25,8 +23,8 @@ const vec2 nmap_a_scroll = vec2(0.01, 0.0);
 const vec2 nmap_b_scroll = vec2(0.005, 0.02);
 
 void main() {
-    vec2 nmap_a_uv = f_uv * u_nmap_scale + nmap_a_scroll * u_time + u_nmap_offset;
-    vec2 nmap_b_uv = f_uv * u_nmap_scale + nmap_b_scroll * u_time + u_nmap_offset;
+    vec2 nmap_a_uv = f_w_pos.xz * u_nmap_scale + nmap_a_scroll * u_time;
+    vec2 nmap_b_uv = f_w_pos.xz * u_nmap_scale + nmap_b_scroll * u_time;
     vec3 normal = texture2D(u_nmap, nmap_a_uv).rgb * texture2D(u_nmap, nmap_b_uv).rgb;
     bool in_shadow = is_in_shadow(f_w_pos);
     o_color = u_base_color;
