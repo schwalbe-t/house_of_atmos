@@ -61,11 +61,6 @@ namespace houseofatmos {
         else if(this->in_water) { this->set_anim_swim(); }
         else if(is_moving) { this->set_anim_walk(); }
         else { this->set_anim_idle(); }
-        if(is_moving) {
-            f64 cross = model_heading.x() * heading.z()
-                - model_heading.z() * heading.x();
-            this->angle = atan2(cross, model_heading.dot(heading));
-        }
         f64 speed = this->is_riding
             ? ride_speed 
             : this->in_water? swim_speed : walk_speed;
@@ -74,6 +69,12 @@ namespace houseofatmos {
     }
 
     void Player::render(engine::Scene& scene, const Renderer& renderer) {
+        Vec<3> heading = this->next_step.normalized();
+        if(heading.len() > 0) {
+            f64 cross = model_heading.x() * heading.z()
+                - model_heading.z() * heading.x();
+            this->angle = atan2(cross, model_heading.dot(heading));
+        }
         engine::Model& model = scene.get<engine::Model>(Player::player_model);
         Mat<4> model_transf = Mat<4>::translate(this->position)
             * Mat<4>::rotate_y(this->angle);

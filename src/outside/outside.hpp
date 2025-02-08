@@ -76,7 +76,7 @@ namespace houseofatmos::outside {
         Outside(Settings&& settings);
         Outside(Settings&& settings, const engine::Arena& buffer);
         void load_resources();
-        static DirectionalLight create_sun();
+        static DirectionalLight create_sun(const Vec<3>& focus_point);
         static void configure_renderer(Renderer& renderer);
 
         void update(engine::Window& window) override;

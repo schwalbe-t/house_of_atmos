@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <thread>
 
+// for debugging and testing (pressing T)
+#include "../interior/scene.hpp"
+
 namespace houseofatmos {
 
     MainMenu::MainMenu(Settings&& settings) {
@@ -20,9 +23,9 @@ namespace houseofatmos {
         this->renderer.camera.look_at
             .y() = this->terrain.elevation_at(this->renderer.camera.look_at);
         this->renderer.fog_origin = this->renderer.camera.look_at;
-        DirectionalLight sun = outside::Outside::create_sun();
-        sun.focus_point = this->renderer.camera.look_at;
-        this->renderer.lights.push_back(std::move(sun));
+        this->renderer.lights.push_back(
+            outside::Outside::create_sun(this->renderer.camera.look_at)
+        );
         this->load_resources();
     }
 
@@ -283,6 +286,11 @@ namespace houseofatmos {
     static const f64 camera_distance = 40.0;
 
     void MainMenu::update(engine::Window& window) {
+        // DEBUG ///////////////////////////////////////////////////////////////
+        if(window.was_pressed(engine::Key::T)) {
+            window.set_scene(std::make_shared<interior::Scene>(interior::mansion));
+        }
+        ////////////////////////////////////////////////////////////////////////
         this->before_next_frame();
         this->before_next_frame = []() {};
         if(this->ui.root.children.size() == 0) {

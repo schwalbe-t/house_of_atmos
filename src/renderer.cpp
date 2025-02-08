@@ -143,6 +143,9 @@ namespace houseofatmos {
         shader.set_uniform("u_local_transf", local_transform);
         shader.set_uniform("u_joint_transfs", std::array { Mat<4>() });
         shader.set_uniform("u_texture", texture);
+        if(!light_i.has_value()) {
+            shader.set_uniform("u_shadow_bias", this->shadow_bias);
+        }
         engine::RenderTarget dest = light_i.has_value()
             ? this->shadow_maps.as_target(*light_i) : this->target.as_target();
         for(size_t completed = 0; completed < model_transforms.size();) {
@@ -192,6 +195,9 @@ namespace houseofatmos {
         );
         if(override_texture != nullptr) {
             shader.set_uniform("u_texture", *override_texture);
+        }
+        if(!light_i.has_value()) {
+            shader.set_uniform("u_shadow_bias", this->shadow_bias);
         }
         engine::RenderTarget dest = light_i.has_value()
             ? this->shadow_maps.as_target(*light_i) : this->target.as_target();
@@ -249,6 +255,9 @@ namespace houseofatmos {
         );
         if(override_texture != nullptr) {
             shader.set_uniform("u_texture", *override_texture);
+        }
+        if(!light_i.has_value()) {
+            shader.set_uniform("u_shadow_bias", this->shadow_bias);
         }
         engine::RenderTarget dest = light_i.has_value()
             ? this->shadow_maps.as_target(*light_i) : this->target.as_target();

@@ -23,11 +23,12 @@ namespace houseofatmos::outside {
         this->load(engine::Localization::Loader(this->local));
     }
 
-    DirectionalLight Outside::create_sun() {
-        return DirectionalLight(
-            Vec<3>(0, 0, 0), // focus point 
+    DirectionalLight Outside::create_sun(const Vec<3>& focus_point) {
+        return DirectionalLight::in_direction_to(
             Vec<3>(1, -1.3, 1.2), // direction
-            80.0 // radius
+            focus_point, 
+            80.0, // radius
+            200.0 // distance
         );
     }
 
@@ -36,6 +37,7 @@ namespace houseofatmos::outside {
         renderer.fog_gradiant_range = 10.0;
         renderer.fog_dist_scale = Vec<3>(1.0, 0.0, 1.0); // only take Y axis into account
         renderer.fog_color = Vec<4>(239, 239, 230, 255) / 255.0;
+        renderer.shadow_bias = 0.0005;
     }
 
     static void set_base_ui(Outside& scene, u64 selected);
@@ -375,7 +377,7 @@ namespace houseofatmos::outside {
         );
         set_action_mode(*this, default_mode_const, UINT64_MAX);
         this->configure_renderer(this->renderer);
-        this->renderer.lights.push_back(Outside::create_sun());
+        this->renderer.lights.push_back(Outside::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
     }
 
@@ -479,7 +481,7 @@ namespace houseofatmos::outside {
     }
 
     void Outside::render(engine::Window& window) {
-        this->sun->focus_point = this->player.position;
+        *this->sun = Outside::create_sun(this->player.position);
         this->renderer.fog_origin = this->player.position;
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(this->player.position);
@@ -531,7 +533,7 @@ namespace houseofatmos::outside {
         );
         set_action_mode(*this, default_mode_const, UINT64_MAX);
         this->configure_renderer(this->renderer);
-        this->renderer.lights.push_back(Outside::create_sun());
+        this->renderer.lights.push_back(Outside::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
     }
 

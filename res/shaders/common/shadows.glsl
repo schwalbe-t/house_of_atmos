@@ -2,11 +2,11 @@
 #include "packing.glsl"
 
 const int MAX_LIGHT_COUNT = 16;
-const float shadow_bias = 0.0002;
 
 uniform int u_light_count;
 uniform mat4 u_light_view_proj[MAX_LIGHT_COUNT];
 uniform sampler2DArray u_shadow_maps;
+uniform float u_shadow_bias;
 
 bool is_in_shadow(vec3 world_pos) {
     for(int i = 0; i < u_light_count; i += 1) {
@@ -19,9 +19,9 @@ bool is_in_shadow(vec3 world_pos) {
         if(!in_bounds) { continue; }
         vec3 packed_shadow_depth = texture(u_shadow_maps, vec3(shadow_uv, i)).rgb;
         float shadow_depth = unpack_value(packed_shadow_depth);
-        if(frag_depth - shadow_bias > shadow_depth) {
-            return true;
+        if(frag_depth - u_shadow_bias <= shadow_depth) {
+            return false;
         }
     }
-    return false;
+    return true;
 }

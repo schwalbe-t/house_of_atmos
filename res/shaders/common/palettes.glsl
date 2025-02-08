@@ -56,6 +56,6 @@ vec3 map_palette(
         mapped_color += is_match * out_palette[i];
         found_match += is_match;
     }
-    found_match = step(0.0, found_match);
-    return mix(no_mapping_color, mapped_color, found_match);
+    found_match = step(0.0001, found_match);
+    return mix(color, mapped_color, found_match);
 }

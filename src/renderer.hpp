@@ -3,6 +3,7 @@
 
 #include <engine/window.hpp>
 #include <engine/model.hpp>
+#include "light.hpp"
 
 namespace houseofatmos {
 
@@ -17,49 +18,6 @@ namespace houseofatmos {
         f64 fov = pi / 6; // 30 degrees
         f64 near_plane = 0.1;
         f64 far_plane = 1000.0;
-    };
-
-
-    struct DirectionalLight {
-
-        Vec<3> focus_point;
-        Vec<3> direction;
-        f64 near_plane = 300.0;
-        f64 far_plane = 700.0;
-        f64 radius;
-        f64 distance_factor = 5.0;
-
-        DirectionalLight(
-            Vec<3> focus_point, Vec<3> direction, 
-            f64 radius = 100.0
-        ) {
-            this->focus_point = focus_point;
-            this->direction = direction;
-            this->radius = radius;
-            this->far_plane = far_plane;
-        }
-
-        Mat<4> compute_view_matrix() const {
-            f64 distance = this->radius * this->distance_factor;
-            Vec<3> position = this->focus_point 
-                - this->direction.normalized() * distance;
-            return Mat<4>::look_at(
-                position, this->focus_point, Vec<3>(0, 1, 0)
-            );
-        }
-
-        Mat<4> compute_proj_matrix() const {
-            f64 distance = this->radius * this->distance_factor;
-            return Mat<4>::orthographic(
-                -this->radius, this->radius, this->radius, -this->radius,
-                this->near_plane, 
-                this->far_plane + distance
-            );
-        }
-
-        Mat<4> compute_view_proj() const {
-            return this->compute_proj_matrix() * this->compute_view_matrix();
-        }
     };
 
 
@@ -108,6 +66,7 @@ namespace houseofatmos {
         Vec<3> fog_origin = Vec<3>(0.0, 0.0, 0.0);
         Vec<3> fog_dist_scale = Vec<3>(1.0, 1.0, 1.0);
         Vec<4> fog_color = Vec<4>(1.0, 1.0, 1.0, 1.0);
+        f64 shadow_bias = 0.0;
         engine::Shader* shadow_shader = nullptr;
         engine::Shader* geometry_shader = nullptr;
 
