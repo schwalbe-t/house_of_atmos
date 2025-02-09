@@ -3,6 +3,8 @@
 
 #include <engine/arena.hpp>
 #include <engine/rng.hpp>
+#include "../interactable.hpp"
+#include "../save_info.hpp"
 #include "complex.hpp"
 #include "buildings.hpp"
 #include "foliage.hpp"
@@ -48,6 +50,7 @@ namespace houseofatmos::outside {
             engine::Mesh water; // water geometry
             std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage;
             std::unordered_map<Building::Type, std::vector<Mat<4>>> buildings;
+            std::vector<std::shared_ptr<Interactable>> interactables;
         };
 
         struct ChunkData {
@@ -101,7 +104,16 @@ namespace houseofatmos::outside {
             collect_foliage_transforms(u64 chunk_x, u64 chunk_z) const;
         std::unordered_map<Building::Type, std::vector<Mat<4>>>
             collect_building_transforms(u64 chunk_x, u64 chunk_z) const;
-        Terrain::LoadedChunk load_chunk(u64 chunk_x, u64 chunk_z) const;
+        std::vector<std::shared_ptr<Interactable>> create_chunk_interactables(
+            u64 chunk_x, u64 chunk_z, 
+            Interactables* interactables, engine::Window& window, 
+            const SaveInfo* save_info
+        ) const;
+        Terrain::LoadedChunk load_chunk(
+            u64 chunk_x, u64 chunk_z, 
+            Interactables* interactables, engine::Window& window, 
+            const SaveInfo* save_info
+        ) const;
 
 
         public:
@@ -222,7 +234,10 @@ namespace houseofatmos::outside {
 
         bool chunk_in_draw_distance(u64 chunk_x, u64 chunk_z) const;
         bool chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const;
-        void load_chunks_around(const Vec<3>& position);
+        void load_chunks_around(
+            const Vec<3>& position, Interactables* interactables,
+            engine::Window& window, const SaveInfo* save_info
+        );
 
         engine::Mesh build_chunk_terrain_geometry(u64 chunk_x, u64 chunk_z) const;
         engine::Mesh build_chunk_water_geometry(u64 chunk_x, u64 chunk_z) const;

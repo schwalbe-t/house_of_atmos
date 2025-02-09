@@ -9,6 +9,7 @@
 #include "../settings.hpp"
 #include "../ui_const.hpp"
 #include "../toasts.hpp"
+#include "../save_info.hpp"
 
 namespace houseofatmos {
 
@@ -22,21 +23,18 @@ namespace houseofatmos {
         };
 
 
-        Settings& settings;
+        SaveInfo save_info;
         engine::Localization::LoadArgs local_ref;
         std::shared_ptr<Scene> previous;
         const engine::Texture& last_frame;
-        std::string& save_path;
-        std::function<engine::Arena ()> serialize;
 
         std::optional<engine::Texture> background = std::nullopt;
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
         Toasts toasts = Toasts(this->local_ref);
 
         PauseMenu(
-            Settings& settings,
-            std::shared_ptr<Scene> previous, const engine::Texture& last_frame,
-            std::string& save_path, std::function<engine::Arena ()>&& serialize
+            SaveInfo save_info,
+            std::shared_ptr<Scene> previous, const engine::Texture& last_frame
         );
 
         void refresh_ui_elements(engine::Window& window);

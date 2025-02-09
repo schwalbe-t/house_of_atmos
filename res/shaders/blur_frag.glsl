@@ -1,8 +1,7 @@
 
 #version 330
 
-const float E = 2.71828182845904523536028747135266250;
-const float PI = 3.14159265358979323846264338327950288;
+#include "common/consts.glsl"
 
 in vec2 f_uv;
 

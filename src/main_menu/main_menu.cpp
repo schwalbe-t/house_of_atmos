@@ -4,10 +4,6 @@
 #include "../outside/outside.hpp"
 #include <filesystem>
 #include <algorithm>
-#include <thread>
-
-// for debugging and testing (pressing T)
-#include "../interior/scene.hpp"
 
 namespace houseofatmos {
 
@@ -286,11 +282,6 @@ namespace houseofatmos {
     static const f64 camera_distance = 40.0;
 
     void MainMenu::update(engine::Window& window) {
-        // DEBUG ///////////////////////////////////////////////////////////////
-        if(window.was_pressed(engine::Key::T)) {
-            window.set_scene(std::make_shared<interior::Scene>(interior::mansion));
-        }
-        ////////////////////////////////////////////////////////////////////////
         this->before_next_frame();
         this->before_next_frame = []() {};
         if(this->ui.root.children.size() == 0) {
@@ -309,7 +300,9 @@ namespace houseofatmos {
 
     void MainMenu::render_background(engine::Window& window) {
         this->renderer.configure(window, *this);
-        this->terrain.load_chunks_around(this->renderer.camera.look_at);
+        this->terrain.load_chunks_around(
+            this->renderer.camera.look_at, nullptr, window, nullptr
+        );
         this->renderer.render_to_shadow_maps();
         this->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->renderer.render_to_output();

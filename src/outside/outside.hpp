@@ -48,6 +48,7 @@ namespace houseofatmos::outside {
         Settings settings;
         engine::Localization::LoadArgs local;
         std::string save_path;
+        SaveInfo save_info;
 
         Renderer renderer;
         DirectionalLight* sun;

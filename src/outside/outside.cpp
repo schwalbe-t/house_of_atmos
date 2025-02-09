@@ -179,7 +179,7 @@ namespace houseofatmos::outside {
         return true;
     }
 
-    static void place_building(
+    static bool place_building(
         Building::Type type, u64 tile_x, u64 tile_z, 
         std::optional<ComplexId> complex, Terrain& terrain
     ) {
@@ -187,8 +187,8 @@ namespace houseofatmos::outside {
         // - figure out the average height of the placed area
         // - check that all tiles are on land and none are obstructed
         i64 average_height = 0;
-        if(tile_x + type_info.width >= terrain.width_in_tiles()) { return; }
-        if(tile_z + type_info.height >= terrain.height_in_tiles()) { return; }
+        if(tile_x + type_info.width >= terrain.width_in_tiles()) { return false; }
+        if(tile_z + type_info.height >= terrain.height_in_tiles()) { return false; }
         for(u64 x = tile_x; x <= tile_x + type_info.width; x += 1) {
             for(u64 z = tile_z; z <= tile_z + type_info.height; z += 1) {
                 i64 elevation = terrain.elevation_at(x, z);
@@ -197,7 +197,7 @@ namespace houseofatmos::outside {
                     && !terrain.building_at((i64) x,     (i64) z - 1)
                     && !terrain.building_at((i64) x - 1, (i64) z    )
                     && !terrain.building_at((i64) x,     (i64) z    );
-                if(!tile_valid) { return; }
+                if(!tile_valid) { return false; }
                 average_height += elevation;
             }
         }
@@ -228,6 +228,7 @@ namespace houseofatmos::outside {
         chunk.buildings.push_back((Building) {
             type, (u8) rel_x, (u8) rel_z, complex
         });
+        return true;
     }
 
     static const u64 settlement_min_spawn_radius = 6; // in tiles
@@ -358,13 +359,37 @@ namespace houseofatmos::outside {
                 seed + 1, terrain, player, balance, complexes, personal_horse
             );
         }
-        player.position = created_settlements.at(0) * terrain.units_per_tile();
-        balance.coins = 20000;
-        personal_horse.set_free(Vec<3>());
+        for(;;) {
+            u64 mansion_x = rng.next_u64() % terrain.width_in_tiles();
+            u64 mansion_z = rng.next_u64() % terrain.width_in_tiles();
+            bool placed_mansion = place_building(
+                Building::Mansion, mansion_x, mansion_z, std::nullopt, terrain
+            );
+            if(!placed_mansion) { continue; }
+            const Building::TypeInfo& mansion = Building::types
+                .at((size_t) Building::Mansion);
+            Vec<3> mansion_center_tile = Vec<3>(mansion_x, 0, mansion_z)
+                + Vec<3>(mansion.width / 2.0, 0, mansion.height / 2.0);
+            Vec<3> player_spawn_tile = mansion_center_tile + Vec<3>(0, 0, 0.5);
+            player.position = player_spawn_tile * terrain.units_per_tile();
+            balance.coins = 20000;
+            Vec<3> horse_spawn_pos = (player_spawn_tile + Vec<3>(-0.25, 0, 0.5))
+                * terrain.units_per_tile();
+            personal_horse.set_free(horse_spawn_pos);
+            break;
+        }
+    }
+
+    static SaveInfo make_save_info(Outside& outside) {
+        return (SaveInfo) {
+            &outside.settings, &outside.save_path,
+            [outside = &outside]() { return outside->serialize(); }
+        };
     }
 
     Outside::Outside(Settings&& settings) {
         this->settings = std::move(settings);
+        this->save_info = make_save_info(*this);
         this->local = this->settings.localization();
         this->load_resources();
         this->carriages = CarriageManager(
@@ -436,8 +461,8 @@ namespace houseofatmos::outside {
         if(window.was_pressed(engine::Key::Escape)) {
             this->terrain_map.hide();
             window.set_scene(std::make_shared<PauseMenu>(
-                this->settings, window.scene(), this->renderer.output(), 
-                this->save_path, [this]() { return this->serialize(); }
+                SaveInfo(this->save_info), window.scene(), 
+                this->renderer.output()
             ));
         }
         this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
@@ -484,7 +509,10 @@ namespace houseofatmos::outside {
         *this->sun = Outside::create_sun(this->player.position);
         this->renderer.fog_origin = this->player.position;
         this->renderer.configure(window, *this);
-        this->terrain.load_chunks_around(this->player.position);
+        this->terrain.load_chunks_around(
+            this->player.position, &this->interactables, window, 
+            &this->save_info
+        );
         this->renderer.render_to_shadow_maps();
         render_geometry(*this, window);
         this->renderer.render_to_output();
@@ -517,6 +545,7 @@ namespace houseofatmos::outside {
             ).data(), 
             (size_t) outside.save_path_len
         ));
+        this->save_info = make_save_info(*this);
         this->terrain = Terrain(
             outside.terrain, 
             Outside::draw_distance_ch, Outside::units_per_tile, Outside::tiles_per_chunk,

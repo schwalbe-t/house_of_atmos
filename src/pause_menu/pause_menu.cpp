@@ -9,14 +9,12 @@
 namespace houseofatmos {
 
     PauseMenu::PauseMenu(
-        Settings& settings,
-        std::shared_ptr<Scene> previous, const engine::Texture& last_frame,
-        std::string& save_path,
-        std::function<engine::Arena ()>&& serialize_impl
-    ): settings(settings), last_frame(last_frame), save_path(save_path) {
-        this->local_ref = settings.localization();
+        SaveInfo save_info,
+        std::shared_ptr<Scene> previous, const engine::Texture& last_frame
+    ): last_frame(last_frame) {
+        this->save_info = save_info;
+        this->local_ref = save_info.settings->localization();
         this->previous = std::move(previous);
-        this->serialize = std::move(serialize_impl);
         ui::Manager::load_shaders(*this);
         ui_const::load_all_textures(*this);
         this->load(engine::Localization::Loader(this->local_ref));
@@ -34,18 +32,20 @@ namespace houseofatmos {
 
     void PauseMenu::save_game(engine::Window& window, bool is_new_save) {
         bool existing_path_invalid = !is_new_save
-            && !std::filesystem::exists(this->save_path);
+            && !std::filesystem::exists(*this->save_info.save_path);
         if(existing_path_invalid) {
-            this->save_path = "";
+            *this->save_info.save_path = "";
             this->toasts.add_error("toast_failed_to_save_game", {});
             this->refresh_ui_elements(window);
             return;
         }
-        engine::Arena serialized = this->serialize();
-        write_to_file(serialized, this->save_path);
-        this->toasts.add_toast("toast_saved_game", { this->save_path });
-        this->settings.add_recent_game(std::string(this->save_path));
-        this->settings.save_to(Settings::default_path);
+        engine::Arena serialized = this->save_info.serialize();
+        write_to_file(serialized, *this->save_info.save_path);
+        this->toasts.add_toast("toast_saved_game", { *this->save_info.save_path });
+        this->save_info.settings->add_recent_game(
+            std::string(*this->save_info.save_path)
+        );
+        this->save_info.settings->save_to(Settings::default_path);
     }
 
     static ui::Element make_button(
@@ -86,7 +86,7 @@ namespace houseofatmos {
                 window->set_scene(std::shared_ptr(this->previous)); 
             }
         ));
-        if(this->save_path.size() > 0) {
+        if(this->save_info.save_path->size() > 0) {
             buttons.children.push_back(make_button(
                 local.text("ui_save_game"),
                 [this, window = &window]() {
@@ -106,7 +106,7 @@ namespace houseofatmos {
                     this->toasts.add_error("toast_failed_to_save_game", {});
                     return;
                 }
-                this->save_path = std::move(new_path); 
+                *this->save_info.save_path = std::move(new_path); 
                 this->save_game(*window, true /* = new save location */);
                 this->refresh_ui_elements(*window);
             }
@@ -115,7 +115,7 @@ namespace houseofatmos {
             local.text("ui_to_main_menu"),
             [window = &window, this]() {
                 window->set_scene(std::make_shared<MainMenu>(
-                    Settings(this->settings)
+                    Settings(*this->save_info.settings)
                 ));
             }
         ));

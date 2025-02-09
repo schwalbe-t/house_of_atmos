@@ -1,16 +1,22 @@
 
 #pragma once
 
-#include "complex.hpp"
+#include "../interior/interiors.hpp"
 #include "../renderer.hpp"
 #include "../collider.hpp"
 #include "../ui_const.hpp"
+#include "complex.hpp"
 
 namespace houseofatmos::outside {
 
     using namespace houseofatmos;
 
     struct Building {
+
+        struct LinkedInterior {
+            Vec<3> interactable_offset;
+            const interior::Interior& interior;
+        };
 
         struct TypeInfo {
             static inline bool remove_terrain = false;
@@ -24,6 +30,7 @@ namespace houseofatmos::outside {
             f64 animation_speed;
             std::vector<RelCollider> colliders; // in game units
             u8 width, height; // in tiles
+            std::optional<LinkedInterior> interior;
             u64 cost; // in coins
             bool destructible;
             u64 workers;
@@ -81,6 +88,7 @@ namespace houseofatmos::outside {
                     RelCollider({  4.425, -0.5, -4.625 }, { 0.25, 1, 9.25 })
                 },
                 2, 2, // size
+                std::nullopt, // no interior
                 500, // building cost
                 true, // may be destroyed
                 5, // workers
@@ -97,6 +105,7 @@ namespace houseofatmos::outside {
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -5 }, { 10, 1, 10 }) },
                 2, 2, // size
+                std::nullopt, // no interior
                 1000, // building cost
                 true, // may be destroyed
                 15, // workers
@@ -113,6 +122,7 @@ namespace houseofatmos::outside {
                 "blades", 1.0,
                 { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
                 2, 2, // size
+                std::nullopt, // no interior
                 1000, // building cost
                 true, // may be destroyed
                 5, // workers
@@ -129,6 +139,7 @@ namespace houseofatmos::outside {
                 std::nullopt, 0.0,
                 { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
                 2, 1, // size
+                std::nullopt, // no interior
                 1000, // building cost
                 true, // may be destroyed
                 25, // workers
@@ -145,6 +156,7 @@ namespace houseofatmos::outside {
                 "door", 0.0, // speed = 0 -> will always be the first frame
                 { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
                 1, 1, // size
+                std::nullopt, // no interior
                 500, // building cost
                 true, // may be destroyed
                 0, // workers
@@ -171,6 +183,7 @@ namespace houseofatmos::outside {
                     RelCollider({ -6.500, -0.5,  3.500 }, {  1.00, 1, 3.00 })
                 },
                 3, 3, // size
+                std::nullopt, // no interior
                 2000, // building cost
                 true, // may be destroyed
                 20, // workers
@@ -204,6 +217,7 @@ namespace houseofatmos::outside {
                     RelCollider({  4.50, -0.5, -5.50 }, { 2.5, 1, 1.0 })
                 },
                 3, 3, // size
+                std::nullopt, // no interior
                 0, // building cost (can't be built nor destroyed)
                 false, // may not be destroyed
                 0, // workers
@@ -219,9 +233,12 @@ namespace houseofatmos::outside {
                 },
                 std::nullopt, 0.0,
                 { 
-                    // colliders
+                    RelCollider({ -7.5, -0.5, -5.0 }, { 15.0, 1,  5.0 }),
+                    RelCollider({ -7.5, -0.5, -5.0 }, {  5.0, 1, 10.0 }),
+                    RelCollider({  2.5, -0.5, -5.0 }, {  5.0, 1, 10.0 })
                 },
                 3, 2, // size
+                (LinkedInterior) { { 0, 1, 0 }, interior::mansion },
                 0, // building cost (can't be built nor destroyed)
                 false, // may not be destroyed
                 0, // workers

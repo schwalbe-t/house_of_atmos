@@ -57,21 +57,27 @@ namespace houseofatmos {
             f64 dist = (instance->pos - pos).len();
             if(dist > max_interaction_distance) { continue; }
             this->container->children.push_back(ui::Element()
+                .as_phantom()
                 .with_pos(pos_ndc.x(), pos_ndc.y(), ui::position::window_ndc)
-                .with_size(7, 7, ui::size::units)
-                .with_background(
-                    &ui_background::border, &ui_background::border_hovering
+                .with_size(0, 0, ui::size::units)
+                .with_child(ui::Element()
+                    .with_pos(-3.5, -3.5, ui::position::parent_offset_units)
+                    .with_size(7, 7, ui::size::units)
+                    .with_background(
+                        &ui_background::border, &ui_background::border_hovering
+                    )
+                    .with_click_handler([w_inst = &weak_instance]() {
+                        std::shared_ptr<Interactable> inst = w_inst->lock();
+                        if(inst == nullptr) { return; }
+                        inst->handler();
+                    })
+                    .as_movable()
                 )
-                .with_click_handler([w_inst = &weak_instance]() {
-                    std::shared_ptr<Interactable> inst = w_inst->lock();
-                    if(inst == nullptr) { return; }
-                    inst->handler();
-                })
                 .as_movable()
             );
             if(dist >= closest_dist) { continue; }
             closest_inst = instance;
-            closest_elem = &this->container->children.back();
+            closest_elem = &this->container->children.back().children[0];
             closest_dist = dist;
         }
         if(closest_elem != nullptr) {

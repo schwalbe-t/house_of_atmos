@@ -1,5 +1,6 @@
 
 #include "terrain.hpp"
+#include "../interior/scene.hpp"
 
 namespace houseofatmos::outside {
 
@@ -325,13 +326,54 @@ namespace houseofatmos::outside {
         return instances;
     }
 
-    Terrain::LoadedChunk Terrain::load_chunk(u64 chunk_x, u64 chunk_z) const {
+    std::vector<std::shared_ptr<Interactable>> Terrain::create_chunk_interactables(
+        u64 chunk_x, u64 chunk_z, 
+        Interactables* interactables, engine::Window& window, 
+        const SaveInfo* save_info
+    ) const {
+        std::vector<std::shared_ptr<Interactable>> created;
+        if(interactables == nullptr) { return created; }
+        const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
+        for(const Building& building: chunk_data.buildings) {
+            const Building::TypeInfo& type = building.get_type_info(); 
+            if(!type.interior.has_value()) { continue; }
+            u64 chunk_tile_x = chunk_x * this->tiles_per_chunk();
+            u64 chunk_tile_z = chunk_z * this->tiles_per_chunk();
+            f64 pos_tile_x = chunk_tile_x + building.x + type.width / 2.0;
+            f64 pos_tile_z = chunk_tile_z + building.z + type.height/ 2.0;
+            Vec<3> position = Vec<3>(pos_tile_x, 0.0, pos_tile_z)
+                * this->units_per_tile();
+            position.y() += this->elevation_at(
+                chunk_tile_x + building.x, chunk_tile_z + building.z
+            );
+            position += type.interior->interactable_offset;
+            created.push_back(interactables->create(
+                [window = &window, type = &type, save_info]() {
+                    window->set_scene(std::make_shared<interior::Scene>(
+                        type->interior->interior, SaveInfo(*save_info), 
+                        window->scene()
+                    ));
+                },
+                position
+            ));
+        }
+        return created;
+    }
+
+    Terrain::LoadedChunk Terrain::load_chunk(
+        u64 chunk_x, u64 chunk_z, 
+        Interactables* interactables, engine::Window& window,
+        const SaveInfo* save_info
+    ) const {
         return {
             chunk_x, chunk_z, false, 
             this->build_chunk_terrain_geometry(chunk_x, chunk_z),
             this->build_chunk_water_geometry(chunk_x, chunk_z),
             this->collect_foliage_transforms(chunk_x, chunk_z),
-            this->collect_building_transforms(chunk_x, chunk_z)
+            this->collect_building_transforms(chunk_x, chunk_z),
+            this->create_chunk_interactables(
+                chunk_x, chunk_z, interactables, window, save_info
+            )
         };
     }
 
@@ -353,7 +395,10 @@ namespace houseofatmos::outside {
         return false;
     }
 
-    void Terrain::load_chunks_around(const Vec<3>& position) {
+    void Terrain::load_chunks_around(
+        const Vec<3>& position, Interactables* interactables,
+        engine::Window& window, const SaveInfo* save_info
+    ) {
         this->view_chunk_x = (u64) (position.x() / this->tile_size / this->chunk_tiles);
         this->view_chunk_z = (u64) (position.z() / this->tile_size / this->chunk_tiles);
         // despawn chunks that are too far away
@@ -382,12 +427,18 @@ namespace houseofatmos::outside {
             for(i64 chunk_z = viewed_start_z; chunk_z <= viewed_end_z; chunk_z += 1) {
                 size_t chunk_i;
                 if(!this->chunk_loaded(chunk_x, chunk_z, chunk_i)) {
-                    this->loaded_chunks.push_back(this->load_chunk(chunk_x, chunk_z));
+                    this->loaded_chunks.push_back(
+                        this->load_chunk(
+                            chunk_x, chunk_z, interactables, window, save_info
+                        )
+                    );
                     continue; 
                 }
                 LoadedChunk& chunk = this->loaded_chunks.at(chunk_i);
                 if(chunk.modified) {
-                    chunk = this->load_chunk(chunk_x, chunk_z);
+                    chunk = this->load_chunk(
+                        chunk_x, chunk_z, interactables, window, save_info
+                    );
                 }
             }
         }
@@ -678,9 +729,6 @@ namespace houseofatmos::outside {
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage_instances;
         std::unordered_map<Building::Type, std::vector<Mat<4>>> building_instances;
         for(LoadedChunk& chunk: this->loaded_chunks) {
-            if(chunk.modified) {
-                chunk = this->load_chunk(chunk.x, chunk.z);
-            }
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
             this->render_chunk_ground(
@@ -780,9 +828,6 @@ namespace houseofatmos::outside {
         renderer.set_fog_uniforms(shader);
         renderer.set_shadow_uniforms(shader);
         for(LoadedChunk& chunk: this->loaded_chunks) {
-            if(chunk.modified) {
-                chunk = this->load_chunk(chunk.x, chunk.z);
-            }
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
             shader.set_uniform("u_local_transf", Mat<4>());
