@@ -104,19 +104,24 @@ namespace houseofatmos::engine {
         alDeleteBuffers(1, &source_id);
     }
 
-    void Audio::play() const {
+    // Technically the following methods could be marked as 'const',
+    // but I shall not since they modify OpenAL state
+    // (passing a 'const Audio&' somewhere should mean they can't
+    //  modify the player in any way)
+
+    void Audio::play() {
         alSourcePlay(this->source_id);
     }
 
-    void Audio::stop() const {
+    void Audio::stop() {
         alSourceStop(this->source_id);
     }
 
-    void Audio::set_pitch(f64 value) const {
+    void Audio::set_pitch(f64 value) {
         alSourcef(this->source_id, AL_PITCH, value);
     }
 
-    void Audio::set_gain(f64 value) const {
+    void Audio::set_gain(f64 value) {
         alSourcef(this->source_id, AL_GAIN, value);
     }
 

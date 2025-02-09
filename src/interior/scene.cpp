@@ -29,7 +29,7 @@ namespace houseofatmos::interior {
         Renderer::load_shaders(*this);
         Player::load_model(*this);
         ui::Manager::load_shaders(*this);
-        ui_const::load_all_textures(*this);
+        ui_const::load_all(*this);
     }
 
 

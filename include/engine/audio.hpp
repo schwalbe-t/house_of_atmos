@@ -38,11 +38,12 @@ namespace houseofatmos::engine {
 
         u8 channels() const { return this->data_channels; }
         u64 sample_rate() const { return this->data_sample_rate; }
-
-        void play() const;
-        void stop() const;
-        void set_pitch(f64 value) const;
-        void set_gain(f64 value) const;
+        
+        void play();
+        void stop();
+        void set_pitch(f64 value);
+        void set_gain(f64 value);
+        
         bool is_playing() const;
     };
 

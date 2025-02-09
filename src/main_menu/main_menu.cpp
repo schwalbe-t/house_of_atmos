@@ -31,7 +31,7 @@ namespace houseofatmos {
         outside::Building::load_models(*this);
         outside::Foliage::load_models(*this);
         ui::Manager::load_shaders(*this);
-        ui_const::load_all_textures(*this);
+        ui_const::load_all(*this);
         this->load(engine::Localization::Loader(this->local_ref));
         this->load(engine::Texture::Loader(MainMenu::title_sprite.texture));
         this->load(engine::Shader::Loader(MainMenu::blur_shader));
@@ -107,6 +107,7 @@ namespace houseofatmos {
         buttons.children.push_back(make_button(
             local.text("ui_new_game"),
             [window = &window, local = &local, this]() {
+                this->get<Sound>(ui_sound::select).play();
                 this->before_next_frame = [window, this]() {
                     window->set_scene(std::make_shared<outside::Outside>(
                         std::move(settings)
@@ -127,6 +128,7 @@ namespace houseofatmos {
             buttons.children.push_back(make_button(
                 local.pattern("ui_load_previous_game", { short_name }),
                 [window = &window, local = &local, this, path = game_path]() {
+                    this->get<Sound>(ui_sound::select).play();
                     this->before_next_frame = [window, this, path]() {
                         load_game_from(path, *window, this->settings);
                     };
@@ -137,6 +139,7 @@ namespace houseofatmos {
         buttons.children.push_back(make_button(
             local.text("ui_load_game"),
             [local = &local, window = &window, this]() {
+                this->get<Sound>(ui_sound::select).play();
                 std::vector<std::string> chosen = pfd::open_file(
                     local->text("ui_choose_load_location"),
                     "",
@@ -153,6 +156,7 @@ namespace houseofatmos {
         buttons.children.push_back(make_button(
             local.text("ui_credits"),
             [this, local = &local, window = &window]() {
+                this->get<Sound>(ui_sound::select).play();
                 this->show_credits(*local, *window);
             }
         ));
@@ -178,6 +182,7 @@ namespace houseofatmos {
                 &ui_background::border, &ui_background::border_hovering
             )
             .with_click_handler([this, window = &window]() {
+                this->get<Sound>(ui_sound::select).play();
                 this->show_language_selection(*window);
             })
             .with_padding(2)
@@ -219,6 +224,7 @@ namespace houseofatmos {
             selection.children.push_back(make_button(
                 name, 
                 [this, locale = &locale, window = &window]() {
+                    this->get<Sound>(ui_sound::select).play();
                     this->settings.locale = *locale;
                     this->settings.save_to(Settings::default_path);
                     window->set_scene(std::make_shared<MainMenu>(
@@ -269,6 +275,7 @@ namespace houseofatmos {
             .as_movable()
         );
         auto close_credits = [this, local = &local, window = &window]() {
+            this->get<Sound>(ui_sound::select).play();
             this->show_title_screen(*local, *window);
         };
         this->ui.root.children.push_back(make_button("X", std::move(close_credits))

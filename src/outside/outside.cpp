@@ -18,8 +18,7 @@ namespace houseofatmos::outside {
         PersonalHorse::load_resources(*this);
         ui::Manager::load_shaders(*this);
         ui_background::load_textures(*this);
-        ui_font::load_textures(*this);
-        ui_icon::load_textures(*this);
+        ui_const::load_all(*this);
         this->load(engine::Localization::Loader(this->local));
     }
 

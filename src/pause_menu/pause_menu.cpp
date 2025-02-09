@@ -16,7 +16,7 @@ namespace houseofatmos {
         this->local_ref = save_info.settings->localization();
         this->previous = std::move(previous);
         ui::Manager::load_shaders(*this);
-        ui_const::load_all_textures(*this);
+        ui_const::load_all(*this);
         this->load(engine::Localization::Loader(this->local_ref));
         this->load(engine::Shader::Loader(PauseMenu::blur_shader));
     }
