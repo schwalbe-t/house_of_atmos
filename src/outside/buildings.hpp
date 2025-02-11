@@ -22,6 +22,9 @@ namespace houseofatmos::outside {
             static inline bool remove_terrain = false;
             static inline bool keep_terrain = true;
 
+            static inline bool indestructible = false;
+            static inline bool allow_destruction = true;
+
             std::string local_name;
             const ui::Background* icon;
             bool terrain_under_building; // false = remove terrain under building
@@ -90,7 +93,7 @@ namespace houseofatmos::outside {
                 2, 2, // size
                 std::nullopt, // no interior
                 500, // building cost
-                true, // may be destroyed
+                TypeInfo::allow_destruction,
                 5, // workers
                 0 // residents
             },
@@ -110,7 +113,7 @@ namespace houseofatmos::outside {
                 2, 2, // size
                 std::nullopt, // no interior
                 1000, // building cost
-                true, // may be destroyed
+                TypeInfo::allow_destruction,
                 15, // workers
                 0 // residents
             },
@@ -127,7 +130,7 @@ namespace houseofatmos::outside {
                 2, 2, // size
                 std::nullopt, // no interior
                 1000, // building cost
-                true, // may be destroyed
+                TypeInfo::allow_destruction,
                 5, // workers
                 0 // residents
             },
@@ -144,7 +147,7 @@ namespace houseofatmos::outside {
                 2, 1, // size
                 std::nullopt, // no interior
                 1000, // building cost
-                true, // may be destroyed
+                TypeInfo::allow_destruction,
                 25, // workers
                 0 // residents
             },
@@ -161,7 +164,7 @@ namespace houseofatmos::outside {
                 1, 1, // size
                 std::nullopt, // no interior
                 500, // building cost
-                true, // may be destroyed
+                TypeInfo::allow_destruction,
                 0, // workers
                 5 // residents
             },
@@ -188,7 +191,7 @@ namespace houseofatmos::outside {
                 3, 3, // size
                 std::nullopt, // no interior
                 2000, // building cost
-                true, // may be destroyed
+                TypeInfo::allow_destruction,
                 20, // workers
                 0 // residents
             },
@@ -222,7 +225,7 @@ namespace houseofatmos::outside {
                 3, 3, // size
                 std::nullopt, // no interior
                 0, // building cost (can't be built nor destroyed)
-                false, // may not be destroyed
+                TypeInfo::indestructible,
                 0, // workers
                 0 // residents
             },
@@ -243,7 +246,7 @@ namespace houseofatmos::outside {
                 3, 2, // size
                 (LinkedInterior) { { 0, 1, 0 }, interior::mansion },
                 0, // building cost (can't be built nor destroyed)
-                false, // may not be destroyed
+                TypeInfo::indestructible,
                 0, // workers
                 0 // residents
             }

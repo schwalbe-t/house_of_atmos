@@ -21,6 +21,7 @@ namespace houseofatmos::interior {
             this->interior.lights.begin(), this->interior.lights.end()
         );
         this->renderer.shadow_bias = interior.shadow_bias;
+        this->renderer.shadow_map_resolution = 512;
         this->player.position = interior.player_start_pos;
     }
 
@@ -73,7 +74,7 @@ namespace houseofatmos::interior {
         if(this->valid_player_position(next_player_z)) {
             this->player.proceed_z();
         }
-        this->renderer.camera.look_at = this->player.position;
+        this->renderer.camera.look_at = this->player.position + Vec<3>(0, 1, 0);
         this->renderer.camera.position = this->player.position
             + this->interior.camera_offset;
     }

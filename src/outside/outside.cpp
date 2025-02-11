@@ -37,6 +37,7 @@ namespace houseofatmos::outside {
         renderer.fog_dist_scale = Vec<3>(1.0, 0.0, 1.0); // only take Y axis into account
         renderer.fog_color = Vec<4>(239, 239, 230, 255) / 255.0;
         renderer.shadow_bias = 0.0005;
+        renderer.shadow_map_resolution = 4096;
     }
 
     static void set_base_ui(Outside& scene, u64 selected);

@@ -92,7 +92,8 @@ namespace houseofatmos {
         this->rendering_shadow_maps = true;
         if(this->shadow_maps.size() != this->lights.size()) {
             this->shadow_maps = engine::TextureArray(
-                4096, 4096, this->lights.size()
+                this->shadow_map_resolution, this->shadow_map_resolution, 
+                this->lights.size()
             );
         }
         for(size_t light_i = 0; light_i < this->lights.size(); light_i += 1) {
