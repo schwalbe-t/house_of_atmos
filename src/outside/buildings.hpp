@@ -97,13 +97,16 @@ namespace houseofatmos::outside {
             /* Type::Mineshaft */ {
                 "building_name_mineshaft",
                 &ui_icon::mineshaft,
-                TypeInfo::keep_terrain,
+                TypeInfo::remove_terrain,
                 { 
                     "res/buildings/mineshaft.glb", Renderer::model_attribs,
-                    engine::FaceCulling::Enabled
+                    engine::FaceCulling::Disabled
                 },
                 std::nullopt, 0.0,
-                { RelCollider({ -5, -0.5, -5 }, { 10, 1, 10 }) },
+                { 
+                    RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }),
+                    RelCollider({  3, -0.5, -1 }, { 2, 1, 2 }) 
+                },
                 2, 2, // size
                 std::nullopt, // no interior
                 1000, // building cost
