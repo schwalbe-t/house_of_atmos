@@ -7,6 +7,7 @@
 #include <engine/localization.hpp>
 #include "../settings.hpp"
 #include "../ui_const.hpp"
+#include "../audio_const.hpp"
 #include "../renderer.hpp"
 #include "../outside/terrain.hpp"
 

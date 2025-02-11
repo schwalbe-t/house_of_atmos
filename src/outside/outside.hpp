@@ -9,6 +9,7 @@
 #include "../interactable.hpp"
 #include "../settings.hpp"
 #include "../ui_const.hpp"
+#include "../audio_const.hpp"
 #include "../renderer.hpp"
 #include "../player.hpp"
 #include "terrain.hpp"

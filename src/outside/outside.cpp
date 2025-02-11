@@ -19,6 +19,7 @@ namespace houseofatmos::outside {
         ui::Manager::load_shaders(*this);
         ui_background::load_textures(*this);
         ui_const::load_all(*this);
+        audio_const::load_all(*this);
         this->load(engine::Localization::Loader(this->local));
     }
 
@@ -53,7 +54,7 @@ namespace houseofatmos::outside {
 
     static const ActionModeBuilder default_mode_const = [](Outside& s) {
         return (std::unique_ptr<ActionMode>) std::make_unique<DefaultMode>(
-            s.terrain, s.complexes, s.carriages, s.player, s.balance,
+            s, s.terrain, s.complexes, s.carriages, s.player, s.balance,
             s.ui, s.toasts
         );
     };
@@ -63,31 +64,31 @@ namespace houseofatmos::outside {
         (std::pair<const ui::Background*, ActionModeBuilder>) 
         { &ui_icon::terraforming, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<TerraformMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance, 
+                s, s.terrain, s.complexes, s.carriages, s.player, s.balance, 
                 s.ui, s.toasts
             );
         } },
         { &ui_icon::construction, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<ConstructionMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance, 
+                s, s.terrain, s.complexes, s.carriages, s.player, s.balance, 
                 s.ui, s.toasts
             );
         } },
         { &ui_icon::bridging, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<BridgingMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance, 
+                s, s.terrain, s.complexes, s.carriages, s.player, s.balance, 
                 s.ui, s.toasts
             );
         } },
         { &ui_icon::demolition, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<DemolitionMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance,
+                s, s.terrain, s.complexes, s.carriages, s.player, s.balance,
                 s.ui, s.toasts
             );
         } },
         { &ui_icon::pathing, [](Outside& s) {
             return (std::unique_ptr<ActionMode>) std::make_unique<PathingMode>(
-                s.terrain, s.complexes, s.carriages, s.player, s.balance, 
+                s, s.terrain, s.complexes, s.carriages, s.player, s.balance, 
                 s.ui, s.toasts
             );
         } }
@@ -142,6 +143,7 @@ namespace houseofatmos::outside {
             .with_background(&ui_background::note)
             .as_movable()
         );
+        scene.toasts.set_scene(&scene);
         scene.ui.root.children.push_back(scene.toasts.create_container());
         scene.toasts.put_states(std::move(toast_states));
     }
@@ -458,6 +460,7 @@ namespace houseofatmos::outside {
     }
 
     void Outside::update(engine::Window& window) {
+        this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(window.was_pressed(engine::Key::Escape)) {
             this->terrain_map.hide();
             window.set_scene(std::make_shared<PauseMenu>(

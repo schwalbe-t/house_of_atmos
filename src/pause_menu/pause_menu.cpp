@@ -17,6 +17,7 @@ namespace houseofatmos {
         this->previous = std::move(previous);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
+        audio_const::load_all(*this);
         this->load(engine::Localization::Loader(this->local_ref));
         this->load(engine::Shader::Loader(PauseMenu::blur_shader));
     }
@@ -127,11 +128,13 @@ namespace houseofatmos {
             .with_background(&ui_background::scroll_vertical)
             .as_movable()
         );
+        this->toasts.set_scene(this);
         this->ui.with_element(this->toasts.create_container());
         this->toasts.put_states(std::move(toast_states));
     }
 
     void PauseMenu::update(engine::Window& window) {
+        this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(this->ui.root.children.size() == 0) {
             this->refresh_ui_elements(window);
         }

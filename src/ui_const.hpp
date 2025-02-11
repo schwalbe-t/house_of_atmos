@@ -2,7 +2,6 @@
 #pragma once
 
 #include <engine/ui.hpp>
-#include "sound.hpp"
 
 
 
@@ -225,30 +224,6 @@ namespace houseofatmos::ui_icon {
 }
 
 
-namespace houseofatmos::ui_sound {
-
-    static inline const Sound::LoadArgs select = (Sound::LoadArgs) {
-        "res/sounds/select.ogg", 0.9, 0.1
-    };
-
-    static inline const Sound::LoadArgs build = (Sound::LoadArgs) {
-        "res/sounds/build.ogg", 0.9, 0.1
-    };
-
-    static inline const Sound::LoadArgs error = (Sound::LoadArgs) {
-        "res/sounds/error.ogg", 0.9, 0.1
-    };
-
-
-    inline void load_sounds(engine::Scene& scene) {
-        scene.load(Sound::Loader(select));
-        scene.load(Sound::Loader(build));
-        scene.load(Sound::Loader(error));
-    }
-
-}
-
-
 
 namespace houseofatmos::ui_const {
     
@@ -257,8 +232,7 @@ namespace houseofatmos::ui_const {
     inline void load_all(engine::Scene& scene) {
         ui_font::load_textures(scene);
         ui_background::load_textures(scene);
-        ui_icon::load_textures(scene); 
-        ui_sound::load_sounds(scene);
+        ui_icon::load_textures(scene);
     }
 
 }

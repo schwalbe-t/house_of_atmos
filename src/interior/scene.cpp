@@ -31,6 +31,7 @@ namespace houseofatmos::interior {
         Player::load_model(*this);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
+        audio_const::load_all(*this);
     }
 
 
@@ -45,6 +46,7 @@ namespace houseofatmos::interior {
     }
 
     void Scene::update(engine::Window& window) {
+        this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(window.was_pressed(engine::Key::Escape)) {
             window.set_scene(std::make_shared<PauseMenu>(
                 this->save_info, window.scene(), this->renderer.output()

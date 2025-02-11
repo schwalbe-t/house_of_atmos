@@ -4,6 +4,7 @@
 #include <engine/ui.hpp>
 #include <engine/localization.hpp>
 #include "ui_const.hpp"
+#include "audio_const.hpp"
 #include <chrono>
 
 namespace houseofatmos {
@@ -24,7 +25,7 @@ namespace houseofatmos {
 
         private:
         const engine::Localization::LoadArgs& local_ref;
-        const engine::Localization* local = nullptr;
+        engine::Scene* scene = nullptr;
         ui::Element* toasts_container = nullptr;
         std::vector<f64> toast_timers;
 
@@ -37,8 +38,17 @@ namespace houseofatmos {
         public:
         Toasts(const engine::Localization::LoadArgs& l): local_ref(l) {}
 
-        const engine::Localization& localization() const { 
-            return *this->local; 
+        const engine::Localization& localization() const {
+            if(this->scene == nullptr) {
+                engine::error("Cannot use 'Toasts::localization' until "
+                    "a scene was configured using 'Toasts::set_scene'!"
+                );
+            }
+            return this->scene->get<engine::Localization>(this->local_ref); 
+        }
+
+        void set_scene(engine::Scene* scene) {
+            this->scene = scene;
         }
 
         ui::Element create_container() {
@@ -65,9 +75,7 @@ namespace houseofatmos {
             const ui::Background* background = &ui_background::note,
             const ui::Font* font = &ui_font::dark
         ) {
-            if(this->local == nullptr) {
-                return; 
-            }
+            if(this->scene == nullptr) { return; }
             if(this->toasts_container == nullptr) {
                 this->toast_timers.clear();
                 return;
@@ -80,7 +88,7 @@ namespace houseofatmos {
             toast_timers.push_back(death_time);
             this->elements().push_back(ui::Element()
                 .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->pattern(name, values), font)
+                .with_text(this->localization().pattern(name, values), font)
                 .with_background(background)
                 .with_padding(5.0)
                 .as_movable()
@@ -102,6 +110,7 @@ namespace houseofatmos {
                 name, std::span(values), duration, 
                 &ui_background::note_error, &ui_font::bright
             );
+            this->scene->get<engine::Sound>(sound::error).play();
         }
 
         States make_states() {
@@ -120,7 +129,7 @@ namespace houseofatmos {
         }
 
         void update(engine::Scene& scene) {
-            this->local = &scene.get<engine::Localization>(this->local_ref);
+            this->scene = &scene;
             if(this->toasts_container == nullptr) {
                 this->toast_timers.clear();
             }

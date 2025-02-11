@@ -7,6 +7,7 @@
 #include "../player.hpp"
 #include "../toasts.hpp"
 #include "../ui_const.hpp"
+#include "../audio_const.hpp"
 #include "carriage.hpp"
 #include "terrain.hpp"
 
@@ -48,6 +49,7 @@ namespace houseofatmos::outside {
 
 
         public:
+        engine::Scene& scene;
         Terrain& terrain;
         ComplexBank& complexes;
         CarriageManager& carriages;
@@ -58,11 +60,12 @@ namespace houseofatmos::outside {
         const engine::Localization* local;
 
         ActionMode(
-            Terrain& terrain, ComplexBank& complexes, 
+            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
-        ): terrain(terrain), complexes(complexes), carriages(carriages),
-            player(player), balance(balance), ui(ui), toasts(toasts) {
+        ): scene(scene), terrain(terrain), complexes(complexes), 
+            carriages(carriages), player(player), balance(balance), ui(ui), 
+            toasts(toasts) {
             this->local = &toasts.localization();
         }
 
@@ -85,10 +88,10 @@ namespace houseofatmos::outside {
         ui::Element* button = nullptr;
 
         DefaultMode(
-            Terrain& terrain, ComplexBank& complexes, 
+            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
+        ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
             this->ui.root.children.push_back(
                 ui::Element().as_phantom().as_movable()
             );
@@ -139,7 +142,7 @@ namespace houseofatmos::outside {
 
 
         TerraformMode(
-            Terrain& terrain, ComplexBank& complexes, 
+            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
         );
@@ -168,7 +171,7 @@ namespace houseofatmos::outside {
         bool placement_valid;
 
         ConstructionMode(
-            Terrain& terrain, ComplexBank& complexes, 
+            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
         );
@@ -200,7 +203,7 @@ namespace houseofatmos::outside {
         bool placement_valid;
 
         BridgingMode(
-            Terrain& terrain, ComplexBank& complexes, 
+            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
         );
@@ -244,10 +247,10 @@ namespace houseofatmos::outside {
 
 
         DemolitionMode(
-            Terrain& terrain, ComplexBank& complexes, 
+            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
+        ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
             this->selection.type = Selection::None;
         }
 
@@ -270,10 +273,10 @@ namespace houseofatmos::outside {
         u64 selected_tile_x, selected_tile_z;
 
         PathingMode(
-            Terrain& terrain, ComplexBank& complexes, 
+            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
             CarriageManager& carriages, Player& player, Balance& balance,
             ui::Manager& ui, Toasts& toasts
-        ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
+        ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
             this->selected_tile_x = 0;
             this->selected_tile_z = 0;
         }

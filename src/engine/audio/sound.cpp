@@ -1,8 +1,8 @@
 
+#include <engine/audio.hpp>
 #include <engine/rng.hpp>
-#include "sound.hpp"
 
-namespace houseofatmos {
+namespace houseofatmos::engine {
 
     using namespace houseofatmos::engine::math;
 

@@ -8,6 +8,7 @@
 #include <engine/arena.hpp>
 #include "../settings.hpp"
 #include "../ui_const.hpp"
+#include "../audio_const.hpp"
 #include "../toasts.hpp"
 #include "../save_info.hpp"
 

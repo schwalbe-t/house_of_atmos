@@ -98,10 +98,10 @@ namespace houseofatmos::outside {
 
 
     TerraformMode::TerraformMode(
-        Terrain& terrain, ComplexBank& complexes, 
+        engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
         CarriageManager& carriages, Player& player, Balance& balance,
         ui::Manager& ui, Toasts& toasts
-    ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
+    ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
         this->has_selection = false;
         this->mode = std::make_unique<Mode>(Mode::Flatten);
         this->mode_buttons = std::make_unique<
@@ -297,6 +297,7 @@ namespace houseofatmos::outside {
                 this->terrain.adjust_area_foliage(
                     min_x - 1, min_z - 1, max_x + 1, max_z + 1
                 );
+                this->scene.get<engine::Sound>(sound::terrain_mod).play();
             }
             if(!is_valid) {
                 this->toasts.add_error("toast_terrain_occupied", {});
@@ -484,10 +485,10 @@ namespace houseofatmos::outside {
     }
 
     ConstructionMode::ConstructionMode(
-        Terrain& terrain, ComplexBank& complexes, 
+        engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
         CarriageManager& carriages, Player& player, Balance& balance,
         ui::Manager& ui, Toasts& toasts
-    ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
+    ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
         this->selected_x = 0;
         this->selected_z = 0;
         this->selected_type = std::make_unique<Building::Type>(Building::House);
@@ -576,6 +577,7 @@ namespace houseofatmos::outside {
                 this->carriages.refind_all_paths(
                     this->complexes, this->terrain, this->toasts
                 );
+                this->scene.get<engine::Sound>(sound::build).play();
             } else if(unemployment < (i64) type_info.workers) {
                 this->toasts.add_error("toast_missing_unemployment", {
                     std::to_string(unemployment), 
@@ -643,10 +645,10 @@ namespace houseofatmos::outside {
     }
 
     BridgingMode::BridgingMode(
-        Terrain& terrain, ComplexBank& complexes, 
+        engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
         CarriageManager& carriages, Player& player, Balance& balance,
         ui::Manager& ui, Toasts& toasts
-    ): ActionMode(terrain, complexes, carriages, player, balance, ui, toasts) {
+    ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
         this->selected_type = std::make_unique<Bridge::Type>(Bridge::Wooden);
         this->ui.root.children.push_back(ui::Element());
         ui::Element* selector = &this->ui.root.children.back();
@@ -788,6 +790,7 @@ namespace houseofatmos::outside {
                 this->carriages.refind_all_paths(
                     this->complexes, this->terrain, this->toasts
                 );
+                this->scene.get<engine::Sound>(sound::build).play();
             }
         }
         this->has_selection &= !attempted_placement;
@@ -1007,6 +1010,7 @@ namespace houseofatmos::outside {
             this->carriages.refind_all_paths(
                 this->complexes, this->terrain, this->toasts
             );
+            this->scene.get<engine::Sound>(sound::terrain_mod).play();
         } else if(has_path && window.was_pressed(engine::Button::Right)) {
             chunk.set_path_at(rel_x, rel_z, false);
             this->terrain.reload_chunk_at(chunk_x, chunk_z);
@@ -1014,6 +1018,7 @@ namespace houseofatmos::outside {
                 this->complexes, this->terrain, this->toasts
             );
             this->balance.add_coins(path_removal_refund, this->toasts);
+            this->scene.get<engine::Sound>(sound::terrain_mod).play();
         }
     }
 

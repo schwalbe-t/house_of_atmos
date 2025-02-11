@@ -3,6 +3,7 @@
 
 #include "scene.hpp"
 #include "nums.hpp"
+#include "rng.hpp"
 #include <vector>
 
 namespace houseofatmos::engine {
@@ -45,6 +46,151 @@ namespace houseofatmos::engine {
         void set_gain(f64 value);
         
         bool is_playing() const;
+    };
+
+
+    struct Sound {
+        struct LoadArgs {
+            std::string path;
+            f64 base_pitch;
+            f64 pitch_variation;
+
+            std::string identifier() const { 
+                return this->path 
+                    + "|||" + std::to_string(this->base_pitch)
+                    + "|||" + std::to_string(this->pitch_variation);
+            }
+            std::string pretty_identifier() const {
+                return "Sound[" + std::to_string(this->base_pitch)
+                    + " +/- " + std::to_string(this->pitch_variation) + "]"
+                    "@'" + this->path + "'";
+            }
+        };
+        using Loader = Resource<Sound, LoadArgs>;
+
+        private:
+        Audio player;
+        f64 curr_base_pitch;
+        f64 curr_pitch_variation;
+
+        public:
+        Sound(
+            Audio&& audio, f64 base_pitch, f64 pitch_variation
+        ): player(std::move(audio)) {
+            this->curr_base_pitch = base_pitch;
+            this->curr_pitch_variation = pitch_variation;
+            this->randomize_pitch();
+        }
+
+        static Sound from_resource(const LoadArgs& args);
+
+        void randomize_pitch();
+
+        void play() {
+            this->randomize_pitch();
+            this->player.play();
+        }
+
+        void stop() { this->player.stop(); }
+        void set_gain(f64 value) { this->player.set_gain(value); }
+
+        void set_base_pitch(f64 base_pitch) {
+            this->curr_base_pitch = base_pitch;
+            this->randomize_pitch();
+        }
+
+        void set_pitch_variation(f64 pitch_variation) {
+            this->curr_pitch_variation = pitch_variation;
+            this->randomize_pitch();
+        }
+
+        f64 base_pitch() const { return this->curr_base_pitch; }
+        f64 pitch_variation() const { return this->curr_pitch_variation; }
+        bool is_playing() const { return this->is_playing(); }
+        const Audio& audio() const { return this->player; }
+
+    };
+
+
+    struct Soundtrack {
+
+        static inline const bool repetition_allowed = true;
+        static inline const bool no_repetition = false; 
+
+        struct LoadArgs {
+            std::initializer_list<std::string> track_sources;
+            bool allow_repetition;
+
+            std::string identifier() const {  return this->pretty_identifier(); }
+
+            std::string pretty_identifier() const {
+                std::string result = "Soundtrack[" 
+                    + std::string(this->allow_repetition
+                        ? "repetition allowed"
+                        : "no repetition"
+                    )
+                    + "]@(";
+                bool had_path = false;
+                for(const std::string& path: this->track_sources) {
+                    if(had_path) { result += ", "; }
+                    result += "'" + path + "'";
+                    had_path = true;
+                }
+                return result + ")";
+            }
+        };
+        using Loader = Resource<Soundtrack, LoadArgs>;
+
+        private:
+        std::vector<Audio> tracks;
+        bool allow_repetition;
+        math::StatefulRNG rng;
+        u64 last_played_idx = UINT64_MAX;
+
+        bool any_is_playing() {
+            for(const Audio& track: this->tracks) {
+                if(track.is_playing()) { return true; }
+            }
+            return false;
+        }
+
+        public:
+        Soundtrack(
+            std::vector<Audio>&& tracks, 
+            bool allow_repetition = Soundtrack::no_repetition,
+            math::StatefulRNG rng = math::StatefulRNG()
+        ): tracks(std::move(tracks)) {
+            this->allow_repetition = allow_repetition;
+            this->rng = rng;
+        }
+
+        static Soundtrack from_resource(const LoadArgs& args) {
+            std::vector<Audio> tracks;
+            tracks.reserve(args.track_sources.size());
+            for(const std::string& track_source: args.track_sources) {
+                auto track = Audio::from_resource(
+                    (Audio::LoadArgs) { track_source }
+                );
+                tracks.push_back(std::move(track));
+            }
+            return Soundtrack(std::move(tracks), args.allow_repetition);
+        }
+
+        void update() {
+            if(this->any_is_playing()) { return; }
+            for(;;) {
+                u64 track_idx = (u64) (
+                    this->rng.next_f64() * (f64) this->tracks.size()
+                ) % this->tracks.size();
+                bool is_valid = this->allow_repetition
+                    || track_idx != this->last_played_idx;
+                if(!is_valid) { continue; }
+                this->last_played_idx = track_idx;
+                this->tracks[track_idx].play();
+                break;
+            }
+        }
+
     };
 
 }

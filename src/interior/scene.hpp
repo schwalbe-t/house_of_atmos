@@ -6,6 +6,7 @@
 #include "../player.hpp"
 #include "../interactable.hpp"
 #include "../save_info.hpp"
+#include "../audio_const.hpp"
 #include "interiors.hpp"
 
 namespace houseofatmos::interior {
