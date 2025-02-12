@@ -419,9 +419,10 @@ namespace houseofatmos::outside {
     }
 
     static void update_player(
-        engine::Window& window, Terrain& terrain, Player& player
+        engine::Scene& scene, engine::Window& window, Terrain& terrain, 
+        Player& player
     ) {
-        player.update(window);
+        player.update(scene, window);
         bool in_coll = !terrain.valid_player_position(
             Player::collider.at(player.position), player.is_riding
         );
@@ -484,8 +485,8 @@ namespace houseofatmos::outside {
         if(update_action_modes) {
             this->action_mode->update(window, *this, this->renderer);
         }
-        this->personal_horse.update(window, this->terrain, this->toasts);
-        update_player(window, this->terrain, this->player);
+        this->personal_horse.update(*this, window, this->terrain, this->toasts);
+        update_player(*this, window, this->terrain, this->player);
         update_camera(
             window, this->player, this->renderer.camera, this->camera_distance, 
             this->terrain_map.element()

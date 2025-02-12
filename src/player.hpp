@@ -4,6 +4,7 @@
 #include <engine/arena.hpp>
 #include <engine/math.hpp>
 #include <engine/model.hpp>
+#include <engine/audio.hpp>
 #include "collider.hpp"
 #include "renderer.hpp"
 #include "toasts.hpp"
@@ -62,6 +63,9 @@ namespace houseofatmos {
         std::string anim_name;
         f64 anim_time;
         f64 anim_speed;
+        const engine::Sound::LoadArgs* sound;
+        f64 sound_time;
+        f64 sound_speed;
 
         void set_anim_idle();
         void set_anim_walk();
@@ -98,7 +102,7 @@ namespace houseofatmos {
 
         f64 current_angle() const { return this->angle; }
 
-        void update(engine::Window& window);
+        void update(engine::Scene& scene, engine::Window& window);
         Vec<3> next_x() {
             return this->position + this->next_step * Vec<3>(1, 0, 0); 
         }

@@ -14,6 +14,10 @@ namespace houseofatmos::sound {
         "res/sounds/build.ogg", 0.9, 0.05
     };
 
+    static inline const Sound::LoadArgs demolish = (Sound::LoadArgs) {
+        "res/sounds/demolish.ogg", 0.9, 0.05
+    };
+
     static inline const Sound::LoadArgs terrain_mod = (Sound::LoadArgs) {
         "res/sounds/terrain_mod.ogg", 0.9, 0.05
     };
@@ -23,10 +27,28 @@ namespace houseofatmos::sound {
     };
 
 
+    static inline const Sound::LoadArgs step = (Sound::LoadArgs) {
+        "res/sounds/step.ogg", 0.9, 0.025
+    };
+
+    static inline const Sound::LoadArgs swim = (Sound::LoadArgs) {
+        "res/sounds/swim.ogg", 0.9, 0.1
+    };
+
+
+    static inline const Sound::LoadArgs horse = (Sound::LoadArgs) {
+        "res/sounds/horse.ogg", 0.9, 0.1
+    };
+
+
     inline void load_sounds(engine::Scene& scene) {
         scene.load(Sound::Loader(build));
+        scene.load(Sound::Loader(demolish));
         scene.load(Sound::Loader(terrain_mod));
         scene.load(Sound::Loader(error));
+        scene.load(Sound::Loader(step));
+        scene.load(Sound::Loader(swim));
+        scene.load(Sound::Loader(horse));
     }
 
 }

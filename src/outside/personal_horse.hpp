@@ -47,9 +47,10 @@ namespace houseofatmos::outside {
 
         Player* player;
         Interactables* interactables;
-
+        engine::Scene* scene = nullptr;
+        
         std::shared_ptr<Interactable> interactable = nullptr;
-
+        
         PersonalHorse(
             Vec<3> pos, Player* player, Interactables* interactables
         ) {
@@ -92,7 +93,8 @@ namespace houseofatmos::outside {
         public:
 
         void update(
-            const engine::Window& window, const Terrain& terrain, Toasts& toasts
+            engine::Scene& scene, const engine::Window& window, 
+            const Terrain& terrain, Toasts& toasts
         );
 
         void render(const Renderer& renderer, engine::Scene& scene);

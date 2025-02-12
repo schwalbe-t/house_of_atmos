@@ -65,7 +65,7 @@ namespace houseofatmos::interior {
             this->player.position, this->renderer, window
         );
         this->ui.update(window);
-        this->player.update(window);
+        this->player.update(*this, window);
         this->player.next_step 
             = this->interior.player_velocity_matrix * this->player.next_step;
         AbsCollider next_player_x = Player::collider.at(this->player.next_x());

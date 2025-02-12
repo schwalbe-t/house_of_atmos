@@ -1,5 +1,6 @@
 
 #include "player.hpp"
+#include "audio_const.hpp"
 
 namespace houseofatmos {
 
@@ -8,6 +9,9 @@ namespace houseofatmos {
         this->anim_name = "idle";
         this->anim_time = 0;
         this->anim_speed = 1;
+        this->sound = nullptr;
+        this->sound_time = 0;
+        this->sound_speed = 0;
     }
 
     void Player::set_anim_walk() {
@@ -15,6 +19,9 @@ namespace houseofatmos {
         this->anim_name = "walk";
         this->anim_time = 0;
         this->anim_speed = 2;
+        this->sound = &sound::step;
+        this->sound_time = 0.1;
+        this->sound_speed = 3.0;
     }
 
     void Player::set_anim_swim() {
@@ -22,6 +29,9 @@ namespace houseofatmos {
         this->anim_name = "swim";
         this->anim_time = 0;
         this->anim_speed = 1;
+        this->sound = &sound::swim;
+        this->sound_time = 1.0;
+        this->sound_speed = 24.0 / 40.0;
     }
 
     void Player::set_anim_ride_idle() {
@@ -29,6 +39,9 @@ namespace houseofatmos {
         this->anim_name = "ride_idle";
         this->anim_time = 0;
         this->anim_speed = 0;
+        this->sound = nullptr;
+        this->sound_time = 0;
+        this->sound_speed = 0;
     }
 
     void Player::set_anim_ride() {
@@ -36,6 +49,9 @@ namespace houseofatmos {
         this->anim_name = "ride";
         this->anim_time = 0;
         this->anim_speed = 3.1;
+        this->sound = &sound::step;
+        this->sound_time = 0;
+        this->sound_speed = 3.1;
     }
 
 
@@ -53,7 +69,7 @@ namespace houseofatmos {
     static const f64 walk_speed = 5.0;
     static const f64 swim_speed = 2.5;
 
-    void Player::update(engine::Window& window) {
+    void Player::update(engine::Scene& scene, engine::Window& window) {
         Vec<3> heading = get_player_heading(window);
         bool is_moving = heading.len() > 0;
         if(this->is_riding && is_moving) { this->set_anim_ride(); }
@@ -66,6 +82,12 @@ namespace houseofatmos {
             : this->in_water? swim_speed : walk_speed;
         this->next_step = heading * speed * window.delta_time();
         this->anim_time += window.delta_time();
+        f64 sound_period = 1.0 / this->sound_speed;
+        this->sound_time += window.delta_time();
+        if(this->sound_time > sound_period) {
+            this->sound_time = 0;
+            scene.get<engine::Sound>(*this->sound).play();
+        }
     }
 
     void Player::render(engine::Scene& scene, const Renderer& renderer) {

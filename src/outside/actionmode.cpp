@@ -868,6 +868,7 @@ namespace houseofatmos::outside {
                     this->complexes, this->terrain, this->toasts
                 );
                 this->selection.type = Selection::None;
+                this->scene.get<engine::Sound>(sound::demolish).play();
                 return;
             }
             case Selection::Bridge: {
@@ -884,6 +885,7 @@ namespace houseofatmos::outside {
                     this->complexes, this->terrain, this->toasts
                 );
                 this->selection.type = Selection::None;
+                this->scene.get<engine::Sound>(sound::demolish).play();
                 return;
             }
         }
