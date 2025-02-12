@@ -149,6 +149,7 @@ namespace houseofatmos::outside {
         std::vector<Vec<3>> curr_path;
         f64 travelled_dist;
         f64 load_timer;
+        f64 sound_timer;
         bool moving;
 
 
@@ -209,8 +210,9 @@ namespace houseofatmos::outside {
         }
 
         void update(
-            const engine::Window& window,
-            ComplexBank& complexes, const Terrain& terrain
+            engine::Scene& scene, const engine::Window& window,
+            ComplexBank& complexes, const Terrain& terrain,
+            bool is_visible
         );
 
         void render(
@@ -263,8 +265,9 @@ namespace houseofatmos::outside {
         );
         
         void update_all(
-            const engine::Window& window, 
-            ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
+            const Vec<3>& observer, engine::Scene& scene, 
+            const engine::Window& window, ComplexBank& complexes, 
+            const Terrain& terrain, Toasts& toasts
         );
 
         void render_all_around(

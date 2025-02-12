@@ -13,8 +13,9 @@ namespace houseofatmos::outside {
     static const u64 carr_spawn_d = 1;
 
     static void summon_carriage(
-        const Terrain& terrain, u64 stable_x, u64 stable_z,
-        Balance& balance, Toasts& toasts, CarriageManager& carriages
+        engine::Scene& scene, const Terrain& terrain, 
+        u64 stable_x, u64 stable_z, Balance& balance, Toasts& toasts, 
+        CarriageManager& carriages
     ) {
         Vec<3> pos;
         bool found_pos = false;
@@ -48,6 +49,7 @@ namespace houseofatmos::outside {
         }
         if(!balance.pay_coins(carriage_buy_cost, toasts)) { return; }
         carriages.carriages.push_back((Carriage) { Carriage::Round, pos });
+        scene.get<engine::Sound>(sound::horse).play();
     }
 
     void DefaultMode::update(
@@ -85,7 +87,7 @@ namespace houseofatmos::outside {
                 )
                 .with_click_handler([this, asx, asz]() {
                     summon_carriage(
-                        this->terrain, asx, asz, 
+                        this->scene, this->terrain, asx, asz, 
                         this->balance, this->toasts, this->carriages
                     );
                 })

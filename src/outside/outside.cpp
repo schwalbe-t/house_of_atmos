@@ -476,7 +476,8 @@ namespace houseofatmos::outside {
         this->toasts.update(*this);
         this->ui.update(window);
         this->carriages.update_all(
-            window, this->complexes, this->terrain, this->toasts
+            this->player.position, *this, window, this->complexes, 
+            this->terrain, this->toasts
         );
         this->complexes.update(window, this->balance);
         bool update_action_modes = !this->player.in_water

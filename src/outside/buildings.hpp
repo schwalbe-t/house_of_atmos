@@ -201,7 +201,7 @@ namespace houseofatmos::outside {
                 TypeInfo::remove_terrain,
                 { 
                     "res/buildings/plaza.glb", Renderer::model_attribs,
-                    engine::FaceCulling::Enabled    
+                    engine::FaceCulling::Disabled    
                 },
                 std::nullopt, 0.0,
                 { 

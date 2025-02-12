@@ -1,5 +1,6 @@
 
 #include "carriage.hpp"
+#include "../audio_const.hpp"
 
 namespace houseofatmos::outside {
 
@@ -22,6 +23,7 @@ namespace houseofatmos::outside {
         this->pitch = 0.0;
         this->travelled_dist = 0.0;
         this->load_timer = 0.0;
+        this->sound_timer = 0.0;
         this->moving = false;
     }
 
@@ -48,6 +50,7 @@ namespace houseofatmos::outside {
         this->pitch = 0.0;
         this->travelled_dist = 0.0;
         this->load_timer = 0.0;
+        this->sound_timer = 0.0;
         this->moving = false;
     }
 
@@ -81,6 +84,8 @@ namespace houseofatmos::outside {
     static const Vec<3> model_heading = Vec<3>(0, 0, -1);
     static const f64 carriage_speed = 4.0;
     static const f64 load_time = 5.0;
+    static const f64 sound_period = 0.5;
+    static const f64 sound_timer_offset = 0.15;
     static const f64 alignment_points_dist = 1.0;
 
     static Vec<3> find_heading(
@@ -99,8 +104,9 @@ namespace houseofatmos::outside {
     }
 
     void Carriage::update(
-        const engine::Window& window, 
-        ComplexBank& complexes, const Terrain& terrain
+        engine::Scene& scene, const engine::Window& window, 
+        ComplexBank& complexes, const Terrain& terrain,
+        bool is_visible
     ) {
         this->moving = this->state == State::Travelling;
         if(this->state == State::Travelling) {
@@ -130,8 +136,18 @@ namespace houseofatmos::outside {
             }
             this->moving = this->target() != nullptr;
             this->position.y() = terrain.elevation_at(this->position);
-            // change state if at end
+            // change state and play sound if at end
             if(at_end) { this->state = State::Loading; }
+            if(at_end && is_visible) {
+                scene.get<engine::Sound>(sound::horse).play();
+            }
+            // play step sounds
+            f64 next_sound_time 
+                = fmod(window.time() + sound_timer_offset, sound_period);
+            if(next_sound_time < this->sound_timer && is_visible) {
+                scene.get<engine::Sound>(sound::step).play();
+            }
+            this->sound_timer = next_sound_time;
         }
         if(this->state == State::Loading) {
             this->load_timer += window.delta_time();
@@ -170,6 +186,9 @@ namespace houseofatmos::outside {
                 this->curr_target_i %= this->targets.size();
                 this->clear_path();
                 this->state = State::Travelling;
+                if(is_visible) {
+                    scene.get<engine::Sound>(sound::horse).play();
+                }
             } 
         } else {
             this->load_timer = 0.0;
@@ -532,14 +551,17 @@ namespace houseofatmos::outside {
 
 
     void CarriageManager::update_all(
-        const engine::Window& window, 
-        ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
+        const Vec<3>& observer, engine::Scene& scene, 
+        const engine::Window& window, ComplexBank& complexes, 
+        const Terrain& terrain, Toasts& toasts
     ) {
         for(Carriage& carriage: this->carriages) {
             if(!carriage.is_lost() && !carriage.has_path()) {
                 this->find_carriage_path(carriage, complexes, terrain, toasts);
             }
-            carriage.update(window, complexes, terrain);
+            f64 distance = (carriage.position - observer).len();
+            bool is_visible = distance <= this->draw_distance;
+            carriage.update(scene, window, complexes, terrain, is_visible);
         }
     }
 
@@ -550,7 +572,8 @@ namespace houseofatmos::outside {
     ) {
         for(Carriage& carriage: this->carriages) {
             f64 distance = (carriage.position - observer).len();
-            if(distance > this->draw_distance) { continue; }
+            bool is_visible = distance <= this->draw_distance;
+            if(!is_visible) { continue; }
             carriage.render(renderer, scene, window);
         }
     }
