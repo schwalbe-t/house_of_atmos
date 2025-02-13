@@ -410,7 +410,7 @@ namespace houseofatmos::outside {
             [](){}, true
         );
         this->add_icon_marker(
-            this->player.position.swizzle<2>("xz"), 
+            this->player.character.position.swizzle<2>("xz"), 
             &ui_icon::map_marker_player,
             [](){}, true
         );

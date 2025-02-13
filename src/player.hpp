@@ -7,41 +7,53 @@
 #include <engine/audio.hpp>
 #include "collider.hpp"
 #include "renderer.hpp"
-#include "toasts.hpp"
+#include "character.hpp"
+#include "audio_const.hpp"
 
 namespace houseofatmos {
 
     using namespace houseofatmos::engine::math;
 
 
-    struct Balance {
-
-        u64 coins;
-
-        bool pay_coins(u64 amount, Toasts& toasts) {
-            if(amount > this->coins) {
-                toasts.add_error(
-                    "toast_too_expensive", { std::to_string(amount) }
-                );
-                return false; 
-            }
-            this->coins -= amount;
-            toasts.add_toast(
-                "toast_removed_coins", { std::to_string(amount) }
-            );
-            return true;
-        }
-
-        void add_coins(u64 amount, Toasts& toasts) {
-            this->coins += amount;
-            toasts.add_toast(
-                "toast_added_coins", { std::to_string(amount) }
-            );
-        }
-    };
-
-
     struct Player {
+
+        static const inline Character::Type character_type = {
+            (engine::Model::LoadArgs) {
+                "res/entities/human.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            Vec<3>(0, 0, 1), // the direction the model faces without rotation
+            {
+                // note: 'x / 24.0' essentially means "'x' Blender frames"
+                /* Animation::Idle */ (Character::AnimationImpl) {},
+                /* Animation::Stand */ (Character::AnimationImpl) {
+                    "idle", 30.0 / 24.0, 0.0
+                },
+                /* Animation::Walk */ (Character::AnimationImpl) {
+                    "walk", (30.0 / 24.0) / 2.0, 0.0,
+                    &sound::step, (15.0 / 24.0) / 2.0, (8.0 / 24.0) / 2.0
+                },
+                /* Animation::Swim */ (Character::AnimationImpl) {
+                    "swim", 40.0 / 24.0, 0.0,
+                    &sound::swim, 40.0 / 24.0, 10.0 / 24.0
+                },
+                /* Animation::HorseSit */ (Character::AnimationImpl) {
+                    "ride_idle"
+                },
+                /* Animation::HorseRide */ (Character::AnimationImpl) {
+                    "ride", (24.0 / 24.0) / 3.1, -0.05, // simulate inertia
+                    &sound::step, (24.0 / 24.0) / 3.1, 0.0
+                }
+            }
+        };
+
+        static const inline engine::Texture::LoadArgs character_variant = {
+            "res/entities/player.png", 
+            engine::Texture::vertical_mirror // GLTF stores images flipped
+        };
+
+        static const inline RelCollider collider
+            = RelCollider({ -0.25, 0, -0.25 }, { 0.5, 2, 0.5 });
     
         struct Serialized {
             Vec<3> position;
@@ -49,71 +61,44 @@ namespace houseofatmos {
         };
 
 
-        static const inline engine::Model::LoadArgs player_model = {
-            "res/entities/player.glb", Renderer::model_attribs,
-            engine::FaceCulling::Disabled
-        };
-
-        static const inline RelCollider collider
-            = RelCollider({ -0.25, 0, -0.25 }, { 0.5, 2, 0.5 });
-
-
-        private:
-        f64 angle;
-        std::string anim_name;
-        f64 anim_time;
-        f64 anim_speed;
-        const engine::Sound::LoadArgs* sound;
-        f64 sound_time;
-        f64 sound_speed;
-
-        void set_anim_idle();
-        void set_anim_walk();
-        void set_anim_swim();
-        void set_anim_ride_idle();
-        void set_anim_ride();
-
         public:
-        Vec<3> position;
+        Character character = Character(
+            &Player::character_type, &Player::character_variant,
+            { 0, 0, 0 }
+        );
         Vec<3> next_step;
-        bool in_water;
-        bool is_riding;
+        Vec<3> confirmed_step;
+        bool in_water = false;
+        bool is_riding = false;
 
-        Player() {
-            this->position = { 0, 0, 0 };
-            this->angle = 0;
-            this->in_water = false;
-            this->is_riding = false;
-            this->set_anim_idle();
+        Player() {}
+
+        Player(const Serialized& serialized) {
+            this->character.position = serialized.position;
+            this->character.angle = serialized.angle;
         }
 
-        Player(const Serialized& serialized, const engine::Arena& buffer) {
-            (void) buffer;
-            this->position = serialized.position;
-            this->angle = serialized.angle;
-            this->in_water = false;
-            this->is_riding = false;
-            this->set_anim_idle();
+        static void load_resources(engine::Scene& scene) {
+            scene.load(engine::Model::Loader(Player::character_type.model));
+            scene.load(engine::Texture::Loader(Player::character_variant));
         }
 
-        static void load_model(engine::Scene& scene) {
-            scene.load(engine::Model::Loader(Player::player_model));
-        }
-
-        f64 current_angle() const { return this->angle; }
-
-        void update(engine::Scene& scene, engine::Window& window);
+        void update(const engine::Window& window);
         Vec<3> next_x() {
-            return this->position + this->next_step * Vec<3>(1, 0, 0); 
+            return this->character.position + this->next_step * Vec<3>(1, 0, 0); 
         }
         Vec<3> next_z() { 
-            return this->position + this->next_step * Vec<3>(0, 0, 1); 
+            return this->character.position + this->next_step * Vec<3>(0, 0, 1); 
         }
-        void proceed_x() { this->position.x() += this->next_step.x(); }
-        void proceed_z() { this->position.z() += this->next_step.z(); }
-        void render(engine::Scene& scene, const Renderer& renderer);
+        void proceed_x() { this->confirmed_step.x() += this->next_step.x(); }
+        void proceed_z() { this->confirmed_step.z() += this->next_step.z(); }
+        void apply_confirmed_step(engine::Scene& scene, const engine::Window& window);
+        void render(
+            engine::Scene& scene, const engine::Window& window, 
+            const Renderer& renderer
+        );
 
-        Serialized serialize(engine::Arena& buffer) const;
+        Serialized serialize() const;
 
     };
 

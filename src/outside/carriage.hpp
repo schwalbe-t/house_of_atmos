@@ -6,6 +6,7 @@
 #include <engine/model.hpp>
 #include <engine/rng.hpp>
 #include "../renderer.hpp"
+#include "../toasts.hpp"
 #include "complex.hpp"
 #include "terrain.hpp"
 

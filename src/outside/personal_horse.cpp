@@ -26,7 +26,7 @@ namespace houseofatmos::outside {
         if(this->scene != nullptr) {
             scene->get<engine::Sound>(sound::horse).play();
         }
-        this->player->position = this->position();
+        this->player->character.position = this->position();
         this->player->is_riding = true;
         this->state = State::Ridden;
         this->interactable = nullptr;
@@ -59,13 +59,13 @@ namespace houseofatmos::outside {
         }
         // move towards player if called
         if(this->state == State::Called) {
-            Vec<3> pos_diff = this->player->position - this->pos;
+            Vec<3> pos_diff = this->player->character.position - this->pos;
             f64 remaining_dist = pos_diff.len();
             f64 speed = std::max(remaining_dist / 2.0, 5.0);
             Vec<3> heading = pos_diff.normalized();
             f64 frame_dist = speed * window.delta_time();
             if(frame_dist >= remaining_dist) {
-                this->pos = this->player->position;
+                this->pos = this->player->character.position;
             } else {
                 this->pos += heading * frame_dist;
             }
@@ -73,7 +73,7 @@ namespace houseofatmos::outside {
         this->pos.y() = terrain.elevation_at(this->pos);
         // set state to idle if called and near player
         bool arrived_at_called = this->state == State::Called
-            && (this->pos - this->player->position).len() < 1.0;
+            && (this->pos - this->player->character.position).len() < 1.0;
         if(arrived_at_called) {
             this->set_free(this->pos);
         }
@@ -82,12 +82,12 @@ namespace houseofatmos::outside {
             this->interactable->pos = pos + Vec<3>(0, 1.0, 0.0);
         }
         // update animation
-        this->update_animation(window);
+        this->update_heading();
     }
 
     static inline const Vec<3> horse_model_heading = Vec<3>(0, 0, -1);
 
-    void PersonalHorse::update_animation(const engine::Window& window) {
+    void PersonalHorse::update_heading() {
         Vec<3> pos = this->position();
         Vec<3> moved = pos - this->last_pos;
         this->is_moving = moved.len() > 0;
@@ -99,25 +99,14 @@ namespace houseofatmos::outside {
             this->angle = atan2(angle_cross, horse_model_heading.dot(heading));
         }
         if(this->state == State::Ridden) {
-            this->angle = this->player->current_angle() + pi;
+            this->angle = this->player->character.angle + pi;
         }
-        f64 anim_speed = this->state == State::Ridden
-            ? (this->is_moving > 0? 3.1 : 0.5)
-            : (this->is_moving > 0? 3.0 : 0.5);
-        if(!this->was_moving && this->is_moving) {
-            // this synchronizes the horse animation with the player animation
-            // the value determines how far the two animations should be apart
-            // (larger values make the horse earlier)
-            // this can be used to simulate the intertia of the player
-            // as a result of the horse moving up and down
-            // (larger value makes the player respond later = more inertia)
-            this->anim_timer = 0.15; // 0.15 looks good
-        }
-        this->was_moving = this->is_moving;
-        this->anim_timer += window.delta_time() * anim_speed;
     }
 
-    void PersonalHorse::render(const Renderer& renderer, engine::Scene& scene) {
+    void PersonalHorse::render(
+        engine::Scene& scene, const engine::Window& window, 
+        const Renderer& renderer
+    ) {
         engine::Model& model = scene
             .get<engine::Model>(PersonalHorse::horse_model);
         Mat<4> transform = Mat<4>::translate(this->position())
@@ -127,12 +116,15 @@ namespace houseofatmos::outside {
                 ? (this->is_moving? "trot" : "idle")
                 : (this->is_moving? "walk" : "idle")
         );
-        this->anim_timer = fmod(this->anim_timer, animation.length());
+        f64 anim_speed = this->state == State::Ridden
+            ? (this->is_moving > 0? 3.1 : 0.5)
+            : (this->is_moving > 0? 3.0 : 0.5);
+        f64 timestamp = fmod(window.time() * anim_speed, animation.length());
         const engine::Texture& texture = scene
             .get<engine::Texture>(PersonalHorse::horse_texture);
         renderer.render(
             model, std::array { transform },
-            animation, this->anim_timer, 
+            animation, timestamp, 
             engine::FaceCulling::Enabled,
             engine::Rendering::Surfaces,
             engine::DepthTesting::Enabled, 

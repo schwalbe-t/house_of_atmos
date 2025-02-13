@@ -7,6 +7,7 @@
 #include "../interactable.hpp"
 #include "../save_info.hpp"
 #include "../audio_const.hpp"
+#include "../ui_const.hpp"
 #include "interiors.hpp"
 
 namespace houseofatmos::interior {
@@ -37,7 +38,7 @@ namespace houseofatmos::interior {
         bool valid_player_position(const AbsCollider& player_coll);
         void update(engine::Window& window) override;
         
-        void render_geometry(bool render_all_rooms);
+        void render_geometry(const engine::Window& window, bool render_all_rooms);
         void render(engine::Window& window) override;
 
     };

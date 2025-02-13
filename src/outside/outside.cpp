@@ -12,7 +12,7 @@ namespace houseofatmos::outside {
         Building::load_models(*this);
         Foliage::load_models(*this);
         Bridge::load_models(*this);
-        Player::load_model(*this);
+        Player::load_resources(*this);
         ActionMode::load_resources(*this);
         Carriage::load_resources(*this);
         PersonalHorse::load_resources(*this);
@@ -373,7 +373,8 @@ namespace houseofatmos::outside {
             Vec<3> mansion_center_tile = Vec<3>(mansion_x, 0, mansion_z)
                 + Vec<3>(mansion.width / 2.0, 0, mansion.height / 2.0);
             Vec<3> player_spawn_tile = mansion_center_tile + Vec<3>(0, 0, 0.5);
-            player.position = player_spawn_tile * terrain.units_per_tile();
+            player.character.position = player_spawn_tile 
+                * terrain.units_per_tile();
             balance.coins = 20000;
             Vec<3> horse_spawn_pos = (player_spawn_tile + Vec<3>(-0.25, 0, 0.5))
                 * terrain.units_per_tile();
@@ -419,12 +420,12 @@ namespace houseofatmos::outside {
     }
 
     static void update_player(
-        engine::Scene& scene, engine::Window& window, Terrain& terrain, 
+        engine::Scene& scene, const engine::Window& window, Terrain& terrain, 
         Player& player
     ) {
-        player.update(scene, window);
+        player.update(window);
         bool in_coll = !terrain.valid_player_position(
-            Player::collider.at(player.position), player.is_riding
+            Player::collider.at(player.character.position), player.is_riding
         );
         bool next_x_free = terrain.valid_player_position(
             Player::collider.at(player.next_x()), player.is_riding
@@ -440,8 +441,10 @@ namespace houseofatmos::outside {
             player.is_riding
         );
         if(in_coll || next_z_free) { player.proceed_z(); }
-        player.position = player_position(player.position, terrain);
-        player.in_water = player.position.y() <= -1.5;
+        player.apply_confirmed_step(scene, window);
+        player.character.position 
+            = player_position(player.character.position, terrain);
+        player.in_water = player.character.position.y() <= -1.5;
     }
 
     static void update_camera(
@@ -455,8 +458,8 @@ namespace houseofatmos::outside {
             std::max(distance, Outside::min_camera_dist), 
             Outside::max_camera_dist
         );
-        camera.look_at = player.position;
-        camera.position = player.position 
+        camera.look_at = player.character.position;
+        camera.position = player.character.position 
             + Vec<3>(0, 1, 1).normalized() * distance;
     }
 
@@ -471,12 +474,12 @@ namespace houseofatmos::outside {
         }
         this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
         this->interactables.observe_from(
-            this->player.position, this->renderer, window
+            this->player.character.position, this->renderer, window
         );
         this->toasts.update(*this);
         this->ui.update(window);
         this->carriages.update_all(
-            this->player.position, *this, window, this->complexes, 
+            this->player.character.position, *this, window, this->complexes, 
             this->terrain, this->toasts
         );
         this->complexes.update(window, this->balance);
@@ -501,21 +504,21 @@ namespace houseofatmos::outside {
 
 
 
-    static void render_geometry(Outside& scene, engine::Window& window) {
+    static void render_geometry(Outside& scene, const engine::Window& window) {
         scene.terrain.render_loaded_chunks(scene, scene.renderer, window);
-        scene.player.render(scene, scene.renderer);
+        scene.player.render(scene, window, scene.renderer);
         scene.carriages.render_all_around(
-            scene.player.position, scene.renderer, scene, window
+            scene.player.character.position, scene.renderer, scene, window
         );
-        scene.personal_horse.render(scene.renderer, scene);
+        scene.personal_horse.render(scene, window, scene.renderer);
     }
 
     void Outside::render(engine::Window& window) {
-        *this->sun = Outside::create_sun(this->player.position);
-        this->renderer.fog_origin = this->player.position;
+        *this->sun = Outside::create_sun(this->player.character.position);
+        this->renderer.fog_origin = this->player.character.position;
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(
-            this->player.position, &this->interactables, window, 
+            this->player.character.position, &this->interactables, window, 
             &this->save_info
         );
         this->renderer.render_to_shadow_maps();
@@ -557,7 +560,7 @@ namespace houseofatmos::outside {
             buffer
         );
         this->complexes = ComplexBank(outside.complexes, buffer);
-        this->player = Player(outside.player, buffer);
+        this->player = Player(outside.player);
         this->balance = outside.balance;
         this->carriages = CarriageManager(
             outside.carriages, buffer, this->terrain, Outside::draw_distance_un
@@ -578,7 +581,7 @@ namespace houseofatmos::outside {
         assert(outside_offset == 0);
         Terrain::Serialized terrain = this->terrain.serialize(buffer);
         ComplexBank::Serialized complexes = this->complexes.serialize(buffer);
-        Player::Serialized player = this->player.serialize(buffer);
+        Player::Serialized player = this->player.serialize();
         CarriageManager::Serialized carriages = this->carriages.serialize(buffer);
         auto& outside = buffer.value_at<Outside::Serialized>(outside_offset);
         outside.save_path_len = this->save_path.size();

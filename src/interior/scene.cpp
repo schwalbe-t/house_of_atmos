@@ -22,13 +22,13 @@ namespace houseofatmos::interior {
         );
         this->renderer.shadow_bias = interior.shadow_bias;
         this->renderer.shadow_map_resolution = 512;
-        this->player.position = interior.player_start_pos;
+        this->player.character.position = interior.player_start_pos;
     }
 
     void Scene::load_resources() {
         this->load(engine::Model::Loader(this->interior.model));
         Renderer::load_shaders(*this);
-        Player::load_model(*this);
+        Player::load_resources(*this);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
@@ -62,10 +62,10 @@ namespace houseofatmos::interior {
             );
         }
         this->interactables.observe_from(
-            this->player.position, this->renderer, window
+            this->player.character.position, this->renderer, window
         );
         this->ui.update(window);
-        this->player.update(*this, window);
+        this->player.update(window);
         this->player.next_step 
             = this->interior.player_velocity_matrix * this->player.next_step;
         AbsCollider next_player_x = Player::collider.at(this->player.next_x());
@@ -76,16 +76,21 @@ namespace houseofatmos::interior {
         if(this->valid_player_position(next_player_z)) {
             this->player.proceed_z();
         }
-        this->renderer.camera.look_at = this->player.position + Vec<3>(0, 1, 0);
-        this->renderer.camera.position = this->player.position
+        this->player.apply_confirmed_step(*this, window);
+        this->renderer.camera.look_at = this->player.character.position 
+            + Vec<3>(0, 1, 0);
+        this->renderer.camera.position = this->player.character.position
             + this->interior.camera_offset;
     }
 
 
-    void Scene::render_geometry(bool render_all_rooms) {
+    void Scene::render_geometry(
+        const engine::Window& window, bool render_all_rooms
+    ) {
         engine::Model& model = this->get<engine::Model>(this->interior.model);
         for(const Interior::Room& room: this->interior.rooms) {
-            bool room_visible = Player::collider.at(this->player.position)
+            bool room_visible = Player::collider
+                .at(this->player.character.position)
                 .collides_with(room.trigger.at(origin));
             if(!room_visible && !render_all_rooms) { continue; }
             auto [primitive, texture, anim] = model.mesh(room.name);
@@ -94,15 +99,15 @@ namespace houseofatmos::interior {
                 std::array { Mat<4>() }
             );
         }
-        this->player.render(*this, this->renderer);
+        this->player.render(*this, window, this->renderer);
     }
 
     void Scene::render(engine::Window& window) {
         this->renderer.configure(window, *this);
         this->renderer.render_to_shadow_maps();
-        this->render_geometry(true /* render all rooms anyway */);
+        this->render_geometry(window, true /* render all rooms anyway */);
         this->renderer.render_to_output();
-        this->render_geometry(false /* render only the visible room */);
+        this->render_geometry(window, false /* render only the visible room */);
         window.show_texture(this->renderer.output());
         this->ui.render(*this, window);
         window.show_texture(this->ui.output());

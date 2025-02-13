@@ -12,6 +12,7 @@
 #include "../audio_const.hpp"
 #include "../renderer.hpp"
 #include "../player.hpp"
+#include "../balance.hpp"
 #include "terrain.hpp"
 #include "actionmode.hpp"
 #include "carriage.hpp"

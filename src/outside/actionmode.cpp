@@ -563,7 +563,8 @@ namespace houseofatmos::outside {
         this->selected_x = tile_x;
         this->selected_z = tile_z;
         this->placement_valid = this->terrain.valid_building_location(
-            (i64) tile_x, (i64) tile_z, this->player.position, type_info
+            (i64) tile_x, (i64) tile_z, this->player.character.position, 
+            type_info
         );
         bool attempted = window.was_pressed(engine::Button::Left)
             && !this->ui.was_clicked();

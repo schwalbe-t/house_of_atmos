@@ -41,8 +41,6 @@ namespace houseofatmos::outside {
         
         Vec<3> last_pos = Vec<3>(0.0, 0.0, 0.0);
         f64 angle = 0.0;
-        f64 anim_timer = 0.0;
-        bool was_moving = false;
         bool is_moving = false;
 
         Player* player;
@@ -79,7 +77,7 @@ namespace houseofatmos::outside {
                 case State::Called: 
                     return this->pos;
                 case State::Ridden: 
-                    return this->player->position;
+                    return this->player->character.position;
                 default: 
                 engine::error(
                     "Unhandled 'PersonalHorse::State' in 'PersonalHorse::position'"
@@ -88,7 +86,7 @@ namespace houseofatmos::outside {
         }
 
         private: 
-        void update_animation(const engine::Window& window);
+        void update_heading();
 
         public:
 
@@ -97,7 +95,10 @@ namespace houseofatmos::outside {
             const Terrain& terrain, Toasts& toasts
         );
 
-        void render(const Renderer& renderer, engine::Scene& scene);
+        void render(
+            engine::Scene& scene, const engine::Window& window, 
+            const Renderer& renderer
+        );
 
         Serialized serialize() const;
 
