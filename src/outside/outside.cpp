@@ -12,7 +12,7 @@ namespace houseofatmos::outside {
         Building::load_models(*this);
         Foliage::load_models(*this);
         Bridge::load_models(*this);
-        Player::load_resources(*this);
+        human::load_resources(*this);
         ActionMode::load_resources(*this);
         Carriage::load_resources(*this);
         PersonalHorse::load_resources(*this);
@@ -22,6 +22,95 @@ namespace houseofatmos::outside {
         audio_const::load_all(*this);
         this->load(engine::Localization::Loader(this->local));
     }
+
+
+
+    static Character create_roaming_human(
+        const CharacterVariant::LoadArgs& variant,
+        Vec<3> origin, std::shared_ptr<StatefulRNG> rng,
+        const Terrain& terrain,
+        f64 spawn_distance, f64 roam_distance, f64 roam_vel,
+        const Character& player, f64 player_stop_dist
+    ) {
+        f64 spawn_angle = rng->next_f64() * 2.0 * pi;
+        Vec<3> spawn_position = origin
+            + Vec<3>(cos(spawn_angle), 0.0, sin(spawn_angle)) * spawn_distance;
+        return Character(
+            &human::character, &variant, spawn_position, UINT64_MAX,
+            [origin, rng, terrain = &terrain, roam_distance, roam_vel, 
+                player = &player, player_stop_dist
+            ](Character& self) {
+                f64 player_dist = (player->position - self.position).len();
+                bool is_close = player_dist <= player_stop_dist;
+                if(is_close && self.action.duration != INFINITY) {
+                    self.action = Character::Action(
+                        (u64) human::Animation::Stand, INFINITY
+                    );
+                    self.face_towards(player->position);
+                }
+                if(!is_close && self.action.duration == INFINITY) {
+                    self.action.animation_id = UINT64_MAX;
+                }
+                if(self.action.animation_id != UINT64_MAX) { return; }
+                self.position.y() = terrain->elevation_at(self.position);
+                if(rng->next_bool()) {
+                    f64 duration = 1.0 + rng->next_f64() * 2.5;
+                    self.action = Character::Action(
+                        (u64) human::Animation::Stand, duration
+                    );
+                    return;
+                }
+                f64 walk_angle = rng->next_f64() * 2.0 * pi;
+                Vec<3> to_origin = origin - self.position;
+                Vec<3> walk_dir = Vec<3>(cos(walk_angle), 0.0, sin(walk_angle))
+                    + to_origin.normalized() * (to_origin.len() / roam_distance);
+                f64 distance = 1.0 + rng->next_f64() * 4.0;
+                Vec<3> walk_dest = self.position 
+                    + walk_dir.normalized() * distance;
+                walk_dest.y() = terrain->elevation_at(walk_dest);
+                f64 duration = distance / roam_vel;
+                self.action = Character::Action(
+                    (u64) human::Animation::Walk, walk_dest, duration
+                );
+                self.face_in_direction(walk_dir.normalized());
+            }
+        );
+    }
+
+    static const f64 peasant_spawn_dist = 4.0;
+    static const f64 peasant_roam_dist = 15.0;
+    static const f64 peasant_roam_vel = 2.5;
+    static const f64 peasant_player_stop_dist = 3.0;
+
+    static void create_peasants(
+        const Terrain& terrain, const Character& player, 
+        std::vector<Character>& characters
+    ) {
+        auto rng = std::make_shared<StatefulRNG>();
+        for(u64 chunk_x = 0; chunk_x < terrain.width_in_chunks(); chunk_x += 1) {
+            for(u64 chunk_z = 0; chunk_z < terrain.height_in_chunks(); chunk_z += 1) {
+                const Terrain::ChunkData& chunk = terrain.chunk_at(chunk_x, chunk_z);
+                for(const Building& building: chunk.buildings) {
+                    if(building.type != Building::House) { continue; }
+                    if(rng->next_bool()) { continue; }
+                    const Building::TypeInfo& house = building.get_type_info();
+                    u64 tile_x = chunk_x * terrain.tiles_per_chunk() + building.x;
+                    u64 tile_z = chunk_z * terrain.tiles_per_chunk() + building.z;
+                    Vec<3> origin = Vec<3>(tile_x, 0, tile_z);
+                    origin += Vec<3>(house.width, 0.0, house.height) / 2.0;
+                    origin *= terrain.units_per_tile();
+                    characters.push_back(create_roaming_human(
+                        rng->next_bool()? human::peasant_man : human::peasant_woman,
+                        origin, rng, terrain,
+                        peasant_spawn_dist, peasant_roam_dist, peasant_roam_vel,
+                        player, peasant_player_stop_dist
+                    ));
+                }
+            }
+        }
+    }
+
+
 
     DirectionalLight Outside::create_sun(const Vec<3>& focus_point) {
         return DirectionalLight::in_direction_to(
@@ -40,6 +129,8 @@ namespace houseofatmos::outside {
         renderer.shadow_bias = 0.0005;
         renderer.shadow_map_resolution = 4096;
     }
+
+
 
     static void set_base_ui(Outside& scene, u64 selected);
 
@@ -407,6 +498,7 @@ namespace houseofatmos::outside {
         this->configure_renderer(this->renderer);
         this->renderer.lights.push_back(Outside::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
+        create_peasants(this->terrain, this->player.character, this->characters);
     }
 
 
@@ -425,19 +517,19 @@ namespace houseofatmos::outside {
     ) {
         player.update(window);
         bool in_coll = !terrain.valid_player_position(
-            Player::collider.at(player.character.position), player.is_riding
+            human::collider.at(player.character.position), player.is_riding
         );
         bool next_x_free = terrain.valid_player_position(
-            Player::collider.at(player.next_x()), player.is_riding
+            human::collider.at(player.next_x()), player.is_riding
         ) && terrain.valid_player_position(
-            Player::collider.at(player_position(player.next_x(), terrain)), 
+            human::collider.at(player_position(player.next_x(), terrain)), 
             player.is_riding
         );
         if(in_coll || next_x_free) { player.proceed_x(); }
         bool next_z_free = terrain.valid_player_position(
-            Player::collider.at(player.next_z()), player.is_riding
+            human::collider.at(player.next_z()), player.is_riding
         ) && terrain.valid_player_position(
-            Player::collider.at(player_position(player.next_z(), terrain)), 
+            human::collider.at(player_position(player.next_z(), terrain)), 
             player.is_riding
         );
         if(in_coll || next_z_free) { player.proceed_z(); }
@@ -495,6 +587,13 @@ namespace houseofatmos::outside {
             window, this->player, this->renderer.camera, this->camera_distance, 
             this->terrain_map.element()
         );
+        for(Character& character: this->characters) {
+            character.update(
+                *this, window, 
+                this->player.character.position,
+                Outside::draw_distance_un, 0.0
+            );
+        }
         if(this->terrain_map.toggle_with_key(engine::Key::M, window)) {
             set_action_mode(*this, default_mode_const, UINT64_MAX);
             this->terrain_map.element()->hidden = false;
@@ -511,6 +610,12 @@ namespace houseofatmos::outside {
             scene.player.character.position, scene.renderer, scene, window
         );
         scene.personal_horse.render(scene, window, scene.renderer);
+        for(Character& character: scene.characters) {
+            character.render(
+                scene, window, scene.renderer, 
+                scene.player.character.position, Outside::draw_distance_un / 2.0
+            );
+        }
     }
 
     void Outside::render(engine::Window& window) {
@@ -572,6 +677,7 @@ namespace houseofatmos::outside {
         this->configure_renderer(this->renderer);
         this->renderer.lights.push_back(Outside::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
+        create_peasants(this->terrain, this->player.character, this->characters);
     }
 
     engine::Arena Outside::serialize() const {

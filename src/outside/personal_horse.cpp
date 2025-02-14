@@ -124,7 +124,7 @@ namespace houseofatmos::outside {
             .get<engine::Texture>(PersonalHorse::horse_texture);
         renderer.render(
             model, std::array { transform },
-            animation, timestamp, 
+            &animation, timestamp, 
             engine::FaceCulling::Enabled,
             engine::Rendering::Surfaces,
             engine::DepthTesting::Enabled, 

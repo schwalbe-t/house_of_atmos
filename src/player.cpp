@@ -18,7 +18,6 @@ namespace houseofatmos {
 
     void Player::update(const engine::Window& window) {
         Vec<3> heading = get_player_heading(window);
-        this->character.face_in_direction(heading);
         f64 speed = this->is_riding? ride_speed 
             : this->in_water? swim_speed 
             : walk_speed;
@@ -31,18 +30,25 @@ namespace houseofatmos {
     ) {
         bool is_moving = this->next_step.len() > 0;
         this->character.action = Character::Action(
-            Character::Idle, this->confirmed_step, 0.0
+            (u64) human::Animation::Stand, window.delta_time()
         );
+        if(is_moving) {
+            this->character.action.target = this->confirmed_step;
+            Vec<3> heading = this->confirmed_step - this->character.position;
+            this->character.face_in_direction(heading);
+        }
         if(this->is_riding && is_moving) {
-            this->character.action.animation = Character::HorseRide;
+            this->character.action.animation_id = (u64) human::Animation::HorseRide;
         } else if(this->is_riding) {
-            this->character.action.animation = Character::HorseSit;
+            this->character.action.animation_id = (u64) human::Animation::HorseSit;
+        } else if(this->in_water && is_moving) {
+            this->character.action.animation_id = (u64) human::Animation::Swim;
         } else if(this->in_water) {
-            this->character.action.animation = Character::Swim;
+            this->character.action.animation_id = (u64) human::Animation::SwimIdle;
         } else if(is_moving) {
-            this->character.action.animation = Character::Walk;
+            this->character.action.animation_id = (u64) human::Animation::Walk;
         } else { 
-            this->character.action.animation = Character::Stand;
+            this->character.action.animation_id = (u64) human::Animation::Stand;
         }
         this->character.update(scene, window);
     }
@@ -51,7 +57,6 @@ namespace houseofatmos {
         engine::Scene& scene, const engine::Window& window, 
         const Renderer& renderer
     ) {
-        if(this->character.action.animation == Character::Idle) { return; }
         this->character.render(scene, window, renderer);
     }
 
