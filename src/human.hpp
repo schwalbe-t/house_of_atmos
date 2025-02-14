@@ -2,6 +2,8 @@
 #pragma once
 
 #include "character.hpp"
+#include "audio_const.hpp"
+#include "collider.hpp"
 
 namespace houseofatmos::human {
 
@@ -11,7 +13,7 @@ namespace houseofatmos::human {
         MaximumValue = HorseRide
     };
 
-    static const inline CharacterType character_type = {
+    static const inline CharacterType<5> character = {
         (engine::Model::LoadArgs) {
             "res/entities/human.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
@@ -51,7 +53,7 @@ namespace houseofatmos::human {
         = RelCollider({ -0.25, 0, -0.25 }, { 0.5, 2, 0.5 });
 
 
-    static void load_resources(engine::Scene& scene) {
+    static inline void load_resources(engine::Scene& scene) {
         scene.load(engine::Model::Loader(character.model));
         scene.load(engine::Texture::Loader(player));
     }

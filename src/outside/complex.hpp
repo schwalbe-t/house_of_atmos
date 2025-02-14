@@ -3,7 +3,6 @@
 
 #include <engine/arena.hpp>
 #include <engine/window.hpp>
-#include "../player.hpp"
 #include "../balance.hpp"
 #include "item.hpp"
 #include <vector>

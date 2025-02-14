@@ -8,7 +8,7 @@
 #include "collider.hpp"
 #include "renderer.hpp"
 #include "human.hpp"
-#include "audio_const.hpp"
+#include "human.hpp"
 
 namespace houseofatmos {
 
@@ -23,7 +23,7 @@ namespace houseofatmos {
 
 
         public:
-        Character character = Character(
+        Character<human::Animation> character = Character<human::Animation>(
             &human::character, &human::player,
             { 0, 0, 0 }
         );

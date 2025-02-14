@@ -16,10 +16,11 @@ namespace houseofatmos {
         f64 sound_offset = 0.0;
     };
     
+    template<size_t N>
     struct CharacterType {
         engine::Model::LoadArgs model;
         Vec<3> model_heading;
-        std::array<CharacterAnimation, animation_count> animations;
+        std::array<CharacterAnimation, N> animations;
     };
     
     template<typename A>
@@ -55,7 +56,7 @@ namespace houseofatmos {
         f64 last_sound_ts = INFINITY;
         
         public:
-        const CharacterType* type;
+        const CharacterType<animation_count>* type;
         const engine::Texture::LoadArgs* variant;
         Action action = Action(A::DefaultValue);
         Vec<3> position;
@@ -63,7 +64,7 @@ namespace houseofatmos {
         f64 angle = 0.0;
 
         Character(
-            const CharacterType* type, const engine::Texture::LoadArgs* variant, 
+            const CharacterType<animation_count>* type, const engine::Texture::LoadArgs* variant, 
             Vec<3> position, 
             Behavior&& behavior = [](auto& c) { (void) c; }
         ): type(type), variant(variant), position(position), 
@@ -102,7 +103,8 @@ namespace houseofatmos {
                 this->position = *this->action.target 
                     + action_distance * (n_progress - 1.0);
                 if(this->action.duration > 0.0) {
-                    this->last_velocity = action_distance / this->action.duration;
+                    this->last_velocity = action_distance.len() 
+                        / this->action.duration;
                 }
             }
             this->action.progress += window.delta_time();
