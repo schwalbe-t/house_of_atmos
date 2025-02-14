@@ -12,7 +12,7 @@ namespace houseofatmos::outside {
         Building::load_models(*this);
         Foliage::load_models(*this);
         Bridge::load_models(*this);
-        Player::load_resources(*this);
+        human::load_resources(*this);
         ActionMode::load_resources(*this);
         Carriage::load_resources(*this);
         PersonalHorse::load_resources(*this);
@@ -425,19 +425,19 @@ namespace houseofatmos::outside {
     ) {
         player.update(window);
         bool in_coll = !terrain.valid_player_position(
-            Player::collider.at(player.character.position), player.is_riding
+            human::collider.at(player.character.position), player.is_riding
         );
         bool next_x_free = terrain.valid_player_position(
-            Player::collider.at(player.next_x()), player.is_riding
+            human::collider.at(player.next_x()), player.is_riding
         ) && terrain.valid_player_position(
-            Player::collider.at(player_position(player.next_x(), terrain)), 
+            human::collider.at(player_position(player.next_x(), terrain)), 
             player.is_riding
         );
         if(in_coll || next_x_free) { player.proceed_x(); }
         bool next_z_free = terrain.valid_player_position(
-            Player::collider.at(player.next_z()), player.is_riding
+            human::collider.at(player.next_z()), player.is_riding
         ) && terrain.valid_player_position(
-            Player::collider.at(player_position(player.next_z(), terrain)), 
+            human::collider.at(player_position(player.next_z(), terrain)), 
             player.is_riding
         );
         if(in_coll || next_z_free) { player.proceed_z(); }

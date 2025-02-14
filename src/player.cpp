@@ -30,19 +30,20 @@ namespace houseofatmos {
         engine::Scene& scene, const engine::Window& window
     ) {
         bool is_moving = this->next_step.len() > 0;
-        this->character.action = Character::Action(
-            Character::Idle, this->confirmed_step, 0.0
+        this->character.action = Character<human::Animation>::Action(
+            human::Animation::DefaultValue, this->confirmed_step, 
+            window.delta_time(), window.delta_time()
         );
         if(this->is_riding && is_moving) {
-            this->character.action.animation = Character::HorseRide;
+            this->character.action.animation = human::Animation::HorseRide;
         } else if(this->is_riding) {
-            this->character.action.animation = Character::HorseSit;
+            this->character.action.animation = human::Animation::HorseSit;
         } else if(this->in_water) {
-            this->character.action.animation = Character::Swim;
+            this->character.action.animation = human::Animation::Swim;
         } else if(is_moving) {
-            this->character.action.animation = Character::Walk;
+            this->character.action.animation = human::Animation::Walk;
         } else { 
-            this->character.action.animation = Character::Stand;
+            this->character.action.animation = human::Animation::Stand;
         }
         this->character.update(scene, window);
     }
@@ -51,7 +52,6 @@ namespace houseofatmos {
         engine::Scene& scene, const engine::Window& window, 
         const Renderer& renderer
     ) {
-        if(this->character.action.animation == Character::Idle) { return; }
         this->character.render(scene, window, renderer);
     }
 

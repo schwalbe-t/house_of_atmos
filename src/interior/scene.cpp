@@ -28,7 +28,7 @@ namespace houseofatmos::interior {
     void Scene::load_resources() {
         this->load(engine::Model::Loader(this->interior.model));
         Renderer::load_shaders(*this);
-        Player::load_resources(*this);
+        human::load_resources(*this);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
@@ -68,11 +68,11 @@ namespace houseofatmos::interior {
         this->player.update(window);
         this->player.next_step 
             = this->interior.player_velocity_matrix * this->player.next_step;
-        AbsCollider next_player_x = Player::collider.at(this->player.next_x());
+        AbsCollider next_player_x = human::collider.at(this->player.next_x());
         if(this->valid_player_position(next_player_x)) {
             this->player.proceed_x();
         }
-        AbsCollider next_player_z = Player::collider.at(this->player.next_z());
+        AbsCollider next_player_z = human::collider.at(this->player.next_z());
         if(this->valid_player_position(next_player_z)) {
             this->player.proceed_z();
         }
@@ -89,7 +89,7 @@ namespace houseofatmos::interior {
     ) {
         engine::Model& model = this->get<engine::Model>(this->interior.model);
         for(const Interior::Room& room: this->interior.rooms) {
-            bool room_visible = Player::collider
+            bool room_visible = human::collider
                 .at(this->player.character.position)
                 .collides_with(room.trigger.at(origin));
             if(!room_visible && !render_all_rooms) { continue; }
