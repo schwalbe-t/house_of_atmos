@@ -23,19 +23,19 @@ namespace houseofatmos::human {
                 "idle", 30.0 / 24.0, 0.0
             },
             /* Animation::Walk */ (CharacterAnimation) {
-                "walk", (30.0 / 24.0) / 10.0, 0.0,
-                &sound::step, (15.0 / 24.0) / 10.0, (8.0 / 24.0) / 2.0
+                "walk", (30.0 / 24.0) / 2.0 * 5.0, 0.0,
+                &sound::step, (15.0 / 24.0) / 2.0 * 5.0, (8.0 / 24.0) / 2.0
             },
             /* Animation::Swim */ (CharacterAnimation) {
-                "swim", (40.0 / 24.0) / 2.5, 0.0,
-                &sound::swim, (40.0 / 24.0) / 2.5, 10.0 / 24.0
+                "swim", (40.0 / 24.0) * 2.5, 0.0,
+                &sound::swim, (40.0 / 24.0) * 2.5, 10.0 / 24.0
             },
             /* Animation::HorseSit */ (CharacterAnimation) {
                 "ride_idle"
             },
             /* Animation::HorseRide */ (CharacterAnimation) {
-                "ride", (24.0 / 24.0) / 31.0, -0.05, // simulate inertia
-                &sound::step, (24.0 / 24.0) / 31.0, 0.0
+                "ride", (24.0 / 24.0) / 3.1 * 10, -0.05, // simulate inertia
+                &sound::step, (24.0 / 24.0) / 3.1 * 10, 0.0
             }
         }
     };
