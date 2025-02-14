@@ -18,7 +18,6 @@ namespace houseofatmos {
 
     void Player::update(const engine::Window& window) {
         Vec<3> heading = get_player_heading(window);
-        this->character.face_in_direction(heading);
         f64 speed = this->is_riding? ride_speed 
             : this->in_water? swim_speed 
             : walk_speed;
@@ -31,9 +30,14 @@ namespace houseofatmos {
     ) {
         bool is_moving = this->next_step.len() > 0;
         this->character.action = Character<human::Animation>::Action(
-            human::Animation::DefaultValue, this->confirmed_step, 
+            human::Animation::DefaultValue, 
             window.delta_time(), window.delta_time()
         );
+        if(is_moving) {
+            this->character.action.target = this->confirmed_step;
+            Vec<3> heading = this->confirmed_step - this->character.position;
+            this->character.face_in_direction(heading);
+        }
         if(this->is_riding && is_moving) {
             this->character.action.animation = human::Animation::HorseRide;
         } else if(this->is_riding) {

@@ -96,6 +96,8 @@ namespace houseofatmos {
             const Mat<4>& local_transform = Mat<4>(),
             std::span<const Mat<4>> model_transforms
                 = std::array<Mat<4>, 1> { Mat<4>() },
+            std::span<const Mat<4>> joint_transforms 
+                = std::array<Mat<4>, 1> { Mat<4>() },
             engine::FaceCulling face_culling = engine::FaceCulling::Enabled,
             engine::Rendering rendering = engine::Rendering::Surfaces,
             engine::DepthTesting depth_testing = engine::DepthTesting::Enabled,
@@ -104,17 +106,8 @@ namespace houseofatmos {
         void render(
             engine::Model& model,
             std::span<const Mat<4>> model_transforms,
-            engine::FaceCulling face_culling = engine::FaceCulling::Enabled,
-            engine::Rendering rendering = engine::Rendering::Surfaces,
-            engine::DepthTesting depth_testing = engine::DepthTesting::Enabled,
-            const engine::Texture* override_texture = nullptr,
-            std::optional<size_t> light_i = std::nullopt
-        ) const;
-        void render(
-            engine::Model& model,
-            std::span<const Mat<4>> model_transforms,
-            const engine::Animation& animation,
-            f64 timestamp,
+            const engine::Animation* animation = nullptr,
+            f64 timestamp = 0.0,
             engine::FaceCulling face_culling = engine::FaceCulling::Enabled,
             engine::Rendering rendering = engine::Rendering::Surfaces,
             engine::DepthTesting depth_testing = engine::DepthTesting::Enabled,

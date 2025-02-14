@@ -50,6 +50,7 @@ namespace houseofatmos::outside {
                 if(!this->animation.has_value()) {
                     renderer.render(
                         model, instances, 
+                        nullptr, 0.0,
                         engine::FaceCulling::Enabled,
                         rendering, 
                         engine::DepthTesting::Enabled,
@@ -64,7 +65,7 @@ namespace houseofatmos::outside {
                 );
                 renderer.render(
                     model, instances, 
-                    anim, timestamp, 
+                    &anim, timestamp, 
                     engine::FaceCulling::Enabled,
                     rendering,
                     engine::DepthTesting::Enabled, 

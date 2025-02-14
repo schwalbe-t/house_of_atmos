@@ -16,12 +16,52 @@ namespace houseofatmos {
         f64 sound_offset = 0.0;
     };
     
+
     template<size_t N>
     struct CharacterType {
         engine::Model::LoadArgs model;
         Vec<3> model_heading;
         std::array<CharacterAnimation, N> animations;
     };
+
+
+    struct CharacterVariant {
+        using TextureOverridePath = std::pair<std::string, std::string>;
+        using TextureOverride = std::pair<std::string, engine::Texture>;
+        
+        struct LoadArgs {
+            std::vector<TextureOverridePath> texture_overrides;
+
+            std::string pretty_identifier() const {
+                std::string result = "CharacterVariant[";
+                bool had_override = false;
+                for(const auto& [mesh_name, path]: this->texture_overrides) {
+                    if(had_override) { result += ", "; }
+                    result += mesh_name + "@'" + path + "'";
+                }
+                return result + "]";
+            }
+            std::string identifier() const { return pretty_identifier(); }
+        };
+        using Loader = engine::Resource<CharacterVariant, LoadArgs>;
+
+        std::vector<TextureOverride> texture_overrides;
+
+        static inline CharacterVariant from_resource(const LoadArgs& args) {
+            CharacterVariant variant;
+            for(const auto& [mesh_name, path]: args.texture_overrides) {
+                engine::Texture::LoadArgs tex_args = {
+                    path, engine::Texture::vertical_mirror /* GLTF maps inverted */
+                };
+                variant.texture_overrides.push_back((TextureOverride) {
+                    mesh_name,
+                    engine::Texture::from_resource(tex_args)
+                });
+            }
+            return variant;
+        }
+    };
+
     
     template<typename A>
     struct Character {
@@ -57,14 +97,15 @@ namespace houseofatmos {
         
         public:
         const CharacterType<animation_count>* type;
-        const engine::Texture::LoadArgs* variant;
+        const CharacterVariant::LoadArgs* variant;
         Action action = Action(A::DefaultValue);
         Vec<3> position;
         Behavior behavior;
         f64 angle = 0.0;
 
         Character(
-            const CharacterType<animation_count>* type, const engine::Texture::LoadArgs* variant, 
+            const CharacterType<animation_count>* type, 
+            const CharacterVariant::LoadArgs* variant, 
             Vec<3> position, 
             Behavior&& behavior = [](auto& c) { (void) c; }
         ): type(type), variant(variant), position(position), 
@@ -132,7 +173,17 @@ namespace houseofatmos {
             f64 anim_complete_c = (window.time() + anim_impl.anim_offset)
                 / (anim_impl.anim_period / this->last_velocity);
             f64 anim_ts = fmod(anim_complete_c, 1.0) * anim.length();
-            renderer.render(model, std::array { model_transf }, anim, anim_ts);
+            const CharacterVariant& variant 
+                = scene.get<CharacterVariant>(*this->variant);
+            for(const auto& [name, tex_overr]: variant.texture_overrides) {
+                auto [primitive, unused_tex, skeleton] = model.mesh(name);
+                renderer.render(
+                    primitive.geometry, tex_overr, primitive.local_transform,
+                    std::array { model_transf },
+                    anim.compute_transformations(*skeleton, anim_ts),
+                    model.face_culling
+                );
+            }
         }
 
     };

@@ -816,6 +816,7 @@ namespace houseofatmos::outside {
         renderer.render(
             model, 
             this->planned.get_instances(this->terrain.units_per_tile()),
+            nullptr, 0.0,
             engine::FaceCulling::Enabled,
             engine::Rendering::Wireframe, 
             engine::DepthTesting::Enabled,
@@ -963,6 +964,7 @@ namespace houseofatmos::outside {
                 engine::Model& model = scene.get<engine::Model>(b_type.model);
                 renderer.render(
                     model, bridge->get_instances(this->terrain.units_per_tile()),
+                    nullptr, 0.0,
                     engine::FaceCulling::Enabled,
                     engine::Rendering::Wireframe,
                     engine::DepthTesting::Enabled, 

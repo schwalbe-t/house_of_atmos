@@ -228,7 +228,7 @@ namespace houseofatmos::outside {
                 * Mat<4>::translate(carriage_info.carriage_offset);
             renderer.render(
                 horse_model, std::array { horse_transform },
-                horse_animation, timestamp, 
+                &horse_animation, timestamp, 
                 engine::FaceCulling::Enabled,
                 rendering, 
                 engine::DepthTesting::Enabled,
@@ -251,7 +251,7 @@ namespace houseofatmos::outside {
             * carriage_animation.length();
         renderer.render(
             carriage_model, std::array { carriage_transform },
-            carriage_animation, timestamp,
+            &carriage_animation, timestamp,
             engine::FaceCulling::Enabled,
             rendering,
             engine::DepthTesting::Enabled, 

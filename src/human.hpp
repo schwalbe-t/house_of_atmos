@@ -20,6 +20,10 @@ namespace houseofatmos::human {
         },
         Vec<3>(0, 0, 1), // the direction the model faces without rotation
         {
+            // note: the given animation speeds change with movement
+            //     - while not moving, the speed doesn't change
+            //     - if it's moving, the given speed is used at 1 unit / second
+            //       (final_period = period / velocity)
             // note: 'x / 24.0' essentially means "'x' Blender frames"
             /* Animation::Stand */ (CharacterAnimation) {
                 "idle", 30.0 / 24.0, 0.0
@@ -43,10 +47,18 @@ namespace houseofatmos::human {
     };
 
 
-    static const inline engine::Texture::LoadArgs player = {
-        "res/entities/player.png", 
-        engine::Texture::vertical_mirror // GLTF stores images flipped
-    };    
+    static const inline CharacterVariant::LoadArgs player = {
+        {
+            { "human", "res/entities/player.png" }
+        }
+    };
+
+    static const inline CharacterVariant::LoadArgs peasant_woman = {
+        {
+            { "human", "res/entities/peasant.png" },
+            { "hair", "res/entities/peasant_hair_woman.png" }
+        }
+    };
 
 
     static const inline RelCollider collider
@@ -55,7 +67,8 @@ namespace houseofatmos::human {
 
     static inline void load_resources(engine::Scene& scene) {
         scene.load(engine::Model::Loader(character.model));
-        scene.load(engine::Texture::Loader(player));
+        scene.load(CharacterVariant::Loader(player));
+        scene.load(CharacterVariant::Loader(peasant_woman));
     }
 
 }
