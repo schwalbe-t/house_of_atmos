@@ -65,6 +65,7 @@ namespace houseofatmos::outside {
         PersonalHorse personal_horse = PersonalHorse(
             Vec<3>(), &this->player, &this->interactables
         );
+        std::vector<Character> characters;
 
         f64 camera_distance = min_camera_dist;
         std::unique_ptr<ActionMode> action_mode;

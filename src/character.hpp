@@ -120,29 +120,36 @@ namespace houseofatmos {
 
         const CharacterAnimation& animation() const {
             size_t animation_idx = (size_t) this->action.animation_id;
-            return this->type->animations[animation_idx];
+            return this->type->animations.at(animation_idx);
         }
 
-        void update(engine::Scene& scene, const engine::Window& window) {
-            if(this->action.progress > this->action.duration) {
+        void update(
+            engine::Scene& scene, const engine::Window& window,
+            const Vec<3>& observer = Vec<3>(), 
+            f64 update_distance = INFINITY, f64 sound_distance = INFINITY
+        ) {
+            f64 distance = (this->position - observer).len();
+            if(distance > update_distance) { return; }
+            if(this->action.progress >= this->action.duration) {
                 this->action = Action(this->default_animation_id);
             }
             this->behavior(*this);
-            f64 n_progress = this->action.progress 
-                / this->action.duration;
-            if(this->action.duration == 0.0) { n_progress = 1.0; }
             this->last_velocity = 1.0;
-            if(this->action.target.has_value()) {
-                Vec<3> action_distance = (*this->action.target - this->position)
-                    / n_progress;
-                this->position = *this->action.target 
-                    + action_distance * (n_progress - 1.0);
-                if(this->action.duration > 0.0) {
-                    this->last_velocity = action_distance.len() 
-                        / this->action.duration;
+            if(this->action.target.has_value() && this->action.duration > 0.0) {
+                f64 n_progress = this->action.progress / this->action.duration;
+                f64 n_remaining = 1.0 - n_progress;
+                f64 n_made_progress = window.delta_time() / this->action.duration;
+                f64 rel_made_progress = n_made_progress < n_remaining
+                    ? n_made_progress / n_remaining : 1.0; 
+                Vec<3> moved_dist = (*this->action.target - this->position)
+                    * rel_made_progress;
+                this->position += moved_dist;
+                if(rel_made_progress > 0.0) {
+                    this->last_velocity = moved_dist.len() / window.delta_time();
                 }
             }
             this->action.progress += window.delta_time();
+            if(distance > sound_distance) { return; }
             const CharacterAnimation& anim_impl = this->animation();
             if(anim_impl.sound != nullptr) {
                 f64 sound_complete_c = (window.time() + anim_impl.sound_offset)
@@ -157,8 +164,11 @@ namespace houseofatmos {
 
         void render(
             engine::Scene& scene, const engine::Window& window, 
-            const Renderer& renderer
+            const Renderer& renderer,
+            const Vec<3>& observer = Vec<3>(), f64 draw_distance = INFINITY
         ) {
+            f64 distance = (this->position - observer).len();
+            if(distance > draw_distance) { return; }
             engine::Model& model = scene.get<engine::Model>(this->type->model);
             Mat<4> model_transf = Mat<4>::translate(this->position)
                 * Mat<4>::rotate_y(this->angle);

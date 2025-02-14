@@ -30,8 +30,7 @@ namespace houseofatmos {
     ) {
         bool is_moving = this->next_step.len() > 0;
         this->character.action = Character::Action(
-            (u64) human::Animation::Stand, 
-            window.delta_time(), window.delta_time()
+            (u64) human::Animation::Stand, window.delta_time()
         );
         if(is_moving) {
             this->character.action.target = this->confirmed_step;
