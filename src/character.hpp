@@ -17,11 +17,10 @@ namespace houseofatmos {
     };
     
 
-    template<size_t N>
     struct CharacterType {
         engine::Model::LoadArgs model;
         Vec<3> model_heading;
-        std::array<CharacterAnimation, N> animations;
+        std::vector<CharacterAnimation> animations;
     };
 
 
@@ -63,52 +62,47 @@ namespace houseofatmos {
     };
 
     
-    template<typename A>
     struct Character {
 
-        // enum A {
-        //     ...,
-        //     DefaultValue = ...,
-        //     MaximumValue = ...
-        // }
-
-        static inline const size_t animation_count 
-            = (size_t) A::MaximumValue + 1;
-
         struct Action {
-            A animation;
+            u64 animation_id;
             std::optional<Vec<3>> target = std::nullopt;
             f64 duration;
             f64 progress = 0.0;
 
-            Action(A animation, f64 duration = INFINITY, f64 progress = 0.0)
-                : animation(animation), duration(duration)
+            Action(u64 animation_id, f64 duration = INFINITY, f64 progress = 0.0)
+                : animation_id(animation_id), duration(duration)
                 , progress(progress) {}
-            Action(A animation, Vec<3> target, f64 duration, f64 progress = 0.0)
-                : animation(animation), target(target), duration(duration)
+            Action(u64 animation_id, Vec<3> target, f64 duration, f64 progress = 0.0)
+                : animation_id(animation_id), target(target), duration(duration)
                 , progress(progress) {}
         };
 
-        using Behavior = std::function<void (Character<A>&)>;
+        using Behavior = std::function<void (Character&)>;
 
         private:
         f64 last_velocity = 0.0;
         f64 last_sound_ts = INFINITY;
         
         public:
-        const CharacterType<animation_count>* type;
+        const CharacterType* type;
         const CharacterVariant::LoadArgs* variant;
-        Action action = Action(A::DefaultValue);
+        u64 default_animation_id;
+        Action action;
         Vec<3> position;
         Behavior behavior;
         f64 angle = 0.0;
 
         Character(
-            const CharacterType<animation_count>* type, 
+            const CharacterType* type, 
             const CharacterVariant::LoadArgs* variant, 
             Vec<3> position, 
+            u64 default_animation_id,
             Behavior&& behavior = [](auto& c) { (void) c; }
-        ): type(type), variant(variant), position(position), 
+        ): type(type), variant(variant), 
+            default_animation_id(default_animation_id),
+            action(Action(default_animation_id)),
+            position(position), 
             behavior(std::move(behavior)) {}
 
         void face_in_direction(const Vec<3>& heading) {
@@ -125,13 +119,13 @@ namespace houseofatmos {
         }
 
         const CharacterAnimation& animation() const {
-            size_t animation_idx = (size_t) this->action.animation;
+            size_t animation_idx = (size_t) this->action.animation_id;
             return this->type->animations[animation_idx];
         }
 
         void update(engine::Scene& scene, const engine::Window& window) {
             if(this->action.progress > this->action.duration) {
-                this->action = Action(A::DefaultValue);
+                this->action = Action(this->default_animation_id);
             }
             this->behavior(*this);
             f64 n_progress = this->action.progress 

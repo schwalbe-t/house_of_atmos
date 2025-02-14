@@ -23,9 +23,9 @@ namespace houseofatmos {
 
 
         public:
-        Character<human::Animation> character = Character<human::Animation>(
-            &human::character, &human::peasant_woman,
-            { 0, 0, 0 }
+        Character character = Character(
+            &human::character, &human::count,
+            { 0, 0, 0 }, (u64) human::Animation::Stand
         );
         Vec<3> next_step;
         Vec<3> confirmed_step;

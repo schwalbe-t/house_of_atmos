@@ -29,8 +29,8 @@ namespace houseofatmos {
         engine::Scene& scene, const engine::Window& window
     ) {
         bool is_moving = this->next_step.len() > 0;
-        this->character.action = Character<human::Animation>::Action(
-            human::Animation::DefaultValue, 
+        this->character.action = Character::Action(
+            (u64) human::Animation::Stand, 
             window.delta_time(), window.delta_time()
         );
         if(is_moving) {
@@ -39,15 +39,17 @@ namespace houseofatmos {
             this->character.face_in_direction(heading);
         }
         if(this->is_riding && is_moving) {
-            this->character.action.animation = human::Animation::HorseRide;
+            this->character.action.animation_id = (u64) human::Animation::HorseRide;
         } else if(this->is_riding) {
-            this->character.action.animation = human::Animation::HorseSit;
+            this->character.action.animation_id = (u64) human::Animation::HorseSit;
+        } else if(this->in_water && is_moving) {
+            this->character.action.animation_id = (u64) human::Animation::Swim;
         } else if(this->in_water) {
-            this->character.action.animation = human::Animation::Swim;
+            this->character.action.animation_id = (u64) human::Animation::SwimIdle;
         } else if(is_moving) {
-            this->character.action.animation = human::Animation::Walk;
+            this->character.action.animation_id = (u64) human::Animation::Walk;
         } else { 
-            this->character.action.animation = human::Animation::Stand;
+            this->character.action.animation_id = (u64) human::Animation::Stand;
         }
         this->character.update(scene, window);
     }

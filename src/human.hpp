@@ -8,22 +8,16 @@
 namespace houseofatmos::human {
 
     enum struct Animation {
-        Stand = 0, Walk = 1, Swim = 2, HorseSit = 3, HorseRide = 4,
-        DefaultValue = Stand,
-        MaximumValue = HorseRide
+        Stand, Walk, SwimIdle, Swim, HorseSit, HorseRide
     };
 
-    static const inline CharacterType<5> character = {
+    static const inline CharacterType character = {
         (engine::Model::LoadArgs) {
             "res/entities/human.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
         },
         Vec<3>(0, 0, 1), // the direction the model faces without rotation
         {
-            // note: the given animation speeds change with movement
-            //     - while not moving, the speed doesn't change
-            //     - if it's moving, the given speed is used at 1 unit / second
-            //       (final_period = period / velocity)
             // note: 'x / 24.0' essentially means "'x' Blender frames"
             /* Animation::Stand */ (CharacterAnimation) {
                 "idle", 30.0 / 24.0, 0.0
@@ -31,6 +25,10 @@ namespace houseofatmos::human {
             /* Animation::Walk */ (CharacterAnimation) {
                 "walk", (30.0 / 24.0) / 2.0 * 5.0, 0.0,
                 &sound::step, (15.0 / 24.0) / 2.0 * 5.0, (8.0 / 24.0) / 2.0
+            },
+            /* Animation::SwimIdle */ (CharacterAnimation) {
+                "swim", 40.0 / 24.0, 0.0,
+                &sound::swim, 40.0 / 24.0, 10.0 / 24.0
             },
             /* Animation::Swim */ (CharacterAnimation) {
                 "swim", (40.0 / 24.0) * 2.5, 0.0,
@@ -47,9 +45,9 @@ namespace houseofatmos::human {
     };
 
 
-    static const inline CharacterVariant::LoadArgs player = {
+    static const inline CharacterVariant::LoadArgs count = {
         {
-            { "human", "res/entities/player.png" }
+            { "human", "res/entities/count.png" }
         }
     };
 
@@ -60,15 +58,23 @@ namespace houseofatmos::human {
         }
     };
 
-
-    static const inline RelCollider collider
-        = RelCollider({ -0.25, 0, -0.25 }, { 0.5, 2, 0.5 });
+    static const inline CharacterVariant::LoadArgs peasant_man = {
+        {
+            { "human", "res/entities/peasant.png" },
+            { "hair", "res/entities/peasant_hair_man.png" }
+        }
+    };
 
 
     static inline void load_resources(engine::Scene& scene) {
         scene.load(engine::Model::Loader(character.model));
-        scene.load(CharacterVariant::Loader(player));
+        scene.load(CharacterVariant::Loader(count));
         scene.load(CharacterVariant::Loader(peasant_woman));
+        scene.load(CharacterVariant::Loader(peasant_man));
     }
+
+
+    static const inline RelCollider collider
+        = RelCollider({ -0.25, 0, -0.25 }, { 0.5, 2, 0.5 });
 
 }
