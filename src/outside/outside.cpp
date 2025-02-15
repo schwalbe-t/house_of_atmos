@@ -433,6 +433,8 @@ namespace houseofatmos::outside {
         }
     }
 
+    static const f64 terrain_falloff_distance = 10.0;
+    static const f64 terrain_falloff_height = -15.0;
     static const u64 max_settlement_count = 30;
     static const u64 max_settlement_attempts = 2000;
 
@@ -440,7 +442,9 @@ namespace houseofatmos::outside {
         u32 seed, Terrain& terrain, Player& player, Balance& balance, 
         ComplexBank& complexes, PersonalHorse& personal_horse
     ) {
-        terrain.generate_elevation((u32) seed);
+        terrain.generate_elevation(
+            (u32) seed, terrain_falloff_distance, terrain_falloff_height
+        );
         terrain.generate_foliage((u32) seed);
         auto rng = StatefulRNG(seed);
         std::vector<Vec<3>> created_settlements;

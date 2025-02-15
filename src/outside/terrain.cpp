@@ -55,14 +55,31 @@ namespace houseofatmos::outside {
     }
 
 
-    void Terrain::generate_elevation(u32 seed) {
+    static f64 compute_falloff(f64 x, f64 z, f64 width, f64 height, f64 falloff) {
+        if(falloff == 0.0) { return 1.0; }
+        f64 left = std::min(std::max(x / falloff, 0.0), 1.0);
+        f64 top = std::min(std::max(z / falloff, 0.0), 1.0);
+        f64 right = std::min(std::max((width - x) / falloff, 0.0), 1.0);
+        f64 bottom = std::min(std::max((height - z) / falloff, 0.0), 1.0);
+        return std::min(std::min(left, top), std::min(right, bottom));
+    }
+
+    void Terrain::generate_elevation(
+        u32 seed, f64 end_falloff_distance, f64 falloff_target_height
+    ) {
         for(u64 x = 0; x <= this->width; x += 1) {
             for(u64 z = 0; z <= this->height; z += 1) {
-                f64 height = 0.0;
-                height += perlin_noise(seed, Vec<2>(x / 1.0, z / 1.0));
-                height += perlin_noise(seed, Vec<2>((f64) x / 40.0, (f64) z / 40.0)) * 10
+                f64 n_height = 0.0;
+                n_height += perlin_noise(seed, Vec<2>(x / 1.0, z / 1.0));
+                n_height += perlin_noise(seed, Vec<2>((f64) x / 40.0, (f64) z / 40.0)) * 10
                     * (perlin_noise(seed, Vec<2>(x / 128.0, z / 128.0)) * 5);
-                this->elevation_at(x, z) = (i16) height;
+                f64 falloff = compute_falloff(
+                    (f64) x, (f64) z, (f64) this->width, (f64) this->height, 
+                    end_falloff_distance
+                );
+                f64 f_height = n_height * falloff 
+                    + falloff_target_height * (1.0 - falloff);
+                this->elevation_at(x, z) = (i16) f_height;
             }
         }
     }
@@ -238,19 +255,23 @@ namespace houseofatmos::outside {
         return geometry;
     }
 
-    engine::Mesh Terrain::build_chunk_water_geometry(u64 chunk_x, u64 chunk_z) const {
+    engine::Mesh Terrain::build_chunk_water_geometry(i64 chunk_x, i64 chunk_z) const {
         auto geometry = engine::Mesh(Terrain::water_plane_attribs);
-        u64 start_x = chunk_x * this->chunk_tiles;
-        u64 end_x = std::min((chunk_x + 1) * this->chunk_tiles, this->width);
-        u64 start_z = chunk_z * this->chunk_tiles;
-        u64 end_z = std::min((chunk_z + 1) * this->chunk_tiles, this->height);
-        for(u64 x = start_x; x < end_x; x += 1) {
-            for(u64 z = start_z; z < end_z; z += 1) {
-                u64 abs_t_left = x;
-                u64 abs_t_right = abs_t_left + 1;
-                u64 abs_t_top = z;
-                u64 abs_t_bottom = abs_t_top + 1;
-                bool has_water = this->elevation_at(abs_t_left, abs_t_top) < 0.0
+        i64 start_x = chunk_x * (i64) this->chunk_tiles;
+        i64 end_x = (chunk_x + 1) * (i64) this->chunk_tiles;
+        i64 start_z = chunk_z * this->chunk_tiles;
+        i64 end_z = (chunk_z + 1) * (i64) this->chunk_tiles;
+        for(i64 x = start_x; x < end_x; x += 1) {
+            for(i64 z = start_z; z < end_z; z += 1) {
+                i64 abs_t_left = x;
+                i64 abs_t_right = abs_t_left + 1;
+                i64 abs_t_top = z;
+                i64 abs_t_bottom = abs_t_top + 1;
+                bool in_bounds = x >= 0 && z >= 0
+                    && x < (i64) this->width_in_tiles() 
+                    && z < (i64) this->width_in_tiles();
+                bool has_water = in_bounds
+                    || this->elevation_at(abs_t_left, abs_t_top) < 0.0
                     || this->elevation_at(abs_t_right, abs_t_top) < 0.0
                     || this->elevation_at(abs_t_left, abs_t_bottom) < 0.0
                     || this->elevation_at(abs_t_right, abs_t_bottom) < 0.0;
@@ -361,18 +382,29 @@ namespace houseofatmos::outside {
     }
 
     Terrain::LoadedChunk Terrain::load_chunk(
-        u64 chunk_x, u64 chunk_z, 
+        i64 chunk_x, i64 chunk_z, 
         Interactables* interactables, engine::Window& window,
-        const SaveInfo* save_info
+        const SaveInfo* save_info,
+        bool in_bounds
     ) const {
+        if(!in_bounds) {
+            return {
+                chunk_x, chunk_z, false,
+                engine::Mesh(Renderer::mesh_attribs),
+                this->build_chunk_water_geometry(chunk_x, chunk_z),
+                std::unordered_map<Foliage::Type, std::vector<Mat<4>>>(),
+                std::unordered_map<Building::Type, std::vector<Mat<4>>>(),
+                std::vector<std::shared_ptr<Interactable>>()
+            };
+        }
         return {
             chunk_x, chunk_z, false, 
-            this->build_chunk_terrain_geometry(chunk_x, chunk_z),
+            this->build_chunk_terrain_geometry((u64) chunk_x, (u64) chunk_z),
             this->build_chunk_water_geometry(chunk_x, chunk_z),
-            this->collect_foliage_transforms(chunk_x, chunk_z),
-            this->collect_building_transforms(chunk_x, chunk_z),
+            this->collect_foliage_transforms((u64) chunk_x, (u64) chunk_z),
+            this->collect_building_transforms((u64) chunk_x, (u64) chunk_z),
             this->create_chunk_interactables(
-                chunk_x, chunk_z, interactables, window, save_info
+                (u64) chunk_x, (u64) chunk_z, interactables, window, save_info
             )
         };
     }
@@ -387,7 +419,7 @@ namespace houseofatmos::outside {
     bool Terrain::chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const {
         for(size_t chunk_i = 0; chunk_i < this->loaded_chunks.size(); chunk_i += 1) {
             const LoadedChunk& chunk = this->loaded_chunks.at(chunk_i);
-            if(chunk.x == chunk_x && chunk.z == chunk_z) {
+            if(chunk.x == (i64) chunk_x && chunk.z == (i64) chunk_z) {
                 index = chunk_i;
                 return true;
             }
@@ -411,25 +443,21 @@ namespace houseofatmos::outside {
             this->loaded_chunks.erase(this->loaded_chunks.begin() + chunk_i);
         }
         // spawn and update chunks in the draw distance
-        i64 viewed_start_x = std::max(
-            this->view_chunk_x - this->draw_distance, (i64) 0
-        );
-        i64 viewed_end_x = std::min(
-            this->view_chunk_x + this->draw_distance, (i64) this->width_chunks - 1
-        );
-        i64 viewed_start_z = std::max(
-            this->view_chunk_z - this->draw_distance, (i64) 0
-        );
-        i64 viewed_end_z = std::min(
-            this->view_chunk_z + this->draw_distance, (i64) this->height_chunks - 1
-        );
+        i64 viewed_start_x = this->view_chunk_x - this->draw_distance;
+        i64 viewed_end_x = this->view_chunk_x + this->draw_distance;
+        i64 viewed_start_z = this->view_chunk_z - this->draw_distance;
+        i64 viewed_end_z = this->view_chunk_z + this->draw_distance;
         for(i64 chunk_x = viewed_start_x; chunk_x <= viewed_end_x; chunk_x += 1) {
             for(i64 chunk_z = viewed_start_z; chunk_z <= viewed_end_z; chunk_z += 1) {
+                bool in_bounds = chunk_x > 0 && chunk_z > 0
+                    && chunk_x < (i64) this->width_chunks
+                    && chunk_z < (i64) this->height_chunks;
                 size_t chunk_i;
                 if(!this->chunk_loaded(chunk_x, chunk_z, chunk_i)) {
                     this->loaded_chunks.push_back(
                         this->load_chunk(
-                            chunk_x, chunk_z, interactables, window, save_info
+                            chunk_x, chunk_z, interactables, window, save_info,
+                            in_bounds
                         )
                     );
                     continue; 
@@ -437,7 +465,8 @@ namespace houseofatmos::outside {
                 LoadedChunk& chunk = this->loaded_chunks.at(chunk_i);
                 if(chunk.modified) {
                     chunk = this->load_chunk(
-                        chunk_x, chunk_z, interactables, window, save_info
+                        chunk_x, chunk_z, interactables, window, save_info,
+                        in_bounds
                     );
                 }
             }

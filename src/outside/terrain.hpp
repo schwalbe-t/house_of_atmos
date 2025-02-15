@@ -44,7 +44,7 @@ namespace houseofatmos::outside {
 
 
         struct LoadedChunk {
-            u64 x, z; // in chunks relative to origin
+            i64 x, z; // in chunks relative to origin
             bool modified; // re-mesh in next render cycle
             engine::Mesh terrain; // terrain geometry
             engine::Mesh water; // water geometry
@@ -110,9 +110,10 @@ namespace houseofatmos::outside {
             const SaveInfo* save_info
         ) const;
         Terrain::LoadedChunk load_chunk(
-            u64 chunk_x, u64 chunk_z, 
+            i64 chunk_x, i64 chunk_z, 
             Interactables* interactables, engine::Window& window, 
-            const SaveInfo* save_info
+            const SaveInfo* save_info,
+            bool in_bounds = true
         ) const;
 
 
@@ -182,10 +183,10 @@ namespace houseofatmos::outside {
             return this->chunks.at(chunk_x + this->width_chunks * chunk_z);
         }
         void reload_chunk_at(u64 chunk_x, u64 chunk_z) {
-            auto chunk = this->loaded_chunk_at(chunk_x, chunk_z);
+            auto chunk = this->loaded_chunk_at((i64) chunk_x, (i64) chunk_z);
             if(chunk != nullptr) { chunk->modified = true; }
         }
-        LoadedChunk* loaded_chunk_at(u64 chunk_x, u64 chunk_z) {
+        LoadedChunk* loaded_chunk_at(i64 chunk_x, i64 chunk_z) {
             for(LoadedChunk& chunk: this->loaded_chunks) {
                 if(chunk.x != chunk_x || chunk.z != chunk_z) { continue; }
                 return &chunk;
@@ -229,7 +230,11 @@ namespace houseofatmos::outside {
         ) const;
         i64 compute_unemployment() const;
 
-        void generate_elevation(u32 seed = (u32) random_init());
+        void generate_elevation(
+            u32 seed = (u32) random_init(), 
+            f64 end_falloff_distance = 0.0,
+            f64 falloff_target_height = 0.0
+        );
         void generate_foliage(u32 seed = (u32) random_init());
 
         bool chunk_in_draw_distance(u64 chunk_x, u64 chunk_z) const;
@@ -240,7 +245,7 @@ namespace houseofatmos::outside {
         );
 
         engine::Mesh build_chunk_terrain_geometry(u64 chunk_x, u64 chunk_z) const;
-        engine::Mesh build_chunk_water_geometry(u64 chunk_x, u64 chunk_z) const;
+        engine::Mesh build_chunk_water_geometry(i64 chunk_x, i64 chunk_z) const;
         Mat<4> building_transform(
             const Building& building, u64 chunk_x, u64 chunk_z
         ) const;    

@@ -359,7 +359,7 @@ namespace houseofatmos::engine {
             error("Attempted to use a moved 'Mesh'");
         }
         if(!this->modified) { return; }
-        if(this->vertices > 0) {
+        if(this->vertices > 0 && this->elements.size() > 0) {
             glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
             glBufferData(
                 GL_ARRAY_BUFFER,
@@ -369,7 +369,7 @@ namespace houseofatmos::engine {
             );
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
-        if(this->elements.size() > 0) {
+        if(this->vertices > 0 && this->elements.size() > 0) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
             glBufferData(
                 GL_ELEMENT_ARRAY_BUFFER,
