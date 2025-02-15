@@ -54,7 +54,8 @@ namespace houseofatmos::human {
     static const inline CharacterVariant::LoadArgs peasant_woman = {
         {
             { "human", "res/entities/peasant.png" },
-            { "hair", "res/entities/peasant_hair_woman.png" }
+            { "hair", "res/entities/peasant_hair_woman.png" },
+            { "dress", "res/entities/peasant_dress_woman.png" }
         }
     };
 

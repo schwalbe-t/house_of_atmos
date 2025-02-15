@@ -28,32 +28,51 @@ namespace houseofatmos::outside {
     static Character create_roaming_human(
         const CharacterVariant::LoadArgs& variant,
         Vec<3> origin, std::shared_ptr<StatefulRNG> rng,
-        const Terrain& terrain,
+        const Terrain& terrain, const engine::Window& window,
         f64 spawn_distance, f64 roam_distance, f64 roam_vel,
         const Character& player, f64 player_stop_dist
     ) {
+        static const u64 no_action = UINT64_MAX;
         f64 spawn_angle = rng->next_f64() * 2.0 * pi;
         Vec<3> spawn_position = origin
             + Vec<3>(cos(spawn_angle), 0.0, sin(spawn_angle)) * spawn_distance;
         return Character(
-            &human::character, &variant, spawn_position, UINT64_MAX,
-            [origin, rng, terrain = &terrain, roam_distance, roam_vel, 
+            &human::character, &variant, spawn_position, no_action,
+            [origin, rng, terrain = &terrain, window = &window, 
+                roam_distance, roam_vel, 
                 player = &player, player_stop_dist
             ](Character& self) {
                 f64 player_dist = (player->position - self.position).len();
-                bool is_close = player_dist <= player_stop_dist;
-                if(is_close && self.action.duration != INFINITY) {
-                    self.action = Character::Action(
-                        (u64) human::Animation::Stand, INFINITY
+                bool player_is_close = player_dist <= player_stop_dist;
+                bool is_walking = self.action.animation_id 
+                    == (u64) human::Animation::Walk;
+                // if player is close stop walking
+                if(player_is_close && is_walking) {
+                    self.action.animation_id = no_action;
+                }
+                // no walking into houses
+                if(is_walking) {
+                    bool current_pos_valid = terrain->valid_player_position(
+                        human::collider.at(self.position), true
                     );
+                    Vec<3> heading = (*self.action.target - self.position);
+                    Vec<3> next_pos = self.position 
+                        + heading.normalized() * roam_vel * window->delta_time();
+                    bool next_pos_valid = terrain->valid_player_position(
+                        human::collider.at(next_pos), true
+                    );
+                    if(current_pos_valid && !next_pos_valid) {
+                        self.action.animation_id = no_action;
+                    }
+                }
+                // return if the current action is still going
+                if(self.action.animation_id != no_action) { return; }
+                // choose a new action
+                self.position.y() = terrain->elevation_at(self.position);
+                if(player_is_close) {
                     self.face_towards(player->position);
                 }
-                if(!is_close && self.action.duration == INFINITY) {
-                    self.action.animation_id = UINT64_MAX;
-                }
-                if(self.action.animation_id != UINT64_MAX) { return; }
-                self.position.y() = terrain->elevation_at(self.position);
-                if(rng->next_bool()) {
+                if(player_is_close || rng->next_bool()) {
                     f64 duration = 1.0 + rng->next_f64() * 2.5;
                     self.action = Character::Action(
                         (u64) human::Animation::Stand, duration
@@ -83,8 +102,8 @@ namespace houseofatmos::outside {
     static const f64 peasant_player_stop_dist = 3.0;
 
     static void create_peasants(
-        const Terrain& terrain, const Character& player, 
-        std::vector<Character>& characters
+        const Terrain& terrain, const engine::Window& window, 
+        const Character& player, std::vector<Character>& characters
     ) {
         auto rng = std::make_shared<StatefulRNG>();
         for(u64 chunk_x = 0; chunk_x < terrain.width_in_chunks(); chunk_x += 1) {
@@ -101,7 +120,7 @@ namespace houseofatmos::outside {
                     origin *= terrain.units_per_tile();
                     characters.push_back(create_roaming_human(
                         rng->next_bool()? human::peasant_man : human::peasant_woman,
-                        origin, rng, terrain,
+                        origin, rng, terrain, window,
                         peasant_spawn_dist, peasant_roam_dist, peasant_roam_vel,
                         player, peasant_player_stop_dist
                     ));
@@ -498,7 +517,6 @@ namespace houseofatmos::outside {
         this->configure_renderer(this->renderer);
         this->renderer.lights.push_back(Outside::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
-        create_peasants(this->terrain, this->player.character, this->characters);
     }
 
 
@@ -563,6 +581,11 @@ namespace houseofatmos::outside {
                 SaveInfo(this->save_info), window.scene(), 
                 this->renderer.output()
             ));
+        }
+        if(this->characters.size() == 0) {
+            create_peasants(
+                this->terrain, window, this->player.character, this->characters
+            );
         }
         this->coins_elem->text = std::to_string(this->balance.coins) + " 🪙";
         this->interactables.observe_from(
@@ -677,7 +700,6 @@ namespace houseofatmos::outside {
         this->configure_renderer(this->renderer);
         this->renderer.lights.push_back(Outside::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
-        create_peasants(this->terrain, this->player.character, this->characters);
     }
 
     engine::Arena Outside::serialize() const {
