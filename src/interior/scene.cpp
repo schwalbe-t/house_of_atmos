@@ -1,21 +1,23 @@
 
 #include "scene.hpp"
 #include "../pause_menu/pause_menu.hpp"
+#include "../world/world.hpp"
 #include <algorithm>
 
 namespace houseofatmos::interior {
 
     static const Vec<3> origin = { 0, 0, 0 };
+    static const Vec<4> background = Vec<4>(31, 14, 28, 255) / 255.0;
 
     Scene::Scene(
         const Interior& interior, 
         std::shared_ptr<world::World>&& world,
             std::shared_ptr<engine::Scene>&& outside
-    ): interior(interior) {
+    ): interior(interior), toasts(Toasts(world->settings.localization())) {
         this->load_resources();
         this->world = std::move(world);
         this->outside = std::move(outside);
-        this->renderer.fog_color = Vec<4>(0.0, 0.0, 0.0, 1.0); // background color
+        this->renderer.fog_color = background;
         this->renderer.lights.insert(
             this->renderer.lights.end(),
             this->interior.lights.begin(), this->interior.lights.end()
@@ -61,11 +63,24 @@ namespace houseofatmos::interior {
                 }, 
                 this->interior.exit_interactable
             );
+            this->ui.root.children.push_back(
+                this->world->balance.create_counter(&this->coin_counter)
+            );
+            this->toasts.set_scene(this);
+            this->ui.root.children.push_back(this->toasts.create_container());
         }
         this->interactables.observe_from(
             this->player.character.position, this->renderer, window
         );
+        this->world->balance.update_counter(*this->coin_counter);
+        this->toasts.update(*this);
         this->ui.update(window);
+        this->world->carriages.update_all(
+            Vec<3>(0.0, 0.0, 0.0), 0.0,
+            *this, window, 
+            this->world->complexes, this->world->terrain, this->toasts
+        );
+        this->world->complexes.update(window, this->world->balance);
         this->player.update(window);
         this->player.next_step 
             = this->interior.player_velocity_matrix * this->player.next_step;

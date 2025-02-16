@@ -96,17 +96,8 @@ namespace houseofatmos::world {
         scene.ui.root.children.push_back(scene.interactables.create_container());
         scene.ui.root.children.push_back(std::move(mode_list));
         scene.terrain_map.create_container();
-        scene.ui.root.children.push_back(ui::Element()
-            .with_handle(&scene.coins_elem)
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(
-                std::to_string(scene.world->balance.coins) + " 🪙",
-                &ui_font::dark
-            )
-            .with_padding(1.0)
-            .with_pos(0.95, 0.05, ui::position::window_fract)
-            .with_background(&ui_background::note)
-            .as_movable()
+        scene.ui.root.children.push_back(
+            scene.world->balance.create_counter(&scene.coin_counter)
         );
         scene.toasts.set_scene(&scene);
         scene.ui.root.children.push_back(scene.toasts.create_container());
@@ -341,7 +332,7 @@ namespace houseofatmos::world {
                 this->world->player.character, this->characters
             );
         }
-        this->coins_elem->text = std::to_string(this->world->balance.coins) + " 🪙";
+        this->world->balance.update_counter(*this->coin_counter);
         this->interactables.observe_from(
             this->world->player.character.position, this->renderer, window
         );

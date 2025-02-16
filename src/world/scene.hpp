@@ -37,8 +37,8 @@ namespace houseofatmos::world {
 
         f64 camera_distance = min_camera_dist;
         std::unique_ptr<ActionMode> action_mode;
-        ui::Element* coins_elem = nullptr;
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
+        ui::Element* coin_counter = nullptr;
         TerrainMap terrain_map;
         Toasts toasts;
 

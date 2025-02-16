@@ -29,6 +29,25 @@ namespace houseofatmos {
                 "toast_added_coins", { std::to_string(amount) }
             );
         }
+
+        ui::Element create_counter(ui::Element** handle_ptr) {
+            ui::Element counter = ui::Element()
+                .with_handle(handle_ptr)
+                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_text(
+                    std::to_string(this->coins) + " 🪙",
+                    &ui_font::dark
+                )
+                .with_padding(1.0)
+                .with_pos(0.95, 0.05, ui::position::window_fract)
+                .with_background(&ui_background::note)
+                .as_movable();
+            return counter;
+        }
+
+        void update_counter(ui::Element& counter) {
+            counter.text = std::to_string(this->coins) + " 🪙";
+        }
     };
 
 }

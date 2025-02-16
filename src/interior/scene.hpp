@@ -7,6 +7,7 @@
 #include "../audio_const.hpp"
 #include "../ui_const.hpp"
 #include "../player.hpp"
+#include "../toasts.hpp"
 #include "interiors.hpp"
 
 namespace houseofatmos::world {
@@ -30,6 +31,8 @@ namespace houseofatmos::interior {
         Renderer renderer;
         Player player;
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
+        ui::Element* coin_counter = nullptr;
+        Toasts toasts;
         Interactables interactables;
         std::shared_ptr<Interactable> exit_interactable;
 
