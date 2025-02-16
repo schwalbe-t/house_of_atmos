@@ -3,7 +3,7 @@
 #include "terrainmap.hpp"
 #include <iostream>
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     namespace ui = houseofatmos::engine::ui;
 
@@ -13,9 +13,8 @@ namespace houseofatmos::outside {
     static const u64 carr_spawn_d = 1;
 
     static void summon_carriage(
-        engine::Scene& scene, const Terrain& terrain, 
-        u64 stable_x, u64 stable_z, Balance& balance, Toasts& toasts, 
-        CarriageManager& carriages
+        engine::Scene& scene, World& world, 
+        u64 stable_x, u64 stable_z, Toasts& toasts
     ) {
         Vec<3> pos;
         bool found_pos = false;
@@ -27,18 +26,18 @@ namespace houseofatmos::outside {
         i64 end_z = stable_z + stable.height + carr_spawn_d;
         for(i64 x = start_x; x < end_x; x += 1) {
             for(i64 z = start_z; z < end_z; z += 1) {
-                if(x < 0 || (u64) x >= terrain.width_in_tiles()) { continue; }
-                if(z < 0 || (u64) z >= terrain.height_in_tiles()) { continue; }
-                u64 chunk_x = (u64) x / terrain.tiles_per_chunk();
-                u64 chunk_z = (u64) z / terrain.tiles_per_chunk();
-                const Terrain::ChunkData& chunk = terrain
+                if(x < 0 || (u64) x >= world.terrain.width_in_tiles()) { continue; }
+                if(z < 0 || (u64) z >= world.terrain.height_in_tiles()) { continue; }
+                u64 chunk_x = (u64) x / world.terrain.tiles_per_chunk();
+                u64 chunk_z = (u64) z / world.terrain.tiles_per_chunk();
+                const Terrain::ChunkData& chunk = world.terrain
                     .chunk_at(chunk_x, chunk_z);
-                u64 rel_x = (u64) x % terrain.tiles_per_chunk();
-                u64 rel_z = (u64) z % terrain.tiles_per_chunk();
+                u64 rel_x = (u64) x % world.terrain.tiles_per_chunk();
+                u64 rel_z = (u64) z % world.terrain.tiles_per_chunk();
                 bool is_obstacle = !chunk.path_at(rel_x, rel_z)
-                    || terrain.building_at(x, z) != nullptr;
+                    || world.terrain.building_at(x, z) != nullptr;
                 if(is_obstacle) { continue; }
-                pos = Vec<3>(x + 0.5, 0, z + 0.5) * terrain.units_per_tile();
+                pos = Vec<3>(x + 0.5, 0, z + 0.5) * world.terrain.units_per_tile();
                 found_pos = true;
                 break;
             }
@@ -47,8 +46,8 @@ namespace houseofatmos::outside {
             toasts.add_error("toast_no_valid_carriage_location", {});
             return;
         }
-        if(!balance.pay_coins(carriage_buy_cost, toasts)) { return; }
-        carriages.carriages.push_back((Carriage) { Carriage::Round, pos });
+        if(!world.balance.pay_coins(carriage_buy_cost, toasts)) { return; }
+        world.carriages.carriages.push_back((Carriage) { Carriage::Round, pos });
         scene.get<engine::Sound>(sound::horse).play();
     }
 
@@ -56,14 +55,12 @@ namespace houseofatmos::outside {
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
     ) {
-        (void) scene;
         (void) renderer;
-        this->local = &this->toasts.localization();
-        auto [s_tile_x, s_tile_z] = this->terrain.find_selected_terrain_tile(
+        auto [s_tile_x, s_tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
         u64 s_chunk_x, s_chunk_z;
-        Building* s_building = this->terrain.building_at(
+        Building* s_building = this->world->terrain.building_at(
             (i64) s_tile_x, (i64) s_tile_z, &s_chunk_x, &s_chunk_z
         );
         bool clicked_world = window.was_pressed(engine::Button::Left)
@@ -72,23 +69,24 @@ namespace houseofatmos::outside {
             && s_building->type == Building::Stable
             && clicked_world;
         if(clicked_stable) {
-            u64 asx = s_chunk_x * this->terrain.tiles_per_chunk() + s_building->x;
-            u64 asz = s_chunk_z * this->terrain.tiles_per_chunk() + s_building->z;
+            u64 asx = s_chunk_x * this->world->terrain.tiles_per_chunk() 
+                + s_building->x;
+            u64 asz = s_chunk_z * this->world->terrain.tiles_per_chunk() 
+                + s_building->z;
             *this->button = ui::Element()
                 .as_phantom()
                 .with_pos(0.5, 0.95, ui::position::window_fract)
                 .with_size(0, 0, ui::size::unwrapped_text)
                 .with_text(
-                    this->local->text("ui_create_carriage"), &ui_font::bright
+                    this->local.text("ui_create_carriage"), &ui_font::bright
                 )
                 .with_padding(3)
                 .with_background(
                     &ui_background::button, &ui_background::button_select
                 )
-                .with_click_handler([this, asx, asz]() {
+                .with_click_handler([this, scene = &scene, asx, asz]() {
                     summon_carriage(
-                        this->scene, this->terrain, asx, asz, 
-                        this->balance, this->toasts, this->carriages
+                        *scene, *this->world, asx, asz, this->toasts
                     );
                 })
                 .as_movable();
@@ -100,10 +98,9 @@ namespace houseofatmos::outside {
 
 
     TerraformMode::TerraformMode(
-        engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-        CarriageManager& carriages, Player& player, Balance& balance,
-        ui::Manager& ui, Toasts& toasts
-    ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
+        std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+        engine::Localization& local
+    ): ActionMode(world, ui, toasts, local) {
         this->has_selection = false;
         this->mode = std::make_unique<Mode>(Mode::Flatten);
         this->mode_buttons = std::make_unique<
@@ -255,7 +252,7 @@ namespace houseofatmos::outside {
         (void) scene;
         (void) renderer;
         // figure out the selection area
-        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+        auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0, 0, 0)
         );
         if(!this->has_selection) {
@@ -281,25 +278,25 @@ namespace houseofatmos::outside {
             && !window.is_down(engine::Button::Left);
         if(attempt_operation && !this->ui.is_hovered_over()) {
             // compute cost
-            i16 start_elev = this->terrain
+            i16 start_elev = this->world->terrain
                 .elevation_at(this->selection.start_x, this->selection.start_z);
             u64 cost = terrain_modification_cost(
-                this->terrain, 
+                this->world->terrain, 
                 *this->mode, min_x, min_z, max_x, max_z, start_elev
             );
             bool is_valid = terrain_modification_is_valid(
-                this->terrain, min_x, min_z, max_x, max_z, 
+                this->world->terrain, min_x, min_z, max_x, max_z, 
                 *this->mode, start_elev
             );
-            if(is_valid && this->balance.pay_coins(cost, this->toasts)) {
+            if(is_valid && this->world->balance.pay_coins(cost, this->toasts)) {
                 apply_terrain_modification(
-                    this->terrain, 
+                    this->world->terrain, 
                     *this->mode, min_x, min_z, max_x, max_z, start_elev
                 );
-                this->terrain.adjust_area_foliage(
+                this->world->terrain.adjust_area_foliage(
                     min_x - 1, min_z - 1, max_x + 1, max_z + 1
                 );
-                this->scene.get<engine::Sound>(sound::terrain_mod).play();
+                scene.get<engine::Sound>(sound::terrain_mod).play();
             }
             if(!is_valid) {
                 this->toasts.add_error("toast_terrain_occupied", {});
@@ -310,10 +307,10 @@ namespace houseofatmos::outside {
         this->vertex_markers->children.clear();
         for(u64 x = min_x; x <= max_x; x += 1) {
             for(u64 z = min_z; z <= max_z; z += 1) {
-                f64 elev = (f64) this->terrain.elevation_at(x, z);
+                f64 elev = (f64) this->world->terrain.elevation_at(x, z);
                 Vec<3> world = Vec<3>(
-                    x * this->terrain.units_per_tile(), elev,
-                    z * this->terrain.units_per_tile()
+                    x * this->world->terrain.units_per_tile(), elev,
+                    z * this->world->terrain.units_per_tile()
                 );
                 Vec<2> ndc = renderer.world_to_ndc(world);
                 this->vertex_markers->children.push_back(ui::Element()
@@ -487,10 +484,9 @@ namespace houseofatmos::outside {
     }
 
     ConstructionMode::ConstructionMode(
-        engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-        CarriageManager& carriages, Player& player, Balance& balance,
-        ui::Manager& ui, Toasts& toasts
-    ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
+        std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+        engine::Localization& local
+    ): ActionMode(world, ui, toasts, local) {
         this->selected_x = 0;
         this->selected_z = 0;
         this->selected_type = std::make_unique<Building::Type>(Building::House);
@@ -503,10 +499,10 @@ namespace houseofatmos::outside {
         *selector = create_building_selector(
             &this->ui, selector, selected,
             this->selected_type.get(), this->selected_conversion.get(),
-            this->local
+            &local
         );
         *selected = TerrainMap::display_building_info(
-            *this->selected_type, *this->selected_conversion, *local
+            *this->selected_type, *this->selected_conversion, local
         );
     }
 
@@ -556,31 +552,31 @@ namespace houseofatmos::outside {
         (void) renderer;
         const Building::TypeInfo& type_info = Building::types
             .at((size_t) *this->selected_type);
-        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+        auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer,
             Vec<3>(type_info.width / 2.0, 0, type_info.height / 2.0)
         );
         this->selected_x = tile_x;
         this->selected_z = tile_z;
-        this->placement_valid = this->terrain.valid_building_location(
-            (i64) tile_x, (i64) tile_z, this->player.character.position, 
+        this->placement_valid = this->world->terrain.valid_building_location(
+            (i64) tile_x, (i64) tile_z, this->world->player.character.position, 
             type_info
         );
         bool attempted = window.was_pressed(engine::Button::Left)
             && !this->ui.was_clicked();
         if(attempted && this->placement_valid) {
-            i64 unemployment = this->terrain.compute_unemployment();
+            i64 unemployment = this->world->terrain.compute_unemployment();
             bool allowed = unemployment >= (i64) type_info.workers
-                && this->balance.pay_coins(type_info.cost, this->toasts);
+                && this->world->balance.pay_coins(type_info.cost, this->toasts);
             if(allowed) {
                 place_building(
-                    tile_x, tile_z, this->terrain, this->complexes,
+                    tile_x, tile_z, this->world->terrain, this->world->complexes,
                     *this->selected_type, type_info, *this->selected_conversion
                 );
-                this->carriages.refind_all_paths(
-                    this->complexes, this->terrain, this->toasts
+                this->world->carriages.refind_all_paths(
+                    this->world->complexes, this->world->terrain, this->toasts
                 );
-                this->scene.get<engine::Sound>(sound::build).play();
+                scene.get<engine::Sound>(sound::build).play();
             } else if(unemployment < (i64) type_info.workers) {
                 this->toasts.add_error("toast_missing_unemployment", {
                     std::to_string(unemployment), 
@@ -600,17 +596,17 @@ namespace houseofatmos::outside {
         const engine::Texture& wireframe_texture = this->placement_valid
             ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
             : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
-        u64 chunk_x = this->selected_x / this->terrain.tiles_per_chunk();
-        u64 chunk_z = this->selected_z / this->terrain.tiles_per_chunk();
-        u64 chunk_rel_x = this->selected_x % this->terrain.tiles_per_chunk();
-        u64 chunk_rel_z = this->selected_z % this->terrain.tiles_per_chunk();
+        u64 chunk_x = this->selected_x / this->world->terrain.tiles_per_chunk();
+        u64 chunk_z = this->selected_z / this->world->terrain.tiles_per_chunk();
+        u64 chunk_rel_x = this->selected_x % this->world->terrain.tiles_per_chunk();
+        u64 chunk_rel_z = this->selected_z % this->world->terrain.tiles_per_chunk();
         Building building = (Building) { 
             *this->selected_type, 
             (u8) chunk_rel_x, (u8) chunk_rel_z, 
             std::nullopt 
         };
         const Building::TypeInfo& type_info = building.get_type_info();
-        Mat<4> transform = this->terrain
+        Mat<4> transform = this->world->terrain
             .building_transform(building, chunk_x, chunk_z);
         type_info.render_buildings(
             window, scene, renderer,
@@ -648,15 +644,14 @@ namespace houseofatmos::outside {
     }
 
     BridgingMode::BridgingMode(
-        engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-        CarriageManager& carriages, Player& player, Balance& balance,
-        ui::Manager& ui, Toasts& toasts
-    ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
+        std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+        engine::Localization& local
+    ): ActionMode(world, ui, toasts, local) {
         this->selected_type = std::make_unique<Bridge::Type>(Bridge::Wooden);
         this->ui.root.children.push_back(ui::Element());
         ui::Element* selector = &this->ui.root.children.back();
         *selector = create_bridge_selector(
-            &this->ui, selector, this->selected_type.get(), this->local
+            &this->ui, selector, this->selected_type.get(), &local
         );
     }
 
@@ -669,10 +664,10 @@ namespace houseofatmos::outside {
         if(x_diff_larger) { end_z = start_z; }
         else { end_x = start_x; }
         i16 height = INT16_MIN;
-        height = std::max(height, this->terrain.elevation_at(start_x, start_z));
-        height = std::max(height, this->terrain.elevation_at(start_x + 1, start_z));
-        height = std::max(height, this->terrain.elevation_at(start_x, start_z + 1));
-        height = std::max(height, this->terrain.elevation_at(start_x + 1, start_z + 1));
+        height = std::max(height, this->world->terrain.elevation_at(start_x, start_z));
+        height = std::max(height, this->world->terrain.elevation_at(start_x + 1, start_z));
+        height = std::max(height, this->world->terrain.elevation_at(start_x, start_z + 1));
+        height = std::max(height, this->world->terrain.elevation_at(start_x + 1, start_z + 1));
         return (Bridge) { 
             *this->selected_type,
             std::min(start_x, end_x), std::min(start_z, end_z), 
@@ -693,13 +688,13 @@ namespace houseofatmos::outside {
         u64 end_z = this->planned.end_z 
             - (this->planned.end_x == 0? 0 : is_horizontal? 0 : 1);
         for(;;) {
-            i64 e_tl = this->terrain.elevation_at(x, z);
+            i64 e_tl = this->world->terrain.elevation_at(x, z);
             result = reduce(result, this->planned.floor_y - e_tl);
-            i64 e_tr = this->terrain.elevation_at(x + 1, z);
+            i64 e_tr = this->world->terrain.elevation_at(x + 1, z);
             result = reduce(result, this->planned.floor_y - e_tr);
-            i64 e_bl = this->terrain.elevation_at(x, z + 1);
+            i64 e_bl = this->world->terrain.elevation_at(x, z + 1);
             result = reduce(result, this->planned.floor_y - e_bl);
-            i64 e_br = this->terrain.elevation_at(x + 1, z + 1);
+            i64 e_br = this->world->terrain.elevation_at(x + 1, z + 1);
             result = reduce(result, this->planned.floor_y - e_br);
             if(x < end_x) { x += 1; }
             else if(z < end_z) { z += 1; }
@@ -713,10 +708,10 @@ namespace houseofatmos::outside {
         u64 right = this->planned.end_x + 1;
         u64 top = this->planned.start_z;
         u64 bottom = this->planned.end_z + 1;
-        i16 tl = this->terrain.elevation_at(left, top);
-        i16 tr = this->terrain.elevation_at(right, top);
-        i16 bl = this->terrain.elevation_at(left, bottom);
-        i16 br = this->terrain.elevation_at(right, bottom);
+        i16 tl = this->world->terrain.elevation_at(left, top);
+        i16 tr = this->world->terrain.elevation_at(right, top);
+        i16 bl = this->world->terrain.elevation_at(left, bottom);
+        i16 br = this->world->terrain.elevation_at(right, bottom);
         return tl == tr && tr == bl && bl == br;
     }
 
@@ -724,8 +719,8 @@ namespace houseofatmos::outside {
         u64 x = this->planned.start_x;
         u64 z = this->planned.start_z;
         for(;;) {
-            bool occupied = this->terrain.bridge_at((i64) x, (i64) z) != nullptr
-                || this->terrain.building_at((i64) x, (i64) z) != nullptr;
+            bool occupied = this->world->terrain.bridge_at((i64) x, (i64) z) != nullptr
+                || this->world->terrain.building_at((i64) x, (i64) z) != nullptr;
             if(occupied) { return true; }
             if(x < this->planned.end_x) { x += 1; }
             else if(z < this->planned.end_z) { z += 1; }
@@ -740,7 +735,7 @@ namespace houseofatmos::outside {
     ) {
         (void) scene;
         // update the selection area
-        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+        auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0, 0, 0)
         );
         if(!this->has_selection) {
@@ -787,13 +782,13 @@ namespace houseofatmos::outside {
                 this->toasts.add_error("toast_bridge_ends_dont_match", {});
             }
             bool doing_placement = this->placement_valid 
-                && this->balance.pay_coins(cost, this->toasts);
+                && this->world->balance.pay_coins(cost, this->toasts);
             if(doing_placement) {
-                this->terrain.bridges.push_back(this->planned);
-                this->carriages.refind_all_paths(
-                    this->complexes, this->terrain, this->toasts
+                this->world->terrain.bridges.push_back(this->planned);
+                this->world->carriages.refind_all_paths(
+                    this->world->complexes, this->world->terrain, this->toasts
                 );
-                this->scene.get<engine::Sound>(sound::build).play();
+                scene.get<engine::Sound>(sound::build).play();
             }
         }
         this->has_selection &= !attempted_placement;
@@ -815,7 +810,7 @@ namespace houseofatmos::outside {
         );
         renderer.render(
             model, 
-            this->planned.get_instances(this->terrain.units_per_tile()),
+            this->planned.get_instances(this->world->terrain.units_per_tile()),
             nullptr, 0.0,
             engine::FaceCulling::Enabled,
             engine::Rendering::Wireframe, 
@@ -828,7 +823,7 @@ namespace houseofatmos::outside {
 
     static const f64 demolition_refund_factor = 0.25;
 
-    void DemolitionMode::attempt_demolition() {
+    void DemolitionMode::attempt_demolition(engine::Scene& scene) {
         switch(this->selection.type) {
             case Selection::None: return;
             case Selection::Building: {
@@ -840,7 +835,7 @@ namespace houseofatmos::outside {
                     this->toasts.add_error("toast_indestructible", {});
                     return;
                 }
-                i64 unemployment = this->terrain.compute_unemployment();
+                i64 unemployment = this->world->terrain.compute_unemployment();
                 bool enough_people = unemployment >= (i64) b_type.residents;
                 if(!enough_people) {
                     this->toasts.add_error("toast_missing_unemployment", {
@@ -849,30 +844,30 @@ namespace houseofatmos::outside {
                     });
                     return;
                 }
-                Terrain::ChunkData& chunk = this->terrain
+                Terrain::ChunkData& chunk = this->world->terrain
                     .chunk_at(building.chunk_x, building.chunk_z);
                 if(building.selected->complex.has_value()) {
                     u64 actual_x = building.selected->x
-                        + building.chunk_x * this->terrain.tiles_per_chunk();
+                        + building.chunk_x * this->world->terrain.tiles_per_chunk();
                     u64 actual_z = building.selected->z
-                        + building.chunk_z * this->terrain.tiles_per_chunk();
+                        + building.chunk_z * this->world->terrain.tiles_per_chunk();
                     ComplexId complex_id = *building.selected->complex;
-                    Complex& complex = this->complexes.get(complex_id);
+                    Complex& complex = this->world->complexes.get(complex_id);
                     complex.remove_member(actual_x, actual_z);
                     if(complex.member_count() == 0) {
-                        this->complexes.delete_complex(complex_id);
+                        this->world->complexes.delete_complex(complex_id);
                     }
                 }
                 size_t building_idx = building.selected - chunk.buildings.data();
                 chunk.buildings.erase(chunk.buildings.begin() + building_idx);
                 u64 refunded = (u64) ((f64) b_type.cost * demolition_refund_factor);
-                this->balance.add_coins(refunded, this->toasts);
-                this->terrain.reload_chunk_at(building.chunk_x, building.chunk_z);
-                this->carriages.refind_all_paths(
-                    this->complexes, this->terrain, this->toasts
+                this->world->balance.add_coins(refunded, this->toasts);
+                this->world->terrain.reload_chunk_at(building.chunk_x, building.chunk_z);
+                this->world->carriages.refind_all_paths(
+                    this->world->complexes, this->world->terrain, this->toasts
                 );
                 this->selection.type = Selection::None;
-                this->scene.get<engine::Sound>(sound::demolish).play();
+                scene.get<engine::Sound>(sound::demolish).play();
                 return;
             }
             case Selection::Bridge: {
@@ -880,16 +875,16 @@ namespace houseofatmos::outside {
                 const Bridge::TypeInfo& b_type = bridge->get_type_info();
                 u64 build_cost = bridge->length() * b_type.cost_per_tile;
                 u64 refunded = (u64) ((f64) build_cost * demolition_refund_factor);
-                size_t bridge_idx = bridge - this->terrain.bridges.data();
-                this->terrain.bridges.erase(
-                    this->terrain.bridges.begin() + bridge_idx
+                size_t bridge_idx = bridge - this->world->terrain.bridges.data();
+                this->world->terrain.bridges.erase(
+                    this->world->terrain.bridges.begin() + bridge_idx
                 );
-                this->balance.add_coins(refunded, this->toasts);
-                this->carriages.refind_all_paths(
-                    this->complexes, this->terrain, this->toasts
+                this->world->balance.add_coins(refunded, this->toasts);
+                this->world->carriages.refind_all_paths(
+                    this->world->complexes, this->world->terrain, this->toasts
                 );
                 this->selection.type = Selection::None;
-                this->scene.get<engine::Sound>(sound::demolish).play();
+                scene.get<engine::Sound>(sound::demolish).play();
                 return;
             }
         }
@@ -901,12 +896,12 @@ namespace houseofatmos::outside {
     ) {
         (void) scene;
         this->selection.type = Selection::None;
-        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+        auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
         // check for selected building
         u64 hover_building_ch_x, hover_building_ch_z;
-        const Building* hover_building = this->terrain.building_at(
+        const Building* hover_building = this->world->terrain.building_at(
             (i64) tile_x, (i64) tile_z,
             &hover_building_ch_x, &hover_building_ch_z
         );
@@ -919,7 +914,7 @@ namespace houseofatmos::outside {
             };
         }
         // check for selected brige
-        const Bridge* hover_bridge = this->terrain
+        const Bridge* hover_bridge = this->world->terrain
             .bridge_at((i64) tile_x, (i64) tile_z);
         if(hover_bridge != nullptr) {
             this->selection.type = Selection::Bridge;
@@ -930,7 +925,7 @@ namespace houseofatmos::outside {
             && window.was_pressed(engine::Button::Left)
             && !this->ui.is_hovered_over();
         if(attempted) {
-            this->attempt_demolition();
+            this->attempt_demolition(scene);
         }
     }
 
@@ -947,7 +942,7 @@ namespace houseofatmos::outside {
                     = this->selection.value.building;
                 const Building::TypeInfo& b_type 
                     = building.selected->get_type_info();
-                Mat<4> transform = this->terrain.building_transform(
+                Mat<4> transform = this->world->terrain.building_transform(
                     *building.selected, building.chunk_x, building.chunk_z
                 );
                 b_type.render_buildings(
@@ -963,7 +958,7 @@ namespace houseofatmos::outside {
                 const Bridge::TypeInfo& b_type = bridge->get_type_info();
                 engine::Model& model = scene.get<engine::Model>(b_type.model);
                 renderer.render(
-                    model, bridge->get_instances(this->terrain.units_per_tile()),
+                    model, bridge->get_instances(this->world->terrain.units_per_tile()),
                     nullptr, 0.0,
                     engine::FaceCulling::Enabled,
                     engine::Rendering::Wireframe,
@@ -994,38 +989,38 @@ namespace houseofatmos::outside {
         const Renderer& renderer
     ) {
         (void) scene;
-        auto [tile_x, tile_z] = this->terrain.find_selected_terrain_tile(
+        auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
         this->selected_tile_x = tile_x;
         this->selected_tile_z = tile_z;
-        u64 chunk_x = tile_x / this->terrain.tiles_per_chunk();
-        u64 chunk_z = tile_z / this->terrain.tiles_per_chunk();
-        u64 rel_x = tile_x % this->terrain.tiles_per_chunk();
-        u64 rel_z = tile_z % this->terrain.tiles_per_chunk();
-        Terrain::ChunkData& chunk = this->terrain.chunk_at(chunk_x, chunk_z);
+        u64 chunk_x = tile_x / this->world->terrain.tiles_per_chunk();
+        u64 chunk_z = tile_z / this->world->terrain.tiles_per_chunk();
+        u64 rel_x = tile_x % this->world->terrain.tiles_per_chunk();
+        u64 rel_z = tile_z % this->world->terrain.tiles_per_chunk();
+        Terrain::ChunkData& chunk = this->world->terrain.chunk_at(chunk_x, chunk_z);
         bool has_path = chunk.path_at(rel_x, rel_z);
         bool place_path = !has_path 
             && window.was_pressed(engine::Button::Left)
             && !this->ui.was_clicked()
-            && valid_path_location(tile_x, tile_z, this->terrain)
-            && this->balance.pay_coins(path_placement_cost, this->toasts);
+            && valid_path_location(tile_x, tile_z, this->world->terrain)
+            && this->world->balance.pay_coins(path_placement_cost, this->toasts);
         if(place_path) {
             chunk.set_path_at(rel_x, rel_z, true);
-            this->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
-            this->terrain.reload_chunk_at(chunk_x, chunk_z);
-            this->carriages.refind_all_paths(
-                this->complexes, this->terrain, this->toasts
+            this->world->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
+            this->world->terrain.reload_chunk_at(chunk_x, chunk_z);
+            this->world->carriages.refind_all_paths(
+                this->world->complexes, this->world->terrain, this->toasts
             );
-            this->scene.get<engine::Sound>(sound::terrain_mod).play();
+            scene.get<engine::Sound>(sound::terrain_mod).play();
         } else if(has_path && window.was_pressed(engine::Button::Right)) {
             chunk.set_path_at(rel_x, rel_z, false);
-            this->terrain.reload_chunk_at(chunk_x, chunk_z);
-            this->carriages.refind_all_paths(
-                this->complexes, this->terrain, this->toasts
+            this->world->terrain.reload_chunk_at(chunk_x, chunk_z);
+            this->world->carriages.refind_all_paths(
+                this->world->complexes, this->world->terrain, this->toasts
             );
-            this->balance.add_coins(path_removal_refund, this->toasts);
-            this->scene.get<engine::Sound>(sound::terrain_mod).play();
+            this->world->balance.add_coins(path_removal_refund, this->toasts);
+            scene.get<engine::Sound>(sound::terrain_mod).play();
         }
     }
 

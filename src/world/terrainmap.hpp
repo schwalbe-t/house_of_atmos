@@ -4,11 +4,9 @@
 #include <engine/ui.hpp>
 #include <engine/rendering.hpp>
 #include <engine/localization.hpp>
-#include "terrain.hpp"
-#include "carriage.hpp"
-#include "personal_horse.hpp"
+#include "world.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using namespace houseofatmos;
 
@@ -17,13 +15,9 @@ namespace houseofatmos::outside {
 
         private:
         u64 t_width, t_height;
-        const engine::Localization::LoadArgs& local_ref;
+        const engine::Localization::LoadArgs local_ref;
         const engine::Localization* local = nullptr;
-        const Terrain& terrain;
-        const ComplexBank& complexes;
-        const Player& player;
-        CarriageManager& carriages;
-        const PersonalHorse& personal_horse;
+        std::shared_ptr<World> world;
         ui::Manager& ui;
         engine::Image rendered_img = engine::Image(0, 0);
         engine::Texture rendered_tex = engine::Texture(1, 1);
@@ -58,15 +52,11 @@ namespace houseofatmos::outside {
         f64 view_scale = 1.0;
 
         TerrainMap(
-            const engine::Localization::LoadArgs& local,
-            const Terrain& terrain, const ComplexBank& complexes,
-            const Player& player, CarriageManager& carriages, 
-            const PersonalHorse& personal_horse, ui::Manager& ui
-        ): local_ref(local), terrain(terrain), complexes(complexes), 
-            player(player), carriages(carriages), personal_horse(personal_horse), 
-            ui(ui) {
-            this->t_width = terrain.width_in_tiles();
-            this->t_height = terrain.height_in_tiles();
+            engine::Localization::LoadArgs local_ref,
+            std::shared_ptr<World> world, ui::Manager& ui
+        ): local_ref(std::move(local_ref)), world(std::move(world)), ui(ui) {
+            this->t_width = this->world->terrain.width_in_tiles();
+            this->t_height = this->world->terrain.height_in_tiles();
             this->rendered_img = engine::Image(this->t_width, this->t_height);
         }
 

@@ -7,7 +7,7 @@
 #include "../ui_const.hpp"
 #include "complex.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using namespace houseofatmos;
 

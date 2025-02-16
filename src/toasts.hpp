@@ -24,7 +24,7 @@ namespace houseofatmos {
         static inline const size_t max_toast_count = 10;
 
         private:
-        const engine::Localization::LoadArgs& local_ref;
+        const engine::Localization::LoadArgs local_ref;
         engine::Scene* scene = nullptr;
         ui::Element* toasts_container = nullptr;
         std::vector<f64> toast_timers;
@@ -36,7 +36,7 @@ namespace houseofatmos {
         }
 
         public:
-        Toasts(const engine::Localization::LoadArgs& l): local_ref(l) {}
+        Toasts(engine::Localization::LoadArgs l): local_ref(l) {}
 
         const engine::Localization& localization() const {
             if(this->scene == nullptr) {

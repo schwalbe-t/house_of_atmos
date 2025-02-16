@@ -3,12 +3,17 @@
 
 #include <engine/scene.hpp>
 #include <engine/window.hpp>
-#include "../player.hpp"
 #include "../interactable.hpp"
-#include "../save_info.hpp"
 #include "../audio_const.hpp"
 #include "../ui_const.hpp"
+#include "../player.hpp"
 #include "interiors.hpp"
+
+namespace houseofatmos::world {
+
+    struct World;
+
+}
 
 namespace houseofatmos::interior {
 
@@ -17,7 +22,7 @@ namespace houseofatmos::interior {
 
     struct Scene: engine::Scene {
         
-        SaveInfo save_info;
+        std::shared_ptr<world::World> world;
         std::shared_ptr<engine::Scene> outside;
 
         const Interior& interior;
@@ -30,8 +35,8 @@ namespace houseofatmos::interior {
 
         Scene(
             const Interior& interior, 
-            SaveInfo save_info,
-            std::shared_ptr<engine::Scene> outside
+            std::shared_ptr<world::World>&& world,
+            std::shared_ptr<engine::Scene>&& outside
         );
         void load_resources();
 

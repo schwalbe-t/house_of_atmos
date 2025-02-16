@@ -9,7 +9,7 @@
 #include "../ui_const.hpp"
 #include "../audio_const.hpp"
 #include "../renderer.hpp"
-#include "../outside/terrain.hpp"
+#include "../world/terrain.hpp"
 
 namespace houseofatmos {
 
@@ -35,8 +35,8 @@ namespace houseofatmos {
 
         Renderer renderer;
         engine::Texture background = engine::Texture(16, 16);
-        outside::Terrain terrain = outside::Terrain(
-            32, 32, draw_distance_ch, units_per_tile, tiles_per_chunk
+        world::Terrain terrain = world::Terrain(
+            32, 32, MainMenu::units_per_tile, MainMenu::tiles_per_chunk
         );
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
 

@@ -1,7 +1,7 @@
 
 #include <samhocevar/portable-file-dialogs.h>
 #include "main_menu.hpp"
-#include "../outside/outside.hpp"
+#include "../world/scene.hpp"
 #include <filesystem>
 #include <algorithm>
 
@@ -13,23 +13,22 @@ namespace houseofatmos {
         u32 background_seed = random_init();
         this->terrain.generate_elevation(background_seed);
         this->terrain.generate_foliage(background_seed);
-        outside::Outside::configure_renderer(this->renderer);
+        world::Scene::configure_renderer(this->renderer);
         this->renderer.camera.look_at = Vec<3>(16, 0.0, 16) 
             * this->terrain.units_per_tile();
         this->renderer.camera.look_at
             .y() = this->terrain.elevation_at(this->renderer.camera.look_at);
         this->renderer.fog_origin = this->renderer.camera.look_at;
         this->renderer.lights.push_back(
-            outside::Outside::create_sun(this->renderer.camera.look_at)
+            world::Scene::create_sun(this->renderer.camera.look_at)
         );
         this->load_resources();
     }
 
     void MainMenu::load_resources() {
         Renderer::load_shaders(*this);
-        outside::Terrain::load_resources(*this);
-        outside::Building::load_models(*this);
-        outside::Foliage::load_models(*this);
+        world::Terrain::load_resources(*this);
+        world::Foliage::load_models(*this);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
@@ -68,13 +67,11 @@ namespace houseofatmos {
     ) {
         std::vector<char> data = engine::GenericResource::read_bytes(path);
         auto buffer = engine::Arena(data);
-        auto game = std::make_shared<outside::Outside>(
-            std::move(settings), buffer
-        );
-        game->save_path = path;
-        game->settings.add_recent_game(std::string(path));
-        game->settings.save_to(Settings::default_path);
-        window.set_scene(std::move(game));
+        auto world = std::make_shared<world::World>(std::move(settings), buffer);
+        world->save_path = path;
+        world->settings.add_recent_game(std::string(path));
+        world->settings.save_to(Settings::default_path);
+        window.set_scene(std::make_shared<world::Scene>(std::move(world)));
     }
 
     static const size_t max_prev_games = 5;
@@ -109,8 +106,8 @@ namespace houseofatmos {
             local.text("ui_new_game"),
             [window = &window, local = &local, this]() {
                 this->before_next_frame = [window, this]() {
-                    window->set_scene(std::make_shared<outside::Outside>(
-                        std::move(settings)
+                    window->set_scene(std::make_shared<world::Scene>(
+                        std::make_shared<world::World>(std::move(settings))
                     ));
                 };
                 this->show_loading_screen(*local);
@@ -303,7 +300,8 @@ namespace houseofatmos {
     void MainMenu::render_background(engine::Window& window) {
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(
-            this->renderer.camera.look_at, nullptr, window, nullptr
+            this->renderer.camera.look_at, 
+            MainMenu::draw_distance_ch, nullptr, window, nullptr
         );
         this->renderer.render_to_shadow_maps();
         this->terrain.render_loaded_chunks(*this, this->renderer, window);

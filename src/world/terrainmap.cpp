@@ -3,7 +3,7 @@
 #include "terrainmap.hpp"
 #include <format>
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using Color = engine::Image::Color;
 
@@ -15,14 +15,13 @@ namespace houseofatmos::outside {
     static const Color low_water_color = Color(44, 101, 118); 
     static const Color path_color = Color(154, 99, 72);
     static const Color building_color = Color(157, 48, 59);
-    static const Color background_color = Color(255, 202, 168);
+    static const Color background_color = Color(84, 142, 148);
     static const Color selected_complex_color = Color(239, 239, 230);
 
     static const f64 step_size = 5;
     static const f64 grass_high = 25;
     static const f64 water_level = 0.0;
     static const f64 water_low = -25;
-    static const f64 fadeout_dist = 5;
 
     static Color color_lerp(Color a, Color b, f64 n) {
         if(n < 0.0) { n = 0.0; }
@@ -59,10 +58,10 @@ namespace houseofatmos::outside {
         for(u64 x = 0; x < this->t_width; x += 1) {
             for(u64 z = 0; z < this->t_height; z += 1) {
                 // get elevation data
-                i64 elev_tl = this->terrain.elevation_at(x,     z    );
-                i64 elev_tr = this->terrain.elevation_at(x + 1, z    );
-                i64 elev_bl = this->terrain.elevation_at(x,     z + 1);
-                i64 elev_br = this->terrain.elevation_at(x + 1, z + 1);
+                i64 elev_tl = this->world->terrain.elevation_at(x,     z    );
+                i64 elev_tr = this->world->terrain.elevation_at(x + 1, z    );
+                i64 elev_bl = this->world->terrain.elevation_at(x,     z + 1);
+                i64 elev_br = this->world->terrain.elevation_at(x + 1, z + 1);
                 f64 elev_avg = (elev_tl + elev_tr + elev_bl + elev_br) / 4.0;
                 f64 step = trunc(elev_avg / step_size) * step_size;
                 // compute pixel color
@@ -84,23 +83,16 @@ namespace houseofatmos::outside {
                     && elev_bl < 0 && elev_br < 0;
                 if(is_water) { color = water_color; }
                 // if is path or building, make building
-                bool is_path = this->terrain.path_at((i64) x, (i64) z)
-                    || this->terrain.bridge_at((i64) x, (i64) z) != nullptr;
+                bool is_path = this->world->terrain.path_at((i64) x, (i64) z)
+                    || this->world->terrain.bridge_at((i64) x, (i64) z) != nullptr;
                 if(is_path) { color = path_color; }
-                const Building* building = this->terrain.building_at(x, z);
+                const Building* building = this->world->terrain.building_at(x, z);
                 if(building != nullptr) { color = building_color; }
                 bool selected = building != nullptr
                     && building->complex.has_value()
                     && this->selected_complex.has_value()
                     && building->complex->index == this->selected_complex->index;
                 if(selected) { color = selected_complex_color; }
-                // fade to background color towards edges (hack, should be alpha)
-                u64 edge_dist = std::min(
-                    std::min(x + 1, this->t_width - x),
-                    std::min(z + 1, this->t_height - z)
-                );
-                f64 edge_fadeout = std::min(edge_dist / fadeout_dist, 1.0);
-                color = color_lerp(background_color, color, edge_fadeout);
                 // write computed color
                 this->rendered_img.pixel_at(x, z) = color;
             }
@@ -177,14 +169,14 @@ namespace houseofatmos::outside {
         i64 x = (i64) pos.x();
         i64 z = (i64) pos.y();
         u64 b_chunk_x, b_chunk_z;
-        const Building* building = this->terrain
+        const Building* building = this->world->terrain
             .building_at(x, z, &b_chunk_x, &b_chunk_z);
         bool add_to_carriage = this->selected_carriage.has_value()
             && this->adding_stop
             && building != nullptr
             && building->complex.has_value();
         if(add_to_carriage) {
-            Carriage& carriage = this->carriages
+            Carriage& carriage = this->world->carriages
                 .carriages[*this->selected_carriage];
             Carriage::Target target;
             target.complex = *building->complex;
@@ -203,9 +195,12 @@ namespace houseofatmos::outside {
         if(building != nullptr) {
             std::span<const Conversion> conversions;
             if(building->complex.has_value()) {
-                u64 ax = b_chunk_x * this->terrain.tiles_per_chunk() + building->x;
-                u64 az = b_chunk_z * this->terrain.tiles_per_chunk() + building->z;
-                const Complex& complex = this->complexes.get(*building->complex);
+                u64 ax = b_chunk_x * this->world->terrain.tiles_per_chunk() 
+                    + building->x;
+                u64 az = b_chunk_z * this->world->terrain.tiles_per_chunk() 
+                    + building->z;
+                const Complex& complex = this->world->complexes
+                    .get(*building->complex);
                 const Complex::Member& member = complex.member_at(ax, az);
                 conversions = member.conversions;
             }
@@ -214,7 +209,7 @@ namespace houseofatmos::outside {
             );
             *this->selected_info_right = building->complex.has_value()
                 ? TerrainMap::display_complex_info(
-                    this->complexes.get(*building->complex), *this->local
+                    this->world->complexes.get(*building->complex), *this->local
                 )
                 : ui::Element().as_phantom().as_movable();
             this->selected_complex = building->complex;
@@ -229,12 +224,13 @@ namespace houseofatmos::outside {
         this->update_view(window);
         this->update_click(window);
         if(this->selected_complex.has_value()) {
-            const Complex& complex = this->complexes.get(*this->selected_complex);
+            const Complex& complex = this->world->complexes
+                .get(*this->selected_complex);
             *this->selected_info_right 
                 = TerrainMap::display_complex_info(complex, *this->local);
         }
         if(this->selected_carriage.has_value()) {
-            Carriage& carriage = this->carriages
+            Carriage& carriage = this->world->carriages
                 .carriages[*this->selected_carriage];
             *this->selected_info_right = this->display_carriage_info(carriage);
         }
@@ -248,7 +244,12 @@ namespace houseofatmos::outside {
             (u64) this->container->final_size().x(), 
             (u64) this->container->final_size().y()
         );
-        this->output_tex.as_target().clear_color(Vec<4>(0, 0, 0, 0));
+        this->output_tex.as_target().clear_color(
+            Vec<4>(
+                background_color.r, background_color.g, background_color.b, 
+                background_color.a
+            ) / 255.0
+        );
         this->view_size_px.x() = (f64) this->output_tex.height() 
             * this->view_scale;
         this->view_size_px.y() = (f64) this->t_width / this->t_height 
@@ -316,7 +317,7 @@ namespace houseofatmos::outside {
 
     void TerrainMap::add_marker(Vec<2> pos, ui::Element&& element) {
         Vec<2> pos_norm = pos 
-            / this->terrain.units_per_tile()
+            / this->world->terrain.units_per_tile()
             / Vec<2>(this->t_width, this->t_height);
         Vec<2> pos_px = this->container->final_pos()
             + this->view_pos_px 
@@ -351,8 +352,11 @@ namespace houseofatmos::outside {
         if(this->container == nullptr) { return; }
         if(this->container->hidden) { return; }
         this->container->children.clear();
-        for(u64 carr_i = 0; carr_i < this->carriages.carriages.size(); carr_i += 1) {
-            Carriage* carriage = &this->carriages.carriages[carr_i];
+        for(
+            u64 carr_i = 0; carr_i < this->world->carriages.carriages.size(); 
+            carr_i += 1
+        ) {
+            Carriage* carriage = &this->world->carriages.carriages[carr_i];
             bool is_selected = this->selected_carriage.has_value()
                 && *this->selected_carriage == carr_i;
             this->add_icon_marker(
@@ -374,26 +378,26 @@ namespace houseofatmos::outside {
             );
         }
         if(this->selected_carriage.has_value()) {
-            const Carriage& carriage = this->carriages
+            const Carriage& carriage = this->world->carriages
                 .carriages[*this->selected_carriage];
             u64 carr_x = (u64) (
-                carriage.position.x() / this->terrain.units_per_tile()
+                carriage.position.x() / this->world->terrain.units_per_tile()
             );
             u64 carr_z = (u64) (
-                carriage.position.z() / this->terrain.units_per_tile()
+                carriage.position.z() / this->world->terrain.units_per_tile()
             );
             for(size_t tgt_i = 0; tgt_i < carriage.targets.size(); tgt_i += 1) {
-                const Complex& complex = this->complexes
+                const Complex& complex = this->world->complexes
                     .get(carriage.targets[tgt_i].complex);
                 const auto& [mem_x, mem_z] = complex
                     .closest_member_to(carr_x, carr_z);
-                const Building* member = this->terrain
+                const Building* member = this->world->terrain
                     .building_at((i64) mem_x, (i64) mem_z);
                 assert(member != nullptr);
                 const Building::TypeInfo& building = member->get_type_info();
                 Vec<2> marker_pos = Vec<2>(
                     mem_x + building.width / 2.0, mem_z + building.height / 2.0
-                ) * this->terrain.units_per_tile();
+                ) * this->world->terrain.units_per_tile();
                 this->add_marker(marker_pos, ui::Element()
                     .as_phantom()
                     .with_size(0, 0, ui::size::unwrapped_text)
@@ -405,12 +409,12 @@ namespace houseofatmos::outside {
             }
         }
         this->add_icon_marker(
-            this->personal_horse.position().swizzle<2>("xz"), 
+            this->world->personal_horse.position().swizzle<2>("xz"), 
             &ui_icon::map_marker_personal_horse,
             [](){}, true
         );
         this->add_icon_marker(
-            this->player.character.position.swizzle<2>("xz"), 
+            this->world->player.character.position.swizzle<2>("xz"), 
             &ui_icon::map_marker_player,
             [](){}, true
         );
@@ -1011,9 +1015,9 @@ namespace houseofatmos::outside {
             )
             .with_child(make_ui_button(this->local->text("ui_remove_carriage"))
                 .with_click_handler([this]() {
-                    auto selected = this->carriages.carriages.begin() 
+                    auto selected = this->world->carriages.carriages.begin() 
                         + *this->selected_carriage;
-                    this->carriages.carriages.erase(selected);
+                    this->world->carriages.carriages.erase(selected);
                     this->selected_info_right->hidden = true;
                     this->selected_info_bottom->hidden = true;
                     this->selected_carriage = std::nullopt;

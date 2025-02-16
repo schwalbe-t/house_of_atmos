@@ -3,7 +3,7 @@
 
 #include "../renderer.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using namespace houseofatmos;
 

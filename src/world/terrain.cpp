@@ -2,7 +2,7 @@
 #include "terrain.hpp"
 #include "../interior/scene.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     static f32 water_height = -0.5;
     static f64 sand_max_height = 0.0;
@@ -270,7 +270,7 @@ namespace houseofatmos::outside {
                 bool in_bounds = x >= 0 && z >= 0
                     && x < (i64) this->width_in_tiles() 
                     && z < (i64) this->width_in_tiles();
-                bool has_water = in_bounds
+                bool has_water = !in_bounds
                     || this->elevation_at(abs_t_left, abs_t_top) < 0.0
                     || this->elevation_at(abs_t_right, abs_t_top) < 0.0
                     || this->elevation_at(abs_t_left, abs_t_bottom) < 0.0
@@ -350,7 +350,7 @@ namespace houseofatmos::outside {
     std::vector<std::shared_ptr<Interactable>> Terrain::create_chunk_interactables(
         u64 chunk_x, u64 chunk_z, 
         Interactables* interactables, engine::Window& window, 
-        const SaveInfo* save_info
+        const std::shared_ptr<World>& world
     ) const {
         std::vector<std::shared_ptr<Interactable>> created;
         if(interactables == nullptr) { return created; }
@@ -369,9 +369,11 @@ namespace houseofatmos::outside {
             );
             position += type.interior->interactable_offset;
             created.push_back(interactables->create(
-                [window = &window, type = &type, save_info]() {
+                [window = &window, type = &type, 
+                    world = std::shared_ptr<World>(world)
+                ]() {
                     window->set_scene(std::make_shared<interior::Scene>(
-                        type->interior->interior, SaveInfo(*save_info), 
+                        type->interior->interior, std::shared_ptr<World>(world), 
                         window->scene()
                     ));
                 },
@@ -384,7 +386,7 @@ namespace houseofatmos::outside {
     Terrain::LoadedChunk Terrain::load_chunk(
         i64 chunk_x, i64 chunk_z, 
         Interactables* interactables, engine::Window& window,
-        const SaveInfo* save_info,
+        const std::shared_ptr<World>& world,
         bool in_bounds
     ) const {
         if(!in_bounds) {
@@ -404,16 +406,18 @@ namespace houseofatmos::outside {
             this->collect_foliage_transforms((u64) chunk_x, (u64) chunk_z),
             this->collect_building_transforms((u64) chunk_x, (u64) chunk_z),
             this->create_chunk_interactables(
-                (u64) chunk_x, (u64) chunk_z, interactables, window, save_info
+                (u64) chunk_x, (u64) chunk_z, interactables, window, world
             )
         };
     }
 
-    bool Terrain::chunk_in_draw_distance(u64 chunk_x, u64 chunk_z) const {
+    bool Terrain::chunk_in_draw_distance(
+        u64 chunk_x, u64 chunk_z, u64 draw_distance
+    ) const {
         i64 diff_x = (i64) chunk_x - this->view_chunk_x;
         i64 diff_z = (i64) chunk_z - this->view_chunk_z;
         i64 mh_dist = llabs(diff_x) + llabs(diff_z);
-        return mh_dist <= this->draw_distance;
+        return mh_dist <= (i64) draw_distance;
     }
 
     bool Terrain::chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const {
@@ -428,35 +432,35 @@ namespace houseofatmos::outside {
     }
 
     void Terrain::load_chunks_around(
-        const Vec<3>& position, Interactables* interactables,
-        engine::Window& window, const SaveInfo* save_info
+        const Vec<3>& position, u64 draw_distance, Interactables* interactables,
+        engine::Window& window, const std::shared_ptr<World>& world
     ) {
         this->view_chunk_x = (u64) (position.x() / this->tile_size / this->chunk_tiles);
         this->view_chunk_z = (u64) (position.z() / this->tile_size / this->chunk_tiles);
         // despawn chunks that are too far away
         for(size_t chunk_i = 0; chunk_i < this->loaded_chunks.size();) {
             const LoadedChunk& chunk = this->loaded_chunks.at(chunk_i);
-            if(this->chunk_in_draw_distance(chunk.x, chunk.z)) {
+            if(this->chunk_in_draw_distance(chunk.x, chunk.z, draw_distance)) {
                 chunk_i += 1;
                 continue;
             }
             this->loaded_chunks.erase(this->loaded_chunks.begin() + chunk_i);
         }
         // spawn and update chunks in the draw distance
-        i64 viewed_start_x = this->view_chunk_x - this->draw_distance;
-        i64 viewed_end_x = this->view_chunk_x + this->draw_distance;
-        i64 viewed_start_z = this->view_chunk_z - this->draw_distance;
-        i64 viewed_end_z = this->view_chunk_z + this->draw_distance;
+        i64 viewed_start_x = this->view_chunk_x - (i64) draw_distance;
+        i64 viewed_end_x = this->view_chunk_x + (i64) draw_distance;
+        i64 viewed_start_z = this->view_chunk_z - (i64) draw_distance;
+        i64 viewed_end_z = this->view_chunk_z + (i64) draw_distance;
         for(i64 chunk_x = viewed_start_x; chunk_x <= viewed_end_x; chunk_x += 1) {
             for(i64 chunk_z = viewed_start_z; chunk_z <= viewed_end_z; chunk_z += 1) {
-                bool in_bounds = chunk_x > 0 && chunk_z > 0
+                bool in_bounds = chunk_x >= 0 && chunk_z >= 0
                     && chunk_x < (i64) this->width_chunks
                     && chunk_z < (i64) this->height_chunks;
                 size_t chunk_i;
                 if(!this->chunk_loaded(chunk_x, chunk_z, chunk_i)) {
                     this->loaded_chunks.push_back(
                         this->load_chunk(
-                            chunk_x, chunk_z, interactables, window, save_info,
+                            chunk_x, chunk_z, interactables, window, world,
                             in_bounds
                         )
                     );
@@ -465,7 +469,7 @@ namespace houseofatmos::outside {
                 LoadedChunk& chunk = this->loaded_chunks.at(chunk_i);
                 if(chunk.modified) {
                     chunk = this->load_chunk(
-                        chunk_x, chunk_z, interactables, window, save_info,
+                        chunk_x, chunk_z, interactables, window, world,
                         in_bounds
                     );
                 }
@@ -867,15 +871,13 @@ namespace houseofatmos::outside {
 
 
     Terrain::Terrain(
-        const Serialized& serialized,
-        i64 draw_distance, u64 tile_size, u64 chunk_tiles,
+        const Serialized& serialized, u64 tile_size, u64 chunk_tiles,
         const engine::Arena& buffer
     ) {
         this->width = serialized.width;
         this->height = serialized.height;
         this->tile_size = tile_size;
         this->chunk_tiles = chunk_tiles;
-        this->draw_distance = draw_distance;
         this->view_chunk_x = 0;
         this->view_chunk_z = 0;
         buffer.copy_array_at_into(

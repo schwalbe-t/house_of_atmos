@@ -2,7 +2,7 @@
 #include "carriage.hpp"
 #include "../audio_const.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     Carriage::Carriage(
         CarriageType type, Vec<3> position,
@@ -274,14 +274,13 @@ namespace houseofatmos::outside {
 
 
 
-    CarriageManager::CarriageManager(const Terrain& terrain, f64 draw_distance) {
+    CarriageManager::CarriageManager(const Terrain& terrain) {
         this->fill_obstacle_data(terrain);
-        this->draw_distance = draw_distance;
     }
 
     CarriageManager::CarriageManager(
         const Serialized& serialized, const engine::Arena& buffer,
-        const Terrain& terrain, f64 draw_distance
+        const Terrain& terrain
     ) {
         std::vector<Carriage::Serialized> carriages;
         buffer.copy_array_at_into(
@@ -293,7 +292,6 @@ namespace houseofatmos::outside {
             this->carriages.push_back(Carriage(carriage, buffer));
         }
         this->fill_obstacle_data(terrain);
-        this->draw_distance = draw_distance;
     }
 
 
@@ -551,28 +549,28 @@ namespace houseofatmos::outside {
 
 
     void CarriageManager::update_all(
-        const Vec<3>& observer, engine::Scene& scene, 
-        const engine::Window& window, ComplexBank& complexes, 
-        const Terrain& terrain, Toasts& toasts
+        const Vec<3>& observer, f64 draw_distance,
+        engine::Scene& scene, const engine::Window& window, 
+        ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
     ) {
         for(Carriage& carriage: this->carriages) {
             if(!carriage.is_lost() && !carriage.has_path()) {
                 this->find_carriage_path(carriage, complexes, terrain, toasts);
             }
             f64 distance = (carriage.position - observer).len();
-            bool is_visible = distance <= this->draw_distance;
+            bool is_visible = distance <= draw_distance;
             carriage.update(scene, window, complexes, terrain, is_visible);
         }
     }
 
 
     void CarriageManager::render_all_around(
-        const Vec<3>& observer, const Renderer& renderer, 
+        const Vec<3>& observer, f64 draw_distance, const Renderer& renderer, 
         engine::Scene& scene, const engine::Window& window
     ) {
         for(Carriage& carriage: this->carriages) {
             f64 distance = (carriage.position - observer).len();
-            bool is_visible = distance <= this->draw_distance;
+            bool is_visible = distance <= draw_distance;
             if(!is_visible) { continue; }
             carriage.render(renderer, scene, window);
         }

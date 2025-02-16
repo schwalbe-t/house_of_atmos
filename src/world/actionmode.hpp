@@ -4,14 +4,12 @@
 #include <engine/window.hpp>
 #include <engine/ui.hpp>
 #include "../renderer.hpp"
-#include "../player.hpp"
 #include "../toasts.hpp"
 #include "../ui_const.hpp"
 #include "../audio_const.hpp"
-#include "carriage.hpp"
-#include "terrain.hpp"
+#include "world.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using namespace houseofatmos;
     namespace ui = houseofatmos::engine::ui;
@@ -49,25 +47,15 @@ namespace houseofatmos::outside {
 
 
         public:
-        engine::Scene& scene;
-        Terrain& terrain;
-        ComplexBank& complexes;
-        CarriageManager& carriages;
-        Player& player;
-        Balance& balance;
+        std::shared_ptr<World>& world;
         ui::Manager& ui;
         Toasts& toasts;
-        const engine::Localization* local;
+        engine::Localization& local;
 
         ActionMode(
-            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-            CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui, Toasts& toasts
-        ): scene(scene), terrain(terrain), complexes(complexes), 
-            carriages(carriages), player(player), balance(balance), ui(ui), 
-            toasts(toasts) {
-            this->local = &toasts.localization();
-        }
+            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+            engine::Localization& local
+        ): world(world), ui(ui), toasts(toasts), local(local) {}
 
         virtual ~ActionMode() = default;
 
@@ -88,10 +76,9 @@ namespace houseofatmos::outside {
         ui::Element* button = nullptr;
 
         DefaultMode(
-            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-            CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui, Toasts& toasts
-        ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
+            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+            engine::Localization& local
+        ): ActionMode(world, ui, toasts, local) {
             this->ui.root.children.push_back(
                 ui::Element().as_phantom().as_movable()
             );
@@ -142,9 +129,8 @@ namespace houseofatmos::outside {
 
 
         TerraformMode(
-            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-            CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui, Toasts& toasts
+            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+            engine::Localization& local
         );
 
         void update(
@@ -171,9 +157,8 @@ namespace houseofatmos::outside {
         bool placement_valid;
 
         ConstructionMode(
-            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-            CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui, Toasts& toasts
+            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+            engine::Localization& local
         );
 
         void update(
@@ -203,9 +188,8 @@ namespace houseofatmos::outside {
         bool placement_valid;
 
         BridgingMode(
-            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-            CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui, Toasts& toasts
+            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+            engine::Localization& local
         );
 
         Bridge get_planned() const;
@@ -235,11 +219,11 @@ namespace houseofatmos::outside {
             struct BuildingSelection {
                 u64 tile_x, tile_z;
                 u64 chunk_x, chunk_z;
-                const outside::Building* selected;
+                const world::Building* selected;
             };
             union {
                 BuildingSelection building;
-                const outside::Bridge* bridge; 
+                const world::Bridge* bridge; 
             } value;
         };
 
@@ -247,14 +231,13 @@ namespace houseofatmos::outside {
 
 
         DemolitionMode(
-            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-            CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui, Toasts& toasts
-        ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
+            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+            engine::Localization& local
+        ): ActionMode(world, ui, toasts, local) {
             this->selection.type = Selection::None;
         }
 
-        void attempt_demolition();
+        void attempt_demolition(engine::Scene& scene);
 
         void update(
             const engine::Window& window, engine::Scene& scene, 
@@ -273,10 +256,9 @@ namespace houseofatmos::outside {
         u64 selected_tile_x, selected_tile_z;
 
         PathingMode(
-            engine::Scene& scene, Terrain& terrain, ComplexBank& complexes, 
-            CarriageManager& carriages, Player& player, Balance& balance,
-            ui::Manager& ui, Toasts& toasts
-        ): ActionMode(scene, terrain, complexes, carriages, player, balance, ui, toasts) {
+            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
+            engine::Localization& local
+        ): ActionMode(world, ui, toasts, local) {
             this->selected_tile_x = 0;
             this->selected_tile_z = 0;
         }

@@ -6,7 +6,7 @@
 #include "../toasts.hpp"
 #include "terrain.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     struct PersonalHorse {
 
@@ -43,26 +43,16 @@ namespace houseofatmos::outside {
         f64 angle = 0.0;
         bool is_moving = false;
 
-        Player* player;
-        Interactables* interactables;
+        Player* player = nullptr;
         engine::Scene* scene = nullptr;
         
         std::shared_ptr<Interactable> interactable = nullptr;
         
-        PersonalHorse(
-            Vec<3> pos, Player* player, Interactables* interactables
-        ) {
-            this->player = player;
-            this->interactables = interactables;
+        PersonalHorse(Vec<3> pos = Vec<3>(0, 0, 0)) {
             this->set_free(pos);
         }
 
-        PersonalHorse(
-            const Serialized& serialized,
-            Player* player, Interactables* interactables
-        ) {
-            this->player = player;
-            this->interactables = interactables;
+        PersonalHorse(const Serialized& serialized) {
             this->set_free(serialized.pos);
             this->angle = serialized.angle;
         }
@@ -92,7 +82,8 @@ namespace houseofatmos::outside {
 
         void update(
             engine::Scene& scene, const engine::Window& window, 
-            const Terrain& terrain, Toasts& toasts
+            const Terrain& terrain, Player& player, 
+            Interactables& interactables, Toasts& toasts
         );
 
         void render(

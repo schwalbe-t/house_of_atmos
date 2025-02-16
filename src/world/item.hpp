@@ -6,7 +6,7 @@
 #include "../ui_const.hpp"
 #include <vector>
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     struct Item {
 

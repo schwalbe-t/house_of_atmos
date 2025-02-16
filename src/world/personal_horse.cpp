@@ -2,13 +2,15 @@
 #include "personal_horse.hpp"
 #include "../audio_const.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     void PersonalHorse::set_free(Vec<3> at_pos) {
         if(this->scene != nullptr && this->state != State::Called) {
             scene->get<engine::Sound>(sound::horse).play();
         }
-        this->player->is_riding = false;
+        if(this->player != nullptr) {
+            this->player->is_riding = false;
+        }
         this->pos = at_pos;
         this->interactable = nullptr;
         this->state = State::Idle;
@@ -34,13 +36,15 @@ namespace houseofatmos::outside {
 
     void PersonalHorse::update(
         engine::Scene& scene, const engine::Window& window, 
-        const Terrain& terrain, Toasts& toasts
+        const Terrain& terrain, Player& player, Interactables& interactables, 
+        Toasts& toasts
     ) {
+        this->player = &player;
         this->scene = &scene;
         Vec<3> pos = this->position();
         // add interactable if in idle
         if(this->interactable == nullptr && this->state == State::Idle) {
-            this->interactable = this->interactables->create([this]() {
+            this->interactable = interactables.create([this]() {
                 this->set_ridden();
             });
         }

@@ -4,16 +4,18 @@
 #include <engine/arena.hpp>
 #include <engine/rng.hpp>
 #include "../interactable.hpp"
-#include "../save_info.hpp"
 #include "complex.hpp"
 #include "buildings.hpp"
 #include "foliage.hpp"
 #include "bridge.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using namespace houseofatmos;
     using namespace houseofatmos::engine::math;
+
+
+    struct World;
 
 
     struct Terrain {
@@ -89,7 +91,6 @@ namespace houseofatmos::outside {
         u64 width, height;
         u64 tile_size;
         u64 chunk_tiles;
-        i64 draw_distance;
         u64 width_chunks, height_chunks;
         i64 view_chunk_x, view_chunk_z;
         std::vector<LoadedChunk> loaded_chunks;
@@ -107,12 +108,12 @@ namespace houseofatmos::outside {
         std::vector<std::shared_ptr<Interactable>> create_chunk_interactables(
             u64 chunk_x, u64 chunk_z, 
             Interactables* interactables, engine::Window& window, 
-            const SaveInfo* save_info
+            const std::shared_ptr<World>& world
         ) const;
         Terrain::LoadedChunk load_chunk(
             i64 chunk_x, i64 chunk_z, 
             Interactables* interactables, engine::Window& window, 
-            const SaveInfo* save_info,
+            const std::shared_ptr<World>& world,
             bool in_bounds = true
         ) const;
 
@@ -127,10 +128,7 @@ namespace houseofatmos::outside {
             scene.load(engine::Shader::Loader(Terrain::water_shader));
         }
 
-        Terrain(
-            u64 width, u64 height, 
-            i64 draw_distance, u64 tile_size, u64 chunk_tiles
-        ) {
+        Terrain(u64 width, u64 height, u64 tile_size, u64 chunk_tiles) {
             if(tile_size * chunk_tiles > UINT8_MAX) {
                 engine::warning("The product of tile_size and chunk_tiles must "
                     "not exceed 256, as this may result in incosistent foliage "
@@ -142,7 +140,6 @@ namespace houseofatmos::outside {
             this->height = height;
             this->tile_size = tile_size;
             this->chunk_tiles = chunk_tiles;
-            this->draw_distance = draw_distance;
             this->view_chunk_x = 0;
             this->view_chunk_z = 0;
             this->elevation.resize((width + 1) * (height + 1));
@@ -154,8 +151,7 @@ namespace houseofatmos::outside {
         }
         
         Terrain(
-            const Serialized& serialized, 
-            i64 draw_distance, u64 tile_size, u64 chunk_tiles,
+            const Serialized& serialized, u64 tile_size, u64 chunk_tiles,
             const engine::Arena& buffer
         );
 
@@ -165,7 +161,6 @@ namespace houseofatmos::outside {
         u64 height_in_chunks() const { return this->height_chunks; }
         u64 units_per_tile() const { return this->tile_size; }
         u64 tiles_per_chunk() const { return this->chunk_tiles; }
-        i64 draw_distance_in_chunks() const { return this->draw_distance; }
         i64 viewed_chunk_x() const { return this->view_chunk_x; }
         i64 viewed_chunk_z() const { return this->view_chunk_z; }
 
@@ -237,11 +232,14 @@ namespace houseofatmos::outside {
         );
         void generate_foliage(u32 seed = (u32) random_init());
 
-        bool chunk_in_draw_distance(u64 chunk_x, u64 chunk_z) const;
+        bool chunk_in_draw_distance(
+            u64 chunk_x, u64 chunk_z, u64 draw_distance
+        ) const;
         bool chunk_loaded(u64 chunk_x, u64 chunk_z, size_t& index) const;
         void load_chunks_around(
-            const Vec<3>& position, Interactables* interactables,
-            engine::Window& window, const SaveInfo* save_info
+            const Vec<3>& position, u64 draw_distance,
+            Interactables* interactables, engine::Window& window, 
+            const std::shared_ptr<World>& world
         );
 
         engine::Mesh build_chunk_terrain_geometry(u64 chunk_x, u64 chunk_z) const;

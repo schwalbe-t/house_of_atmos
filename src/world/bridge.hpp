@@ -4,7 +4,7 @@
 #include "../renderer.hpp"
 #include "../ui_const.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using namespace houseofatmos;
 

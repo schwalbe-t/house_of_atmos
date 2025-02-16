@@ -9,12 +9,12 @@ namespace houseofatmos::interior {
 
     Scene::Scene(
         const Interior& interior, 
-        SaveInfo save_info,
-        std::shared_ptr<engine::Scene> outside
+        std::shared_ptr<world::World>&& world,
+            std::shared_ptr<engine::Scene>&& outside
     ): interior(interior) {
         this->load_resources();
-        this->save_info = save_info;
-        this->outside = outside;
+        this->world = std::move(world);
+        this->outside = std::move(outside);
         this->renderer.fog_color = Vec<4>(0.0, 0.0, 0.0, 1.0); // background color
         this->renderer.lights.insert(
             this->renderer.lights.end(),
@@ -49,14 +49,15 @@ namespace houseofatmos::interior {
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(window.was_pressed(engine::Key::Escape)) {
             window.set_scene(std::make_shared<PauseMenu>(
-                this->save_info, window.scene(), this->renderer.output()
+                std::shared_ptr<world::World>(this->world), 
+                window.scene(), this->renderer.output()
             ));
         }
         if(this->ui.root.children.size() == 0) {
             this->ui.with_element(this->interactables.create_container());
             this->exit_interactable = this->interactables.create(
                 [this, window = &window]() {
-                    window->set_scene(std::shared_ptr(this->outside));
+                    window->set_scene(std::shared_ptr<engine::Scene>(this->outside));
                 }, 
                 this->interior.exit_interactable
             );

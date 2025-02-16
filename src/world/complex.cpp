@@ -4,7 +4,7 @@
 
 using namespace houseofatmos::engine::math;
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     Conversion::Conversion(
         const Serialized& serialized, const engine::Arena& buffer

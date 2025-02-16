@@ -10,7 +10,7 @@
 #include "../ui_const.hpp"
 #include "../audio_const.hpp"
 #include "../toasts.hpp"
-#include "../save_info.hpp"
+#include "../world/world.hpp"
 
 namespace houseofatmos {
 
@@ -24,18 +24,18 @@ namespace houseofatmos {
         };
 
 
-        SaveInfo save_info;
-        engine::Localization::LoadArgs local_ref;
+        std::shared_ptr<world::World> world;
         std::shared_ptr<Scene> previous;
         const engine::Texture& last_frame;
 
         std::optional<engine::Texture> background = std::nullopt;
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
-        Toasts toasts = Toasts(this->local_ref);
+        Toasts toasts;
 
         PauseMenu(
-            SaveInfo save_info,
-            std::shared_ptr<Scene> previous, const engine::Texture& last_frame
+            std::shared_ptr<world::World>&& world,
+            std::shared_ptr<Scene>&& previous, 
+            const engine::Texture& last_frame
         );
 
         void refresh_ui_elements(engine::Window& window);

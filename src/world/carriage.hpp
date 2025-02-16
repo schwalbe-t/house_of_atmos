@@ -10,7 +10,7 @@
 #include "complex.hpp"
 #include "terrain.hpp"
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using namespace houseofatmos;
     using namespace houseofatmos::engine::math;
@@ -237,7 +237,6 @@ namespace houseofatmos::outside {
 
         private:
         std::vector<u8> obstacle_tiles;
-        f64 draw_distance = INFINITY;
 
         void fill_obstacle_data(const Terrain& terrain);
 
@@ -246,10 +245,10 @@ namespace houseofatmos::outside {
         std::vector<Carriage> carriages;
 
         CarriageManager() {}
-        CarriageManager(const Terrain& terrain, f64 draw_distance);
+        CarriageManager(const Terrain& terrain);
         CarriageManager(
             const Serialized& serialized, const engine::Arena& buffer,
-            const Terrain& terrain, f64 draw_distance
+            const Terrain& terrain
         );
 
         std::optional<std::vector<Vec<3>>> find_path_to(
@@ -266,14 +265,15 @@ namespace houseofatmos::outside {
         );
         
         void update_all(
-            const Vec<3>& observer, engine::Scene& scene, 
-            const engine::Window& window, ComplexBank& complexes, 
-            const Terrain& terrain, Toasts& toasts
+            const Vec<3>& observer, f64 draw_distance,
+            engine::Scene& scene, const engine::Window& window, 
+            ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
         );
 
         void render_all_around(
-            const Vec<3>& observer, const Renderer& renderer, 
-            engine::Scene& scene, const engine::Window& window
+            const Vec<3>& observer, f64 draw_distance,
+            const Renderer& renderer, engine::Scene& scene, 
+            const engine::Window& window
         );
 
         std::optional<size_t> find_selected_carriage(

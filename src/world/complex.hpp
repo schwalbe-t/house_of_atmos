@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <optional>
 
-namespace houseofatmos::outside {
+namespace houseofatmos::world {
 
     using namespace houseofatmos;
 
