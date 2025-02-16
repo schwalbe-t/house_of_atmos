@@ -16,6 +16,7 @@ bool is_in_shadow(vec3 world_pos) {
         float frag_depth = l_ndc.z * 0.5 + 0.5;
         bool in_bounds = shadow_uv.x >= 0.0 && shadow_uv.x <= 1.0
             && shadow_uv.y >= 0.0 && shadow_uv.y <= 1.0;
+        if(!in_bounds && u_light_count == 1) { return false; }
         if(!in_bounds) { continue; }
         vec3 packed_shadow_depth = texture(u_shadow_maps, vec3(shadow_uv, i)).rgb;
         float shadow_depth = unpack_value(packed_shadow_depth);
