@@ -105,12 +105,12 @@
     "menu_windowed": {
         "_context": "Text of the button that makes the game run in windowed mode",
         "en": "Windowed",
-        "de": "Fenster"
+        "de": "Fenstermodus"
     },
     "menu_fullscreen": {
         "_context": "Text of the button that makes the game run in fullscreen mode",
         "en": "Fullscreen",
-        "de": "Vollbild"
+        "de": "Vollbildmodus"
     },
     "menu_music_volume": {
         "_context": "Displayed over the slider that controls the music volume",
