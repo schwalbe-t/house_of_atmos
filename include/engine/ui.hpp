@@ -60,6 +60,9 @@ namespace houseofatmos::engine::ui {
     };
 
 
+    static inline const bool include_dragging = true;
+    static inline const bool ignore_dragging = false;
+
     struct Manager;
 
     struct Element {
@@ -85,7 +88,8 @@ namespace houseofatmos::engine::ui {
         const Background* background_hover;
         const Texture* texture;
 
-        std::function<void()> on_click;
+        std::function<void (ui::Element&, Vec<2>)> on_click;
+        bool handle_dragging;
 
         std::string text;
         const Font* font;
@@ -132,8 +136,23 @@ namespace houseofatmos::engine::ui {
             this->texture = texture;
             return *this;
         }
-        Element& with_click_handler(std::function<void()>&& handler) {
+        Element& with_click_handler(
+            std::function<void ()>&& handler, 
+            bool handle_dragging = ui::ignore_dragging
+        ) {
+            this->on_click = [h = std::move(handler)](const ui::Element& e, Vec<2> c) {
+                (void) e; (void) c;
+                h();    
+            };
+            this->handle_dragging = handle_dragging;
+            return *this;
+        }
+        Element& with_click_handler(
+            std::function<void (ui::Element&, Vec<2>)>&& handler, 
+            bool handle_dragging = ui::ignore_dragging
+        ) {
             this->on_click = std::move(handler);
+            this->handle_dragging = handle_dragging;
             return *this;
         }
         Element& with_text(
@@ -189,7 +208,7 @@ namespace houseofatmos::engine::ui {
             std::optional<ChildRef> parent, const Window& window, f64 unit
         );
         void update_hovering(const Window& window);
-        bool update_clicked(const Window& window) const;
+        bool update_clicked(const Window& window);
 
         void render(Manager& manager, Scene& scene, f64 unit) const;
         void render_background(Manager& manager, Scene& scene, f64 unit) const;

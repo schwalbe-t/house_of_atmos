@@ -17,6 +17,9 @@ namespace houseofatmos::engine {
             = (size_t) Button::MaximumValue + 1;
         
         void* ptr;
+        i32 original_width;
+        i32 original_height;
+        bool fullscreen;
         i32 last_width;
         i32 last_height;
         f64 last_time;
@@ -50,7 +53,7 @@ namespace houseofatmos::engine {
 
 
         public:
-        Window(u64 width, u64 height, const char* name);
+        Window(u64 width, u64 height, const std::string& name);
         Window(const Window& other) = delete;
         Window(Window&& other) = delete;
         Window& operator=(const Window& other) = delete;
@@ -96,6 +99,10 @@ namespace houseofatmos::engine {
                 && this->buttons_down_last[(size_t) button];
         }
         const Vec<2>& scrolled() const { return this->scroll_dist; }
+
+        void set_windowed();
+        void set_fullscreen();
+        bool is_fullscreen() const { return this->fullscreen; }
 
         void set_scene(std::shared_ptr<Scene>&& scene);
         std::shared_ptr<Scene> scene(); 

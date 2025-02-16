@@ -38,7 +38,8 @@ namespace houseofatmos {
             const engine::Texture& last_frame
         );
 
-        void refresh_ui_elements(engine::Window& window);
+        void show_root_menu(engine::Window& window);
+        void show_settings(engine::Window& window);
         void save_game(engine::Window& window, bool is_new_save = false);
 
         void update(engine::Window& window) override;

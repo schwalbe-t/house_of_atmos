@@ -50,6 +50,9 @@ namespace houseofatmos {
         );
         void show_loading_screen(const engine::Localization& local);
         void show_language_selection(engine::Window& window);
+        void show_settings(
+            const engine::Localization& local, engine::Window& window
+        );
         void show_credits(
             const engine::Localization& local, engine::Window& window
         );

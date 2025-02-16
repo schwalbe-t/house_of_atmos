@@ -113,7 +113,6 @@ namespace houseofatmos::world {
     ))
     , toasts(Toasts(world->settings.localization())) {
         this->world = world;
-        Scene::configure_renderer(this->renderer);
         this->renderer.lights.push_back(Scene::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
         this->load_resources();
@@ -148,9 +147,11 @@ namespace houseofatmos::world {
         );
     }
 
-    void Scene::configure_renderer(Renderer& renderer) {
-        renderer.fog_start_dist = 50.0;
+    void Scene::configure_renderer(Renderer& renderer, u64 view_distance) {
         renderer.fog_gradiant_range = 10.0;
+        renderer.fog_start_dist = view_distance
+            * World::tiles_per_chunk * World::units_per_tile
+            - renderer.fog_gradiant_range;
         renderer.fog_dist_scale = Vec<3>(1.0, 0.0, 1.0); // only take Y axis into account
         renderer.fog_color = Vec<4>(239, 239, 230, 255) / 255.0;
         renderer.shadow_bias = 0.0005;
@@ -318,6 +319,7 @@ namespace houseofatmos::world {
     }
 
     void Scene::update(engine::Window& window) {
+        this->world->settings.apply(*this, window);
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(window.was_pressed(engine::Key::Escape)) {
             this->terrain_map.hide();
@@ -339,7 +341,7 @@ namespace houseofatmos::world {
         this->toasts.update(*this);
         this->ui.update(window);
         this->world->carriages.update_all(
-            this->world->player.character.position, Scene::draw_distance_un,
+            this->world->player.character.position, this->draw_distance_units(),
             *this, window, 
             this->world->complexes, this->world->terrain, this->toasts
         );
@@ -363,7 +365,7 @@ namespace houseofatmos::world {
             character.update(
                 *this, window, 
                 this->world->player.character.position,
-                Scene::draw_distance_un, 0.0
+                this->draw_distance_units(), 0.0
             );
         }
         if(this->terrain_map.toggle_with_key(engine::Key::M, window)) {
@@ -379,24 +381,28 @@ namespace houseofatmos::world {
         this->world->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->world->player.render(*this, window, this->renderer);
         this->world->carriages.render_all_around(
-            this->world->player.character.position, Scene::draw_distance_un,
+            this->world->player.character.position, this->draw_distance_units(),
             this->renderer, *this, window
         );
         this->world->personal_horse.render(*this, window, this->renderer);
         for(Character& character: this->characters) {
             character.render(
                 *this, window, this->renderer, 
-                this->world->player.character.position, Scene::draw_distance_un / 2.0
+                this->world->player.character.position, this->draw_distance_units() / 2.0
             );
         }
     }
 
     void Scene::render(engine::Window& window) {
+        Scene::configure_renderer(
+            this->renderer, this->world->settings.view_distance
+        );
         *this->sun = Scene::create_sun(this->world->player.character.position);
         this->renderer.fog_origin = this->world->player.character.position;
         this->renderer.configure(window, *this);
         this->world->terrain.load_chunks_around(
-            this->world->player.character.position, Scene::draw_distance_ch,
+            this->world->player.character.position, 
+            this->world->settings.view_distance,
             &this->interactables, window, this->world
         );
         this->renderer.render_to_shadow_maps();

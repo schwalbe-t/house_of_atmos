@@ -123,7 +123,7 @@ namespace houseofatmos::engine {
     }
 
 
-    Window::Window(u64 width, u64 height, const char* name) {
+    Window::Window(u64 width, u64 height, const std::string& name) {
         if(width == 0 || height == 0) {
             error("Window width and height must both be larger than 0"
                 " (given was " + std::to_string(width)
@@ -135,12 +135,15 @@ namespace houseofatmos::engine {
             init_openal();
         }
         this->ptr = (GLFWwindow*) glfwCreateWindow(
-            width, height, name, NULL, NULL
+            width, height, name.c_str(), NULL, NULL
         );
         if(this->ptr == nullptr) {
             glfwTerminate();
             error("Unable to initialize the window!");
         }
+        this->original_width = width;
+        this->original_height = height;
+        this->fullscreen = false;
         this->last_width = width;
         this->last_height = height;
         this->last_time = 0;
@@ -197,6 +200,49 @@ namespace houseofatmos::engine {
     void Window::hide_cursor() const {
         GLFWwindow* window = (GLFWwindow*) this->ptr;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+
+    void Window::set_windowed() {
+        if(!this->is_fullscreen()) { return; }
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        if(monitor == NULL) {
+            warning("Unable to make the window windowed!");
+            return;
+        }
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        if(mode == NULL) {
+            warning("Unable to make the window windowed!");
+            return;
+        }
+        i32 x = (mode->width - this->original_width) / 2;
+        i32 y = (mode->height - this->original_height) / 2;
+        glfwSetWindowMonitor(
+            (GLFWwindow*) this->ptr, NULL,
+            x, y, 
+            this->original_width, this->original_height, 
+            0
+        );
+        this->fullscreen = false;
+    }
+
+    void Window::set_fullscreen() {
+        if(this->is_fullscreen()) { return; }
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        if(monitor == NULL) {
+            warning("Unable to make the window fullscreen!");
+            return;
+        }
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        if(mode == NULL) {
+            warning("Unable to make the window fullscreen!");
+            return;
+        }
+        glfwSetWindowMonitor(
+            (GLFWwindow*) this->ptr, monitor,
+            0, 0, mode->width, mode->height, mode->refreshRate
+        );
+        this->fullscreen = true;
     }
 
 

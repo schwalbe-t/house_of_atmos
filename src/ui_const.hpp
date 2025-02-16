@@ -76,28 +76,34 @@ namespace houseofatmos::ui_background {
         Vec<2>(232, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
-    static inline const ui::Background button = (ui::Background) {
+    static inline const ui::Background border_dark = (ui::Background) {
         (engine::Texture::LoadArgs) { "res/ui.png" },
         // offset, corner size, edge size
         Vec<2>(288, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
-    static inline const ui::Background button_select = (ui::Background) {
+    static inline const ui::Background button = (ui::Background) {
         (engine::Texture::LoadArgs) { "res/ui.png" },
         // offset, corner size, edge size
         Vec<2>(344, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
+    static inline const ui::Background button_select = (ui::Background) {
+        (engine::Texture::LoadArgs) { "res/ui.png" },
+        // offset, corner size, edge size
+        Vec<2>(400, 8), Vec<2>(8, 8), Vec<2>(32, 32)
+    };
+
     static inline const ui::Background note = (ui::Background) {
         (engine::Texture::LoadArgs) { "res/ui.png" },
         // offset, corner size, edge size
-        Vec<2>(392, 8), Vec<2>(8, 8), Vec<2>(32, 32)
+        Vec<2>(456, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
     static inline const ui::Background note_error = (ui::Background) {
         (engine::Texture::LoadArgs) { "res/ui.png" },
         // offset, corner size, edge size
-        Vec<2>(440, 8), Vec<2>(8, 8), Vec<2>(32, 32)
+        Vec<2>(512, 8), Vec<2>(8, 8), Vec<2>(32, 32)
     };
 
 

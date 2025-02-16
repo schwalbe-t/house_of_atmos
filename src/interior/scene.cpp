@@ -48,6 +48,7 @@ namespace houseofatmos::interior {
     }
 
     void Scene::update(engine::Window& window) {
+        this->world->settings.apply(*this, window);
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(window.was_pressed(engine::Key::Escape)) {
             window.set_scene(std::make_shared<PauseMenu>(

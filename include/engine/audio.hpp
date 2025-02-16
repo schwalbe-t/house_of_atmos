@@ -176,6 +176,12 @@ namespace houseofatmos::engine {
             return Soundtrack(std::move(tracks), args.allow_repetition);
         }
 
+        void set_gain(f64 value) {
+            for(Audio& track: this->tracks) {
+                track.set_gain(value);
+            }
+        }
+
         void update() {
             if(this->any_is_playing()) { return; }
             for(;;) {

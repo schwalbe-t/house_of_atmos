@@ -4,7 +4,9 @@
 namespace houseofatmos::engine::ui {
 
 
-    static void default_click_handler() {}
+    static void default_click_handler(const ui::Element& e, Vec<2> c) { 
+        (void) e; (void) c; 
+    }
 
     Element::Element() {
         this->size_px = Vec<2>();
@@ -42,6 +44,7 @@ namespace houseofatmos::engine::ui {
         to.background_hover = from.background_hover;
         to.texture = from.texture;
         to.on_click = std::move(from.on_click);
+        to.handle_dragging = from.handle_dragging;
         to.text = std::move(from.text);
         to.font = from.font;
         to.wrap_text = from.wrap_text;
@@ -160,15 +163,20 @@ namespace houseofatmos::engine::ui {
         }
     }
 
-    bool Element::update_clicked(const Window& window) const {
+    bool Element::update_clicked(const Window& window) {
         if(this->hidden) { return false; }
-        for(const Element& child: this->children) {
+        for(Element& child: this->children) {
             if(child.update_clicked(window)) { return true; }
         }
+        bool was_dragged = this->hovering && this->handle_dragging 
+            && window.is_down(Button::Left);
         bool was_clicked = this->hovering 
             && window.was_pressed(Button::Left);
-        if(was_clicked) { this->on_click(); }
-        return was_clicked;
+        bool handled = was_dragged || was_clicked;
+        if(handled) {
+            this->on_click(*this, window.cursor_pos_px() - this->position_px); 
+        }
+        return handled;
     }
 
 

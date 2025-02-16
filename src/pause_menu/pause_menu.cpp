@@ -39,7 +39,7 @@ namespace houseofatmos {
         if(existing_path_invalid) {
             this->world->save_path = "";
             this->toasts.add_error("toast_failed_to_save_game", {});
-            this->refresh_ui_elements(window);
+            this->show_root_menu(window);
             return;
         }
         engine::Arena serialized = this->world->serialize();
@@ -58,17 +58,17 @@ namespace houseofatmos {
             .as_phantom()
             .with_size(0, 0, ui::size::unwrapped_text)
             .with_text(text, &ui_font::bright)
-            .with_padding(3)
+            .with_padding(2)
             .with_background(
                 &ui_background::button, &ui_background::button_select
             )
             .with_click_handler(std::move(handler))
-            .with_padding(3)
+            .with_padding(2)
             .as_movable();
         return button;
     }
 
-    void PauseMenu::refresh_ui_elements(engine::Window& window) {
+    void PauseMenu::show_root_menu(engine::Window& window) {
         Toasts::States toast_states = this->toasts.make_states();
         this->ui.root.children.clear();
         const engine::Localization& local = this
@@ -76,7 +76,7 @@ namespace houseofatmos {
         this->ui.with_element(ui::Element()
             .with_pos(0.5, 0.2, ui::position::window_fract)
             .with_size(0.0, 0.0, ui::size::unwrapped_text)
-            .with_text(local.text("ui_game_paused"), &ui_font::bright)
+            .with_text(local.text("menu_game_paused"), &ui_font::bright)
             .as_movable()
         );
         ui::Element buttons = ui::Element()
@@ -84,26 +84,26 @@ namespace houseofatmos {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         buttons.children.push_back(make_button(
-            local.text("ui_resume_game"), 
+            local.text("menu_resume_game"), 
             [window = &window, this]() {
                 window->set_scene(std::shared_ptr<engine::Scene>(this->previous)); 
             }
         ));
         if(this->world->save_path.size() > 0) {
             buttons.children.push_back(make_button(
-                local.text("ui_save_game"),
+                local.text("menu_save_game"),
                 [this, window = &window]() {
                     this->save_game(*window); 
                 }
             ));
         }
         buttons.children.push_back(make_button(
-            local.text("ui_save_game_as"),
+            local.text("menu_save_game_as"),
             [this, local = &local, window = &window]() {
                 std::string new_path = pfd::save_file(
-                    local->text("ui_choose_save_location"),
+                    local->text("menu_choose_save_location"),
                     "",
-                    { local->text("ui_save_file"), "*.bin" }
+                    { local->text("menu_save_file"), "*.bin" }
                 ).result();
                 if(new_path.size() == 0) {
                     this->toasts.add_error("toast_failed_to_save_game", {});
@@ -111,11 +111,17 @@ namespace houseofatmos {
                 }
                 this->world->save_path = std::move(new_path); 
                 this->save_game(*window, true /* = new save location */);
-                this->refresh_ui_elements(*window);
+                this->show_root_menu(*window);
             }
         ));
         buttons.children.push_back(make_button(
-            local.text("ui_to_main_menu"),
+            local.text("menu_settings"),
+            [window = &window, this]() {
+                this->show_settings(*window);
+            }
+        ));
+        buttons.children.push_back(make_button(
+            local.text("menu_to_main_menu"),
             [window = &window, this]() {
                 window->set_scene(std::make_shared<MainMenu>(
                     Settings(this->world->settings)
@@ -134,11 +140,29 @@ namespace houseofatmos {
         this->ui.with_element(this->toasts.create_container());
         this->toasts.put_states(std::move(toast_states));
     }
+    
+    void PauseMenu::show_settings(engine::Window& window) {
+        Toasts::States toast_states = this->toasts.make_states();
+        this->ui.root.children.clear();
+        const engine::Localization& local = this
+            ->get<engine::Localization>(this->world->settings.localization());
+        this->ui.with_element(this->world->settings.create_menu(
+            local, *this, window,
+            [this, window = &window]() {
+                this->world->settings.save_to(Settings::default_path);
+                this->show_root_menu(*window);
+            }
+        ));
+        this->toasts.set_scene(this);
+        this->ui.with_element(this->toasts.create_container());
+        this->toasts.put_states(std::move(toast_states));
+    }
 
     void PauseMenu::update(engine::Window& window) {
+        this->world->settings.apply(*this, window);
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(this->ui.root.children.size() == 0) {
-            this->refresh_ui_elements(window);
+            this->show_root_menu(window);
         }
         if(window.was_pressed(engine::Key::Escape)) {
             window.set_scene(std::shared_ptr<engine::Scene>(this->previous));

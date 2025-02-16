@@ -13,7 +13,6 @@ namespace houseofatmos {
         u32 background_seed = random_init();
         this->terrain.generate_elevation(background_seed);
         this->terrain.generate_foliage(background_seed);
-        world::Scene::configure_renderer(this->renderer);
         this->renderer.camera.look_at = Vec<3>(16, 0.0, 16) 
             * this->terrain.units_per_tile();
         this->renderer.camera.look_at
@@ -44,12 +43,12 @@ namespace houseofatmos {
             .as_phantom()
             .with_size(0, 0, ui::size::unwrapped_text)
             .with_text(text, &ui_font::bright)
-            .with_padding(3)
+            .with_padding(2)
             .with_background(
                 &ui_background::button, &ui_background::button_select
             )
             .with_click_handler(std::move(handler))
-            .with_padding(3)
+            .with_padding(2)
             .as_movable();
         return button;
     }
@@ -103,7 +102,7 @@ namespace houseofatmos {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         buttons.children.push_back(make_button(
-            local.text("ui_new_game"),
+            local.text("menu_new_game"),
             [window = &window, local = &local, this]() {
                 this->before_next_frame = [window, this]() {
                     window->set_scene(std::make_shared<world::Scene>(
@@ -123,7 +122,7 @@ namespace houseofatmos {
                     : 0;
             std::string short_name = game_path.substr(short_start);
             buttons.children.push_back(make_button(
-                local.pattern("ui_load_previous_game", { short_name }),
+                local.pattern("menu_load_previous_game", { short_name }),
                 [window = &window, local = &local, this, path = game_path]() {
                     this->before_next_frame = [window, this, path]() {
                         load_game_from(path, *window, this->settings);
@@ -133,12 +132,12 @@ namespace houseofatmos {
             ));
         }
         buttons.children.push_back(make_button(
-            local.text("ui_load_game"),
+            local.text("menu_load_game"),
             [local = &local, window = &window, this]() {
                 std::vector<std::string> chosen = pfd::open_file(
-                    local->text("ui_choose_load_location"),
+                    local->text("menu_choose_load_location"),
                     "",
-                    { local->text("ui_save_file"), "*.bin" }
+                    { local->text("menu_save_file"), "*.bin" }
                 ).result();
                 if(chosen.empty()) { return; }
                 if(!std::filesystem::exists(chosen[0])) { return; }
@@ -149,13 +148,19 @@ namespace houseofatmos {
             }
         ));
         buttons.children.push_back(make_button(
-            local.text("ui_credits"),
+            local.text("menu_settings"),
+            [this, local = &local, window = &window]() {
+                this->show_settings(*local, *window);
+            }
+        ));
+        buttons.children.push_back(make_button(
+            local.text("menu_credits"),
             [this, local = &local, window = &window]() {
                 this->show_credits(*local, *window);
             }
         ));
         buttons.children.push_back(make_button(
-            local.text("ui_close_game"),
+            local.text("menu_exit_game"),
             []() { std::exit(0); }
         ));
         this->ui.with_element(buttons
@@ -185,7 +190,7 @@ namespace houseofatmos {
         this->ui.with_element(ui::Element()
             .with_pos(7.5, 7.5, ui::position::window_bl_units)
             .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(local.text("ui_copyright_notice"), &ui_font::bright)
+            .with_text(local.text("menu_copyright_notice"), &ui_font::bright)
             .as_movable()
         );
     }
@@ -195,7 +200,7 @@ namespace houseofatmos {
         this->ui.with_element(ui::Element()
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(local.text("ui_loading"), &ui_font::bright)
+            .with_text(local.text("menu_loading"), &ui_font::bright)
             .as_movable()
         );
     }
@@ -232,6 +237,19 @@ namespace houseofatmos {
         );
     }
 
+    void MainMenu::show_settings(
+        const engine::Localization& local, engine::Window& window
+    ) {
+        this->ui.root.children.clear();
+        this->ui.with_element(this->settings.create_menu(
+            local, *this, window,
+            [this, local = &local, window = &window]() {
+                this->settings.save_to(Settings::default_path);
+                this->show_title_screen(*local, *window);
+            }
+        ));
+    }
+
     void MainMenu::show_credits(
         const engine::Localization& local, engine::Window& window
     ) {
@@ -239,7 +257,7 @@ namespace houseofatmos {
         this->ui.root.children.push_back(ui::Element()
             .with_pos(0.5, 0.15, ui::position::window_fract)
             .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(local.text("ui_credits"), &ui_font::bright)
+            .with_text(local.text("menu_credits"), &ui_font::bright)
             .as_movable()
         );
         ui::Element credits = ui::Element()
@@ -247,7 +265,7 @@ namespace houseofatmos {
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        std::string credit_text = local.text("ui_credit_text");
+        std::string credit_text = local.text("menu_credit_text");
         size_t start = 0;
         while(start < credit_text.size()) {
             size_t end = credit_text.find('\n', start);
@@ -261,16 +279,18 @@ namespace houseofatmos {
             );
             start = end + 1;
         }
+        credits.children.push_back(make_button(
+                local.text("menu_close_menu"),
+                [this, local = &local, window = &window]() {
+                    this->show_title_screen(*local, *window);
+                }
+            )
+            .with_padding(2.0)
+            .as_movable()
+        );
         this->ui.root.children.push_back(credits
             .with_padding(4)
             .with_background(&ui_background::scroll_vertical)
-            .as_movable()
-        );
-        auto close_credits = [this, local = &local, window = &window]() {
-            this->show_title_screen(*local, *window);
-        };
-        this->ui.root.children.push_back(make_button("X", std::move(close_credits))
-            .with_pos(25.0, 25.0, ui::position::window_tl_units)
             .as_movable()
         );
     }
@@ -280,6 +300,7 @@ namespace houseofatmos {
     static const f64 camera_distance = 40.0;
 
     void MainMenu::update(engine::Window& window) {
+        this->settings.apply(*this, window);
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         this->before_next_frame();
         this->before_next_frame = []() {};
@@ -298,6 +319,9 @@ namespace houseofatmos {
     }
 
     void MainMenu::render_background(engine::Window& window) {
+        world::Scene::configure_renderer(
+            this->renderer, this->settings.view_distance
+        );
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(
             this->renderer.camera.look_at, 

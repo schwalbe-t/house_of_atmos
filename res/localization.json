@@ -1,5 +1,140 @@
 {
 
+    "menu_game_paused": {
+        "_context": "Displayed at the top of the game paused menu",
+        "de": "Spiel pausiert",
+        "en": "Game paused",
+        "bg": "Играта е спряна"
+    },
+    "menu_resume_game": {
+        "_context": "Text of the button that closes the paused menu and resumes the game",
+        "de": "Spiel fortsetzen",
+        "en": "Resume game",
+        "bg": "Продължи играта"
+    },
+    "menu_save_game": {
+        "_context": "Text of the button that saves the game as a file at its previous save location",
+        "de": "Spiel speichern",
+        "en": "Save game",
+        "bg": "Запази играта"
+    },
+    "menu_save_game_as": {
+        "_context": "Text of the button that prompts the user for a save location and then saves the game as a file at that location",
+        "de": "Spiel speichern als...",
+        "en": "Save game as...",
+        "bg": "Запази играта като..."
+    },
+    "menu_choose_save_location": {
+        "_context": "Title of the window that prompts the user for a save location",
+        "de": "Speicherort wählen",
+        "en": "Choose save location",
+        "bg": "Избери локация на запазване"
+    },
+    "menu_save_file": {
+        "_context": "Name of the file format ('.bin') used to store a save file (storing game progress)",
+        "de": "Spielstands-Datei",
+        "en": "Save file",
+        "bg": "Запазена игра"
+    },
+    "menu_to_main_menu": {
+        "_context": "Text of the button that returns the user to the main menu",
+        "de": "Zurück zum Hauptmenü",
+        "en": "Return to main menu",
+        "bg": "Вънри се към главното меню"
+    },
+    "menu_new_game": {
+        "_context": "Text of the button used to start a new game",
+        "de": "Neues Spiel",
+        "en": "New game",
+        "bg": "Нова игра"
+    },
+    "menu_load_previous_game": {
+        "_context": "Text of a button used to load a previously loaded game",
+        "_placeholders": "The path (or part of it) of the previously loaded game",
+        "de": "Lade '{}'",
+        "en": "Load '{}'",
+        "bg": "Зареди '{}'"
+    },
+    "menu_load_game": {
+        "_context": "Text of the button used to load a specific file",
+        "de": "Lade...",
+        "en": "Load...",
+        "bg": "Зареди..."
+    },
+    "menu_choose_load_location": {
+        "_context": "Title of the window that prompts the user for a load location",
+        "de": "Spielstandsdatei wählen",
+        "en": "Choose save location",
+        "bg": "Избeрете файлa за зареждане"
+    },
+    "menu_settings": {
+        "_context": "Text of the button used to open the game settings",
+        "de": "Einstellungen",
+        "en": "Settings"
+    },
+    "menu_credits": {
+        "_context": "Text of the button used to show (and title of) the credits screen",
+        "de": "Credits",
+        "en": "Credits",
+        "bg": "Надписи"
+    },
+    "menu_exit_game": {
+        "_context": "Text of the button used to close the game",
+        "de": "Spiel verlassen",
+        "en": "Exit game",
+        "bg": "Затвори играта"
+    },
+    "menu_loading": {
+        "_context": "Shown when the game is loading for a longer amount of time",
+        "de": "Lädt...",
+        "en": "Loading...",
+        "bg": "Зареждане..."
+    },
+    "menu_copyright_notice": {
+        "_context": "The copyright notice text as displayed in the main menu",
+        "de": "(C) schwalbe_t 2024",
+        "en": "(C) schwalbe_t 2024",
+        "bg": "(C) schwalbe_t 2024"
+    },
+    "menu_credit_text": {
+        "_context": "The full credit text as displayed on the credits screen (this text is an exception in that it allows new line characters)",
+        "en": "Programming, 3D models and textures:\nschwalbe_t\n\nTranslation:\nschwalbe_t (English and German)\nGalahad and Mitko0012 (Bulgarian)\n\nTesting:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nLicensed under GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html",
+        "de": "Programmierung, 3D-Modelle und Texturen:\nschwalbe_t\n\nÜbersetzung:\nschwalbe_t (Englisch und Deutsch)\nGalahad und Mitko0012 (Bulgarisch)\n\nTesting:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nLizensiert unter GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html",
+        "bg": "Програмиране, 3D модели и текстури:\nschwalbe_t\n\nПревод:\nschwalbe_t (английски и немски)\nGalahad и Mitko0012 (български)\n\nТестване:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nЛицензиран под GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html"
+    },
+    "menu_windowed": {
+        "_context": "Text of the button that makes the game run in windowed mode",
+        "en": "Windowed",
+        "de": "Fenster"
+    },
+    "menu_fullscreen": {
+        "_context": "Text of the button that makes the game run in fullscreen mode",
+        "en": "Fullscreen",
+        "de": "Vollbild"
+    },
+    "menu_music_volume": {
+        "_context": "Displayed over the slider that controls the music volume",
+        "en": "Music Volume",
+        "de": "Musiklautstärke"
+    },
+    "menu_sound_volume": {
+        "_context": "Displayed over the slider that controls the volume of sound effects",
+        "en": "Sound Effect Volume",
+        "de": "Geräuschelautstärke"
+    },
+    "menu_view_distance": {
+        "_context": "Displayed over the slider that controls the view distance of the game",
+        "en": "View distance",
+        "de": "Sichtdistanz"
+    },
+    "menu_close_menu": {
+        "_context": "Confirms and closes the current menu (e.g. credits, settings)",
+        "en": "Done",
+        "de": "Fertig"
+    },
+
+
+
     "ui_building_selection": {
         "_context": "Title of the building selection UI (when building a building)",
         "de": "Gebäudeauswahl",
@@ -154,103 +289,8 @@
         "en": "On board",
         "bg": "На борд"
     },
-    "ui_game_paused": {
-        "_context": "Displayed at the top of the game paused menu",
-        "de": "Spiel pausiert",
-        "en": "Game paused",
-        "bg": "Играта е спряна"
-    },
-    "ui_resume_game": {
-        "_context": "Text of the button that closes the paused menu and resumes the game",
-        "de": "Spiel fortsetzen",
-        "en": "Resume game",
-        "bg": "Продължи играта"
-    },
-    "ui_save_game": {
-        "_context": "Text of the button that saves the game as a file at its previous save location",
-        "de": "Spiel speichern",
-        "en": "Save game",
-        "bg": "Запази играта"
-    },
-    "ui_save_game_as": {
-        "_context": "Text of the button that prompts the user for a save location and then saves the game as a file at that location",
-        "de": "Spiel speichern als...",
-        "en": "Save game as...",
-        "bg": "Запази играта като..."
-    },
-    "ui_choose_save_location": {
-        "_context": "Title of the window that prompts the user for a save location",
-        "de": "Speicherort wählen",
-        "en": "Choose save location",
-        "bg": "Избери локация на запазване"
-    },
-    "ui_save_file": {
-        "_context": "Name of the file format ('.bin') used to store a save file (storing game progress)",
-        "de": "Spielstands-Datei",
-        "en": "Save file",
-        "bg": "Запазена игра"
-    },
-    "ui_to_main_menu": {
-        "_context": "Text of the button that returns the user to the main menu",
-        "de": "Zurück zum Hauptmenü",
-        "en": "Return to main menu",
-        "bg": "Вънри се към главното меню"
-    },
-    "ui_new_game": {
-        "_context": "Text of the button used to start a new game",
-        "de": "Neues Spiel",
-        "en": "New game",
-        "bg": "Нова игра"
-    },
-    "ui_load_previous_game": {
-        "_context": "Text of a button used to load a previously loaded game",
-        "_placeholders": "The path (or part of it) of the previously loaded game",
-        "de": "Lade '{}'",
-        "en": "Load '{}'",
-        "bg": "Зареди '{}'"
-    },
-    "ui_load_game": {
-        "_context": "Text of the button used to load a specific file",
-        "de": "Lade...",
-        "en": "Load...",
-        "bg": "Зареди..."
-    },
-    "ui_choose_load_location": {
-        "_context": "Title of the window that prompts the user for a load location",
-        "de": "Spielstandsdatei wählen",
-        "en": "Choose save location",
-        "bg": "Избeрете файлa за зареждане"
-    },
-    "ui_credits": {
-        "_context": "Text of the button used to show (and title of) the credits screen",
-        "de": "Credits",
-        "en": "Credits",
-        "bg": "Надписи"
-    },
-    "ui_close_game": {
-        "_context": "Text of the button used to close the game",
-        "de": "Spiel schließen",
-        "en": "Close game",
-        "bg": "Затвори играта"
-    },
-    "ui_loading": {
-        "_context": "Shown when the game is loading for a longer amount of time",
-        "de": "Lädt...",
-        "en": "Loading...",
-        "bg": "Зареждане..."
-    },
-    "ui_copyright_notice": {
-        "_context": "The copyright notice text as displayed in the main menu",
-        "de": "(C) schwalbe_t 2024",
-        "en": "(C) schwalbe_t 2024",
-        "bg": "(C) schwalbe_t 2024"
-    },
-    "ui_credit_text": {
-        "_context": "The full credit text as displayed on the credits screen (this text is an exception in that it allows new line characters)",
-        "en": "Programming, 3D models and textures:\nschwalbe_t\n\nTranslation:\nschwalbe_t (English and German)\nGalahad and Mitko0012 (Bulgarian)\n\nTesting:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nLicensed under GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html",
-        "de": "Programmierung, 3D-Modelle und Texturen:\nschwalbe_t\n\nÜbersetzung:\nschwalbe_t (Englisch und Deutsch)\nGalahad und Mitko0012 (Bulgarisch)\n\nTesting:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nLizensiert unter GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html",
-        "bg": "Програмиране, 3D модели и текстури:\nschwalbe_t\n\nПревод:\nschwalbe_t (английски и немски)\nGalahad и Mitko0012 (български)\n\nТестване:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nЛицензиран под GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html"
-    },
+
+
 
     "toast_saved_game": {
         "_context": "Pop-up that notifies the user that the game has been saved",
@@ -349,6 +389,7 @@
     },
 
 
+
     "item_name_barley": {
         "_context": "Name of the barley item",
         "de": "Gerste", 
@@ -423,6 +464,7 @@
     },
 
 
+
     "building_name_farmland": {
         "_context": "Name of the 'building' that is a simple field used to grow crops",
         "de": "Ackerland",
@@ -471,6 +513,8 @@
         "en": "Mansion",
         "bg": "Мение"
     },
+
+
 
     "bridge_name_wooden": {
         "_context": "Name for a bridge made out of wood",

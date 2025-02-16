@@ -21,10 +21,6 @@ namespace houseofatmos::world {
 
     struct Scene: engine::Scene {
 
-        static inline const i64 draw_distance_ch = 2;
-        static inline const i64 draw_distance_un    
-            = draw_distance_ch * World::tiles_per_chunk * World::units_per_tile;
-
         static inline const f64 min_camera_dist = 15.0;
         static inline const f64 max_camera_dist = 60.0;
 
@@ -45,7 +41,12 @@ namespace houseofatmos::world {
         Scene(std::shared_ptr<World> world);
         void load_resources();
         static DirectionalLight create_sun(const Vec<3>& focus_point);
-        static void configure_renderer(Renderer& renderer);
+        static void configure_renderer(Renderer& renderer, u64 view_distance);
+
+        f64 draw_distance_units() const {
+            return this->world->settings.view_distance 
+                * World::tiles_per_chunk * World::units_per_tile;
+        }
 
         void update(engine::Window& window) override;
 

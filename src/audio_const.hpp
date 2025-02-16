@@ -11,33 +11,33 @@ namespace houseofatmos::sound {
 
 
     static inline const Sound::LoadArgs build = (Sound::LoadArgs) {
-        "res/sounds/build.ogg", 0.9, 0.05
+        "res/sounds/build.ogg", 1.0, 0.05
     };
 
     static inline const Sound::LoadArgs demolish = (Sound::LoadArgs) {
-        "res/sounds/demolish.ogg", 0.9, 0.05
+        "res/sounds/demolish.ogg", 1.0, 0.05
     };
 
     static inline const Sound::LoadArgs terrain_mod = (Sound::LoadArgs) {
-        "res/sounds/terrain_mod.ogg", 0.9, 0.05
+        "res/sounds/terrain_mod.ogg", 1.0, 0.05
     };
 
     static inline const Sound::LoadArgs error = (Sound::LoadArgs) {
-        "res/sounds/error.ogg", 0.9, 0.05
+        "res/sounds/error.ogg", 1.0, 0.05
     };
 
 
     static inline const Sound::LoadArgs step = (Sound::LoadArgs) {
-        "res/sounds/step.ogg", 0.9, 0.025
+        "res/sounds/step.ogg", 1.0, 0.025
     };
 
     static inline const Sound::LoadArgs swim = (Sound::LoadArgs) {
-        "res/sounds/swim.ogg", 0.9, 0.1
+        "res/sounds/swim.ogg", 1.0, 0.1
     };
 
 
     static inline const Sound::LoadArgs horse = (Sound::LoadArgs) {
-        "res/sounds/horse.ogg", 0.9, 0.1
+        "res/sounds/horse.ogg", 1.0, 0.1
     };
 
 
@@ -49,6 +49,16 @@ namespace houseofatmos::sound {
         scene.load(Sound::Loader(step));
         scene.load(Sound::Loader(swim));
         scene.load(Sound::Loader(horse));
+    }
+
+    inline void set_gain(engine::Scene& scene, f64 value) {
+        scene.get<engine::Sound>(build).set_gain(value);
+        scene.get<engine::Sound>(demolish).set_gain(value);
+        scene.get<engine::Sound>(terrain_mod).set_gain(value);
+        scene.get<engine::Sound>(error).set_gain(value);
+        scene.get<engine::Sound>(step).set_gain(value);
+        scene.get<engine::Sound>(swim).set_gain(value);
+        scene.get<engine::Sound>(horse).set_gain(value);
     }
 
 }
