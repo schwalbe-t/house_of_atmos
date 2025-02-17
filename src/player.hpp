@@ -8,12 +8,12 @@
 #include "collider.hpp"
 #include "renderer.hpp"
 #include "human.hpp"
-#include "human.hpp"
 
 namespace houseofatmos {
 
     using namespace houseofatmos::engine::math;
 
+    
     struct Player {
     
         struct Serialized {

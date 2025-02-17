@@ -296,6 +296,11 @@
         "en": "On board",
         "bg": "На борд"
     },
+    "ui_required": {
+        "_context": "Shown in the research viewer - title of the section that tells the user how much they need to produce to unlock the given advancement",
+        "de": "Benötigt",
+        "en": "Required"
+    },
 
 
 

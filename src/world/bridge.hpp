@@ -3,10 +3,13 @@
 
 #include "../renderer.hpp"
 #include "../ui_const.hpp"
+#include "../collider.hpp"
 
 namespace houseofatmos::world {
 
     using namespace houseofatmos;
+    namespace ui = houseofatmos::engine::ui;
+
 
     struct Bridge {
 

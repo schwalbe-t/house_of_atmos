@@ -21,7 +21,7 @@ namespace houseofatmos::world {
             Balance balance;
             CarriageManager::Serialized carriages;
             PersonalHorse::Serialized personal_horse;
-            Research::Serialized research;
+            research::Research::Serialized research;
         };
 
         static inline u64 units_per_tile = 5;
@@ -36,7 +36,7 @@ namespace houseofatmos::world {
         Balance balance;
         CarriageManager carriages;
         PersonalHorse personal_horse;
-        Research research;
+        research::Research research;
 
         private:
         bool settlement_allowed_at(

@@ -4,8 +4,8 @@
 #include <engine/arena.hpp>
 #include <engine/window.hpp>
 #include "../balance.hpp"
+#include "../research/research.hpp"
 #include "item.hpp"
-#include "research.hpp"
 #include <vector>
 #include <utility>
 #include <unordered_map>
@@ -102,7 +102,8 @@ namespace houseofatmos::world {
         std::unordered_map<Item::Type, f64> compute_throughput() const;
 
         void update(
-            const engine::Window& window, Balance& balance, Research& research
+            const engine::Window& window, Balance& balance, 
+            research::Research& research
         );
 
         Serialized serialize(engine::Arena& buffer) const;
@@ -137,7 +138,8 @@ namespace houseofatmos::world {
         void delete_complex(ComplexId complex);
 
         void update(
-            const engine::Window& window, Balance& balance, Research& research
+            const engine::Window& window, Balance& balance, 
+            research::Research& research
         );
 
         Serialized serialize(engine::Arena& buffer) const;

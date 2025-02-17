@@ -34,7 +34,7 @@ namespace houseofatmos::interior {
         ui::Element* coin_counter = nullptr;
         Toasts toasts;
         Interactables interactables;
-        std::shared_ptr<Interactable> exit_interactable;
+        std::vector<std::shared_ptr<Interactable>> created_interactables;
 
         Scene(
             const Interior& interior, 
@@ -42,6 +42,8 @@ namespace houseofatmos::interior {
             std::shared_ptr<engine::Scene>&& outside
         );
         void load_resources();
+
+        void init_ui(engine::Window& window);
 
         bool valid_player_position(const AbsCollider& player_coll);
         void update(engine::Window& window) override;

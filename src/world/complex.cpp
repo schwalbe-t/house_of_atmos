@@ -207,7 +207,8 @@ namespace houseofatmos::world {
     }
 
     void Complex::update(
-        const engine::Window& window, Balance& balance, Research& research
+        const engine::Window& window, Balance& balance, 
+        research::Research& research
     ) {
         for(auto& member: this->members) {
             for(Conversion& conversion: member.second.conversions) {
@@ -310,7 +311,8 @@ namespace houseofatmos::world {
     }
 
     void ComplexBank::update(
-        const engine::Window& window, Balance& balance, Research& research
+        const engine::Window& window, Balance& balance, 
+        research::Research& research
     ) {
         for(Complex& complex: this->complexes) {
             if(complex.is_free()) { continue; }

@@ -321,12 +321,15 @@ namespace houseofatmos::world {
     void Scene::update(engine::Window& window) {
         this->world->settings.apply(*this, window);
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
-        if(window.was_pressed(engine::Key::Escape)) {
-            this->terrain_map.hide();
+        bool paused_game = window.was_pressed(engine::Key::Escape)
+            && this->terrain_map.element()->hidden;
+        if(paused_game) {
             window.set_scene(std::make_shared<PauseMenu>(
                 std::shared_ptr<World>(this->world), window.scene(), 
                 this->renderer.output()
             ));
+        } else if(window.was_pressed(engine::Key::Escape)) {
+            this->terrain_map.hide();
         }
         if(this->characters.size() == 0) {
             create_peasants(
@@ -334,12 +337,6 @@ namespace houseofatmos::world {
                 this->world->player.character, this->characters
             );
         }
-        this->world->balance.update_counter(*this->coin_counter);
-        this->interactables.observe_from(
-            this->world->player.character.position, this->renderer, window
-        );
-        this->toasts.update(*this);
-        this->ui.update(window);
         this->world->carriages.update_all(
             this->world->player.character.position, this->draw_distance_units(),
             *this, window, 
@@ -349,6 +346,12 @@ namespace houseofatmos::world {
             window, this->world->balance, this->world->research
         );
         this->world->research.check_completion(this->toasts);
+        this->world->balance.update_counter(*this->coin_counter);
+        this->interactables.observe_from(
+            this->world->player.character.position, this->renderer, window
+        );
+        this->toasts.update(*this);
+        this->ui.update(window);
         bool update_action_modes = !this->world->player.in_water
             && !this->world->player.is_riding
             && this->terrain_map.element()->hidden;

@@ -12,7 +12,7 @@ namespace houseofatmos::interior {
     Scene::Scene(
         const Interior& interior, 
         std::shared_ptr<world::World>&& world,
-            std::shared_ptr<engine::Scene>&& outside
+        std::shared_ptr<engine::Scene>&& outside
     ): interior(interior), toasts(Toasts(world->settings.localization())) {
         this->load_resources();
         this->world = std::move(world);
@@ -37,6 +37,33 @@ namespace houseofatmos::interior {
     }
 
 
+    void Scene::init_ui(engine::Window& window) {
+        Toasts::States toast_states = this->toasts.make_states();
+        this->ui.root.children.clear();
+        this->ui.with_element(this->interactables.create_container());
+        this->created_interactables.push_back(this->interactables.create(
+            [this, window = &window]() {
+                window->set_scene(std::shared_ptr<engine::Scene>(this->outside));
+            }, 
+            this->interior.exit_interactable
+        ));
+        for(const auto& interaction: this->interior.interactions) {
+            this->created_interactables.push_back(this->interactables.create(
+                [handler = interaction.handler, this, window = &window]() {
+                    handler(this->world, this->renderer, *window);
+                },
+                interaction.position
+            ));
+        }
+        this->ui.with_element(
+            this->world->balance.create_counter(&this->coin_counter)
+        );
+        this->toasts.set_scene(this);
+        this->ui.with_element(this->toasts.create_container());
+        this->toasts.put_states(std::move(toast_states));
+    }
+
+
     bool Scene::valid_player_position(const AbsCollider& player_coll) {
         for(const Interior::Room& room: this->interior.rooms) {
             for(const RelCollider& coll: room.colliders) {
@@ -57,25 +84,11 @@ namespace houseofatmos::interior {
             ));
         }
         if(this->ui.root.children.size() == 0) {
-            this->ui.with_element(this->interactables.create_container());
-            this->exit_interactable = this->interactables.create(
-                [this, window = &window]() {
-                    window->set_scene(std::shared_ptr<engine::Scene>(this->outside));
-                }, 
-                this->interior.exit_interactable
-            );
-            this->ui.root.children.push_back(
-                this->world->balance.create_counter(&this->coin_counter)
-            );
-            this->toasts.set_scene(this);
-            this->ui.root.children.push_back(this->toasts.create_container());
+            this->init_ui(window);
         }
         this->interactables.observe_from(
             this->player.character.position, this->renderer, window
         );
-        this->world->balance.update_counter(*this->coin_counter);
-        this->toasts.update(*this);
-        this->ui.update(window);
         this->world->carriages.update_all(
             Vec<3>(0.0, 0.0, 0.0), 0.0,
             *this, window, 
@@ -85,6 +98,9 @@ namespace houseofatmos::interior {
             window, this->world->balance, this->world->research
         );
         this->world->research.check_completion(this->toasts);
+        this->world->balance.update_counter(*this->coin_counter);
+        this->toasts.update(*this);
+        this->ui.update(window);
         this->player.update(window);
         this->player.next_step 
             = this->interior.player_velocity_matrix * this->player.next_step;
