@@ -105,32 +105,38 @@
     "menu_windowed": {
         "_context": "Text of the button that makes the game run in windowed mode",
         "en": "Windowed",
-        "de": "Fenstermodus"
+        "de": "Fenstermodus",
+        "bg": "Режим прозорец"
     },
     "menu_fullscreen": {
         "_context": "Text of the button that makes the game run in fullscreen mode",
         "en": "Fullscreen",
-        "de": "Vollbildmodus"
+        "de": "Vollbildmodus",
+        "bg": "Цял екран"
     },
     "menu_music_volume": {
         "_context": "Displayed over the slider that controls the music volume",
         "en": "Music Volume",
-        "de": "Musiklautstärke"
+        "de": "Musiklautstärke",
+        "bg": "Сила на музиката"
     },
     "menu_sound_volume": {
         "_context": "Displayed over the slider that controls the volume of sound effects",
         "en": "Sound Effect Volume",
-        "de": "Geräuschelautstärke"
+        "de": "Geräuschelautstärke",
+        "bg": "Сила на звукове"
     },
     "menu_view_distance": {
         "_context": "Displayed over the slider that controls the view distance of the game",
         "en": "View distance",
-        "de": "Sichtdistanz"
+        "de": "Sichtdistanz",
+        "bg": "Разстояние на виждане"
     },
     "menu_close_menu": {
         "_context": "Confirms and closes the current menu (e.g. credits, settings)",
         "en": "Done",
-        "de": "Fertig"
+        "de": "Fertig",
+        "bg": "Готово"
     },
 
 
