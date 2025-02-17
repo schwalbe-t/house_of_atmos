@@ -345,7 +345,10 @@ namespace houseofatmos::world {
             *this, window, 
             this->world->complexes, this->world->terrain, this->toasts
         );
-        this->world->complexes.update(window, this->world->balance);
+        this->world->complexes.update(
+            window, this->world->balance, this->world->research
+        );
+        this->world->research.check_completion(this->toasts);
         bool update_action_modes = !this->world->player.in_water
             && !this->world->player.is_riding
             && this->terrain_map.element()->hidden;

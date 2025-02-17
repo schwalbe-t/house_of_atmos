@@ -144,8 +144,7 @@ namespace houseofatmos {
     }
 
     ui::Element Settings::create_menu(
-        const engine::Localization& local,
-        engine::Scene& scene, engine::Window& window,
+        const engine::Localization& local, engine::Scene& scene,
         std::function<void ()>&& close_handler
     ) {
         ui::Element menu = ui::Element()

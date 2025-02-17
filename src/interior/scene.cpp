@@ -81,7 +81,10 @@ namespace houseofatmos::interior {
             *this, window, 
             this->world->complexes, this->world->terrain, this->toasts
         );
-        this->world->complexes.update(window, this->world->balance);
+        this->world->complexes.update(
+            window, this->world->balance, this->world->research
+        );
+        this->world->research.check_completion(this->toasts);
         this->player.update(window);
         this->player.next_step 
             = this->interior.player_velocity_matrix * this->player.next_step;

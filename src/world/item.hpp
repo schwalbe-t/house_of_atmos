@@ -8,6 +8,9 @@
 
 namespace houseofatmos::world {
 
+    namespace ui = houseofatmos::engine::ui;
+
+
     struct Item {
 
         struct TypeInfo {

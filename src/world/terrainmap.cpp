@@ -591,9 +591,11 @@ namespace houseofatmos::world {
         return info;
     }
 
+    
     ui::Element TerrainMap::display_complex_info(
         const Complex& complex, const engine::Localization& local
     ) {
+        static const f64 display_epsilon = 0.00001;
         std::unordered_map<Item::Type, f64> throughput 
             = complex.compute_throughput();
         ui::Element inputs = ui::Element()
@@ -601,7 +603,7 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [item, freq]: throughput) {
-            if(freq >= 0.0) { continue; }
+            if(freq >= -display_epsilon) { continue; }
             inputs.children.push_back(TerrainMap::display_item_stack(
                 item, std::format("{}", fabs(freq)), local
             ));
@@ -611,7 +613,7 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [item, freq]: throughput) {
-            if(freq <= 0.0) { continue; }
+            if(freq <= display_epsilon) { continue; }
             outputs.children.push_back(TerrainMap::display_item_stack(
                 item, std::format("{}", freq), local
             ));

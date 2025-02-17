@@ -70,7 +70,8 @@
     "menu_settings": {
         "_context": "Text of the button used to open the game settings",
         "de": "Einstellungen",
-        "en": "Settings"
+        "en": "Settings",
+        "bg": "Настройки"
     },
     "menu_credits": {
         "_context": "Text of the button used to show (and title of) the credits screen",
@@ -392,6 +393,20 @@
         "de": "Brückenenden sind nicht auf der selben Höhe!",
         "en": "Bridge ends are not on the same height!",
         "bg": "Краищата на моста не са на един и същ ръст!"
+    },
+    "toast_research_complete": {
+        "_context": "Pop-up that notifies the user that the conditions for some research have been met",
+        "_placeholders": "The localized name of the completed research",
+        "de": "Forsching abgeschlossen: \"{}\"",
+        "en": "Research complete: \"{}\""
+    },
+
+
+
+    "research_name_metalworking": {
+        "_context": "Given to the player after setting up a basic steel production line",
+        "de": "Metalverarbeitung",
+        "en": "Metalworking"
     },
 
 

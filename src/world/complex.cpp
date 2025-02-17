@@ -206,7 +206,9 @@ namespace houseofatmos::world {
         return result;
     }
 
-    void Complex::update(const engine::Window& window, Balance& balance) {
+    void Complex::update(
+        const engine::Window& window, Balance& balance, Research& research
+    ) {
         for(auto& member: this->members) {
             for(Conversion& conversion: member.second.conversions) {
                 conversion.passed += window.delta_time();
@@ -220,10 +222,13 @@ namespace houseofatmos::world {
                 }
                 if(allowed_times == 0) { continue; }
                 for(auto& [count, item]: conversion.inputs) {
-                    this->remove_stored(item, allowed_times * count);
+                    u64 consumed = allowed_times * count;
+                    this->remove_stored(item, consumed);
                 }
                 for(auto& [count, item]: conversion.outputs) {
-                    this->add_stored(item, allowed_times * count);
+                    u64 produced = allowed_times * count;
+                    this->add_stored(item, produced);
+                    research.report_item_production(item, produced);
                 }
             }
         }
@@ -304,10 +309,12 @@ namespace houseofatmos::world {
         return &this->complexes[complex_i];   
     }
 
-    void ComplexBank::update(const engine::Window& window, Balance& balance) {
+    void ComplexBank::update(
+        const engine::Window& window, Balance& balance, Research& research
+    ) {
         for(Complex& complex: this->complexes) {
             if(complex.is_free()) { continue; }
-            complex.update(window, balance);
+            complex.update(window, balance, research);
         }
     }
 

@@ -5,6 +5,7 @@
 #include <engine/window.hpp>
 #include "../balance.hpp"
 #include "item.hpp"
+#include "research.hpp"
 #include <vector>
 #include <utility>
 #include <unordered_map>
@@ -100,7 +101,9 @@ namespace houseofatmos::world {
 
         std::unordered_map<Item::Type, f64> compute_throughput() const;
 
-        void update(const engine::Window& window, Balance& balance);
+        void update(
+            const engine::Window& window, Balance& balance, Research& research
+        );
 
         Serialized serialize(engine::Arena& buffer) const;
 
@@ -133,7 +136,9 @@ namespace houseofatmos::world {
         const Complex* get_arbitrary(u64 complex_i) const;
         void delete_complex(ComplexId complex);
 
-        void update(const engine::Window& window, Balance& balance);
+        void update(
+            const engine::Window& window, Balance& balance, Research& research
+        );
 
         Serialized serialize(engine::Arena& buffer) const;
 

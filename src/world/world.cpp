@@ -266,6 +266,7 @@ namespace houseofatmos::world {
             serialized.carriages, buffer, this->terrain
         );
         this->personal_horse = PersonalHorse(serialized.personal_horse);
+        this->research = Research(serialized.research, buffer);
     }
 
     engine::Arena World::serialize() const {
@@ -280,6 +281,7 @@ namespace houseofatmos::world {
         ComplexBank::Serialized complexes = this->complexes.serialize(buffer);
         Player::Serialized player = this->player.serialize();
         CarriageManager::Serialized carriages = this->carriages.serialize(buffer);
+        Research::Serialized research = this->research.serialize(buffer);
         auto& serialized = buffer.value_at<World::Serialized>(root_offset);
         serialized.save_path_len = this->save_path.size();
         serialized.save_path_offset = buffer.alloc_array<char>(
@@ -291,6 +293,7 @@ namespace houseofatmos::world {
         serialized.balance = this->balance;
         serialized.carriages = carriages;
         serialized.personal_horse = this->personal_horse.serialize();
+        serialized.research = research;
         return buffer;
     }
 

@@ -41,8 +41,7 @@ namespace houseofatmos {
             std::string suffix, std::function<void (f64)>&& handler
         );
         ui::Element create_menu(
-            const engine::Localization& local,
-            engine::Scene& scene, engine::Window& window,
+            const engine::Localization& local, engine::Scene& scene,
             std::function<void ()>&& close_handler
         );
 
