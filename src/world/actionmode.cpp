@@ -56,6 +56,7 @@ namespace houseofatmos::world {
         const Renderer& renderer
     ) {
         (void) renderer;
+        if(!this->permitted) { return; }
         auto [s_tile_x, s_tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
@@ -172,49 +173,85 @@ namespace houseofatmos::world {
         }
     }
 
+    static u64 area_abs_terrain_mod_amount(
+        const Terrain& terrain, TerraformMode::Mode mode,
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z, i16 start_elev
+    ) {
+        u64 sum = 0;
+        for(u64 x = min_x; x <= max_x; x += 1) {
+            for(u64 z = min_z; z <= max_z; z += 1) {
+                sum += (u64) std::abs(terrain_mod_amount(
+                    terrain, x, z, mode, start_elev
+                ));
+            }
+        }
+        return sum;
+    }
+
     static bool terrain_modification_is_valid(
         const Terrain& terrain,
         u64 min_x, u64 min_z, u64 max_x, u64 max_z,
         TerraformMode::Mode mode, i16 s_elev
     ) {
-        u64 start_x = min_x >= 1? min_x - 1 : 0;
-        u64 start_z = min_z >= 1? min_z - 1 : 0;
-        u64 end_x = std::min(max_x, terrain.width_in_tiles() - 1);
-        u64 end_z = std::min(max_z, terrain.height_in_tiles() - 1);
-        for(u64 x = start_x; x <= end_x; x += 1) {
-            for(u64 z = start_z; z <= end_z; z += 1) {
-                bool is_occupied = (bool) terrain.building_at((i64) x, (i64) z)
-                    || (bool) terrain.bridge_at((i64) x, (i64) z);
-                u64 lx = std::max(x, start_x + 1); // left x
-                u64 rx = std::min(lx + 1, end_x); // right x
-                u64 tz = std::max(z, start_z + 1); // top z
-                u64 bz = std::min(tz + 1, end_z); // bottom z
-                bool is_modified 
-                    = terrain_mod_amount(terrain, lx, tz, mode, s_elev) != 0
-                    || terrain_mod_amount(terrain, lx, bz, mode, s_elev) != 0
-                    || terrain_mod_amount(terrain, rx, tz, mode, s_elev) != 0
-                    || terrain_mod_amount(terrain, rx, bz, mode, s_elev) != 0;
-                if(is_occupied && is_modified) { return false; }
+        // ensure that the ground beneath all buildings in a 1 chunk radius 
+        // don't get modified 
+        // (works as long as no building is larger than a chunk) 
+        u64 start_ch_x = min_x / terrain.tiles_per_chunk();
+        if(start_ch_x >= 1) { start_ch_x -= 1; }
+        u64 start_ch_z = min_z / terrain.tiles_per_chunk();
+        if(start_ch_z >= 1) { start_ch_z -= 1; }
+        u64 end_ch_x = (max_x / terrain.tiles_per_chunk()) + 1;
+        end_ch_x = std::min(end_ch_x, terrain.width_in_chunks() - 1);
+        u64 end_ch_z = (max_z / terrain.tiles_per_chunk()) + 1;
+        end_ch_z = std::min(end_ch_z, terrain.height_in_chunks() - 1);
+        for(u64 ch_x = start_ch_x; ch_x <= end_ch_x; ch_x += 1) {
+            for(u64 ch_z = start_ch_z; ch_z <= end_ch_z; ch_z += 1) {
+                const Terrain::ChunkData& chunk = terrain.chunk_at(ch_x, ch_z);
+                for(const Building& building: chunk.buildings) {
+                    const Building::TypeInfo& info = building.get_type_info();
+                    // determine the vertex bounds of the building
+                    u64 b_start_x = ch_x * terrain.tiles_per_chunk() + building.x;
+                    u64 b_start_z = ch_z * terrain.tiles_per_chunk() + building.z;
+                    u64 b_end_x = b_start_x + info.width;
+                    u64 b_end_z = b_start_z + info.height;
+                    // determine the intersection
+                    bool has_zero_overlap = min_x > b_end_x || min_z > b_end_z
+                        || max_x < b_start_x || max_z < b_start_z;
+                    if(has_zero_overlap) { continue; }
+                    u64 i_start_x = std::max(min_x, b_start_x);
+                    u64 i_start_z = std::max(min_z, b_start_z);
+                    u64 i_end_x = std::min(max_x, b_end_x);
+                    u64 i_end_z = std::min(max_z, b_end_z);
+                    // ensure that each point in the intersection does not get
+                    // modified
+                    u64 i_mod = area_abs_terrain_mod_amount(
+                        terrain, mode, i_start_x, i_start_z, i_end_x, i_end_z, 
+                        s_elev
+                    );
+                    if(i_mod > 0) { return false; }
+                }
             }
+        }
+        // check the ground beneath all bridges
+        for(const Bridge& bridge: terrain.bridges) {
+            u64 b_end_x = bridge.end_x + 1;
+            u64 b_end_z = bridge.end_z + 1;
+            // determine the intersection
+            bool has_zero_overlap = min_x > b_end_x || min_z > b_end_z
+                || max_x < bridge.start_x || max_z < bridge.start_z;
+            if(has_zero_overlap) { continue; }
+            u64 i_start_x = std::max(min_x, bridge.start_x);
+            u64 i_start_z = std::max(min_z, bridge.start_z);
+            u64 i_end_x = std::min(max_x, b_end_x);
+            u64 i_end_z = std::min(max_z, b_end_z);
+            // ensure that each point in the intersection does not get
+            // modified
+            u64 i_mod = area_abs_terrain_mod_amount(
+                terrain, mode, i_start_x, i_start_z, i_end_x, i_end_z, s_elev
+            );
+            if(i_mod > 0) { return false; }
         }
         return true;
-    }
-
-    static const u64 terrain_mod_cost_per_vertex = 50;
-
-    static u64 terrain_modification_cost(
-        const Terrain& terrain, TerraformMode::Mode mode,
-        u64 min_x, u64 min_z, u64 max_x, u64 max_z, i16 start_elev
-    ) {
-        u64 cost = 0;
-        for(u64 x = min_x; x <= max_x; x += 1) {
-            for(u64 z = min_z; z <= max_z; z += 1) {
-                cost += (u64) std::abs(terrain_mod_amount(
-                    terrain, x, z, mode, start_elev
-                ));
-            }
-        }
-        return cost * terrain_mod_cost_per_vertex;
     }
 
     static void apply_terrain_modification(
@@ -244,6 +281,8 @@ namespace houseofatmos::world {
             }
         }
     }
+
+    static const u64 terrain_mod_cost_per_unit = 50;
 
     void TerraformMode::update(
         const engine::Window& window, engine::Scene& scene, 
@@ -280,15 +319,18 @@ namespace houseofatmos::world {
             // compute cost
             i16 start_elev = this->world->terrain
                 .elevation_at(this->selection.start_x, this->selection.start_z);
-            u64 cost = terrain_modification_cost(
+            u64 cost = area_abs_terrain_mod_amount(
                 this->world->terrain, 
                 *this->mode, min_x, min_z, max_x, max_z, start_elev
-            );
+            ) * terrain_mod_cost_per_unit;
             bool is_valid = terrain_modification_is_valid(
                 this->world->terrain, min_x, min_z, max_x, max_z, 
                 *this->mode, start_elev
             );
-            if(is_valid && this->world->balance.pay_coins(cost, this->toasts)) {
+            bool do_operation = is_valid 
+                && this->permitted
+                && this->world->balance.pay_coins(cost, this->toasts);
+            if(do_operation) {
                 apply_terrain_modification(
                     this->world->terrain, 
                     *this->mode, min_x, min_z, max_x, max_z, start_elev
@@ -550,6 +592,7 @@ namespace houseofatmos::world {
     ) {
         (void) scene;
         (void) renderer;
+        if(!this->permitted) { return; }
         const Building::TypeInfo& type_info = Building::types
             .at((size_t) *this->selected_type);
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
@@ -593,6 +636,7 @@ namespace houseofatmos::world {
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
     ) {
+        if(!this->permitted) { return; }
         const engine::Texture& wireframe_texture = this->placement_valid
             ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
             : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
@@ -782,6 +826,7 @@ namespace houseofatmos::world {
                 this->toasts.add_error("toast_bridge_ends_dont_match", {});
             }
             bool doing_placement = this->placement_valid 
+                && this->permitted
                 && this->world->balance.pay_coins(cost, this->toasts);
             if(doing_placement) {
                 this->world->terrain.bridges.push_back(this->planned);

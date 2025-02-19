@@ -51,6 +51,7 @@ namespace houseofatmos::world {
         ui::Manager& ui;
         Toasts& toasts;
         engine::Localization& local;
+        bool permitted = true;
 
         ActionMode(
             std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,

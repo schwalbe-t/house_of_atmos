@@ -352,12 +352,10 @@ namespace houseofatmos::world {
         );
         this->toasts.update(*this);
         this->ui.update(window);
-        bool update_action_modes = !this->world->player.in_water
+        this->action_mode->permitted = !this->world->player.in_water
             && !this->world->player.is_riding
             && this->terrain_map.element()->hidden;
-        if(update_action_modes) {
-            this->action_mode->update(window, *this, this->renderer);
-        }
+        this->action_mode->update(window, *this, this->renderer);
         this->world->personal_horse.update(
             *this, window, this->world->terrain, this->world->player, 
             this->interactables, this->toasts
@@ -416,12 +414,7 @@ namespace houseofatmos::world {
         this->renderer.render_to_output();
         this->render_geometry(window);
         this->world->terrain.render_water(*this, this->renderer, window);
-        bool render_action_modes = !this->world->player.in_water
-            && !this->world->player.is_riding
-            && this->terrain_map.element()->hidden;
-        if(render_action_modes) {
-            this->action_mode->render(window, *this, this->renderer);
-        }
+        this->action_mode->render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
         this->terrain_map.render();
         this->ui.render(*this, window);
