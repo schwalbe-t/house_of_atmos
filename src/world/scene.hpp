@@ -11,6 +11,7 @@
 #include "../ui_const.hpp"
 #include "../audio_const.hpp"
 #include "../renderer.hpp"
+#include "../dialogue.hpp"
 #include "actionmode.hpp"
 #include "terrainmap.hpp"
 
@@ -37,6 +38,7 @@ namespace houseofatmos::world {
         ui::Element* coin_counter = nullptr;
         TerrainMap terrain_map;
         Toasts toasts;
+        DialogueManager dialogues;
 
         Scene(std::shared_ptr<World> world);
         void load_resources();

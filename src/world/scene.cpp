@@ -102,6 +102,7 @@ namespace houseofatmos::world {
         scene.toasts.set_scene(&scene);
         scene.ui.root.children.push_back(scene.toasts.create_container());
         scene.toasts.put_states(std::move(toast_states));
+        scene.ui.root.children.push_back(scene.dialogues.create_container());
     }
 
 
@@ -330,6 +331,12 @@ namespace houseofatmos::world {
         } else if(window.was_pressed(engine::Key::Escape)) {
             this->terrain_map.hide();
         }
+        ////////////////////////////////////////////////////////////////////////
+        if(window.was_pressed(engine::Key::T)) {
+            this->dialogues.say(Dialogue("This is a demonstration\nof the new dialogue system.", &voice::voiced, 2.0, 1.2));
+            this->dialogues.say(Dialogue("I wonder what other games\nhave talking sounds like this?", &voice::voiced, 1.4, 1.0));
+        }
+        ////////////////////////////////////////////////////////////////////////
         if(this->characters.size() == 0) {
             create_peasants(
                 this->world->terrain, window, 
@@ -349,6 +356,7 @@ namespace houseofatmos::world {
         );
         this->world->research.check_completion(this->toasts);
         this->world->balance.update_counter(*this->coin_counter);
+        this->dialogues.update(*this, window);
         this->interactables.observe_from(
             this->world->player.character.position, this->renderer, window
         );

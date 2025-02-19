@@ -221,7 +221,7 @@ namespace houseofatmos {
         }
         scene.get<engine::Soundtrack>(audio_const::soundtrack)
             .set_gain(this->music_volume);
-        sound::set_gain(scene, this->sound_volume);
+        audio_const::set_sfx_gain(scene, this->sound_volume);
         // view distance needs to be respected by the specific scene
     }
 

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <engine/audio.hpp>
+#include "dialogue.hpp"
 
 
 
@@ -65,6 +66,30 @@ namespace houseofatmos::sound {
 
 
 
+namespace houseofatmos::voice {
+
+    using Sound = houseofatmos::engine::Sound;
+    using Voice = houseofatmos::Dialogue::Voice;
+
+
+    extern const Voice voiced;
+    extern const Voice popped;
+
+
+    inline void load_voices(engine::Scene& scene) {
+        voiced.load(scene);
+        popped.load(scene);
+    }
+
+    inline void set_gain(engine::Scene& scene, f64 value) {
+        voiced.set_gain(scene, value);
+        popped.set_gain(scene, value);
+    }
+
+}
+
+
+
 namespace houseofatmos::audio_const {
 
     using Soundtrack = houseofatmos::engine::Soundtrack;
@@ -80,7 +105,13 @@ namespace houseofatmos::audio_const {
 
     inline void load_all(engine::Scene& scene) {
         sound::load_sounds(scene);
+        voice::load_voices(scene);
         scene.load(Soundtrack::Loader(soundtrack));
+    }
+
+    inline void set_sfx_gain(engine::Scene& scene, f64 value) {
+        sound::set_gain(scene, value);
+        voice::set_gain(scene, value);
     }
 
 }
