@@ -53,9 +53,6 @@ namespace houseofatmos {
         void show_settings(
             const engine::Localization& local, engine::Window& window
         );
-        void show_credits(
-            const engine::Localization& local, engine::Window& window
-        );
 
         void update(engine::Window& window) override;
         void render(engine::Window& window) override;

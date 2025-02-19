@@ -154,12 +154,6 @@ namespace houseofatmos {
             }
         ));
         buttons.children.push_back(make_button(
-            local.text("menu_credits"),
-            [this, local = &local, window = &window]() {
-                this->show_credits(*local, *window);
-            }
-        ));
-        buttons.children.push_back(make_button(
             local.text("menu_exit_game"),
             []() { std::exit(0); }
         ));
@@ -248,51 +242,6 @@ namespace houseofatmos {
                 this->show_title_screen(*local, *window);
             }
         ));
-    }
-
-    void MainMenu::show_credits(
-        const engine::Localization& local, engine::Window& window
-    ) {
-        this->ui.root.children.clear();
-        this->ui.root.children.push_back(ui::Element()
-            .with_pos(0.5, 0.15, ui::position::window_fract)
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(local.text("menu_credits"), &ui_font::bright)
-            .as_movable()
-        );
-        ui::Element credits = ui::Element()
-            .with_pos(0.5, 0.7, ui::position::window_fract)
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Vertical)
-            .as_movable();
-        std::string credit_text = local.text("menu_credit_text");
-        size_t start = 0;
-        while(start < credit_text.size()) {
-            size_t end = credit_text.find('\n', start);
-            if(end == std::string::npos) { end = credit_text.size(); }
-            std::string line = credit_text.substr(start, end - start);
-            credits.children.push_back(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(line, &ui_font::dark)
-                .with_padding(1)
-                .as_movable()
-            );
-            start = end + 1;
-        }
-        credits.children.push_back(make_button(
-                local.text("menu_close_menu"),
-                [this, local = &local, window = &window]() {
-                    this->show_title_screen(*local, *window);
-                }
-            )
-            .with_padding(2.0)
-            .as_movable()
-        );
-        this->ui.root.children.push_back(credits
-            .with_padding(4)
-            .with_background(&ui_background::scroll_vertical)
-            .as_movable()
-        );
     }
 
     static const f64 camera_rotation_period = 60.0;

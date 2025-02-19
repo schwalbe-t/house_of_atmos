@@ -73,12 +73,6 @@
         "en": "Settings",
         "bg": "Настройки"
     },
-    "menu_credits": {
-        "_context": "Text of the button used to show (and title of) the credits screen",
-        "de": "Credits",
-        "en": "Credits",
-        "bg": "Надписи"
-    },
     "menu_exit_game": {
         "_context": "Text of the button used to close the game",
         "de": "Spiel verlassen",
@@ -93,21 +87,15 @@
     },
     "menu_copyright_notice": {
         "_context": "The copyright notice text as displayed in the main menu",
-        "de": "(C) schwalbe_t 2024",
-        "en": "(C) schwalbe_t 2024",
-        "bg": "(C) schwalbe_t 2024"
-    },
-    "menu_credit_text": {
-        "_context": "The full credit text as displayed on the credits screen (this text is an exception in that it allows new line characters)",
-        "en": "Programming, 3D models and textures:\nschwalbe_t\n\nTranslation:\nschwalbe_t (English and German)\nGalahad and Mitko0012 (Bulgarian)\n\nTesting:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nLicensed under GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html",
-        "de": "Programmierung, 3D-Modelle und Texturen:\nschwalbe_t\n\nÜbersetzung:\nschwalbe_t (Englisch und Deutsch)\nGalahad und Mitko0012 (Bulgarisch)\n\nTesting:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nLizensiert unter GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html",
-        "bg": "Програмиране, 3D модели и текстури:\nschwalbe_t\n\nПревод:\nschwalbe_t (английски и немски)\nGalahad и Mitko0012 (български)\n\nТестване:\nSpionGeilo\nMitko0012\n\n\n(C) schwalbe_t 2024\nЛицензиран под GPL-3.0\nhttps://www.gnu.org/licenses/gpl-3.0.html"
+        "de": "(C) schwalbe_t 2024 - Lizenziert unter GPLv3",
+        "en": "(C) schwalbe_t 2024 - Licensed under GPLv3",
+        "bg": "(C) schwalbe_t 2024 - Лицензирано под GPLv3"
     },
     "menu_windowed": {
         "_context": "Text of the button that makes the game run in windowed mode",
         "en": "Windowed",
         "de": "Fenstermodus",
-        "bg": "Режим прозорец"
+        "bg": "Прозоречен режим"
     },
     "menu_fullscreen": {
         "_context": "Text of the button that makes the game run in fullscreen mode",
@@ -124,14 +112,14 @@
     "menu_sound_volume": {
         "_context": "Displayed over the slider that controls the volume of sound effects",
         "en": "Sound Effect Volume",
-        "de": "Geräuschelautstärke",
-        "bg": "Сила на звукове"
+        "de": "Soundlautstärke",
+        "bg": "Сила на звуците"
     },
     "menu_view_distance": {
         "_context": "Displayed over the slider that controls the view distance of the game",
         "en": "View distance",
-        "de": "Sichtdistanz",
-        "bg": "Разстояние на виждане"
+        "de": "Sichtweite",
+        "bg": "Дистанция на видимостта"
     },
     "menu_close_menu": {
         "_context": "Confirms and closes the current menu (e.g. credits, settings)",
@@ -270,7 +258,7 @@
         "_context": "Schedule item can be set to 'Pick up' items (move items from carriage to buildings) at some set building complex (or other location)",
         "de": "Belade",
         "en": "Pick up",
-        "bg": "Вдигни"
+        "bg": "Вземи"
     },
     "ui_drop_off": {
         "_context": "Schedule item can be set to 'Drop off' items (move items from buildings to carriage) at some set building complex (or other location)",
@@ -298,8 +286,9 @@
     },
     "ui_required": {
         "_context": "Shown in the research viewer - title of the section that tells the user how much they need to produce to unlock the given advancement",
-        "de": "Benötigt",
-        "en": "Required"
+        "de": "Voraussetzungen",
+        "en": "Requirements",
+        "bg": "Изисквания"
     },
 
 
@@ -327,7 +316,7 @@
         "_context": "Pop-up that notifies the user when they try to modify terrain under a building or bridge (note: localized text should be why they can't do it, not what they did)",
         "de": "Gelände unter Gebäuden und Brücken kann nicht bearbeitet werden!",
         "en": "Terrain occupied by buildings or bridges may not be modified!",
-        "bg": "Земя, която състой сгради или мости не може да се променя."
+        "bg": "Земя, заета от сгради или мостове, не може да се променя."
     },
     "toast_invalid_building_placement": {
         "_context": "Pop-up that notifies the user when they try to place a building on uneven terrain (note: localized text should be why they can't do it, not what they did)",
@@ -397,21 +386,23 @@
         "_context": "Pop-up that notifies the user that the ends of the bridge they attempted to build are not on the same height",
         "de": "Brückenenden sind nicht auf der selben Höhe!",
         "en": "Bridge ends are not on the same height!",
-        "bg": "Краищата на моста не са на един и същ ръст!"
+        "bg": "Краищата на мостта не са на едно и също ниво!"
     },
     "toast_research_complete": {
         "_context": "Pop-up that notifies the user that the conditions for some research have been met",
         "_placeholders": "The localized name of the completed research",
-        "de": "Forsching abgeschlossen: \"{}\"",
-        "en": "Research complete: \"{}\""
+        "de": "Forschung abgeschlossen: \"{}\"",
+        "en": "Research complete: \"{}\"",
+        "bg": "Завършено изследване: \"{}\""
     },
 
 
 
     "research_name_metalworking": {
         "_context": "Given to the player after setting up a basic steel production line",
-        "de": "Metalverarbeitung",
-        "en": "Metalworking"
+        "de": "Metallverarbeitung",
+        "en": "Metalworking",
+        "bg": "Металообработка"
     },
 
 
@@ -450,7 +441,7 @@
         "_context": "Name of the bread item",
         "de": "Brot", 
         "en": "Bread", 
-        "bg": "Хляба"
+        "bg": "Хлябове"
     },
     "item_name_hematite": {
         "_context": "Name of the hematite item (a type of iron ore)",
@@ -474,7 +465,7 @@
         "_context": "Name of the armor item (armor for humans made of metal)",
         "de": "Rüstung",
         "en": "Armor",
-        "bg": "Броня"
+        "bg": "Брони"
     },
     "item_name_tools": {
         "_context": "Name of the tools item (tools made of metal, like a pickaxe or axe)",

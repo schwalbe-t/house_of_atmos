@@ -138,7 +138,7 @@ namespace houseofatmos::world {
             this->position.y() = terrain.elevation_at(this->position);
             // change state and play sound if at end
             if(at_end) { this->state = State::Loading; }
-            if(at_end && is_visible) {
+            if(at_end && is_visible && this->targets.size() > 1) {
                 scene.get<engine::Sound>(sound::horse).play();
             }
             // play step sounds
@@ -186,9 +186,10 @@ namespace houseofatmos::world {
                 this->curr_target_i %= this->targets.size();
                 this->clear_path();
                 this->state = State::Travelling;
-                if(is_visible) {
+                if(is_visible && this->targets.size() > 1) {
                     scene.get<engine::Sound>(sound::horse).play();
                 }
+                this->load_timer = 0.0;
             } 
         } else {
             this->load_timer = 0.0;
