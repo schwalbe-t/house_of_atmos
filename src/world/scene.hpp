@@ -32,7 +32,7 @@ namespace houseofatmos::world {
         std::vector<Character> characters;
 
         f64 camera_distance = min_camera_dist;
-        std::unique_ptr<ActionMode> action_mode;
+        std::unique_ptr<ActionMode> action_mode = nullptr;
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
         ui::Element* coin_counter = nullptr;
         TerrainMap terrain_map;

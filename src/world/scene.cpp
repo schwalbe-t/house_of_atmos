@@ -116,7 +116,6 @@ namespace houseofatmos::world {
         this->renderer.lights.push_back(Scene::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
         this->load_resources();
-        set_action_mode(*this, default_mode_const, UINT64_MAX);
     }
 
     void Scene::load_resources() {
@@ -336,6 +335,9 @@ namespace houseofatmos::world {
                 this->world->terrain, window, 
                 this->world->player.character, this->characters
             );
+        }
+        if(this->action_mode == nullptr) {
+            set_action_mode(*this, default_mode_const, UINT64_MAX);
         }
         this->world->carriages.update_all(
             this->world->player.character.position, this->draw_distance_units(),

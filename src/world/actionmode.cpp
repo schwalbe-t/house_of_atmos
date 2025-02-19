@@ -51,6 +51,8 @@ namespace houseofatmos::world {
         scene.get<engine::Sound>(sound::horse).play();
     }
 
+    static const f64 max_carriage_summon_dist = 5; // in tiles
+
     void DefaultMode::update(
         const engine::Window& window, engine::Scene& scene, 
         const Renderer& renderer
@@ -86,6 +88,13 @@ namespace houseofatmos::world {
                     &ui_background::button, &ui_background::button_select
                 )
                 .with_click_handler([this, scene = &scene, asx, asz]() {
+                    Vec<2> player = this->world->player.character.position
+                        .swizzle<2>("xz") / this->world->terrain.units_per_tile();
+                    f64 distance = (player - Vec<2>(asx, asz)).len();
+                    if(distance > max_carriage_summon_dist) {
+                        *this->button = ui::Element().as_phantom().as_movable();
+                        return;
+                    }
                     summon_carriage(
                         *scene, *this->world, asx, asz, this->toasts
                     );
