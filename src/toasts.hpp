@@ -15,12 +15,12 @@ namespace houseofatmos {
     struct Toasts {
 
         struct States {
-            std::vector<ui::Element> elements;
+            std::list<ui::Element> elements;
             std::vector<f64> timers;
         };
 
 
-        static inline std::vector<ui::Element> empty_toasts;
+        static inline std::list<ui::Element> empty_toasts;
         static inline const size_t max_toast_count = 10;
 
         private:
@@ -61,7 +61,7 @@ namespace houseofatmos {
             return container;
         }
 
-        std::vector<ui::Element>& elements() {
+        std::list<ui::Element>& elements() {
             if(this->toasts_container == nullptr) {
                 empty_toasts.clear();
                 return empty_toasts;
@@ -140,7 +140,7 @@ namespace houseofatmos {
                     i += 1;
                     continue;
                 }
-                this->elements().erase(this->elements().begin() + i);
+                this->elements().erase(std::next(this->elements().begin(), i));
                 this->toast_timers.erase(this->toast_timers.begin() + i);
             }
         }

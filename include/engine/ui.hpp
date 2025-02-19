@@ -3,9 +3,11 @@
 
 #include "window.hpp"
 #include "math.hpp"
+#include <list>
 #include <vector>
 #include <optional>
 #include <functional>
+#include <iterator>
 
 namespace houseofatmos::engine::ui {
 
@@ -81,7 +83,13 @@ namespace houseofatmos::engine::ui {
         Vec<2> position;
         PosFunc pos_func;
 
-        std::vector<Element> children;
+        // 'std::list' because:
+        //   - preserves the addresses of children even on push / pop
+        //     (this is the most important reason)
+        //   - push / pop are constant time (very very common operation)
+        //   - iteration is still constant time
+        //   - direct indexing is usually a low index, such as [0], [1] or [2]
+        std::list<Element> children;
         Direction list_direction;
 
         const Background* background;
@@ -183,6 +191,17 @@ namespace houseofatmos::engine::ui {
         bool is_hovered_over() const { return this->hovering; }
         const Vec<2>& final_size() const { return this->size_px; }
         const Vec<2>& final_pos() const { return this->position_px; }
+
+        // these use a constexpr index so noone gets any idea of using these
+        // in a loop >:/
+        template<size_t N>
+        ui::Element& child_at() {
+            return *std::next(this->children.begin(), N);
+        }
+        template<size_t N>
+        const ui::Element& child_at() const {
+            return *std::next(this->children.begin(), N);
+        }
 
         Vec<2> offset_of_child(size_t child_i) const;
         bool update_root(

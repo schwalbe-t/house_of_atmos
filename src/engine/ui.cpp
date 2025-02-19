@@ -96,10 +96,13 @@ namespace houseofatmos::engine::ui {
 
     Vec<2> Element::offset_of_child(size_t child_i) const {
         Vec<2> offset;
-        for(size_t i = 0; i < child_i; i += 1) {
-            const Element& child = this->children[i];
-            if(child.hidden) { continue; }
-            offset += child.size_px;
+        u64 i_child_i = 0;
+        for(const Element& child: this->children) {
+            if(i_child_i >= child_i) { break; }
+            if(!child.hidden) { 
+                offset += child.size_px;
+            }
+            i_child_i += 1;
         }
         switch(this->list_direction) {
             case Direction::Horizontal: return Vec<2>(offset.x(), 0);
@@ -140,10 +143,11 @@ namespace houseofatmos::engine::ui {
     ) {
         if(this->hidden) { return; }
         this->position_px = this->pos_func(*this, parent, window, unit);
-        for(size_t child_i = 0; child_i < this->children.size(); child_i += 1) {
-            Element& child = this->children[child_i];
+        size_t child_i = 0;
+        for(Element& child: this->children) {
             auto child_ref = (ChildRef) { *this, child_i };
             child.update_position(child_ref, window, unit);
+            child_i += 1;
         }
     }
 

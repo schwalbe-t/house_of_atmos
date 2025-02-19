@@ -77,7 +77,7 @@ namespace houseofatmos {
             );
             if(dist >= closest_dist) { continue; }
             closest_inst = instance;
-            closest_elem = &this->container->children.back().children[0];
+            closest_elem = &this->container->children.back().child_at<0>();
             closest_dist = dist;
         }
         if(closest_elem != nullptr) {

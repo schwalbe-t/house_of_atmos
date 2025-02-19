@@ -57,7 +57,7 @@ namespace houseofatmos {
         auto click_handler = [min, max, step, suffix, h = std::move(handler)](
             ui::Element& container, Vec<2> container_cursor
         ) {
-            ui::Element& slider = container.children.at(0);
+            ui::Element& slider = container.child_at<0>();
             f64 cursor_x = container_cursor.x() - container.final_pos().x()
                 + slider.final_pos().x();
             f64 n_value = std::min(
@@ -66,9 +66,9 @@ namespace houseofatmos {
             f64 range = max - min;
             f64 r_value = round(n_value * range / step) * step;
             f64 f_value = min + r_value;
-            ui::Element& handle = slider.children.at(1);
+            ui::Element& handle = slider.child_at<1>();
             handle.position.x() = r_value / range;
-            ui::Element& value = container.children.at(1).children.at(0);
+            ui::Element& value = container.child_at<1>().child_at<0>();
             value.text = std::format("{}{}", f_value, suffix);
             h(f_value);
         };
@@ -162,7 +162,7 @@ namespace houseofatmos {
             ) {
                 (void) cursor;
                 this->fullscreen = !this->fullscreen;
-                element.children.at(0).text = this->fullscreen
+                element.child_at<0>().text = this->fullscreen
                     ? local->text("menu_windowed")
                     : local->text("menu_fullscreen");
             }
