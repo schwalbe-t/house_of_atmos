@@ -3,13 +3,84 @@
 
 namespace houseofatmos::world {
 
+    static i64 average_area_elevation(
+        const Terrain& terrain, u64 s_x, u64 s_z, u64 w, u64 h
+    ) {
+        u64 e_x = std::min(s_x + w, terrain.width_in_tiles());
+        u64 e_z = std::min(s_z + h, terrain.width_in_tiles());
+        i64 sum = 0;
+        for(u64 x = s_x; x <= e_x; x += 1) {
+            for(u64 z = s_z; z <= e_z; z += 1) {
+                sum += terrain.elevation_at(x, z);
+            }
+        }
+        u64 node_count = (e_x - s_x + 1) * (e_z - s_z + 1);
+        return sum / (i64) node_count;
+    }
 
-    static const u64 settlement_min_land_rad = 5; // in tiles
+    static const f64 rivers_per_sq_tile = 10.0 / (256.0 * 256.0);
+    static const u64 river_min_size = 1;
+    static const u64 river_max_size = 3;
+    static const u64 river_size_dist = 100; // 50 steps per size
+
+    void World::generate_rivers(StatefulRNG& rng, u32 seed) {
+        u64 world_area = this->terrain.width_in_tiles() 
+            * this->terrain.height_in_tiles();
+        u64 river_count = (u64) ((f64) world_area * rivers_per_sq_tile);
+        for(u64 river_i = 0; river_i < river_count; river_i += 1) {
+            u64 size = (u64) (
+                rng.next_f64() * (f64) (river_max_size - river_min_size)
+            ) + river_min_size;
+            u64 length = river_size_dist * size;
+            f64 b_a = rng.next_f64() * 2.0 * pi; // base angle
+            f64 fx = rng.next_f64() * (f64) this->terrain.width_in_tiles();
+            f64 fz = rng.next_f64() * (f64) this->terrain.height_in_tiles();
+            for(u64 step_i = 0; step_i < length; step_i += 1) {
+                if(fx < 0.0 || fz < 0.0) { break; }
+                if((u64) fx >= this->terrain.width_in_tiles()) { break; }
+                if((u64) fz >= this->terrain.height_in_tiles()) { break; }
+                // modify terrain
+                u64 x = (u64) fx;
+                u64 z = (u64) fz;
+                u64 s_x = x >= (size / 2)? x - (size / 2) : 0;
+                u64 s_z = z >= (size / 2)? z - (size / 2) : 0;
+                u64 e_x = std::min(s_x + size, this->terrain.width_in_tiles());
+                u64 e_z = std::min(s_z + size, this->terrain.height_in_tiles());
+                i64 average_height = average_area_elevation(
+                    this->terrain, s_x, s_z, e_x - s_x, e_z - s_z
+                );
+                if(average_height >= 0 && average_height <= 5) {
+                    for(u64 v_x = s_x; v_x <= e_x; v_x += 1) {
+                        for(u64 v_z = s_z; v_z <= e_z; v_z += 1) {
+                            this->terrain.elevation_at(v_x, v_z) = -1;
+                        } 
+                    }
+                }
+                // walk
+                f64 angle_a = b_a + perlin_noise(seed, Vec<2>(x, z) /  4.0) * pi;
+                f64 angle_b = b_a + perlin_noise(seed, Vec<2>(x, z) / 13.0) * pi;
+                f64 angle_c = b_a + perlin_noise(seed, Vec<2>(x, z) / 27.0) * pi;
+                Vec<2> step = (Vec<2>(cos(angle_a), sin(angle_a)) * 0.25)
+                            + (Vec<2>(cos(angle_b), sin(angle_b)) * 0.50)
+                            + (Vec<2>(cos(angle_c), sin(angle_c)) * 0.25);
+                step = step.normalized();
+                fx += step.x();
+                fz += step.y();
+            }
+        }
+    }
+
+    static const i16 settlement_max_elevation = 10;
+    static const u64 settlement_min_land_rad = 2; // in tiles
     static const f64 min_settlement_distance = 10; // in tiles
 
     bool World::settlement_allowed_at(
         u64 center_x, u64 center_z, const std::vector<Vec<3>> settlements
     ) {
+        // center height must be less than maximum
+        bool is_too_high = this->terrain.elevation_at(center_x, center_z) 
+            >= settlement_max_elevation;
+        if(is_too_high) { return false; }
         // all tiles in an N tile radius must be land and inside the world
         if(center_x < settlement_min_land_rad) { return false; }
         if(center_z < settlement_min_land_rad) { return false; }
@@ -34,31 +105,36 @@ namespace houseofatmos::world {
         return true;
     }
 
+    static bool area_occupied(
+        const Terrain& terrain, u64 s_x, u64 s_z, u64 w, u64 h
+    ) {
+        if(s_x + w > terrain.width_in_tiles()) { return true; }
+        if(s_z + h > terrain.height_in_tiles()) { return true; }
+        for(i64 bx = (i64) s_x - 1; bx < (i64) (s_x + w + 1); bx += 1) {
+            for(i64 bz = (i64) s_z - 1; bz < (i64) (s_z + h + 1); bz += 1) {
+                if(terrain.building_at(bx, bz) != nullptr) { return true; } 
+            }
+        }
+        for(u64 x = s_x; x <= s_x + w; x += 1) {
+            for(u64 z = s_z; z <= s_z + h; z += 1) {
+                if(terrain.elevation_at(x, z) < 0.0) { return true; } 
+            }
+        }
+        return false;
+    }
+
     bool World::place_building(
         Building::Type type, u64 tile_x, u64 tile_z, 
         std::optional<ComplexId> complex
     ) {
         const Building::TypeInfo& type_info = Building::types[(size_t) type];
-        // - figure out the average height of the placed area
-        // - check that all tiles are on land and none are obstructed
-        i64 average_height = 0;
-        if(tile_x + type_info.width >= this->terrain.width_in_tiles()) { return false; }
-        if(tile_z + type_info.height >= this->terrain.height_in_tiles()) { return false; }
-        for(u64 x = tile_x; x <= tile_x + type_info.width; x += 1) {
-            for(u64 z = tile_z; z <= tile_z + type_info.height; z += 1) {
-                i64 elevation = this->terrain.elevation_at(x, z);
-                bool tile_valid = elevation >= 0
-                    && !this->terrain.building_at((i64) x - 1, (i64) z - 1)
-                    && !this->terrain.building_at((i64) x,     (i64) z - 1)
-                    && !this->terrain.building_at((i64) x - 1, (i64) z    )
-                    && !this->terrain.building_at((i64) x,     (i64) z    );
-                if(!tile_valid) { return false; }
-                average_height += elevation;
-            }
-        }
-        u64 node_count = (type_info.width + 1) * (type_info.height + 1);
-        average_height /= node_count;
-        // set the terrain heights and remove foliage
+        bool is_occupied = area_occupied(
+            this->terrain, tile_x, tile_z, type_info.width, type_info.height
+        );
+        if(is_occupied) { return false; }
+        i64 average_height = average_area_elevation(
+            this->terrain, tile_x, tile_z, type_info.width, type_info.height
+        );
         for(u64 x = tile_x; x <= tile_x + type_info.width; x += 1) {
             for(u64 z = tile_z; z <= tile_z + type_info.height; z += 1) {
                 this->terrain.elevation_at(x, z) = (i16) average_height;
@@ -181,11 +257,12 @@ namespace houseofatmos::world {
     static const u64 max_settlement_attempts = 2000;
 
     void World::generate_map(u32 seed) {
+        auto rng = StatefulRNG(seed);
         this->terrain.generate_elevation(
             (u32) seed, terrain_falloff_distance, terrain_falloff_height
         );
+        this->generate_rivers(rng, seed);
         this->terrain.generate_foliage((u32) seed);
-        auto rng = StatefulRNG(seed);
         std::vector<Vec<3>> created_settlements;
         u64 settlement_attempts = 0;
         for(;;) {

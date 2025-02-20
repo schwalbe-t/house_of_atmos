@@ -39,6 +39,7 @@ namespace houseofatmos::world {
         research::Research research;
 
         private:
+        void generate_rivers(StatefulRNG& rng, u32 seed);
         bool settlement_allowed_at(
             u64 center_x, u64 center_z, const std::vector<Vec<3>> settlements
         );

@@ -67,12 +67,14 @@ namespace houseofatmos::world {
     void Terrain::generate_elevation(
         u32 seed, f64 end_falloff_distance, f64 falloff_target_height
     ) {
+        f64 o = (f64) (seed % 1024);
         for(u64 x = 0; x <= this->width; x += 1) {
             for(u64 z = 0; z <= this->height; z += 1) {
                 f64 n_height = 0.0;
-                n_height += perlin_noise(seed, Vec<2>(x / 1.0, z / 1.0));
-                n_height += perlin_noise(seed, Vec<2>((f64) x / 40.0, (f64) z / 40.0)) * 10
-                    * (perlin_noise(seed, Vec<2>(x / 128.0, z / 128.0)) * 5);
+                n_height += perlin_noise(seed, Vec<2>(o + x / 1.0, z / 1.0));
+                n_height += perlin_noise(seed, Vec<2>(o + (f64) x / 75.0, (f64) z / 75.0)) * 10
+                    * (perlin_noise(seed, Vec<2>(o + x / 220.0, z / 220.0)) * 5);
+                n_height += 5.0;
                 f64 falloff = compute_falloff(
                     (f64) x, (f64) z, (f64) this->width, (f64) this->height, 
                     end_falloff_distance
