@@ -42,6 +42,7 @@ namespace houseofatmos {
         };
 
 
+        std::string name;
         std::string text;
         const Voice* voice;
         f64 pitch;
@@ -49,11 +50,13 @@ namespace houseofatmos {
         std::function<void ()> handler;
 
         Dialogue(
+            std::string&& name,
             std::string&& text, 
             const Voice* voice, 
             f64 pitch = 1.0, f64 speed = 1.0,
             std::function<void ()>&& handler = [](){}
-        ): text(std::move(text)), voice(voice), pitch(pitch), speed(speed), 
+        ): name(std::move(name)), text(std::move(text)),
+            voice(voice), pitch(pitch), speed(speed), 
             handler(std::move(handler)) {}
     };
 

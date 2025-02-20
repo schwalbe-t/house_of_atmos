@@ -25,29 +25,16 @@ namespace houseofatmos {
             .as_movable();
         container.children.push_back(ui::Element()
             .with_handle(&this->lines)
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Vertical)
-            .with_padding(3.0)
+            .with_size(150, 45, ui::size::units)
+            .with_text("", &ui_font::dark)
+            .with_padding(4.0)
             .as_movable()
         );
         return container;
     }
 
     void DialogueManager::set_displayed_lines(std::string text) const {
-        this->lines->children.clear();
-        size_t start = 0;
-        while(start < text.size()) {
-            size_t end = text.find('\n', start);
-            if(end == std::string::npos) { end = text.size(); }
-            std::string line = text.substr(start, end - start);
-            this->lines->children.push_back(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(line, &ui_font::dark)
-                .with_padding(1)
-                .as_movable()
-            );
-            start = end + 1;
-        }
+        this->lines->text = std::move(text);
     }
 
 
@@ -112,7 +99,9 @@ namespace houseofatmos {
         sound.play();
         this->current_offset += char_size;
         std::string displayed = dialogue.text.substr(0, this->current_offset);
-        this->set_displayed_lines(displayed);
+        this->set_displayed_lines(
+            "[" + dialogue.name + "]\n\n" + displayed
+        );
     }
 
     void DialogueManager::update(engine::Scene& scene, const engine::Window& window) {

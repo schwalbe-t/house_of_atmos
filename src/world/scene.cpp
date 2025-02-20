@@ -165,7 +165,8 @@ namespace houseofatmos::world {
         Vec<3> origin, std::shared_ptr<StatefulRNG> rng,
         const Terrain& terrain, const engine::Window& window,
         f64 spawn_distance, f64 roam_distance, f64 roam_vel,
-        const Character& player, f64 player_stop_dist
+        const Character& player, f64 player_stop_dist,
+        std::shared_ptr<Interactable>&& interactable
     ) {
         static const u64 no_action = UINT64_MAX;
         f64 spawn_angle = rng->next_f64() * 2.0 * pi;
@@ -175,8 +176,10 @@ namespace houseofatmos::world {
             &human::character, &variant, spawn_position, no_action,
             [origin, rng, terrain = &terrain, window = &window, 
                 roam_distance, roam_vel, 
-                player = &player, player_stop_dist
+                player = &player, player_stop_dist,
+                interactable = std::move(interactable)
             ](Character& self) {
+                interactable->pos = self.position;
                 f64 player_dist = (player->position - self.position).len();
                 bool player_is_close = player_dist <= player_stop_dist;
                 bool is_walking = self.action.animation_id 
@@ -235,10 +238,18 @@ namespace houseofatmos::world {
     static const f64 peasant_roam_dist = 15.0;
     static const f64 peasant_roam_vel = 2.5;
     static const f64 peasant_player_stop_dist = 3.0;
+    static const std::string peasant_dialogue_key_base = "dialogue_peasant_";
+    static const size_t peasant_dialogue_count = 5;
+    static const f64 peasant_male_pitch = 1.7;
+    static const f64 peasant_female_pitch = 2.2;
+    static const f64 peasant_male_speed = 1.4;
+    static const f64 peasant_female_speed = 1.75;
 
     static void create_peasants(
         const Terrain& terrain, const engine::Window& window, 
-        const Character& player, std::vector<Character>& characters
+        const Character& player, std::vector<Character>& characters,
+        Interactables& interactables, const engine::Localization& local,
+        DialogueManager& dialogue
     ) {
         auto rng = std::make_shared<StatefulRNG>();
         for(u64 chunk_x = 0; chunk_x < terrain.width_in_chunks(); chunk_x += 1) {
@@ -253,11 +264,32 @@ namespace houseofatmos::world {
                     Vec<3> origin = Vec<3>(tile_x, 0, tile_z);
                     origin += Vec<3>(house.width, 0.0, house.height) / 2.0;
                     origin *= terrain.units_per_tile();
+                    bool is_male = rng->next_bool();
+                    std::string dialogue_key = peasant_dialogue_key_base
+                        + std::to_string(rng->next_u64() % peasant_dialogue_count);
+                    auto dialogue_interactable = interactables.create(
+                        [
+                            is_male, dialogue_key = std::move(dialogue_key),
+                            dialogue = &dialogue, local = &local
+                        ]() {
+                            std::string dialogue_name_key = is_male
+                                ? "dialogue_peasant_name_male"
+                                : "dialogue_peasant_name_female";
+                            dialogue->say(Dialogue(
+                                std::string(local->text(dialogue_name_key)),
+                                std::string(local->text(dialogue_key)), 
+                                &voice::voiced,
+                                is_male? peasant_male_pitch : peasant_female_pitch,
+                                is_male? peasant_male_speed : peasant_female_speed
+                            ));
+                        }
+                    );
                     characters.push_back(create_roaming_human(
-                        rng->next_bool()? human::peasant_man : human::peasant_woman,
+                        is_male? human::peasant_man : human::peasant_woman,
                         origin, rng, terrain, window,
                         peasant_spawn_dist, peasant_roam_dist, peasant_roam_vel,
-                        player, peasant_player_stop_dist
+                        player, peasant_player_stop_dist,
+                        std::move(dialogue_interactable)
                     ));
                 }
             }
@@ -331,16 +363,14 @@ namespace houseofatmos::world {
         } else if(window.was_pressed(engine::Key::Escape)) {
             this->terrain_map.hide();
         }
-        ////////////////////////////////////////////////////////////////////////
-        if(window.was_pressed(engine::Key::T)) {
-            this->dialogues.say(Dialogue("This is a demonstration\nof the new dialogue system.", &voice::voiced, 2.0, 1.2));
-            this->dialogues.say(Dialogue("I wonder what other games\nhave talking sounds like this?", &voice::voiced, 1.4, 1.0));
-        }
-        ////////////////////////////////////////////////////////////////////////
         if(this->characters.size() == 0) {
+            const auto& local = this->get<engine::Localization>(
+                this->world->settings.localization()
+            );
             create_peasants(
                 this->world->terrain, window, 
-                this->world->player.character, this->characters
+                this->world->player.character, this->characters,
+                this->interactables, local, this->dialogues
             );
         }
         if(this->action_mode == nullptr) {

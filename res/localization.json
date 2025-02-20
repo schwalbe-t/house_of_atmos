@@ -550,6 +550,51 @@
         "de": "Stahlbrücke",
         "en": "Steel bridge",
         "bg": "Железен мост"
+    },
+
+
+
+    "dialogue_peasant_name_male": {
+        "_context": "Displayed name of a male peasant when talked to",
+        "en": "Villager",
+        "de": "Dorfbewohner",
+        "bg": "Селянин"
+    },
+    "dialogue_peasant_name_female": {
+        "_context": "Displayed name of a female peasant when talked to",
+        "en": "Villager",
+        "de": "Dorfbewohnerin",
+        "bg": "Селянка"
+    },
+    "dialogue_peasant_0": {
+        "_context": "One of the possible greetings when talking with peasants",
+        "en": "Oh, your lordship! Is there something I can help your lordship with?",
+        "de": "Oh, Herr Graf! Gibt es etwas, womit ich Euch dienen kann?",
+        "bg": "О, Ваше благородие! С нещо мога ли да Ви помогна?"
+    },
+    "dialogue_peasant_1": {
+        "_context": "One of the possible greetings when talking with peasants",
+        "en": "That I would one day speak to your lordship... I must tell my children about this!",
+        "de": "Dass ich eines Tages mit Euer Gnaden sprechen würde... Davon muss ich meinen Kindern erzählen!",
+        "bg": "Че аз някога ще говоря с Ваше благородие... Трябва да разкажа на децата си за това!"
+    },
+    "dialogue_peasant_2": {
+        "_context": "One of the possible greetings when talking with peasants",
+        "en": "I feel truly proud to live in such a pretty part of the Kingdom.",
+        "de": "Ich bin wirklich stolz darauf, in so einem schönen Teil des Königreichs zu leben.",
+        "bg": "Чувствам се наистина горд, че живея в толкова хубава част на кралството."
+    },
+    "dialogue_peasant_3": {
+        "_context": "One of the possible greetings when talking with peasants",
+        "en": "May the goddess protect your lordship.",
+        "de": "Möge die Göttin über Euer Gnaden wachen.",
+        "bg": "Нека богинята закриля Ваше благородие."
+    },
+    "dialogue_peasant_4": {
+        "_context": "One of the possible greetings when talking with peasants",
+        "en": "I am most honored to be visited by your lordship.",
+        "de": "Es ist mir eine große Ehre, von Euer Gnaden besucht zu werden.",
+        "bg": "За мен е най-голяма чест да бъда посетен от Ваше благородие."
     }
 
 }
