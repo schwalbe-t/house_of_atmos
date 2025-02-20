@@ -383,7 +383,10 @@ namespace houseofatmos::world {
 
 
     using BuildingVariant = std::vector<Conversion>;
-    using BuildingGroup = std::pair<Building::Type, std::vector<BuildingVariant>>;
+    struct BuildingGroup {
+        Building::Type type;
+        std::vector<BuildingVariant> variants;
+    };
     static const std::vector<BuildingGroup> buildable = {
         (BuildingGroup) { Building::House, {} },
         (BuildingGroup) { Building::Farmland, {
@@ -470,7 +473,7 @@ namespace houseofatmos::world {
             )
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .as_movable();
-        for(const BuildingVariant& variant: group.second) {
+        for(const BuildingVariant& variant: group.variants) {
             if(variant.size() == 0) { continue; }
             if(variant.at(0).outputs.size() == 0) { continue; }
             const Item::TypeInfo& result = Item::items
@@ -480,7 +483,7 @@ namespace houseofatmos::world {
                 result.icon, local->text(result.local_name), false,
                 [
                     ui, dest, selected, s_type, s_conv, local, 
-                    type = group.first, conversions
+                    type = group.type, conversions
                 ]() {
                     *s_type = type;
                     *s_conv = std::move(conversions);
@@ -510,12 +513,12 @@ namespace houseofatmos::world {
         for(const BuildingGroup& group: buildable) {
             const BuildingGroup* group_ptr = &group;
             const Building::TypeInfo& type = Building::types
-                .at((size_t) group.first);
+                .at((size_t) group.type);
             selector.children.push_back(TerrainMap::create_selection_item(
-                type.icon, local->text(type.local_name), *s_type == group.first,
+                type.icon, local->text(type.local_name), *s_type == group.type,
                 [ui, dest, selected, s_type, s_conv, local, group_ptr]() {
-                    if(group_ptr->second.size() == 0) {
-                        *s_type = group_ptr->first;
+                    if(group_ptr->variants.size() == 0) {
+                        *s_type = group_ptr->type;
                         s_conv->clear();
                         *selected = TerrainMap::display_building_info(
                             *s_type, *s_conv, *local
@@ -614,6 +617,12 @@ namespace houseofatmos::world {
             (i64) tile_x, (i64) tile_z, this->world->player.character.position, 
             type_info
         );
+        bool high_enough = this->world->terrain.elevation_at(tile_x, tile_z) 
+            >= type_info.min_elev;
+        this->placement_valid &= high_enough;
+        bool low_enough = this->world->terrain.elevation_at(tile_x, tile_z) 
+            <= type_info.max_elev;
+        this->placement_valid &= low_enough;
         bool attempted = window.was_pressed(engine::Button::Left)
             && !this->ui.was_clicked();
         if(attempted && this->placement_valid) {
@@ -636,7 +645,11 @@ namespace houseofatmos::world {
                 });
             }
         }
-        if(attempted && !this->placement_valid) {
+        if(attempted && !high_enough) {
+            this->toasts.add_error("toast_building_too_low", {});
+        } else if(attempted && !low_enough) {
+            this->toasts.add_error("toast_building_too_high", {});
+        } else if(attempted && !this->placement_valid) {
             this->toasts.add_error("toast_invalid_building_placement", {});
         }
     }

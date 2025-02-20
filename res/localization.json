@@ -324,6 +324,18 @@
         "en": "Buildings must be placed on flat, unoccupied ground!",
         "bg": "Сгради тряба да се поставят на плоска и свободна земя!"
     },
+    "toast_building_too_high": {
+        "_context": "Pop-up that notifies the user that the building they attempted to build is too high up",
+        "de": "Gebäude muss weiter unten platziert werden!",
+        "en": "Building needs to be placed further down!",
+        "bg": "Сградата трябва да бъде поставена на по-ниска височина!"
+    },
+    "toast_building_too_low": {
+        "_context": "Pop-up that notifies the user that the building they attempted to build needs to be further up",
+        "de": "Gebäude muss weiter oben platziert werden!",
+        "en": "Building needs to be placed further up!",
+        "bg": "Сградата трябва да бъде поставена на по-висока височина!"
+    },
     "toast_too_expensive": {
         "_context": "Pop-up that notifies the user when they try to do something they cannot afford",
         "_placeholders": "The number of coins the operation would cost if they could afford it",
