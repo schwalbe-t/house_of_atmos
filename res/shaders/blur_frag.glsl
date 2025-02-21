@@ -1,7 +1,7 @@
 
 #version 330
 
-#include "common/consts.glsl"
+#include "common/util.glsl"
 
 in vec2 f_uv;
 

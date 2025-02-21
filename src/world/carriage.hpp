@@ -217,7 +217,7 @@ namespace houseofatmos::world {
         );
 
         void render(
-            const Renderer& renderer, engine::Scene& scene, 
+            Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window,
             engine::Rendering rendering = engine::Rendering::Surfaces,
             const engine::Texture* override_texture = nullptr
@@ -272,7 +272,7 @@ namespace houseofatmos::world {
 
         void render_all_around(
             const Vec<3>& observer, f64 draw_distance,
-            const Renderer& renderer, engine::Scene& scene, 
+            Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window
         );
 

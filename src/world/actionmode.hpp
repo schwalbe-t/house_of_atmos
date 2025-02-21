@@ -37,12 +37,18 @@ namespace houseofatmos::world {
             "res/terrain/wireframe_error.png"
         };
 
+        static inline const engine::Shader::LoadArgs terrain_overlay_shader = {
+            "res/shaders/terrain_overlay_vert.glsl", 
+            "res/shaders/terrain_overlay_frag.glsl"
+        };
+
         static void load_resources(engine::Scene& scene) {
-            scene.load(engine::Texture::Loader(ActionMode::wireframe_info_texture));
-            scene.load(engine::Texture::Loader(ActionMode::wireframe_add_texture));
-            scene.load(engine::Texture::Loader(ActionMode::wireframe_sub_texture));
-            scene.load(engine::Texture::Loader(ActionMode::wireframe_valid_texture));
-            scene.load(engine::Texture::Loader(ActionMode::wireframe_error_texture));
+            scene.load(engine::Texture::Loader(wireframe_info_texture));
+            scene.load(engine::Texture::Loader(wireframe_add_texture));
+            scene.load(engine::Texture::Loader(wireframe_sub_texture));
+            scene.load(engine::Texture::Loader(wireframe_valid_texture));
+            scene.load(engine::Texture::Loader(wireframe_error_texture));
+            scene.load(engine::Shader::Loader(terrain_overlay_shader));
         }
 
 
@@ -66,7 +72,7 @@ namespace houseofatmos::world {
         ) = 0;
         virtual void render(
             const engine::Window& window, engine::Scene& scene, 
-            const Renderer& renderer
+            Renderer& renderer
         ) = 0;
 
     };
@@ -93,7 +99,7 @@ namespace houseofatmos::world {
 
         void render(
             const engine::Window& window, engine::Scene& scene, 
-            const Renderer& renderer
+            Renderer& renderer
         ) override {
             (void) window;
             (void) scene;
@@ -140,7 +146,7 @@ namespace houseofatmos::world {
         ) override;
         void render(
             const engine::Window& window, engine::Scene& scene, 
-            const Renderer& renderer
+            Renderer& renderer
         ) override {
             (void) window;
             (void) scene;
@@ -157,10 +163,20 @@ namespace houseofatmos::world {
         std::unique_ptr<std::vector<Conversion>> selected_conversion;
         bool placement_valid;
 
+        struct ChunkOverlay {
+            u64 x, z;
+            engine::Mesh terrain;
+        };
+
+        std::vector<ChunkOverlay> chunk_overlays;
+        i64 last_viewed_chunk_x = INT64_MIN, last_viewed_chunk_z = INT64_MIN;
+
         ConstructionMode(
             std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
             engine::Localization& local
         );
+
+        void collect_chunk_overlays(i64 viewed_chunk_x, i64 viewed_chunk_z);
 
         void update(
             const engine::Window& window, engine::Scene& scene, 
@@ -168,7 +184,7 @@ namespace houseofatmos::world {
         ) override;
         void render(
             const engine::Window& window, engine::Scene& scene, 
-            const Renderer& renderer
+            Renderer& renderer
         ) override;
 
     };
@@ -206,7 +222,7 @@ namespace houseofatmos::world {
         ) override;
         void render(
             const engine::Window& window, engine::Scene& scene, 
-            const Renderer& renderer
+            Renderer& renderer
         ) override;
 
     };
@@ -246,7 +262,7 @@ namespace houseofatmos::world {
         ) override;
         void render(
             const engine::Window& window, engine::Scene& scene, 
-            const Renderer& renderer
+            Renderer& renderer
         ) override;
 
     };
@@ -270,7 +286,7 @@ namespace houseofatmos::world {
         ) override;
         void render(
             const engine::Window& window, engine::Scene& scene, 
-            const Renderer& renderer
+            Renderer& renderer
         ) override {
             (void) window;
             (void) scene;

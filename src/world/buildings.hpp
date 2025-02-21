@@ -42,7 +42,7 @@ namespace houseofatmos::world {
 
             void render_buildings(
                 const engine::Window& window, engine::Scene& scene,
-                const Renderer& renderer,
+                Renderer& renderer,
                 std::span<const Mat<4>> instances,
                 engine::Rendering rendering = engine::Rendering::Surfaces,
                 const engine::Texture* override_texture = nullptr

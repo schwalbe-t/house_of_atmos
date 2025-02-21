@@ -55,7 +55,7 @@ namespace houseofatmos {
 
     void Player::render(
         engine::Scene& scene, const engine::Window& window, 
-        const Renderer& renderer
+        Renderer& renderer
     ) {
         this->character.render(scene, window, renderer);
     }

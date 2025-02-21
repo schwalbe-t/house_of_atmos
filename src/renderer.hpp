@@ -102,7 +102,7 @@ namespace houseofatmos {
             engine::Rendering rendering = engine::Rendering::Surfaces,
             engine::DepthTesting depth_testing = engine::DepthTesting::Enabled,
             std::optional<size_t> light_i = std::nullopt
-        ) const;
+        );
         void render(
             engine::Model& model,
             std::span<const Mat<4>> model_transforms,
@@ -113,9 +113,10 @@ namespace houseofatmos {
             engine::DepthTesting depth_testing = engine::DepthTesting::Enabled,
             const engine::Texture* override_texture = nullptr,
             std::optional<size_t> light_i = std::nullopt
-        ) const;
+        );
 
         const engine::Texture& output() const { return this->target; }
+        engine::Texture& output() { return this->target; }
 
     };
 

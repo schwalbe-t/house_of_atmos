@@ -249,11 +249,11 @@ namespace houseofatmos::world {
         ) const;    
 
         void render_loaded_chunks(
-            engine::Scene& scene, const Renderer& renderer,
+            engine::Scene& scene, Renderer& renderer,
             const engine::Window& window
         );
         void render_water(
-            engine::Scene& scene, const Renderer& renderer,
+            engine::Scene& scene, Renderer& renderer,
             const engine::Window& window
         );
         private:
@@ -261,10 +261,10 @@ namespace houseofatmos::world {
             LoadedChunk& loaded_chunk,
             const engine::Texture& ground_texture, 
             const Vec<3>& chunk_offset,
-            const Renderer& renderer
+            Renderer& renderer
         );
         void render_bridges(
-            engine::Scene& scene, const Renderer& renderer
+            engine::Scene& scene, Renderer& renderer
         );
 
         public:

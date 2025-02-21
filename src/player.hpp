@@ -51,7 +51,7 @@ namespace houseofatmos {
         void apply_confirmed_step(engine::Scene& scene, const engine::Window& window);
         void render(
             engine::Scene& scene, const engine::Window& window, 
-            const Renderer& renderer
+            Renderer& renderer
         );
 
         Serialized serialize() const;

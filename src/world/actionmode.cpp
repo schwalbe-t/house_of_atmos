@@ -560,6 +560,40 @@ namespace houseofatmos::world {
         );
     }
 
+    static const i64 terrain_overlay_r = 1;
+
+    void ConstructionMode::collect_chunk_overlays(
+        i64 viewed_chunk_x, i64 viewed_chunk_z
+    ) {
+        bool matches_current = viewed_chunk_x == this->last_viewed_chunk_x
+            && viewed_chunk_z == this->last_viewed_chunk_z;
+        if(matches_current) { return; }
+        this->chunk_overlays.clear();
+        u64 s_chunk_x = (u64) std::max(
+            (i64) viewed_chunk_x - terrain_overlay_r, (i64) 0
+        );
+        u64 s_chunk_z = (u64) std::max(
+            (i64) viewed_chunk_z - terrain_overlay_r, (i64) 0
+        );
+        u64 e_chunk_x = std::min(
+            s_chunk_x + (u64) (terrain_overlay_r * 2), 
+            this->world->terrain.width_in_chunks() - 1
+        );
+        u64 e_chunk_z = std::min(
+            s_chunk_z + (u64) (terrain_overlay_r * 2), 
+            this->world->terrain.height_in_chunks() - 1
+        );
+        for(u64 chunk_x = s_chunk_x; chunk_x <= e_chunk_x; chunk_x += 1) {
+            for(u64 chunk_z = s_chunk_z; chunk_z <= e_chunk_z; chunk_z += 1) {
+                this->chunk_overlays.push_back({
+                    chunk_x, chunk_z,
+                    this->world->terrain
+                        .build_chunk_terrain_geometry(chunk_x, chunk_z)
+                });
+            }
+        }
+    }
+
     static void place_building(
         u64 tile_x, u64 tile_z, Terrain& terrain, ComplexBank& complexes,
         Building::Type type, const Building::TypeInfo& type_info,
@@ -656,9 +690,36 @@ namespace houseofatmos::world {
 
     void ConstructionMode::render(
         const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer
+        Renderer& renderer
     ) {
         if(!this->permitted) { return; }
+        this->collect_chunk_overlays(
+            this->world->terrain.viewed_chunk_x(),
+            this->world->terrain.viewed_chunk_z()
+        );
+        // render overlay
+        engine::Shader& terrain_overlay_shader = scene
+            .get<engine::Shader>(ActionMode::terrain_overlay_shader);
+        terrain_overlay_shader.set_uniform(
+            "u_view_proj", renderer.compute_view_proj()
+        );
+        for(ChunkOverlay& overlay: this->chunk_overlays) {
+            Vec<3> offset = Vec<3>(overlay.x, 0, overlay.z) 
+                * this->world->terrain.tiles_per_chunk()
+                * this->world->terrain.units_per_tile();
+            terrain_overlay_shader.set_uniform(
+                "u_transform", Mat<4>::translate(offset)
+            );
+            overlay.terrain.render(
+                terrain_overlay_shader, 
+                renderer.output().as_target(), 
+                1, 
+                engine::FaceCulling::Disabled, 
+                engine::Rendering::Surfaces,
+                engine::DepthTesting::Disabled
+            );
+        }
+        // render building
         const engine::Texture& wireframe_texture = this->placement_valid
             ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
             : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
@@ -863,7 +924,7 @@ namespace houseofatmos::world {
 
     void BridgingMode::render(
         const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer
+        Renderer& renderer
     ) {
         (void) window;
         this->planned = this->get_planned();
@@ -998,7 +1059,7 @@ namespace houseofatmos::world {
 
     void DemolitionMode::render(
         const engine::Window& window, engine::Scene& scene, 
-        const Renderer& renderer
+        Renderer& renderer
     ) {
         const engine::Texture& wireframe_texture = scene
             .get<engine::Texture>(ActionMode::wireframe_error_texture);

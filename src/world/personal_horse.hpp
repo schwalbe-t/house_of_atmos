@@ -88,7 +88,7 @@ namespace houseofatmos::world {
 
         void render(
             engine::Scene& scene, const engine::Window& window, 
-            const Renderer& renderer
+            Renderer& renderer
         );
 
         Serialized serialize() const;

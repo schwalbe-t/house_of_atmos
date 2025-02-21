@@ -142,11 +142,17 @@ namespace houseofatmos::engine {
             }
             return this->tex_id; 
         }
+        u64 internal_fbo_id() const {
+            if(this->moved) {
+                error("Attempted to use a moved 'Texture'");
+            }
+            return this->fbo_id; 
+        }
 
         void resize_fast(u64 width, u64 height);
         void resize(u64 width, u64 height);
 
-        RenderTarget as_target() const {
+        RenderTarget as_target() {
             if(this->moved) {
                 error("Attempted to use a moved 'Texture'");
             }
@@ -198,7 +204,7 @@ namespace houseofatmos::engine {
             return this->tex_id; 
         }
 
-        RenderTarget as_target(size_t layer_idx) const {
+        RenderTarget as_target(size_t layer_idx) {
             if(this->moved) {
                 error("Attempted to use a moved 'TextureArray'");
             }
@@ -321,15 +327,6 @@ namespace houseofatmos::engine {
 
 
     struct Mesh {
-
-        static inline const bool render_wireframe = true;
-        static inline const bool render_surfaces = false;
-
-        static inline const bool do_depth_testing = true;
-        static inline const bool no_depth_testing = false;
-
-        static inline const bool do_face_culling = true;
-        static inline const bool no_face_culling = false;
 
         enum AttribType {
             F32,

@@ -198,7 +198,7 @@ namespace houseofatmos::world {
 
 
     void Carriage::render(
-        const Renderer& renderer, engine::Scene& scene, 
+        Renderer& renderer, engine::Scene& scene, 
         const engine::Window& window,
         engine::Rendering rendering,
         const engine::Texture* override_texture
@@ -566,7 +566,7 @@ namespace houseofatmos::world {
 
 
     void CarriageManager::render_all_around(
-        const Vec<3>& observer, f64 draw_distance, const Renderer& renderer, 
+        const Vec<3>& observer, f64 draw_distance, Renderer& renderer, 
         engine::Scene& scene, const engine::Window& window
     ) {
         for(Carriage& carriage: this->carriages) {

@@ -164,7 +164,7 @@ namespace houseofatmos {
 
         void render(
             engine::Scene& scene, const engine::Window& window, 
-            const Renderer& renderer,
+            Renderer& renderer,
             const Vec<3>& observer = Vec<3>(), f64 draw_distance = INFINITY
         ) {
             f64 distance = (this->position - observer).len();

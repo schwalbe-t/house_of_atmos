@@ -30,7 +30,7 @@ namespace houseofatmos::engine {
                     " (while creating a 'TextureArray')"
                 );
             }
-            glBindFramebuffer(GL_FRAMEBUFFER, texture.as_target().fbo_id);
+            glBindFramebuffer(GL_FRAMEBUFFER, texture.internal_fbo_id());
             glCopyTexSubImage3D(
                 GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer_i, 
                 0, 0, texture.width(), texture.height()

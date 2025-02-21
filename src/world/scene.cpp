@@ -432,7 +432,7 @@ namespace houseofatmos::world {
         for(Character& character: this->characters) {
             character.render(
                 *this, window, this->renderer, 
-                this->world->player.character.position, this->draw_distance_units() / 2.0
+                this->world->player.character.position, this->draw_distance_units()
             );
         }
     }

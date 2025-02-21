@@ -109,7 +109,7 @@ namespace houseofatmos::world {
 
     void PersonalHorse::render(
         engine::Scene& scene, const engine::Window& window, 
-        const Renderer& renderer
+        Renderer& renderer
     ) {
         engine::Model& model = scene
             .get<engine::Model>(PersonalHorse::horse_model);

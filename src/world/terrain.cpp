@@ -756,7 +756,7 @@ namespace houseofatmos::world {
 
 
     void Terrain::render_loaded_chunks(
-        engine::Scene& scene, const Renderer& renderer,
+        engine::Scene& scene, Renderer& renderer,
         const engine::Window& window
     ) {
         const engine::Texture& ground_texture
@@ -796,7 +796,7 @@ namespace houseofatmos::world {
         LoadedChunk& loaded_chunk,
         const engine::Texture& ground_texture, 
         const Vec<3>& chunk_offset,
-        const Renderer& renderer
+        Renderer& renderer
     ) {
         renderer.render(
             loaded_chunk.terrain, ground_texture, 
@@ -806,7 +806,7 @@ namespace houseofatmos::world {
     }
 
     void Terrain::render_bridges(
-        engine::Scene& scene, const Renderer& renderer
+        engine::Scene& scene, Renderer& renderer
     ) {
         i64 view_start_x = (this->viewed_chunk_x() - tile_selection_range_chunks) 
             * (i64) this->tiles_per_chunk();
@@ -845,7 +845,7 @@ namespace houseofatmos::world {
     static Vec<4> water_dark_color = Vec<4>(52, 133, 157, 255) / 255;
 
     void Terrain::render_water(
-        engine::Scene& scene, const Renderer& renderer, 
+        engine::Scene& scene, Renderer& renderer, 
         const engine::Window& window
     ) {
         const engine::Texture& normal_map = scene.get<engine::Texture>(Terrain::water_texture);

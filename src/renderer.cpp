@@ -119,7 +119,7 @@ namespace houseofatmos {
         engine::Rendering rendering,
         engine::DepthTesting depth_testing,
         std::optional<size_t> light_i
-    ) const {
+    ) {
         bool render_all_light_maps = this->rendering_shadow_maps
             && !light_i.has_value() 
             && rendering == engine::Rendering::Surfaces 
@@ -175,7 +175,7 @@ namespace houseofatmos {
         engine::DepthTesting depth_testing,
         const engine::Texture* override_texture,
         std::optional<size_t> light_i
-    ) const {
+    ) {
         bool render_all_light_maps = this->rendering_shadow_maps
             && !light_i.has_value() 
             && rendering == engine::Rendering::Surfaces 
