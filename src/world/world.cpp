@@ -18,45 +18,76 @@ namespace houseofatmos::world {
         return sum / (i64) node_count;
     }
 
+    static f64 river_base_angle(f64 x, f64 z, const Terrain& terrain) {
+        f64 d_left   = fabs(x - 0.0);
+        f64 d_top    = fabs(z - 0.0);
+        f64 d_right  = fabs(x - (f64) terrain.width_in_tiles());
+        f64 d_bottom = fabs(z - (f64) terrain.height_in_tiles());
+        f64 d_min_x = std::min( d_left,  d_right);
+        f64 d_min_z = std::min(  d_top, d_bottom);
+        f64 d_min   = std::min(d_min_x,  d_min_z);
+        // 0 degress = right, clockwise (for some reason)
+        if(d_left   == d_min) { return pi;       } // 180 degrees
+        if(d_top    == d_min) { return pi * 1.5; } // 270 degrees
+        if(d_right  == d_min) { return 0.0;      } //   0 degrees
+        if(d_bottom == d_min) { return pi * 0.5; } //  90 degrees
+        return 0.0; // unreachable
+    }
+
+    static void apply_river_point(u64 x, u64 z, u64 size, Terrain& terrain) {
+        u64 s_x = x >= size? x - size : 0;
+        u64 s_z = z >= size? z - size : 0;
+        u64 e_x = std::min(s_x + size * 2, terrain.width_in_tiles());
+        u64 e_z = std::min(s_z + size * 2, terrain.height_in_tiles());
+        for(u64 v_x = s_x; v_x <= e_x; v_x += 1) {
+            for(u64 v_z = s_z; v_z <= e_z; v_z += 1) {
+                f64 center_d = (Vec<2>(v_x, v_z) - Vec<2>(x, z)).len();
+                f64 river_end = (f64) size / 2.0;
+                i16 max_elev = center_d <= river_end
+                    ? center_d - river_end
+                    : pow(center_d - river_end, 2.0);
+                i16& v_elev = terrain.elevation_at(v_x, v_z);
+                if(v_elev <= max_elev) { continue; }
+                v_elev = max_elev;
+            } 
+        }
+    }
+
     static const f64 rivers_per_sq_tile = 10.0 / (256.0 * 256.0);
-    static const u64 river_min_size = 1;
-    static const u64 river_max_size = 3;
+    static const u64 river_min_size = 3;
+    static const u64 river_max_size = 6;
     static const u64 river_size_dist = 100; // 50 steps per size
 
     void World::generate_rivers(StatefulRNG& rng, u32 seed) {
         u64 world_area = this->terrain.width_in_tiles() 
             * this->terrain.height_in_tiles();
         u64 river_count = (u64) ((f64) world_area * rivers_per_sq_tile);
+        f64 river_spawn_area_w = (f64) this->terrain.width_in_tiles() * 0.5;
+        f64 river_spawn_area_h = (f64) this->terrain.height_in_tiles() * 0.5;
+        f64 river_spawn_area_x = 0.5
+            * (this->terrain.width_in_tiles() - river_spawn_area_w);
+        f64 river_spawn_area_z = 0.5
+            * (this->terrain.height_in_tiles() - river_spawn_area_h);
         for(u64 river_i = 0; river_i < river_count; river_i += 1) {
             u64 size = (u64) (
                 rng.next_f64() * (f64) (river_max_size - river_min_size)
             ) + river_min_size;
-            u64 length = river_size_dist * size;
-            f64 b_a = rng.next_f64() * 2.0 * pi; // base angle
-            f64 fx = rng.next_f64() * (f64) this->terrain.width_in_tiles();
-            f64 fz = rng.next_f64() * (f64) this->terrain.height_in_tiles();
-            for(u64 step_i = 0; step_i < length; step_i += 1) {
+            f64 fx = rng.next_f64() * river_spawn_area_w + river_spawn_area_x;
+            f64 fz = rng.next_f64() * river_spawn_area_h + river_spawn_area_z;
+            f64 b_a = river_base_angle(fx, fz, this->terrain);
+            for(;;) {
                 if(fx < 0.0 || fz < 0.0) { break; }
                 if((u64) fx >= this->terrain.width_in_tiles()) { break; }
                 if((u64) fz >= this->terrain.height_in_tiles()) { break; }
                 // modify terrain
                 u64 x = (u64) fx;
                 u64 z = (u64) fz;
-                u64 s_x = x >= (size / 2)? x - (size / 2) : 0;
-                u64 s_z = z >= (size / 2)? z - (size / 2) : 0;
-                u64 e_x = std::min(s_x + size, this->terrain.width_in_tiles());
-                u64 e_z = std::min(s_z + size, this->terrain.height_in_tiles());
-                i64 average_height = average_area_elevation(
-                    this->terrain, s_x, s_z, e_x - s_x, e_z - s_z
-                );
-                if(average_height >= 0 && average_height <= 5) {
-                    for(u64 v_x = s_x; v_x <= e_x; v_x += 1) {
-                        for(u64 v_z = s_z; v_z <= e_z; v_z += 1) {
-                            this->terrain.elevation_at(v_x, v_z) = -1;
-                        } 
-                    }
-                }
+                apply_river_point(x, z, size, this->terrain);
                 // walk
+                bool at_end = fx <= 0.0 || fz <= 0.0
+                    || fx >= (f64) this->terrain.width_in_tiles()
+                    || fz >= (f64) this->terrain.height_in_tiles();
+                if(at_end) { break; }
                 f64 angle_a = b_a + perlin_noise(seed, Vec<2>(x, z) /  4.0) * pi;
                 f64 angle_b = b_a + perlin_noise(seed, Vec<2>(x, z) / 13.0) * pi;
                 f64 angle_c = b_a + perlin_noise(seed, Vec<2>(x, z) / 27.0) * pi;
@@ -251,6 +282,26 @@ namespace houseofatmos::world {
         }
     }
 
+    std::pair<u64, u64> World::generate_mansion() {
+        i64 cx = (i64) this->terrain.width_in_tiles() / 2;
+        i64 cz = (i64) this->terrain.height_in_tiles() / 2;
+        f64 angle = 0.0;
+        f64 dist = 0.0;
+        for(;;) {
+            u64 x = (u64) (cx + (i64) (cos(angle) * dist));
+            u64 z = (u64) (cz + (i64) (sin(angle) * dist));
+            bool placed_mansion = this
+                ->place_building(Building::Mansion, x, z, std::nullopt);
+            if(placed_mansion) { return { x, z }; }
+            if(angle < pi * 2.0) {
+                angle += pi / 12.0; // 30 degrees
+                continue;
+            }
+            dist += 3.0;
+            angle = 0.0;
+        }
+    }
+
     static const f64 terrain_falloff_distance = 10.0;
     static const f64 terrain_falloff_height = -15.0;
     static const u64 max_settlement_count = 30;
@@ -289,26 +340,18 @@ namespace houseofatmos::world {
             // (seed incremented by one to make a new map, still deterministic)
             this->generate_map(seed + 1);
         }
-        for(;;) {
-            u64 mansion_x = rng.next_u64() % this->terrain.width_in_tiles();
-            u64 mansion_z = rng.next_u64() % this->terrain.width_in_tiles();
-            bool placed_mansion = this->place_building(
-                Building::Mansion, mansion_x, mansion_z, std::nullopt
-            );
-            if(!placed_mansion) { continue; }
-            const Building::TypeInfo& mansion = Building::types
-                .at((size_t) Building::Mansion);
-            Vec<3> mansion_center_tile = Vec<3>(mansion_x, 0, mansion_z)
-                + Vec<3>(mansion.width / 2.0, 0, mansion.height / 2.0);
-            Vec<3> player_spawn_tile = mansion_center_tile + Vec<3>(0, 0, 0.5);
-            this->player.character.position = player_spawn_tile 
-                * this->terrain.units_per_tile();
-            this->balance.coins = 20000;
-            Vec<3> horse_spawn_pos = (player_spawn_tile + Vec<3>(-0.25, 0, 0.5))
-                * this->terrain.units_per_tile();
-            this->personal_horse.set_free(horse_spawn_pos);
-            break;
-        }
+        auto [mansion_x, mansion_z] = this->generate_mansion();
+        const Building::TypeInfo& mansion = Building::types
+            .at((size_t) Building::Mansion);
+        Vec<3> mansion_center_tile = Vec<3>(mansion_x, 0, mansion_z)
+            + Vec<3>(mansion.width / 2.0, 0, mansion.height / 2.0);
+        Vec<3> player_spawn_tile = mansion_center_tile + Vec<3>(0, 0, 0.5);
+        this->player.character.position = player_spawn_tile 
+            * this->terrain.units_per_tile();
+        this->balance.coins = 20000;
+        Vec<3> horse_spawn_pos = (player_spawn_tile + Vec<3>(-0.25, 0, 0.5))
+            * this->terrain.units_per_tile();
+        this->personal_horse.set_free(horse_spawn_pos);
     }
 
 

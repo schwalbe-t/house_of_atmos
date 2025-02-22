@@ -50,6 +50,7 @@ namespace houseofatmos::world {
         void generate_settlement(
             u64 center_x, u64 center_z, StatefulRNG& rng
         );
+        std::pair<u64, u64> generate_mansion();
         void generate_map(u32 seed);
 
         public:

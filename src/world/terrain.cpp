@@ -217,12 +217,17 @@ namespace houseofatmos::world {
                 };
                 f64 tl_br_height_diff = fabs(pos_tl.y() - pos_br.y());
                 f64 tr_bl_height_diff = fabs(pos_tr.y() - pos_bl.y());
+                f64 tl_br_height_max = std::max(pos_tl.y(), pos_br.y());
+                f64 tr_bl_height_max = std::max(pos_tr.y(), pos_bl.y());
                 bool is_path = chunk_data.path_at(left, top);
                 Vec<2> uv_bl = { 0.00, 0.00 };
                 Vec<2> uv_br = { 0.49, 0.00 };
                 Vec<2> uv_tl = { 0.00, 0.49 };
                 Vec<2> uv_tr = { 0.49, 0.49 };
-                if(tr_bl_height_diff > tl_br_height_diff) {
+                bool cut_tl_br = tl_br_height_diff == tr_bl_height_diff
+                    ? tl_br_height_max < tr_bl_height_max
+                    : tl_br_height_diff < tr_bl_height_diff;
+                if(cut_tl_br) {
                     // tl---tr
                     //  | \ |
                     // bl---br
