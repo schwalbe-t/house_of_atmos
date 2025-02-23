@@ -42,6 +42,7 @@ namespace houseofatmos::human {
             "res/entities/human.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
         },
+        Mat<4>(),
         Vec<3>(0, 0, 1), // the direction the model faces without rotation
         {
             // in the order defined by 'human::Animation'
@@ -57,6 +58,7 @@ namespace houseofatmos::human {
             "res/entities/human.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
         },
+        Mat<4>(),
         Vec<3>(0, 0, 1), // the direction the model faces without rotation
         {
             // in the order defined by 'human::Animation'
@@ -64,6 +66,22 @@ namespace houseofatmos::human {
             human::swim_idle, human::swim,
             human::horse_sit, human::horse_ride, 
             human::sit_female
+        }
+    };
+
+    static const inline CharacterType toddler = {
+        (engine::Model::LoadArgs) {
+            "res/entities/human.glb", Renderer::model_attribs,
+            engine::FaceCulling::Disabled
+        },
+        Mat<4>::scale(Vec<3>(0.5, 0.5, 0.5)), // model transform
+        Vec<3>(0, 0, 1), // the direction the model faces without rotation
+        {
+            // in the order defined by 'human::Animation'
+            human::stand, human::walk, 
+            human::swim_idle, human::swim,
+            human::horse_sit, human::horse_ride, 
+            human::sit_male
         }
     };
 

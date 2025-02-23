@@ -2,6 +2,7 @@
 #include <samhocevar/portable-file-dialogs.h>
 #include "main_menu.hpp"
 #include "../world/scene.hpp"
+#include "../tutorial/tutorial.hpp"
 #include <filesystem>
 #include <algorithm>
 
@@ -105,8 +106,12 @@ namespace houseofatmos {
             local.text("menu_new_game"),
             [window = &window, local = &local, this]() {
                 this->before_next_frame = [window, this]() {
-                    window->set_scene(std::make_shared<world::Scene>(
-                        std::make_shared<world::World>(std::move(settings), 256, 256)
+                    auto world_after = std::make_shared<world::World>(
+                        Settings(this->settings), 256, 256
+                    );
+                    world_after->generate_map(random_init());
+                    window->set_scene(tutorial::create_scene(
+                        std::move(world_after)
                     ));
                 };
                 this->show_loading_screen(*local);

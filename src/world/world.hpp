@@ -40,6 +40,7 @@ namespace houseofatmos::world {
         PersonalHorse personal_horse;
         research::Research research;
 
+        bool saving_allowed = true;
         f64 last_autosave_time;
 
         private:
@@ -55,14 +56,15 @@ namespace houseofatmos::world {
             u64 center_x, u64 center_z, StatefulRNG& rng
         );
         std::pair<u64, u64> generate_mansion();
-        void generate_map(u32 seed);
 
         public:
         World(
             Settings&& settings, 
-            u64 width = 256, u64 height = 256, u32 seed = random_init()
+            u64 width = 256, u64 height = 256
         );
         World(Settings&& settings, const engine::Arena& serialized);
+
+        void generate_map(u32 seed);
         
         engine::Arena serialize() const;
         bool write_to_file(bool force_creation = false);

@@ -364,14 +364,12 @@ namespace houseofatmos::world {
     }
 
 
-    World::World(Settings&& settings, u64 width, u64 height, u32 seed)
-    : settings(std::move(settings))
-    , terrain(Terrain(
-        width, height, World::units_per_tile, World::tiles_per_chunk
-    ))
-    , carriages(CarriageManager(this->terrain)) {
-        this->generate_map(seed);
-    }
+    World::World(Settings&& settings, u64 width, u64 height): 
+        settings(std::move(settings)), 
+        terrain(Terrain(
+            width, height, World::units_per_tile, World::tiles_per_chunk
+        )), 
+        carriages(CarriageManager(this->terrain)) {}
 
 
     World::World(Settings&& settings, const engine::Arena& buffer)
@@ -429,7 +427,8 @@ namespace houseofatmos::world {
     bool World::write_to_file(bool force_creation) {
         bool exists = std::filesystem::exists(this->save_path);
         bool has_path = this->save_path.size() > 0;
-        bool write_allowed = has_path && (exists || force_creation);
+        bool write_allowed = this->saving_allowed 
+            && has_path && (exists || force_creation);
         if(!write_allowed) { return false; }
         engine::Arena serialized = this->serialize();
         std::ofstream fout;
@@ -444,6 +443,7 @@ namespace houseofatmos::world {
     void World::trigger_autosave(
         const engine::Window& window, Toasts* toasts
     ) {
+        if(!this->saving_allowed) { return; }
         if(window.time() < this->last_autosave_time + World::autosave_period) {
             return;
         }

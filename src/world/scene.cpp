@@ -386,6 +386,7 @@ namespace houseofatmos::world {
         if(this->action_mode == nullptr) {
             set_action_mode(*this, default_mode_const, UINT64_MAX);
         }
+        this->cutscene.update(window);
         this->world->carriages.update_all(
             this->world->player.character.position, this->draw_distance_units(),
             *this, window, 

@@ -12,6 +12,7 @@
 #include "../audio_const.hpp"
 #include "../renderer.hpp"
 #include "../dialogue.hpp"
+#include "../cutscene.hpp"
 #include "actionmode.hpp"
 #include "terrainmap.hpp"
 
@@ -26,6 +27,8 @@ namespace houseofatmos::world {
         static inline const f64 max_camera_dist = 60.0;
 
         std::shared_ptr<World> world;
+
+        Cutscene cutscene;
 
         Renderer renderer;
         DirectionalLight* sun;

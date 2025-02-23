@@ -44,11 +44,13 @@ namespace houseofatmos {
             std::function<void ()>&& handler, Vec<3> pos = { 0, 0, 0 }
         );
 
+        void forget_all() { this->instances.clear(); }
+
         void observe_from(
             const Vec<3>& pos, 
             const Renderer& renderer, const engine::Window& window
         );
-
+        
         private:
         void clean_instance_refs();
         void update_ui_elements(

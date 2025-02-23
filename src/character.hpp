@@ -19,6 +19,7 @@ namespace houseofatmos {
 
     struct CharacterType {
         engine::Model::LoadArgs model;
+        Mat<4> model_transform;
         Vec<3> model_heading;
         std::vector<CharacterAnimation> animations;
     };
@@ -171,7 +172,8 @@ namespace houseofatmos {
             if(distance > draw_distance) { return; }
             engine::Model& model = scene.get<engine::Model>(this->type->model);
             Mat<4> model_transf = Mat<4>::translate(this->position)
-                * Mat<4>::rotate_y(this->angle);
+                * Mat<4>::rotate_y(this->angle)
+                * this->type->model_transform;
             const CharacterAnimation& anim_impl = this->animation();
             const engine::Animation& anim = model.animation(anim_impl.anim_name);
             f64 anim_complete_c = (window.time() + anim_impl.anim_offset)
