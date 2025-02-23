@@ -66,12 +66,21 @@ namespace houseofatmos::human {
         }
     };
 
+    static const inline CharacterVariant::LoadArgs maid = {
+        {
+            { "human", "res/entities/maid.png" },
+            { "hair", "res/entities/maid_hair.png" },
+            { "dress", "res/entities/maid_dress.png" }
+        }
+    };
+
 
     static inline void load_resources(engine::Scene& scene) {
         scene.load(engine::Model::Loader(character.model));
         scene.load(CharacterVariant::Loader(count));
         scene.load(CharacterVariant::Loader(peasant_woman));
         scene.load(CharacterVariant::Loader(peasant_man));
+        scene.load(CharacterVariant::Loader(maid));
     }
 
 

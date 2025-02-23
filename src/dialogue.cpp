@@ -104,7 +104,10 @@ namespace houseofatmos {
         );
     }
 
-    void DialogueManager::update(engine::Scene& scene, const engine::Window& window) {
+    void DialogueManager::update(
+        engine::Scene& scene, const engine::Window& window, 
+        const Vec<3>& observer
+    ) {
         bool has_work = this->container != nullptr
             && this->lines != nullptr
             && this->queued.size() > 0;
@@ -120,10 +123,12 @@ namespace houseofatmos {
                 this->char_timer -= char_duration;
             }
         }
+        f64 distance = (observer - dialogue.origin).len();
         bool skipped = window.was_pressed(engine::Button::Left)
             || window.was_pressed(engine::Key::Enter)
             || window.was_pressed(engine::Key::Space)
-            || window.was_pressed(engine::Key::E);
+            || window.was_pressed(engine::Key::E)
+            || distance > dialogue.max_distance;
         if(skipped) {
             this->skip(scene);
         }

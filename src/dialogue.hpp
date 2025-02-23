@@ -9,6 +9,7 @@
 namespace houseofatmos {
 
     namespace ui = houseofatmos::engine::ui;
+    using namespace houseofatmos::engine::math;
 
 
     struct Dialogue {
@@ -47,16 +48,20 @@ namespace houseofatmos {
         const Voice* voice;
         f64 pitch;
         f64 speed;
+        Vec<3> origin;
+        f64 max_distance;
         std::function<void ()> handler;
 
         Dialogue(
             std::string&& name,
             std::string&& text, 
             const Voice* voice, 
-            f64 pitch = 1.0, f64 speed = 1.0,
+            f64 pitch, f64 speed,
+            Vec<3> origin, f64 max_distance = 5.0,
             std::function<void ()>&& handler = [](){}
-        ): name(std::move(name)), text(std::move(text)),
+        ): name(std::move(name)), text(std::move(text)), 
             voice(voice), pitch(pitch), speed(speed), 
+            origin(origin), max_distance(max_distance),
             handler(std::move(handler)) {}
     };
 
@@ -82,7 +87,10 @@ namespace houseofatmos {
 
         ui::Element create_container();
 
-        void update(engine::Scene& scene, const engine::Window& window);
+        void update(
+            engine::Scene& scene, const engine::Window& window,
+            const Vec<3>& observer
+        );
 
     };
 

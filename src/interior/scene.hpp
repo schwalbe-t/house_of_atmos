@@ -33,8 +33,10 @@ namespace houseofatmos::interior {
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
         ui::Element* coin_counter = nullptr;
         Toasts toasts;
+        DialogueManager dialogues;
         Interactables interactables;
         std::vector<std::shared_ptr<Interactable>> created_interactables;
+        std::vector<std::pair<Character, Interior::CharacterUpdate>> characters;
 
         Scene(
             const Interior& interior, 
@@ -45,7 +47,7 @@ namespace houseofatmos::interior {
 
         void init_ui(engine::Window& window);
 
-        bool valid_player_position(const AbsCollider& player_coll);
+        bool collides_with(const AbsCollider& coll);
         void update(engine::Window& window) override;
         
         void render_geometry(const engine::Window& window, bool render_all_rooms);

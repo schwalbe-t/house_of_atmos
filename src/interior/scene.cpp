@@ -14,7 +14,6 @@ namespace houseofatmos::interior {
         std::shared_ptr<world::World>&& world,
         std::shared_ptr<engine::Scene>&& outside
     ): interior(interior), toasts(Toasts(world->settings.localization())) {
-        this->load_resources();
         this->world = std::move(world);
         this->outside = std::move(outside);
         this->renderer.fog_color = background;
@@ -25,6 +24,10 @@ namespace houseofatmos::interior {
         this->renderer.shadow_bias = interior.shadow_bias;
         this->renderer.shadow_map_resolution = 512;
         this->player.character.position = interior.player_start_pos;
+        this->load_resources();
+        for(auto character_c: this->interior.characters) {
+            this->characters.push_back(character_c(*this));
+        }
     }
 
     void Scene::load_resources() {
@@ -34,6 +37,9 @@ namespace houseofatmos::interior {
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
+        this->load(engine::Localization::Loader(
+            this->world->settings.localization()
+        ));
     }
 
 
@@ -61,13 +67,14 @@ namespace houseofatmos::interior {
         this->toasts.set_scene(this);
         this->ui.with_element(this->toasts.create_container());
         this->toasts.put_states(std::move(toast_states));
+        this->ui.with_element(this->dialogues.create_container());
     }
 
 
-    bool Scene::valid_player_position(const AbsCollider& player_coll) {
+    bool Scene::collides_with(const AbsCollider& coll) {
         for(const Interior::Room& room: this->interior.rooms) {
-            for(const RelCollider& coll: room.colliders) {
-                if(!coll.at(origin).collides_with(player_coll)) { continue; }
+            for(const RelCollider& room_coll: room.colliders) {
+                if(!room_coll.at(origin).collides_with(coll)) { continue; }
                 return false;
             }
         }
@@ -86,6 +93,7 @@ namespace houseofatmos::interior {
         if(this->ui.root.children.size() == 0) {
             this->init_ui(window);
         }
+        this->dialogues.update(*this, window, this->player.character.position);
         this->interactables.observe_from(
             this->player.character.position, this->renderer, window
         );
@@ -105,11 +113,11 @@ namespace houseofatmos::interior {
         this->player.next_step 
             = this->interior.player_velocity_matrix * this->player.next_step;
         AbsCollider next_player_x = human::collider.at(this->player.next_x());
-        if(this->valid_player_position(next_player_x)) {
+        if(this->collides_with(next_player_x)) {
             this->player.proceed_x();
         }
         AbsCollider next_player_z = human::collider.at(this->player.next_z());
-        if(this->valid_player_position(next_player_z)) {
+        if(this->collides_with(next_player_z)) {
             this->player.proceed_z();
         }
         this->player.apply_confirmed_step(*this, window);
@@ -117,6 +125,14 @@ namespace houseofatmos::interior {
             + Vec<3>(0, 1, 0);
         this->renderer.camera.position = this->player.character.position
             + this->interior.camera_offset;
+        for(auto& [character, char_update]: this->characters) {
+            character.behavior = [
+                this, window = &window, char_update = &char_update
+            ](Character& c) {
+                (*char_update)(c, *this, *window);
+            };
+            character.update(*this, window);
+        }
     }
 
 
@@ -136,6 +152,9 @@ namespace houseofatmos::interior {
             );
         }
         this->player.render(*this, window, this->renderer);
+        for(auto& character: this->characters) {
+            character.first.render(*this, window, this->renderer);
+        }
     }
 
     void Scene::render(engine::Window& window) {

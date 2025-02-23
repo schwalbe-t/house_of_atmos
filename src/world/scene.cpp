@@ -166,7 +166,8 @@ namespace houseofatmos::world {
         const Terrain& terrain, const engine::Window& window,
         f64 spawn_distance, f64 roam_distance, f64 roam_vel,
         const Character& player, f64 player_stop_dist,
-        std::shared_ptr<Interactable>&& interactable
+        std::shared_ptr<Interactable>&& interactable,
+        std::shared_ptr<Vec<3>>&& dialogue_origin
     ) {
         static const u64 no_action = UINT64_MAX;
         f64 spawn_angle = rng->next_f64() * 2.0 * pi;
@@ -177,9 +178,11 @@ namespace houseofatmos::world {
             [origin, rng, terrain = &terrain, window = &window, 
                 roam_distance, roam_vel, 
                 player = &player, player_stop_dist,
-                interactable = std::move(interactable)
+                interactable = std::move(interactable),
+                dialogue_origin = std::move(dialogue_origin)
             ](Character& self) {
-                interactable->pos = self.position;
+                interactable->pos = self.position + Vec<3>(0.0, 1.0, 0.0);
+                *dialogue_origin = self.position;
                 f64 player_dist = (player->position - self.position).len();
                 bool player_is_close = player_dist <= player_stop_dist;
                 bool is_walking = self.action.animation_id 
@@ -267,10 +270,12 @@ namespace houseofatmos::world {
                     bool is_male = rng->next_bool();
                     std::string dialogue_key = peasant_dialogue_key_base
                         + std::to_string(rng->next_u64() % peasant_dialogue_count);
+                    auto dialogue_origin = std::make_shared<Vec<3>>();
                     auto dialogue_interactable = interactables.create(
                         [
                             is_male, dialogue_key = std::move(dialogue_key),
-                            dialogue = &dialogue, local = &local
+                            dialogue = &dialogue, local = &local,
+                            dialogue_origin
                         ]() {
                             std::string dialogue_name_key = is_male
                                 ? "dialogue_peasant_name_male"
@@ -280,7 +285,8 @@ namespace houseofatmos::world {
                                 std::string(local->text(dialogue_key)), 
                                 &voice::voiced,
                                 is_male? peasant_male_pitch : peasant_female_pitch,
-                                is_male? peasant_male_speed : peasant_female_speed
+                                is_male? peasant_male_speed : peasant_female_speed,
+                                *dialogue_origin
                             ));
                         }
                     );
@@ -289,7 +295,8 @@ namespace houseofatmos::world {
                         origin, rng, terrain, window,
                         peasant_spawn_dist, peasant_roam_dist, peasant_roam_vel,
                         player, peasant_player_stop_dist,
-                        std::move(dialogue_interactable)
+                        std::move(dialogue_interactable),
+                        std::move(dialogue_origin)
                     ));
                 }
             }
@@ -386,7 +393,9 @@ namespace houseofatmos::world {
         );
         this->world->research.check_completion(this->toasts);
         this->world->balance.update_counter(*this->coin_counter);
-        this->dialogues.update(*this, window);
+        this->dialogues.update(
+            *this, window, this->world->player.character.position
+        );
         this->interactables.observe_from(
             this->world->player.character.position, this->renderer, window
         );

@@ -607,6 +607,30 @@
         "en": "I am most honored to be visited by your lordship.",
         "de": "Es ist mir eine große Ehre, von Euer Gnaden besucht zu werden.",
         "bg": "За мен е най-голяма чест да бъда посетен от Ваше благородие."
+    },
+    "dialogue_maid_name": {
+        "_context": "Displayed name of the maid when talked to",
+        "en": "Maid",
+        "de": "Zofe",
+        "bg": "Камериерка"
+    },
+    "dialogue_maid_0": {
+        "_context": "One of the possible dialogues when talking to the maid",
+        "en": "My lordship, is there possibly any way in which I may assist you?",
+        "de": "Euer Gnaden, gibt es möglicherweise etwas, womit ich Euch behilflich sein könnte?",
+        "bg": "Благородие, има ли някакъв начин, по който бих могла да ви бъда от полза?"
+    },
+    "dialogue_maid_1": {
+        "_context": "One of the possible dialogues when talking to the maid",
+        "en": "Is it already time for dinner? I shall start preparations immediately.",
+        "de": "Ist es bereits Zeit für das Abendmahl? Ich werde sogleich mit der Zubereitung beginnen.",
+        "bg": "Вече ли настъпи часът за вечеря? Ще пристъпя към приготовленията незабавно."
+    },
+    "dialogue_maid_2": {
+        "_context": "One of the possible dialogues when talking to the maid",
+        "en": "If your lordship has any problems with my work, please feel free to speak your mind.",
+        "de": "Sollte Euer Gnaden jegliche Beanstandungen an meiner Arbeit haben, so zögert nicht, es mir mitzuteilen.",
+        "bg": "Ако благородието има някакви забележки относно моята служба, моля, не се колебайте да ги изкажете."
     }
 
 }

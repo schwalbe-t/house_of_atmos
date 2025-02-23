@@ -2,8 +2,11 @@
 #pragma once
 
 #include <engine/model.hpp>
+#include <engine/localization.hpp>
 #include "../renderer.hpp"
 #include "../collider.hpp"
+#include "../character.hpp"
+#include "../interactable.hpp"
 #include <functional>
 
 namespace houseofatmos::world {
@@ -11,6 +14,8 @@ namespace houseofatmos::world {
 }
 
 namespace houseofatmos::interior {
+
+    struct Scene;
 
     struct Interior {
 
@@ -28,6 +33,13 @@ namespace houseofatmos::interior {
             );
         };
 
+        using CharacterUpdate = std::function<void (
+            Character&, Scene&, const engine::Window& window
+        )>;
+        using CharacterConstructor = std::pair<Character, CharacterUpdate> (*)(
+            Scene&
+        );
+
         engine::Model::LoadArgs model;
         std::vector<Room> rooms;
         Vec<3> player_start_pos;
@@ -37,6 +49,7 @@ namespace houseofatmos::interior {
         Vec<3> camera_offset;
         Mat<3> player_velocity_matrix;
         std::vector<Interaction> interactions;
+        std::vector<CharacterConstructor> characters;
 
     };
 
