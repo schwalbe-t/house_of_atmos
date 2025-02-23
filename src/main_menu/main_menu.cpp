@@ -106,7 +106,7 @@ namespace houseofatmos {
             [window = &window, local = &local, this]() {
                 this->before_next_frame = [window, this]() {
                     window->set_scene(std::make_shared<world::Scene>(
-                        std::make_shared<world::World>(std::move(settings))
+                        std::make_shared<world::World>(std::move(settings), 256, 256)
                     ));
                 };
                 this->show_loading_screen(*local);

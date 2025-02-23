@@ -27,6 +27,8 @@ namespace houseofatmos::world {
         static inline u64 units_per_tile = 5;
         static inline u64 tiles_per_chunk = 5;
 
+        static inline f64 autosave_period = 60.0;
+
         Settings settings;
         std::string save_path;
 
@@ -37,6 +39,8 @@ namespace houseofatmos::world {
         CarriageManager carriages;
         PersonalHorse personal_horse;
         research::Research research;
+
+        f64 last_autosave_time;
 
         private:
         void generate_rivers(StatefulRNG& rng, u32 seed);
@@ -61,6 +65,11 @@ namespace houseofatmos::world {
         World(Settings&& settings, const engine::Arena& serialized);
         
         engine::Arena serialize() const;
+        bool write_to_file(bool force_creation = false);
+
+        void trigger_autosave(
+            const engine::Window& window, Toasts* toasts = nullptr
+        );
 
     };
 

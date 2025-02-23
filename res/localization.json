@@ -298,13 +298,25 @@
         "_placeholders": "The location that the game has been saved at",
         "de": "💾 Spiel gespeichert als '{}'.",
         "en": "💾 Game saved as '{}'.",
-        "bg": "💾 Играта запазена като '{}'."
+        "bg": "💾 Играта беше запазена като '{}'."
+    },
+    "toast_auto_saved_game": {
+        "_context": "Pop-up that notifies the user that the game has been saved automatically",
+        "de": "💾 Spiel automatisch gespeichert.",
+        "en": "💾 Game saved automatically.",
+        "bg": "💾 Играта беше запазена автоматично."
     },
     "toast_failed_to_save_game": {
         "_context": "Pop-up that notifies the user that the game could not be saved",
         "de": "💾 Spiel konnte nicht gespeichert werden.",
         "en": "💾 Game was unable to be saved.",
-        "bg": "💾 Играта не можa да бъде запазена."
+        "bg": "💾 Играта не можа да бъде запазена."
+    },
+    "toast_failed_to_auto_save_game": {
+        "_context": "Pop-up that notifies the user that the game could not be saved automatically",
+        "de": "💾 Spiel konnte nicht automatisch gespeichert werden.",
+        "en": "💾 Game was unable to be saved automatically.",
+        "bg": "💾 Играта не можа да бъде запазена автоматично."
     },
     "toast_indestructible": {
         "_context": "Pop-up that notifies the user when they try to demolish buildings they aren't allowed to (note: localized text should be why they can't do it, not what they did)",

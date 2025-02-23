@@ -358,6 +358,7 @@ namespace houseofatmos::world {
     }
 
     void Scene::update(engine::Window& window) {
+        this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         bool paused_game = window.was_pressed(engine::Key::Escape)

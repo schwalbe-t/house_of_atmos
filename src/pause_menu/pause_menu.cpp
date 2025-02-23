@@ -2,8 +2,6 @@
 #include <samhocevar/portable-file-dialogs.h>
 #include "pause_menu.hpp"
 #include "../main_menu/main_menu.hpp"
-#include <fstream>
-#include <filesystem>
 #include <algorithm>
 
 namespace houseofatmos {
@@ -24,31 +22,18 @@ namespace houseofatmos {
         this->load(engine::Shader::Loader(PauseMenu::blur_shader));
     }
 
-    static void write_to_file(
-        const engine::Arena& buffer, const std::string& path
-    ) {
-        std::ofstream fout;
-        fout.open(path, std::ios::binary | std::ios::out);
-        fout.write((const char*) buffer.data().data(), buffer.data().size());
-        fout.close();
-    }
-
     void PauseMenu::save_game(engine::Window& window, bool is_new_save) {
-        bool existing_path_invalid = !is_new_save
-            && !std::filesystem::exists(this->world->save_path);
-        if(existing_path_invalid) {
+        if(!this->world->write_to_file(is_new_save)) {
             this->world->save_path = "";
             this->toasts.add_error("toast_failed_to_save_game", {});
             this->show_root_menu(window);
             return;
         }
-        engine::Arena serialized = this->world->serialize();
-        write_to_file(serialized, this->world->save_path);
-        this->toasts.add_toast("toast_saved_game", { this->world->save_path });
         this->world->settings.add_recent_game(
             std::string(this->world->save_path)
         );
         this->world->settings.save_to(Settings::default_path);
+        this->toasts.add_toast("toast_saved_game", { this->world->save_path });
     }
 
     static ui::Element make_button(
@@ -123,6 +108,7 @@ namespace houseofatmos {
         buttons.children.push_back(make_button(
             local.text("menu_to_main_menu"),
             [window = &window, this]() {
+                this->world->write_to_file();
                 window->set_scene(std::make_shared<MainMenu>(
                     Settings(this->world->settings)
                 ));
@@ -159,6 +145,7 @@ namespace houseofatmos {
     }
 
     void PauseMenu::update(engine::Window& window) {
+        this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(this->ui.root.children.size() == 0) {

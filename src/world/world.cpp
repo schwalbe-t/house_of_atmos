@@ -1,5 +1,7 @@
 
 #include "world.hpp"
+#include <filesystem>
+#include <fstream>
 
 namespace houseofatmos::world {
 
@@ -56,7 +58,8 @@ namespace houseofatmos::world {
     static const f64 rivers_per_sq_tile = 10.0 / (256.0 * 256.0);
     static const u64 river_min_size = 3;
     static const u64 river_max_size = 6;
-    static const u64 river_size_dist = 100; // 50 steps per size
+    // river generation is limited to at most have
+    // as many steps as the world has tiles
 
     void World::generate_rivers(StatefulRNG& rng, u32 seed) {
         u64 world_area = this->terrain.width_in_tiles() 
@@ -75,7 +78,7 @@ namespace houseofatmos::world {
             f64 fx = rng.next_f64() * river_spawn_area_w + river_spawn_area_x;
             f64 fz = rng.next_f64() * river_spawn_area_h + river_spawn_area_z;
             f64 b_a = river_base_angle(fx, fz, this->terrain);
-            for(;;) {
+            for(u64 step_i = 0; step_i < world_area; step_i += 1) {
                 if(fx < 0.0 || fz < 0.0) { break; }
                 if((u64) fx >= this->terrain.width_in_tiles()) { break; }
                 if((u64) fz >= this->terrain.height_in_tiles()) { break; }
@@ -103,7 +106,7 @@ namespace houseofatmos::world {
 
     static const i16 settlement_max_elevation = 10;
     static const u64 settlement_min_land_rad = 2; // in tiles
-    static const f64 min_settlement_distance = 10; // in tiles
+    static const f64 min_settlement_distance = 20; // in tiles
 
     bool World::settlement_allowed_at(
         u64 center_x, u64 center_z, const std::vector<Vec<3>> settlements
@@ -302,9 +305,9 @@ namespace houseofatmos::world {
         }
     }
 
-    static const f64 terrain_falloff_distance = 10.0;
+    static const f64 terrain_falloff_distance = 40.0;
     static const f64 terrain_falloff_height = -15.0;
-    static const u64 max_settlement_count = 30;
+    static const f64 max_settlements_per_sq_tile = 30.0 / (256.0 * 256.0);
     static const u64 max_settlement_attempts = 2000;
 
     void World::generate_map(u32 seed) {
@@ -315,6 +318,11 @@ namespace houseofatmos::world {
         this->generate_rivers(rng, seed);
         this->terrain.generate_foliage((u32) seed);
         std::vector<Vec<3>> created_settlements;
+        u64 world_area = this->terrain.width_in_tiles()
+            * this->terrain.height_in_tiles();
+        u64 max_settlement_count = (u64) (
+            max_settlements_per_sq_tile * (f64) world_area
+        );
         u64 settlement_attempts = 0;
         for(;;) {
             if(created_settlements.size() >= max_settlement_count) { break; }
@@ -339,6 +347,7 @@ namespace houseofatmos::world {
             //  since this should happen very very rarely)
             // (seed incremented by one to make a new map, still deterministic)
             this->generate_map(seed + 1);
+            return;
         }
         auto [mansion_x, mansion_z] = this->generate_mansion();
         const Building::TypeInfo& mansion = Building::types
@@ -415,6 +424,36 @@ namespace houseofatmos::world {
         serialized.personal_horse = this->personal_horse.serialize();
         serialized.research = research;
         return buffer;
+    }
+
+    bool World::write_to_file(bool force_creation) {
+        bool exists = std::filesystem::exists(this->save_path);
+        bool has_path = this->save_path.size() > 0;
+        bool write_allowed = has_path && (exists || force_creation);
+        if(!write_allowed) { return false; }
+        engine::Arena serialized = this->serialize();
+        std::ofstream fout;
+        fout.open(this->save_path, std::ios::binary | std::ios::out);
+        fout.write(
+            (const char*) serialized.data().data(), serialized.data().size()
+        );
+        fout.close();
+        return true;
+    }
+
+    void World::trigger_autosave(
+        const engine::Window& window, Toasts* toasts
+    ) {
+        if(window.time() < this->last_autosave_time + World::autosave_period) {
+            return;
+        }
+        bool saved = this->write_to_file();
+        if(saved && toasts != nullptr) {
+            toasts->add_toast("toast_auto_saved_game", {});
+        } else if(toasts != nullptr) {
+            toasts->add_error("toast_failed_to_auto_save_game", {});
+        }
+        this->last_autosave_time = window.time();
     }
 
 }

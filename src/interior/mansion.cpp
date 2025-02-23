@@ -84,6 +84,7 @@ namespace houseofatmos::interior {
             ](
                 Character& self, Scene& scene, const engine::Window& window
             ) {
+                (void) window;
                 interactable->pos = self.position + Vec<3>(0.0, 1.0, 0.0);
                 *dialogue_origin = self.position;
                 f64 player_dist

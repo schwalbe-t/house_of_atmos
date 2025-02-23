@@ -82,6 +82,7 @@ namespace houseofatmos::interior {
     }
 
     void Scene::update(engine::Window& window) {
+        this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
         this->get<engine::Soundtrack>(audio_const::soundtrack).update();
         if(window.was_pressed(engine::Key::Escape)) {
