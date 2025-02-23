@@ -8,39 +8,62 @@
 namespace houseofatmos::human {
 
     enum struct Animation {
-        Stand, Walk, SwimIdle, Swim, HorseSit, HorseRide
+        Stand, Walk, SwimIdle, Swim, HorseSit, HorseRide, Sit
     };
 
-    static const inline CharacterType character = {
+    // note: 'x / 24.0' essentially means "'x' Blender frames"
+    static const inline CharacterAnimation stand = { 
+        "idle", 30.0 / 24.0, 0.0 
+    };
+    static const inline CharacterAnimation walk = {
+        "walk", (30.0 / 24.0) / 2.0 * 5.0, 0.0,
+        &sound::step, (15.0 / 24.0) / 2.0 * 5.0, (8.0 / 24.0) / 2.0
+    };
+    static const inline CharacterAnimation swim_idle = {
+        "swim", 40.0 / 24.0, 0.0,
+        &sound::swim, 40.0 / 24.0, 10.0 / 24.0
+    };
+    static const inline CharacterAnimation swim = {
+        "swim", (40.0 / 24.0) * 2.5, 0.0,
+        &sound::swim, (40.0 / 24.0) * 2.5, 10.0 / 24.0
+    };
+    static const inline CharacterAnimation horse_sit = { 
+        "ride_idle" 
+    };
+    static const inline CharacterAnimation horse_ride = {
+        "ride", (24.0 / 24.0) / 3.1 * 10, -0.05, // simulate inertia
+        &sound::step, (24.0 / 24.0) / 3.1 * 10, 0.0
+    };
+    static const inline CharacterAnimation sit_male = { "sit_male" };
+    static const inline CharacterAnimation sit_female = { "sit_female" };
+
+    static const inline CharacterType male = {
         (engine::Model::LoadArgs) {
             "res/entities/human.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
         },
         Vec<3>(0, 0, 1), // the direction the model faces without rotation
         {
-            // note: 'x / 24.0' essentially means "'x' Blender frames"
-            /* Animation::Stand */ (CharacterAnimation) {
-                "idle", 30.0 / 24.0, 0.0
-            },
-            /* Animation::Walk */ (CharacterAnimation) {
-                "walk", (30.0 / 24.0) / 2.0 * 5.0, 0.0,
-                &sound::step, (15.0 / 24.0) / 2.0 * 5.0, (8.0 / 24.0) / 2.0
-            },
-            /* Animation::SwimIdle */ (CharacterAnimation) {
-                "swim", 40.0 / 24.0, 0.0,
-                &sound::swim, 40.0 / 24.0, 10.0 / 24.0
-            },
-            /* Animation::Swim */ (CharacterAnimation) {
-                "swim", (40.0 / 24.0) * 2.5, 0.0,
-                &sound::swim, (40.0 / 24.0) * 2.5, 10.0 / 24.0
-            },
-            /* Animation::HorseSit */ (CharacterAnimation) {
-                "ride_idle"
-            },
-            /* Animation::HorseRide */ (CharacterAnimation) {
-                "ride", (24.0 / 24.0) / 3.1 * 10, -0.05, // simulate inertia
-                &sound::step, (24.0 / 24.0) / 3.1 * 10, 0.0
-            }
+            // in the order defined by 'human::Animation'
+            human::stand, human::walk, 
+            human::swim_idle, human::swim,
+            human::horse_sit, human::horse_ride, 
+            human::sit_male
+        }
+    };
+
+    static const inline CharacterType female = {
+        (engine::Model::LoadArgs) {
+            "res/entities/human.glb", Renderer::model_attribs,
+            engine::FaceCulling::Disabled
+        },
+        Vec<3>(0, 0, 1), // the direction the model faces without rotation
+        {
+            // in the order defined by 'human::Animation'
+            human::stand, human::walk, 
+            human::swim_idle, human::swim,
+            human::horse_sit, human::horse_ride, 
+            human::sit_female
         }
     };
 
@@ -76,7 +99,8 @@ namespace houseofatmos::human {
 
 
     static inline void load_resources(engine::Scene& scene) {
-        scene.load(engine::Model::Loader(character.model));
+        scene.load(engine::Model::Loader(male.model));
+        scene.load(engine::Model::Loader(female.model));
         scene.load(CharacterVariant::Loader(count));
         scene.load(CharacterVariant::Loader(peasant_woman));
         scene.load(CharacterVariant::Loader(peasant_man));

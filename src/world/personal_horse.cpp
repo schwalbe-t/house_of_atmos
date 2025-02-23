@@ -89,7 +89,7 @@ namespace houseofatmos::world {
         this->update_heading();
     }
 
-    static inline const Vec<3> horse_model_heading = Vec<3>(0, 0, -1);
+    static inline const Vec<3> horse_model_heading = Vec<3>(0, 0, 1);
 
     void PersonalHorse::update_heading() {
         Vec<3> pos = this->position();
@@ -103,7 +103,7 @@ namespace houseofatmos::world {
             this->angle = atan2(angle_cross, horse_model_heading.dot(heading));
         }
         if(this->state == State::Ridden) {
-            this->angle = this->player->character.angle + pi;
+            this->angle = this->player->character.angle;
         }
     }
 

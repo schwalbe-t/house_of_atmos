@@ -70,7 +70,7 @@ namespace houseofatmos::interior {
         );
         static const u64 no_action = UINT64_MAX;
         Character character = Character(
-            &human::character, &human::maid,
+            &human::female, &human::maid,
             { 0, 0, 0 }, no_action
         );
         auto current_target = std::make_shared<u64>(maid_start_target);

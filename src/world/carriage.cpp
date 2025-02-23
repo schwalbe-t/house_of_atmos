@@ -1,6 +1,7 @@
 
 #include "carriage.hpp"
 #include "../audio_const.hpp"
+#include "../human.hpp"
 
 namespace houseofatmos::world {
 
@@ -81,7 +82,7 @@ namespace houseofatmos::world {
         return path.back();
     }
 
-    static const Vec<3> model_heading = Vec<3>(0, 0, -1);
+    static const Vec<3> model_heading = Vec<3>(0, 0, 1);
     static const f64 carriage_speed = 4.0;
     static const f64 load_time = 5.0;
     static const f64 sound_period = 0.5;
@@ -197,6 +198,11 @@ namespace houseofatmos::world {
     }
 
 
+    static Character driver = Character(
+        &human::male, &human::peasant_man, 
+        { 0, 0, 0 }, (u64) human::Animation::Sit
+    );
+
     void Carriage::render(
         Renderer& renderer, engine::Scene& scene, 
         const engine::Window& window,
@@ -235,6 +241,19 @@ namespace houseofatmos::world {
                 engine::DepthTesting::Enabled,
                 override_texture == nullptr? &horse_texture : override_texture
             );
+        }
+        // render drivers
+        for(const auto& driver_inst: carriage_info.drivers) {
+            Mat<4> driver_transform = Mat<4>::translate(this->position)
+                * Mat<4>::rotate_y(this->yaw)
+                * Mat<4>::rotate_x(this->pitch)
+                * Mat<4>::translate(driver_inst.offset)
+                * Mat<4>::translate(carriage_info.carriage_offset);
+            driver.position = (driver_transform * Vec<4>(0, 0, 0, 1))
+                .swizzle<3>("xyz");
+            f64 angle = this->yaw + driver_inst.angle;
+            driver.face_in_direction(Vec<3>(cos(angle), 0, sin(angle)));
+            driver.render(scene, window, renderer);
         }
         // render carriage
         engine::Model& carriage_model = scene

@@ -73,9 +73,15 @@ namespace houseofatmos::world {
 
 
         struct CarriageTypeInfo {
+            struct Driver {
+                Vec<3> offset;
+                f64 angle;
+            };
+            
             engine::Model::LoadArgs model;
             Vec<3> carriage_offset;
             std::vector<Vec<3>> horse_offsets;
+            std::vector<Driver> drivers;
             f64 wheel_radius;
         };
 
@@ -85,9 +91,15 @@ namespace houseofatmos::world {
                     "res/entities/round_carriage.glb", Renderer::model_attribs,
                     engine::FaceCulling::Disabled
                 },
-                Vec<3>(0.0, 0.0, 1.5),
-                (std::vector<Vec<3>>) {
-                    Vec<3>(0.0, 0.0, -4.5)
+                Vec<3>(0.0, 0.0, -1.5),
+                { // horses
+                    Vec<3>(0.0, 0.0, 4.5)
+                },
+                {
+                    (CarriageTypeInfo::Driver) {
+                        Vec<3>(0.0, 1.2, 2.35),
+                        pi / 2.0 // 90 degrees
+                    }
                 },
                 0.5 // wheel radius 
             }

@@ -161,6 +161,7 @@ namespace houseofatmos::world {
 
 
     static Character create_roaming_human(
+        const CharacterType& type,
         const CharacterVariant::LoadArgs& variant,
         Vec<3> origin, std::shared_ptr<StatefulRNG> rng,
         const Terrain& terrain, const engine::Window& window,
@@ -174,7 +175,7 @@ namespace houseofatmos::world {
         Vec<3> spawn_position = origin
             + Vec<3>(cos(spawn_angle), 0.0, sin(spawn_angle)) * spawn_distance;
         return Character(
-            &human::character, &variant, spawn_position, no_action,
+            &type, &variant, spawn_position, no_action,
             [origin, rng, terrain = &terrain, window = &window, 
                 roam_distance, roam_vel, 
                 player = &player, player_stop_dist,
@@ -291,6 +292,7 @@ namespace houseofatmos::world {
                         }
                     );
                     characters.push_back(create_roaming_human(
+                        is_male? human::male : human::female,
                         is_male? human::peasant_man : human::peasant_woman,
                         origin, rng, terrain, window,
                         peasant_spawn_dist, peasant_roam_dist, peasant_roam_vel,
