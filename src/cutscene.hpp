@@ -45,8 +45,9 @@ namespace houseofatmos {
 
         void update(engine::Window& window) {
             if(this->is_empty()) { return; }
+            this->current_section().on_update(window);
+            if(this->is_empty()) { return; }
             Section& section = this->sections.at(0);
-            section.on_update(window);
             section.remaining -= window.delta_time();
             if(section.remaining > 0.0) { return; }
             this->advance(window);

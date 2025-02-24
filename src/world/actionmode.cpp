@@ -107,61 +107,52 @@ namespace houseofatmos::world {
 
 
 
-    TerraformMode::TerraformMode(
-        std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-        engine::Localization& local
-    ): ActionMode(world, ui, toasts, local) {
+    TerraformMode::TerraformMode(ActionContext ctx): ActionMode(ctx) {
         this->has_selection = false;
-        this->mode = std::make_unique<Mode>(Mode::Flatten);
-        this->mode_buttons = std::make_unique<
-            std::array<ui::Element*, (size_t) Mode::TotalCount>
-        >();
-        ui::Element mode_list = ui::Element()
+    }
+
+    void TerraformMode::init_ui() {
+        this->ui.with_element(ui::Element()
             .with_pos(0.05, 0.80, ui::position::window_fract)
             .with_size(0, 0, ui::size::units_with_children)
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Horizontal)
-            .as_movable();
+            .as_movable()
+        );
+        this->mode_selection = &this->ui.root.children.back();
+        this->ui.with_element(ui::Element()
+            .as_phantom()
+            .with_pos(0.0, 0.0, ui::position::window_tl_units)
+            .with_size(1.0, 1.0, ui::size::window_fract)
+            .as_movable()
+        );
+        this->vertex_markers = &this->ui.root.children.back();
+        this->set_mode(Mode::Flatten);
+    }
+
+    void TerraformMode::set_mode(Mode mode) {
+        if(this->mode == mode) { return; }
+        this->mode = mode;
+        this->mode_selection->children.clear();
         for(size_t mode_i = 0; mode_i < (size_t) Mode::TotalCount; mode_i += 1) {
-            Mode* mode_ptr = this->mode.get();
-            auto buttons = this->mode_buttons.get();
-            mode_list.children.push_back(ui::Element()
+            bool is_selected = mode_i == (size_t) mode;
+            this->mode_selection->children.push_back(ui::Element()
                 .with_size(16, 16, ui::size::units)
                 .with_background(TerraformMode::mode_icons[mode_i])
-                .with_click_handler([mode_ptr, mode_i, buttons]() {
-                    if((size_t) (*mode_ptr) == mode_i) { return; }
-                    *mode_ptr = (Mode) mode_i;
-                    for(size_t i = 0; i < (size_t) Mode::TotalCount; i += 1) {
-                        buttons->at(i)->background = i == mode_i
-                            ? &ui_background::border_selected
-                            : &ui_background::border;
-                        buttons->at(i)->background_hover = i == mode_i
-                            ? &ui_background::border_selected
-                            : &ui_background::border_hovering;
-                    }
+                .with_click_handler([this, mode_i]() {
+                    this->set_mode((Mode) mode_i);
                 })
                 .with_padding(0)
-                .with_handle(&this->mode_buttons->at(mode_i))
                 .with_background(
-                    *mode_ptr == (Mode) mode_i
-                        ? &ui_background::border_selected
+                    is_selected? &ui_background::border_selected
                         : &ui_background::border,
-                    *mode_ptr == (Mode) mode_i
-                        ? &ui_background::border_selected
+                    is_selected? &ui_background::border_selected
                         : &ui_background::border_hovering
                 )
                 .with_padding(2)
                 .as_movable()
             );
         }
-        ui.root.children.push_back(std::move(mode_list));
-        ui.root.children.push_back(ui::Element()
-            .as_phantom()
-            .with_pos(0.0, 0.0, ui::position::window_tl_units)
-            .with_size(1.0, 1.0, ui::size::window_fract)
-            .with_handle(&this->vertex_markers)
-            .as_movable()
-        );
     }
 
     static i64 terrain_mod_amount(
@@ -330,11 +321,11 @@ namespace houseofatmos::world {
                 .elevation_at(this->selection.start_x, this->selection.start_z);
             u64 cost = area_abs_terrain_mod_amount(
                 this->world->terrain, 
-                *this->mode, min_x, min_z, max_x, max_z, start_elev
+                this->mode, min_x, min_z, max_x, max_z, start_elev
             ) * terrain_mod_cost_per_unit;
             bool is_valid = terrain_modification_is_valid(
                 this->world->terrain, min_x, min_z, max_x, max_z, 
-                *this->mode, start_elev
+                this->mode, start_elev
             );
             bool do_operation = is_valid 
                 && this->permitted
@@ -342,7 +333,7 @@ namespace houseofatmos::world {
             if(do_operation) {
                 apply_terrain_modification(
                     this->world->terrain, 
-                    *this->mode, min_x, min_z, max_x, max_z, start_elev
+                    this->mode, min_x, min_z, max_x, max_z, start_elev
                 );
                 this->world->terrain.adjust_area_foliage(
                     min_x - 1, min_z - 1, max_x + 1, max_z + 1
@@ -538,14 +529,16 @@ namespace houseofatmos::world {
     }
 
     ConstructionMode::ConstructionMode(
-        std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-        engine::Localization& local
-    ): ActionMode(world, ui, toasts, local) {
+        ActionContext ctx
+    ): ActionMode(ctx) {
         this->selected_x = 0;
         this->selected_z = 0;
         this->selected_type = std::make_unique<Building::Type>(Building::House);
         this->selected_conversion = std::make_unique<std::vector<Conversion>>();
         this->placement_valid = false;
+    }
+
+    void ConstructionMode::init_ui() {
         this->ui.root.children.push_back(ui::Element().as_phantom().as_movable());
         ui::Element* selector = &this->ui.root.children.back();
         this->ui.root.children.push_back(ui::Element().as_phantom().as_movable());
@@ -770,11 +763,11 @@ namespace houseofatmos::world {
         return selector;
     }
 
-    BridgingMode::BridgingMode(
-        std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-        engine::Localization& local
-    ): ActionMode(world, ui, toasts, local) {
+    BridgingMode::BridgingMode(ActionContext ctx): ActionMode(ctx) {
         this->selected_type = std::make_unique<Bridge::Type>(Bridge::Wooden);
+    }
+
+    void BridgingMode::init_ui() {
         this->ui.root.children.push_back(ui::Element());
         ui::Element* selector = &this->ui.root.children.back();
         *selector = create_bridge_selector(

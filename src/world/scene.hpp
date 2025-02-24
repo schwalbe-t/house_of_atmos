@@ -36,7 +36,14 @@ namespace houseofatmos::world {
         std::vector<Character> characters;
 
         f64 camera_distance = min_camera_dist;
-        std::unique_ptr<ActionMode> action_mode = nullptr;
+        ActionManager action_mode = ActionManager([this]() {
+            return (ActionContext) {
+                &this->world, &this->ui, &this->toasts,
+                &this->get<engine::Localization>(
+                    this->world->settings.localization()
+                )
+            };
+        });
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
         ui::Element* coin_counter = nullptr;
         TerrainMap terrain_map;
@@ -47,6 +54,7 @@ namespace houseofatmos::world {
         void load_resources();
         static DirectionalLight create_sun(const Vec<3>& focus_point);
         static void configure_renderer(Renderer& renderer, u64 view_distance);
+        void update_ui();
 
         f64 draw_distance_units() const {
             return this->world->settings.view_distance 

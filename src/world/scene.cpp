@@ -6,62 +6,17 @@
 
 namespace houseofatmos::world {
 
-    static void set_base_ui(Scene& scene, u64 selected);
-
-    using ActionModeBuilder = std::unique_ptr<ActionMode> (*)(Scene& scene);
-
-    static void set_action_mode(
-        Scene& scene, ActionModeBuilder builder, u64 selected
-    ) {
-        set_base_ui(scene, selected);
-        scene.action_mode = builder(scene);
-    }
-
-    static const ActionModeBuilder default_mode_const = [](Scene& s) {
-        return (std::unique_ptr<ActionMode>) std::make_unique<DefaultMode>(
-            s.world, s.ui, s.toasts,
-            s.get<engine::Localization>(s.world->settings.localization())
-        );
-    };
-    static const std::array<
-        std::pair<const ui::Background*, ActionModeBuilder>, 5
+    static const std::vector<
+        std::pair<const ui::Background*, ActionManager::Mode>
     > action_modes = {
-        (std::pair<const ui::Background*, ActionModeBuilder>) 
-        { &ui_icon::terraforming, [](Scene& s) {
-            return (std::unique_ptr<ActionMode>) std::make_unique<TerraformMode>(
-                s.world, s.ui, s.toasts, 
-                s.get<engine::Localization>(s.world->settings.localization())
-            );
-        } },
-        { &ui_icon::construction, [](Scene& s) {
-            return (std::unique_ptr<ActionMode>) std::make_unique<ConstructionMode>(
-                s.world, s.ui, s.toasts,
-                s.get<engine::Localization>(s.world->settings.localization())
-            );
-        } },
-        { &ui_icon::bridging, [](Scene& s) {
-            return (std::unique_ptr<ActionMode>) std::make_unique<BridgingMode>(
-                s.world, s.ui, s.toasts,
-                s.get<engine::Localization>(s.world->settings.localization())
-            );
-        } },
-        { &ui_icon::demolition, [](Scene& s) {
-            return (std::unique_ptr<ActionMode>) std::make_unique<DemolitionMode>(
-                s.world, s.ui, s.toasts,
-                s.get<engine::Localization>(s.world->settings.localization())
-            );
-        } },
-        { &ui_icon::pathing, [](Scene& s) {
-            return (std::unique_ptr<ActionMode>) std::make_unique<PathingMode>(
-                s.world, s.ui, s.toasts,
-                s.get<engine::Localization>(s.world->settings.localization())
-            );
-        } }
+        { &ui_icon::terraforming, ActionManager::Mode::Terraform },
+        { &ui_icon::construction, ActionManager::Mode::Construction },
+        { &ui_icon::bridging, ActionManager::Mode::Bridging},
+        { &ui_icon::demolition, ActionManager::Mode::Demolition},
+        { &ui_icon::pathing, ActionManager::Mode::Pathing }
     };
 
-    static void set_base_ui(Scene& scene, u64 selected) {
-        Toasts::States toast_states = scene.toasts.make_states();
-        scene.ui.root.children.clear();
+    static ui::Element create_mode_selector(Scene* scene) {
         ui::Element mode_list = ui::Element()
             .with_pos(0.05, 0.95, ui::position::window_fract)
             .with_size(0, 0, ui::size::units_with_children)
@@ -69,40 +24,46 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Horizontal)
             .as_movable();
         for(u64 mode_i = 0; mode_i < action_modes.size(); mode_i += 1) {
-            const auto& [mode_bkg, mode_const] = action_modes[mode_i];
+            const auto& [mode_icon, mode] = action_modes[mode_i];
+            bool is_selected = scene->action_mode.current_type() == mode;
             mode_list.children.push_back(ui::Element()
                 .with_size(16, 16, ui::size::units)
-                .with_background(mode_bkg)
-                .with_click_handler([mode_i, &scene, selected, mode_const]() {
-                    if(selected != mode_i) {
-                        set_action_mode(scene, mode_const, mode_i);
-                        return;
-                    }
-                    set_action_mode(scene, default_mode_const, UINT64_MAX);
+                .with_background(mode_icon)
+                .with_click_handler([scene, is_selected, mode]() {
+                    scene->action_mode.set_mode(
+                        is_selected? ActionManager::Mode::Default : mode
+                    );
                 })
                 .with_padding(0)
                 .with_background(
-                    selected == mode_i
-                        ? &ui_background::border_selected
+                    is_selected? &ui_background::border_selected
                         : &ui_background::border,
-                    selected == mode_i
-                        ? &ui_background::border_selected
+                    is_selected? &ui_background::border_selected
                         : &ui_background::border_hovering
                 )                
                 .with_padding(2)
                 .as_movable()
             );
         }
-        scene.ui.root.children.push_back(scene.interactables.create_container());
-        scene.ui.root.children.push_back(std::move(mode_list));
-        scene.terrain_map.create_container();
-        scene.ui.root.children.push_back(
-            scene.world->balance.create_counter(&scene.coin_counter)
+        return mode_list;
+    }
+
+    void Scene::update_ui() {
+        Toasts::States toast_states = this->toasts.make_states();
+        this->ui.root.children.clear();
+        this->ui.with_element(this->interactables.create_container());
+        if(this->action_mode.has_mode()) {
+            this->ui.with_element(create_mode_selector(this));
+        }
+        this->terrain_map.create_container();
+        this->ui.with_element(
+            this->world->balance.create_counter(&this->coin_counter)
         );
-        scene.toasts.set_scene(&scene);
-        scene.ui.root.children.push_back(scene.toasts.create_container());
-        scene.toasts.put_states(std::move(toast_states));
-        scene.ui.root.children.push_back(scene.dialogues.create_container());
+        this->toasts.set_scene(this);
+        this->ui.with_element(this->toasts.create_container());
+        this->toasts.put_states(std::move(toast_states));
+        this->ui.with_element(this->dialogues.create_container());
+        this->action_mode.init_ui();
     }
 
 
@@ -117,6 +78,7 @@ namespace houseofatmos::world {
         this->renderer.lights.push_back(Scene::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
         this->load_resources();
+        this->action_mode.set_mode(ActionManager::Mode::Default);
     }
 
     void Scene::load_resources() {
@@ -383,8 +345,19 @@ namespace houseofatmos::world {
                 this->interactables, local, this->dialogues
             );
         }
-        if(this->action_mode == nullptr) {
-            set_action_mode(*this, default_mode_const, UINT64_MAX);
+        if(this->terrain_map.toggle_with_key(engine::Key::M, window)) {
+            if(!this->terrain_map.element()->hidden) {
+                this->action_mode.remove_mode();
+                this->update_ui();
+                this->action_mode.acknowledge_change();
+                this->terrain_map.element()->hidden = false;
+            } else {
+                this->action_mode.set_mode(ActionManager::Mode::Default);
+            }
+        }
+        if(this->action_mode.has_changed()) {
+            this->update_ui();
+            this->action_mode.acknowledge_change();
         }
         this->cutscene.update(window);
         this->world->carriages.update_all(
@@ -405,10 +378,12 @@ namespace houseofatmos::world {
         );
         this->toasts.update(*this);
         this->ui.update(window);
-        this->action_mode->permitted = !this->world->player.in_water
-            && !this->world->player.is_riding
-            && this->terrain_map.element()->hidden;
-        this->action_mode->update(window, *this, this->renderer);
+        if(this->action_mode.has_mode()) {
+            this->action_mode.current().permitted = !this->world->player.in_water
+                && !this->world->player.is_riding
+                && this->terrain_map.element()->hidden;
+        }
+        this->action_mode.update(window, *this, this->renderer);
         this->world->personal_horse.update(
             *this, window, this->world->terrain, this->world->player, 
             this->interactables, this->toasts
@@ -424,10 +399,6 @@ namespace houseofatmos::world {
                 this->world->player.character.position,
                 this->draw_distance_units(), 0.0
             );
-        }
-        if(this->terrain_map.toggle_with_key(engine::Key::M, window)) {
-            set_action_mode(*this, default_mode_const, UINT64_MAX);
-            this->terrain_map.element()->hidden = false;
         }
         this->terrain_map.update(window, *this);
     }
@@ -467,7 +438,7 @@ namespace houseofatmos::world {
         this->renderer.render_to_output();
         this->render_geometry(window);
         this->world->terrain.render_water(*this, this->renderer, window);
-        this->action_mode->render(window, *this, this->renderer);
+        this->action_mode.render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
         this->terrain_map.render();
         this->ui.render(*this, window);

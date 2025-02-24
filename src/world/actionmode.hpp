@@ -15,6 +15,14 @@ namespace houseofatmos::world {
     namespace ui = houseofatmos::engine::ui;
 
 
+    struct ActionContext {
+        std::shared_ptr<World>* world;
+        ui::Manager* ui;
+        Toasts* toasts;
+        engine::Localization* local;
+    };
+
+
     struct ActionMode {
 
         static inline const engine::Texture::LoadArgs wireframe_info_texture = {
@@ -59,21 +67,29 @@ namespace houseofatmos::world {
         engine::Localization& local;
         bool permitted = true;
 
-        ActionMode(
-            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-            engine::Localization& local
-        ): world(world), ui(ui), toasts(toasts), local(local) {}
+        ActionMode(ActionContext ctx): 
+            world(*ctx.world), ui(*ctx.ui), 
+            toasts(*ctx.toasts), local(*ctx.local) {}
 
         virtual ~ActionMode() = default;
 
+        virtual void init_ui() {}
         virtual void update(
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
-        ) = 0;
+        ) {
+            (void) window;
+            (void) scene;
+            (void) renderer;
+        }
         virtual void render(
             const engine::Window& window, engine::Scene& scene, 
             Renderer& renderer
-        ) = 0;
+        ) {
+            (void) window;
+            (void) scene;
+            (void) renderer;
+        }
 
     };
 
@@ -82,10 +98,9 @@ namespace houseofatmos::world {
 
         ui::Element* button = nullptr;
 
-        DefaultMode(
-            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-            engine::Localization& local
-        ): ActionMode(world, ui, toasts, local) {
+        DefaultMode(ActionContext ctx): ActionMode(ctx) {}
+
+        void init_ui() override {
             this->ui.root.children.push_back(
                 ui::Element().as_phantom().as_movable()
             );
@@ -96,15 +111,6 @@ namespace houseofatmos::world {
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
         ) override;
-
-        void render(
-            const engine::Window& window, engine::Scene& scene, 
-            Renderer& renderer
-        ) override {
-            (void) window;
-            (void) scene;
-            (void) renderer;
-        }
 
     };
 
@@ -129,29 +135,21 @@ namespace houseofatmos::world {
 
         bool has_selection;
         Selection selection;
-        std::unique_ptr<Mode> mode;
+        Mode mode;
 
-        std::unique_ptr<std::array<ui::Element*, (size_t) Mode::TotalCount>> mode_buttons;
+        ui::Element* mode_selection = nullptr;
         ui::Element* vertex_markers = nullptr;
 
 
-        TerraformMode(
-            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-            engine::Localization& local
-        );
+        TerraformMode(ActionContext ctx);
+
+        void set_mode(Mode mode);
+        void init_ui() override;
 
         void update(
             const engine::Window& window, engine::Scene& scene, 
             const Renderer& renderer
         ) override;
-        void render(
-            const engine::Window& window, engine::Scene& scene, 
-            Renderer& renderer
-        ) override {
-            (void) window;
-            (void) scene;
-            (void) renderer;
-        }
 
     };
 
@@ -171,10 +169,9 @@ namespace houseofatmos::world {
         std::vector<ChunkOverlay> chunk_overlays;
         i64 last_viewed_chunk_x = INT64_MIN, last_viewed_chunk_z = INT64_MIN;
 
-        ConstructionMode(
-            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-            engine::Localization& local
-        );
+        ConstructionMode(ActionContext ctx);
+
+        void init_ui() override;
 
         void collect_chunk_overlays(i64 viewed_chunk_x, i64 viewed_chunk_z);
 
@@ -204,10 +201,9 @@ namespace houseofatmos::world {
         Bridge planned;
         bool placement_valid;
 
-        BridgingMode(
-            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-            engine::Localization& local
-        );
+        BridgingMode(ActionContext ctx);
+
+        void init_ui() override;
 
         Bridge get_planned() const;
         i64 get_reduced_planned_height(
@@ -247,10 +243,7 @@ namespace houseofatmos::world {
         Selection selection;
 
 
-        DemolitionMode(
-            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-            engine::Localization& local
-        ): ActionMode(world, ui, toasts, local) {
+        DemolitionMode(ActionContext ctx): ActionMode(ctx) {
             this->selection.type = Selection::None;
         }
 
@@ -272,10 +265,7 @@ namespace houseofatmos::world {
 
         u64 selected_tile_x, selected_tile_z;
 
-        PathingMode(
-            std::shared_ptr<World>& world, ui::Manager& ui, Toasts& toasts,
-            engine::Localization& local
-        ): ActionMode(world, ui, toasts, local) {
+        PathingMode(ActionContext ctx): ActionMode(ctx) {
             this->selected_tile_x = 0;
             this->selected_tile_z = 0;
         }
@@ -291,6 +281,104 @@ namespace houseofatmos::world {
             (void) window;
             (void) scene;
             (void) renderer;
+        }
+
+    };
+
+
+
+    struct ActionManager {
+
+        enum struct Mode {
+            Default, Terraform, Construction, Bridging, Demolition, Pathing
+        };
+
+        private:
+        std::function<ActionContext ()> ctx;
+        std::unique_ptr<ActionMode> mode = nullptr;
+        Mode mode_type;
+        bool was_changed = true;
+        bool ui_initialized = false;
+
+        public:
+        ActionManager(std::function<ActionContext ()>&& ctx):
+            ctx(std::move(ctx)) {}
+
+        bool has_changed() const { return this->was_changed; }
+        bool has_mode() const { return this->mode != nullptr; }
+        ActionMode& current() {
+            if(!this->has_mode()) {
+                engine::error(
+                    "Attempted access to mode of empty action mode manager"
+                );
+            }
+            return *this->mode;
+        }
+        Mode current_type() const {
+            if(!this->has_mode()) {
+                engine::error(
+                    "Attempted access to mode of empty action mode manager"
+                );
+            }
+            return this->mode_type;
+        }
+
+        void acknowledge_change() { this->was_changed = false; }
+
+        void set_mode(Mode mode) {
+            ActionContext ctx = this->ctx();
+            this->mode_type = mode;
+            switch(mode) {
+                case Mode::Default: 
+                    this->mode = std::make_unique<DefaultMode>(ctx);
+                    break;
+                case Mode::Terraform:
+                    this->mode = std::make_unique<TerraformMode>(ctx);
+                    break;
+                case Mode::Construction:
+                    this->mode = std::make_unique<ConstructionMode>(ctx);
+                    break;
+                case Mode::Bridging:
+                    this->mode = std::make_unique<BridgingMode>(ctx);
+                    break;
+                case Mode::Demolition:
+                    this->mode = std::make_unique<DemolitionMode>(ctx);
+                    break;
+                case Mode::Pathing:
+                    this->mode = std::make_unique<PathingMode>(ctx);
+                    break;
+            }
+            this->was_changed = true;
+            this->ui_initialized = false;
+        }
+
+        void remove_mode() {
+            if(!this->has_mode()) { return; }
+            this->mode = nullptr;
+            this->was_changed = true;
+        }
+
+        void init_ui() {
+            if(!this->has_mode()) { return; }
+            if(this->ui_initialized) { return; }
+            this->current().init_ui();
+            this->ui_initialized = true;
+        }
+        
+        void update(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) {
+            if(!this->has_mode() || !this->ui_initialized) { return; }
+            this->mode->update(window, scene, renderer);
+        }
+
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            Renderer& renderer
+        ) {
+            if(!this->has_mode() || !this->ui_initialized) { return; }
+            this->mode->render(window, scene, renderer);
         }
 
     };

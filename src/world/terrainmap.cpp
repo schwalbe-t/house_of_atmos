@@ -117,7 +117,7 @@ namespace houseofatmos::world {
             if(!this->container->hidden) {
                 this->render_map();
             }
-            return !this->container->hidden;
+            return true;
         }
         return false;
     }

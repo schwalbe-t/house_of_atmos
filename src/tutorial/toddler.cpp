@@ -7,10 +7,13 @@ namespace houseofatmos::tutorial {
     static const u64 seed = 1740334904;
 
     static world::World create_world(Settings&& settings) {
-        auto world = world::World(std::move(settings), 75, 75);
+        auto world = world::World(std::move(settings), 32, 32);
+        world.terrain.generate_foliage();
         world.saving_allowed = false;
-        world.generate_map(seed);
         world.player.character.type = &human::toddler;
+        world.player.character.position = Vec<3>(16, 0, 16)
+            * world.terrain.units_per_tile();
+        world.balance.coins = 0;
         return world;
     }
 
@@ -19,22 +22,16 @@ namespace houseofatmos::tutorial {
         std::shared_ptr<world::World>&& world_after
     ) {
         return {
-            // Generating the final game world takes up a single frame,
-            // which causes delta time to become massive in the following.
-            // This first section just makes it so we essentially ignore
-            // the first frame.
             Cutscene::Section(
-                0.0, 
-                [](engine::Window& window) { (void) window; },
-                [](engine::Window& window) { (void) window; }
-            ),
-            Cutscene::Section(
-                20.0,
+                INFINITY,
                 [scene](engine::Window& window) {
                     (void) window;
+                    scene->action_mode.remove_mode();
                     scene->world->personal_horse.pos 
                         = Vec<3>(INFINITY, 0, INFINITY);
-                    scene->interactables.forget_all();
+                    if(window.was_pressed(engine::Key::Tab)) {
+                        scene->cutscene.advance(window);
+                    }
                 },
                 [world_after = std::move(world_after)](engine::Window& window) {
                     window.set_scene(
