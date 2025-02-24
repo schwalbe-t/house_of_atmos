@@ -73,7 +73,8 @@ namespace houseofatmos::world {
         world->settings.localization(), 
         world, this->ui
     ))
-    , toasts(Toasts(world->settings.localization())) {
+    , toasts(Toasts(world->settings.localization()))
+    , dialogues(DialogueManager(world->settings.localization())) {
         this->world = world;
         this->renderer.lights.push_back(Scene::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
@@ -206,7 +207,7 @@ namespace houseofatmos::world {
     static const f64 peasant_player_stop_dist = 3.0;
     static const std::string peasant_dialogue_key_base = "dialogue_peasant_";
     static const size_t peasant_dialogue_count = 5;
-    static const f64 peasant_male_pitch = 1.7;
+    static const f64 peasant_male_pitch = 1.9;
     static const f64 peasant_female_pitch = 2.2;
     static const f64 peasant_male_speed = 1.6;
     static const f64 peasant_female_speed = 1.75;

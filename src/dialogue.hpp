@@ -68,6 +68,7 @@ namespace houseofatmos {
     struct DialogueManager {
 
         private:
+        engine::Localization::LoadArgs local_ref;
         std::vector<Dialogue> queued;
         size_t current_offset = 0;
         f64 char_timer = 0.0;
@@ -80,9 +81,15 @@ namespace houseofatmos {
         void advance_to_next_char(engine::Scene& scene);
 
         public:
-        DialogueManager() {}
+        DialogueManager(engine::Localization::LoadArgs local_ref):
+            local_ref(local_ref) {}
 
+        bool is_empty() const { return this->queued.size() == 0; }
         void say(Dialogue&& dialogue) { this->queued.push_back(dialogue); }
+        bool waiting() const {
+            if(this->queued.size() == 0) { return false; }
+            return this->current_offset >= this->queued[0].text.size();
+        }
         void skip(engine::Scene& scene);
 
         ui::Element create_container();

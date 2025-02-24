@@ -110,7 +110,7 @@ namespace houseofatmos {
                         Settings(this->settings), 256, 256
                     );
                     world_after->generate_map(random_init());
-                    window->set_scene(tutorial::create_scene(
+                    window->set_scene(tutorial::create_toddler_scene(
                         std::move(world_after)
                     ));
                 };

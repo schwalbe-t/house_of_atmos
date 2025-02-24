@@ -578,6 +578,12 @@
 
 
 
+    "dialogue_press_to_continue": {
+        "_context": "Displayed at the bottom of every dialogue when it is over",
+        "en": "(Press E or left click to continue)"
+    },
+
+
     "dialogue_peasant_name_male": {
         "_context": "Displayed name of a male peasant when talked to",
         "en": "Villager",
@@ -645,37 +651,172 @@
         "bg": "Ако благородието има някакви забележки относно моята служба, моля, не се колебайте да ги изкажете."
     },
 
-    "dialogue_tutorial_father_name": {
-        "_context": "Displayed name of the father of the player in the tutorial",
-        "en": "Father"
-    },
     "dialogue_tutorial_prompt_name": {
         "_context": "Displayed name of the prompts shown in the tutorial",
         "en": "Tutorial"
     },
-    "dialogue_tutorial_father_0": {
+    "dialogue_tutorial_father_name": {
+        "_context": "Displayed name of the father of the player in the tutorial",
+        "en": "Father"
+    },
+    "dialogue_tutorial_instructions_name": {
+        "_context": "Displayed name of the instructions the father has given to the player in the second tutorial",
+        "en": "Father's Instructions"
+    },
+    "dialogue_tutorial_0_prompt_0": {
+        "_context": "The prompt tells the player that they can use the tab key to skip the tutorial",
+        "en": "You may press the tab key to skip this tutorial at any time."
+    },
+    "dialogue_tutorial_0_father_1": {
         "_context": "The count father tells his small son to go and take a walk with him",
         "en": "Come son, let us take a walk."
     },
-    "dialogue_tutorial_prompt_1": {
+    "dialogue_tutorial_0_prompt_2": {
         "_context": "The prompt tells the player to use certain keys to move around",
         "en": "Press [W], [A], [S] and [D] to move around and follow your father."
     },
-    "dialogue_tutorial_father_2": {
+    "dialogue_tutorial_0_father_3": {
         "_context": "The father asks his son whether he can see the other end of the path, since it suddenly ended",
         "en": "The path suddenly ended... Can you see the other end?"
     },
-    "dialogue_tutorial_prompt_3": {
+    "dialogue_tutorial_0_prompt_4": {
         "_context": "The prompt tells the player to use the mouse wheel to zoom out the camera",
         "en": "Use the scroll wheel to zoom the camera in and out."
     },
-    "dialogue_tutorial_father_4": {
+    "dialogue_tutorial_0_father_5": {
         "_context": "The player zoomed out the camera and can now see the path",
         "en": "Well done! Let us continue."
     },
-    "dialogue_tutorial_father_5": {
+    "dialogue_tutorial_0_father_6": {
         "_context": "The final dialogue of the father in the first tutorial",
         "en": "Take a good look at this land my son, as for one day you shall inherit it."
+    },
+    "dialogue_tutorial_1_father_0": {
+        "_context": "Father greets his son at the start of the second tutorial",
+        "en": "Hello, my son. As you know, I want you to take over my position as count in the near future."
+    },
+    "dialogue_tutorial_1_father_1": {
+        "_context": "Father explains his task for his son to prepare him for his abdication",
+        "en": "For that reason, I am tasking you with developing the area around the village in the east."
+    },
+    "dialogue_tutorial_1_father_2": {
+        "_context": "Father tells the player what he is giving him",
+        "en": "Take this map, some money and this list of instructions with you."
+    },
+    "dialogue_tutorial_1_prompt_3": {
+        "_context": "Explains to the user that they can open the map using the M key",
+        "en": "Open the map at any time by pressing [M]."
+    },
+    "dialogue_tutorial_1_prompt_4": {
+        "_context": "Explains to the user that they can call their horse by presing the H key",
+        "en": "Call your horse from anywhere by pressing [H]. Press space to get off the horse."
+    },
+    "dialogue_tutorial_1_instructions_5": {
+        "_context": "First, the instructions tell the player to ensure that there is a path over the river to the east of the village",
+        "en": "First, I want you to make sure that there is a way to the farmland near the village."
+    },
+    "dialogue_tutorial_1_instructions_6": {
+        "_context": "Continuation of 'dialogue_tutorial_1_instructions_5'",
+        "en": "The farmland is just across the river to the east of the village."
+    },
+    "dialogue_tutorial_1_instructions_7": {
+        "_context": "Instructs the player to build a bridge to cross the river",
+        "en": "In the case that there is no way across, I need you to make a new bridge across the river."
+    },
+    "dialogue_tutorial_1_prompt_8": {
+        "_context": "Explains to the user that they can create bridges by clicking the bridge icon in the bottom left",
+        "en": "Click the bridge icon in the bottom left of the screen to select it."
+    },
+    "dialogue_tutorial_1_prompt_9": {
+        "_context": "Continuation of 'dialogue_tutorial_1_prompt_9'",
+        "en": "You can then create a bridge by dragging between two cliffs of equal elevation."
+    },
+    "dialogue_tutorial_1_instructions_10": {
+        "_context": "Father instructs the player to build a windmill",
+        "en": "This area already has bakeries and farmland, but we need a windmill."
+    },
+    "dialogue_tutorial_1_instructions_11": {
+        "_context": "Continuation of 'dialogue_tutorial_1_instructions_10'",
+        "en": "Build a new windmill for flour near the farmland."
+    },
+    "dialogue_tutorial_1_prompt_12": {
+        "_context": "Informs the user how to open the build menu.",
+        "en": "Clicking the hammer icon in the bottom left of the screen opens the construction menu."
+    },
+    "dialogue_tutorial_1_prompt_13": {
+        "_context": "Informs the user about the production statistics in the map.",
+        "en": "Clicking on the farmland on the map ([M] to open) shows us that it produces wheat."
+    },
+    "dialogue_tutorial_1_prompt_14": {
+        "_context": "Informs the user to match inputs / outputs.",
+        "en": "Therefore we can build a windmill for flour, as it requires wheat."
+    },
+    "dialogue_tutorial_1_prompt_15": {
+        "_context": "Informs the user that buildings built close to each other share storage.",
+        "en": "Buildings placed next to each other have a shared storage."
+    },
+    "dialogue_tutorial_1_instructions_16": {
+        "_context": "Father instructs the player to next build a stable",
+        "en": "After that is done, I need you to fix up the path leading to the farmland."
+    },
+    "dialogue_tutorial_1_prompt_17": {
+        "_context": "Informs the user how to add / remove paths.",
+        "en": "Enter pathing mode by clicking the trowel (right-most) icon in the bottom left."
+    },
+    "dialogue_tutorial_1_prompt_18": {
+        "_context": "Informs the user how to use the pathing mode.",
+        "en": "Left clicking then adds paths, while right clicking removes them."
+    },
+    "dialogue_tutorial_1_instructions_19": {
+        "_context": "Father explains to the player why they need a carriage",
+        "en": "Now we only need a way to move the flour to the village, where the bakeries are."
+    },
+    "dialogue_tutorial_1_instructions_20": {
+        "_context": "Father tells the player to build a stable",
+        "en": "For this reason I want you to build a stable next to the path."
+    },
+    "dialogue_tutorial_1_instructions_21": {
+        "_context": "Father instructs the player to create a carriage",
+        "en": "Next, I need you to create a carriage."
+    },
+    "dialogue_tutorial_1_prompt_22": {
+        "_context": "Tells the user how to make a carriage",
+        "en": "Click the stable without having any other menus open."
+    },
+    "dialogue_tutorial_1_prompt_23": {
+        "_context": "Continuation of 'dialogue_tutorial_1_prompt_22'",
+        "en": "This reveals a button you can use to create a new carriage."
+    },
+    "dialogue_tutorial_1_instructions_24": {
+        "_context": "Father instructs the player to create a carriage",
+        "en": "Now you just need to tell the driver to transport the flour to the village."
+    },
+    "dialogue_tutorial_1_prompt_25": {
+        "_context": "Tells the user that carriages show up on the map",
+        "en": "The newly created carriage is also visible on the map ([M] to open)."
+    },
+    "dialogue_tutorial_1_prompt_26": {
+        "_context": "Tells the user how to configure carriages",
+        "en": "Clicking the carriage on the map allows you to configure them."
+    },
+    "dialogue_tutorial_1_prompt_27": {
+        "_context": "Continuation of 'dialogue_tutorial_1_prompt_25'",
+        "en": "A carriage must be told where to go and what to transfer there."
+    },
+    "dialogue_tutorial_1_prompt_28": {
+        "_context": "Tells the user that carriages need an unbroken path to their destination",
+        "en": "Carriages can only travel to their destinations on pathed tiles or bridges."
+    },
+    "dialogue_tutorial_1_prompt_29": {
+        "_context": "Tells the user (again) to set up a carriage to transport the flour to the village",
+        "en": "Configure the carriage to transport flour from the farmland to the village center."
+    },
+    "dialogue_tutorial_1_prompt_30": {
+        "_context": "Tells the user that the tutorial is done",
+        "en": "Congratulations! You have completed the tutorial."
+    },
+    "dialogue_tutorial_2_prompt_0": {
+        "_context": "Tells the user that they can press escape to pause the game",
+        "en": "Press the escape key to pause the game and save, change settings or exit."
     }
-
 }

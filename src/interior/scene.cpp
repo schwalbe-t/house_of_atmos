@@ -13,7 +13,9 @@ namespace houseofatmos::interior {
         const Interior& interior, 
         std::shared_ptr<world::World>&& world,
         std::shared_ptr<engine::Scene>&& outside
-    ): interior(interior), toasts(Toasts(world->settings.localization())) {
+    ): interior(interior)
+    , toasts(Toasts(world->settings.localization()))
+    , dialogues(DialogueManager(world->settings.localization())) {
         this->world = std::move(world);
         this->outside = std::move(outside);
         this->renderer.fog_color = background;

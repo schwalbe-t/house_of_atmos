@@ -131,7 +131,6 @@ namespace houseofatmos::world {
     }
 
     void TerraformMode::set_mode(Mode mode) {
-        if(this->mode == mode) { return; }
         this->mode = mode;
         this->mode_selection->children.clear();
         for(size_t mode_i = 0; mode_i < (size_t) Mode::TotalCount; mode_i += 1) {
@@ -140,6 +139,7 @@ namespace houseofatmos::world {
                 .with_size(16, 16, ui::size::units)
                 .with_background(TerraformMode::mode_icons[mode_i])
                 .with_click_handler([this, mode_i]() {
+                    if(mode_i == (u64) this->mode) { return; }
                     this->set_mode((Mode) mode_i);
                 })
                 .with_padding(0)

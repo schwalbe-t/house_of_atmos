@@ -92,6 +92,12 @@ namespace houseofatmos::human {
         }
     };
 
+    static const inline CharacterVariant::LoadArgs father = {
+        {
+            { "human", "res/entities/father.png" }
+        }
+    };
+
     static const inline CharacterVariant::LoadArgs peasant_woman = {
         {
             { "human", "res/entities/peasant.png" },
@@ -119,7 +125,9 @@ namespace houseofatmos::human {
     static inline void load_resources(engine::Scene& scene) {
         scene.load(engine::Model::Loader(male.model));
         scene.load(engine::Model::Loader(female.model));
+        scene.load(engine::Model::Loader(toddler.model));
         scene.load(CharacterVariant::Loader(count));
+        scene.load(CharacterVariant::Loader(father));
         scene.load(CharacterVariant::Loader(peasant_woman));
         scene.load(CharacterVariant::Loader(peasant_man));
         scene.load(CharacterVariant::Loader(maid));

@@ -1,36 +1,8 @@
 
 #include "tutorial.hpp"
-#include "../world/scene.hpp"
+#include "common.hpp"
 
 namespace houseofatmos::tutorial {
-
-    static void for_line(
-        u64 min_x, u64 min_z, u64 max_x, u64 max_z,
-        std::function<void (u64, u64)> action
-    ) {
-        u64 x = min_x;
-        u64 z = min_z;
-        for(;;) {
-            action(x, z);
-            if(x != max_x) { x += 1; }
-            else if(z != max_z) { z += 1; }
-            else { break; }
-        }
-    }
-
-    static std::function<void (u64, u64)> remove_foliage_from(
-        world::Terrain& terrain
-    ) {
-        return [terrain = &terrain](u64 x, u64 z) {
-            terrain->remove_foliage_at(x, z);
-        };
-    }
-
-    static std::function<void (u64, u64)> set_path_at(world::Terrain& terrain) {
-        return [terrain = &terrain](u64 x, u64 z) {
-            terrain->set_path_at(x, z);
-        };
-    }
 
     static world::World create_world(Settings&& settings) {
         auto world = world::World(std::move(settings), 48, 48);
@@ -60,32 +32,37 @@ namespace houseofatmos::tutorial {
         return world;
     }
 
+
+
     static std::function<void (engine::Window&)> base_restrictions_over(
-        std::shared_ptr<world::Scene> scene
+        std::shared_ptr<world::Scene> scene, 
+        std::shared_ptr<world::World> after
     ) {
-        return [scene](engine::Window& window) {
+        return [scene, after](engine::Window& window) {
             (void) window;
             scene->action_mode.remove_mode();
             scene->world->personal_horse.pos 
                 = Vec<3>(INFINITY, 0, INFINITY);
             if(window.was_pressed(engine::Key::Tab)) {
-                scene->cutscene.advance();
+                window.set_scene(std::make_shared<world::Scene>(after));
             }
         };
     }
     
     static Cutscene::Section await_advance(
-        std::shared_ptr<world::Scene> scene
+        std::shared_ptr<world::Scene> scene,
+        std::shared_ptr<world::World> after
     ) {
         return Cutscene::Section(
             INFINITY,
-            base_restrictions_over(scene), 
+            base_restrictions_over(scene, after), 
             [](auto& w) { (void) w; }
         );
     }
 
     static Cutscene::Section await_condition(
         std::shared_ptr<world::Scene> scene,
+        std::shared_ptr<world::World> after,
         std::function<bool (engine::Window&)> cond,
         std::function<void (engine::Window&)> handler 
             = [](auto& w) { (void) w; }
@@ -93,7 +70,7 @@ namespace houseofatmos::tutorial {
         return Cutscene::Section(
             INFINITY,
             [
-                scene, cond, base_restr = base_restrictions_over(scene)
+                scene, cond, base_restr = base_restrictions_over(scene, after)
             ](engine::Window& window) {
                 base_restr(window);
                 if(cond(window)) {
@@ -153,14 +130,9 @@ namespace houseofatmos::tutorial {
         };
     }
 
-    static const f64 father_v_pitch = 1.6;
-    static const f64 father_v_speed = 1.6;
-    static const f64 prompt_v_pitch = 2.0;
-    static const f64 prompt_v_speed = 2.0;
-
     static Cutscene create_cutscene(
         std::shared_ptr<world::Scene> scene,
-        std::shared_ptr<world::World>&& world_after
+        std::shared_ptr<world::World> after
     ) {
         // this is only legal because the main menu already loads this :/
         const engine::Localization* local = &scene
@@ -183,32 +155,49 @@ namespace houseofatmos::tutorial {
             ),
             Cutscene::Section(
                 1.0,
-                base_restrictions_over(scene),
-                say_dialogue(
-                    scene, local, 
-                    "dialogue_tutorial_father_name", 
-                    "dialogue_tutorial_father_0",
-                    voice::voiced, father_v_pitch, father_v_speed,
-                    [scene]() { scene->cutscene.advance(); }
-                )
-            ),
-            // wait for 'dialogue_tutorial_father_0' to end 
-            Cutscene::Section(
-                INFINITY, 
-                base_restrictions_over(scene), 
+                base_restrictions_over(scene, after),
                 say_dialogue(
                     scene, local, 
                     "dialogue_tutorial_prompt_name", 
-                    "dialogue_tutorial_prompt_1",
+                    "dialogue_tutorial_0_prompt_0",
                     voice::popped, prompt_v_pitch, prompt_v_speed,
                     [scene]() { scene->cutscene.advance(); }
                 )
             ),
-            // wait for 'dialogue_tutorial_prompt_1' to end 
-            await_advance(scene),
+            // wait for 'dialogue_tutorial_0_prompt_0' to end 
+            Cutscene::Section(
+                INFINITY,
+                base_restrictions_over(scene, after),
+                [](auto& w) { (void) w; }
+            ),
+            Cutscene::Section(
+                1.0,
+                base_restrictions_over(scene, after),
+                say_dialogue(
+                    scene, local, 
+                    "dialogue_tutorial_father_name", 
+                    "dialogue_tutorial_0_father_1",
+                    voice::voiced, father_v_pitch, father_v_speed,
+                    [scene]() { scene->cutscene.advance(); }
+                )
+            ),
+            // wait for 'dialogue_tutorial_0_father_1' to end 
+            Cutscene::Section(
+                INFINITY, 
+                base_restrictions_over(scene, after), 
+                say_dialogue(
+                    scene, local, 
+                    "dialogue_tutorial_prompt_name", 
+                    "dialogue_tutorial_0_prompt_2",
+                    voice::popped, prompt_v_pitch, prompt_v_speed,
+                    [scene]() { scene->cutscene.advance(); }
+                )
+            ),
+            // wait for 'dialogue_tutorial_0_prompt_2' to end 
+            await_advance(scene, after),
             // repeatedly wait for player to be near, then move along again
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -218,7 +207,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -228,7 +217,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -238,7 +227,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -248,7 +237,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -259,37 +248,37 @@ namespace houseofatmos::tutorial {
             ),
             // wait for the walking sequence to end
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 say_dialogue(
                     scene, local, 
                     "dialogue_tutorial_father_name", 
-                    "dialogue_tutorial_father_2",
+                    "dialogue_tutorial_0_father_3",
                     voice::voiced, father_v_pitch, father_v_speed,
                     [scene]() { scene->cutscene.advance(); }
                 )
             ),
-            // wait for 'dialogue_tutorial_father_2' to end
+            // wait for 'dialogue_tutorial_0_father_3' to end
             Cutscene::Section(
                 INFINITY, 
-                base_restrictions_over(scene), 
+                base_restrictions_over(scene, after), 
                 say_dialogue(
                     scene, local, 
                     "dialogue_tutorial_prompt_name", 
-                    "dialogue_tutorial_prompt_3",
+                    "dialogue_tutorial_0_prompt_4",
                     voice::popped, prompt_v_pitch, prompt_v_speed,
                     [scene]() { scene->cutscene.advance(); }
                 )
             ),
-            // wait for 'dialogue_tutorial_prompt_3' to end
+            // wait for 'dialogue_tutorial_0_prompt_4' to end
             Cutscene::Section(
                 INFINITY, 
-                base_restrictions_over(scene),
+                base_restrictions_over(scene, after),
                 [](auto& w) { (void) w; }
             ),
             // wait for the player to zoom out the camera
             await_condition(
-                scene,
+                scene, after,
                 [scene](engine::Window& window) {
                     (void) window;
                     f64 zoom_range = world::Scene::max_camera_dist 
@@ -301,15 +290,15 @@ namespace houseofatmos::tutorial {
                 say_dialogue(
                     scene, local, 
                     "dialogue_tutorial_father_name", 
-                    "dialogue_tutorial_father_4",
+                    "dialogue_tutorial_0_father_5",
                     voice::voiced, father_v_pitch, father_v_speed,
                     [scene]() { scene->cutscene.advance(); }
                 )
             ),
-            // wait for 'dialogue_tutorial_father_4' to end
+            // wait for 'dialogue_tutorial_0_father_5' to end
             Cutscene::Section(
                 INFINITY, 
-                base_restrictions_over(scene),
+                base_restrictions_over(scene, after),
                 move_to_dest(
                     father, 
                     Vec<3>(24.5, 0, 31.5) * scene->world->terrain.units_per_tile()
@@ -318,7 +307,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -328,7 +317,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -338,7 +327,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -348,7 +337,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -358,7 +347,7 @@ namespace houseofatmos::tutorial {
                 )
             ),
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 move_to_dest(
                     father, 
@@ -369,37 +358,42 @@ namespace houseofatmos::tutorial {
             ),
             // wait for sequence to end
             await_condition(
-                scene, 
+                scene, after, 
                 player_close_to_father(scene, father),
                 say_dialogue(
                     scene, local, 
                     "dialogue_tutorial_father_name", 
-                    "dialogue_tutorial_father_5",
+                    "dialogue_tutorial_0_father_6",
                     voice::voiced, father_v_pitch, father_v_speed,
                     [scene]() { scene->cutscene.advance(); }
                 )
             ),
-            // wait for 'dialogue_tutorial_father_5' to end
+            // wait for 'dialogue_tutorial_0_father_6' to end
             Cutscene::Section(
                 INFINITY, 
-                base_restrictions_over(scene),
-                [world_after = std::move(world_after)](engine::Window& window) {
-                    window.set_scene(
-                        std::make_shared<world::Scene>(world_after)
-                    );
+                base_restrictions_over(scene, after),
+                [](auto& w) { (void) w; }
+            ),
+            Cutscene::Section(
+                3.0, 
+                base_restrictions_over(scene, after),
+                [after](engine::Window& window) {
+                    window.set_scene(create_grownup_scene(after));
                 }
             )
         };
     }
 
-    std::shared_ptr<engine::Scene> create_scene(
-        std::shared_ptr<world::World>&& world_after
+
+
+    std::shared_ptr<engine::Scene> create_toddler_scene(
+        std::shared_ptr<world::World> world_after
     ) {
         auto world = std::make_shared<world::World>(
             create_world(Settings(world_after->settings))
         );
         auto scene = std::make_shared<world::Scene>(std::move(world));
-        scene->cutscene.append(create_cutscene(scene, std::move(world_after)));
+        scene->cutscene.append(create_cutscene(scene, world_after));
         return scene;
     }
 

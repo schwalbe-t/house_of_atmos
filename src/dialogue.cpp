@@ -20,14 +20,14 @@ namespace houseofatmos {
             .with_handle(&this->container)
             .as_hidden(true)
             .with_size(0, 0, ui::size::units_with_children)
-            .with_pos(0.5, 0.9, ui::position::window_fract)
+            .with_pos(0.5, 0.95, ui::position::window_fract)
             .with_background(&ui_background::scroll_horizontal)
             .as_movable();
         container.children.push_back(ui::Element()
             .with_handle(&this->lines)
-            .with_size(150, 45, ui::size::units)
+            .with_size(150, 50, ui::size::units)
             .with_text("", &ui_font::dark)
-            .with_padding(4.0)
+            .with_padding(3.0)
             .as_movable()
         );
         return container;
@@ -75,7 +75,7 @@ namespace houseofatmos {
     }
 
     void DialogueManager::skip(engine::Scene& scene) {
-        if(this->queued.size() == 0) { return; }
+        if(this->is_empty()) { return; }
         this->stop_voice_sounds(scene);
         this->queued[0].handler();
         this->queued.erase(this->queued.begin());
@@ -99,8 +99,13 @@ namespace houseofatmos {
         sound.play();
         this->current_offset += char_size;
         std::string displayed = dialogue.text.substr(0, this->current_offset);
-        this->set_displayed_lines(
-            "[" + dialogue.name + "]\n\n" + displayed
+        const engine::Localization local = scene
+            .get<engine::Localization>(this->local_ref);
+        this->set_displayed_lines("[" + dialogue.name + "]" 
+            + "\n\n" + displayed 
+            + (this->waiting()
+                ? "\n\n" + local.text("dialogue_press_to_continue") : ""
+            )
         );
     }
 
@@ -124,10 +129,11 @@ namespace houseofatmos {
             }
         }
         f64 distance = (observer - dialogue.origin).len();
-        bool skipped = window.was_pressed(engine::Button::Left)
+        bool requested_skip = window.was_pressed(engine::Button::Left)
             || window.was_pressed(engine::Key::Enter)
             || window.was_pressed(engine::Key::Space)
-            || window.was_pressed(engine::Key::E)
+            || window.was_pressed(engine::Key::E);
+        bool skipped = (this->waiting() && requested_skip)
             || distance > dialogue.max_distance;
         if(skipped) {
             this->skip(scene);
