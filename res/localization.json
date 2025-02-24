@@ -643,6 +643,39 @@
         "en": "If your lordship has any problems with my work, please feel free to speak your mind.",
         "de": "Sollte Euer Gnaden jegliche Beanstandungen an meiner Arbeit haben, so zögert nicht, es mir mitzuteilen.",
         "bg": "Ако благородието има някакви забележки относно моята служба, моля, не се колебайте да ги изкажете."
+    },
+
+    "dialogue_tutorial_father_name": {
+        "_context": "Displayed name of the father of the player in the tutorial",
+        "en": "Father"
+    },
+    "dialogue_tutorial_prompt_name": {
+        "_context": "Displayed name of the prompts shown in the tutorial",
+        "en": "Tutorial"
+    },
+    "dialogue_tutorial_father_0": {
+        "_context": "The count father tells his small son to go and take a walk with him",
+        "en": "Come son, let us take a walk."
+    },
+    "dialogue_tutorial_prompt_1": {
+        "_context": "The prompt tells the player to use certain keys to move around",
+        "en": "Press [W], [A], [S] and [D] to move around and follow your father."
+    },
+    "dialogue_tutorial_father_2": {
+        "_context": "The father asks his son whether he can see the other end of the path, since it suddenly ended",
+        "en": "The path suddenly ended... Can you see the other end?"
+    },
+    "dialogue_tutorial_prompt_3": {
+        "_context": "The prompt tells the player to use the mouse wheel to zoom out the camera",
+        "en": "Use the scroll wheel to zoom the camera in and out."
+    },
+    "dialogue_tutorial_father_4": {
+        "_context": "The player zoomed out the camera and can now see the path",
+        "en": "Well done! Let us continue."
+    },
+    "dialogue_tutorial_father_5": {
+        "_context": "The final dialogue of the father in the first tutorial",
+        "en": "Take a good look at this land my son, as for one day you shall inherit it."
     }
 
 }

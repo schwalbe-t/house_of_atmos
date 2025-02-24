@@ -48,10 +48,6 @@ namespace houseofatmos::world {
         bool settlement_allowed_at(
             u64 center_x, u64 center_z, const std::vector<Vec<3>> settlements
         );
-        bool place_building(
-            Building::Type type, u64 tile_x, u64 tile_z, 
-            std::optional<ComplexId> complex
-        );
         void generate_settlement(
             u64 center_x, u64 center_z, StatefulRNG& rng
         );

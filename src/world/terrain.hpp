@@ -207,18 +207,43 @@ namespace houseofatmos::world {
             u64 rel_z = (u64) tile_z % this->chunk_tiles;
             return chunk.path_at(rel_x, rel_z);
         }
+        void set_path_at(i64 tile_x, i64 tile_z, bool is_present = true) {
+            if(tile_x < 0 || tile_z < 0) { return; }
+            if((u64) tile_x >= this->width) { return; }
+            if((u64) tile_z >= this->height) { return; }
+            u64 ch_x = (u64) tile_x / this->tiles_per_chunk();
+            u64 ch_z = (u64) tile_z / this->tiles_per_chunk();
+            world::Terrain::ChunkData& chunk = this->chunk_at(ch_x, ch_z);
+            u64 rel_x = (u64) tile_x % this->tiles_per_chunk();
+            u64 rel_z = (u64) tile_z % this->tiles_per_chunk();
+            chunk.set_path_at(rel_x, rel_z, is_present);
+            if(is_present) { this->remove_foliage_at(tile_x, tile_z); }
+        }
         const Bridge* bridge_at(
             i64 tile_x, i64 tile_z, f64 closest_to_height = 0.0
-        ) const;
-        bool valid_building_location(
-            i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
-            const Building::TypeInfo& building_type
         ) const;
         bool valid_player_position(
             const AbsCollider& player_collider, bool water_is_obstacle
         ) const;
         void remove_foliage_at(i64 tile_x, i64 tile_z);
-        void adjust_area_foliage(i64 start_x, i64 start_z, i64 end_x, i64 end_z);
+        void adjust_area_foliage(i64 min_x, i64 min_z, i64 max_x, i64 max_z);
+        f64 average_area_elevation(u64 s_x, u64 s_z, u64 w, u64 h) const;
+        bool vert_area_elev_mutable(
+            u64 min_x, u64 min_z, u64 max_x, u64 max_z,
+            std::function<bool (i16)> modified 
+                = [](i16 e) { (void) e; return true; }
+        ) const;
+        bool vert_area_above_water(
+            u64 min_x, u64 min_z, u64 max_x, u64 max_z
+        ) const;
+        void set_area_elevation(
+            u64 min_x, u64 min_z, u64 max_x, u64 max_z, i16 elev
+        );
+        void place_building(
+            Building::Type type, u64 tile_x, u64 tile_z, 
+            std::optional<ComplexId> complex = std::nullopt,
+            std::optional<i16> elevation = std::nullopt
+        );
 
         std::pair<u64, u64> find_selected_terrain_tile(
             Vec<2> cursor_pos_ndc, const Renderer& renderer, Vec<3> tile_offset

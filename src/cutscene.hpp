@@ -34,10 +34,9 @@ namespace houseofatmos {
             );
         }
         
-        void advance(engine::Window& window) {
-            const Section& old_section = this->current_section();
-            old_section.on_end(window);
-            this->sections.erase(this->sections.begin());
+        void advance() {
+            if(this->is_empty()) { return; }
+            this->sections.at(0).remaining = 0.0;
         }
 
         const Section& current_section() const { return this->sections.at(0); }
@@ -50,7 +49,9 @@ namespace houseofatmos {
             Section& section = this->sections.at(0);
             section.remaining -= window.delta_time();
             if(section.remaining > 0.0) { return; }
-            this->advance(window);
+            section.on_end(window);
+            if(this->is_empty()) { return; }
+            this->sections.erase(this->sections.begin());
         }
 
     };

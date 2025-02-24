@@ -543,34 +543,6 @@ namespace houseofatmos::world {
         return closest;
     }
 
-    bool Terrain::valid_building_location(
-        i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
-        const Building::TypeInfo& building_type
-    ) const {
-        i64 player_tile_x = (i64) player_position.x() / this->units_per_tile();
-        i64 player_tile_z = (i64) player_position.z() / this->units_per_tile();
-        i64 end_x = tile_x + (i64) building_type.width;
-        i64 end_z = tile_z + (i64) building_type.height;
-        if(tile_x < 0 || (u64) end_x > this->width_in_tiles()) { return false; }
-        if(tile_z < 0 || (u64) end_z > this->height_in_tiles()) { return false; }
-        i16 target = this->elevation_at((u64) tile_x, (u64) tile_z);
-        for(i64 x = tile_x; x <= end_x; x += 1) {
-            for(i64 z = tile_z; z <= end_z; z += 1) {
-                i16 elevation = this->elevation_at((u64) x, (u64) z);
-                if(elevation != target) { return false; }
-            }
-        }
-        for(i64 x = tile_x; x < end_x; x += 1) {
-            for(i64 z = tile_z; z < end_z; z += 1) {
-                if(x == player_tile_x && z == player_tile_z) { return false; }
-                if(this->building_at(x, z) != nullptr) { return false; }
-                if(this->bridge_at(x, z) != nullptr) { return false; }
-            }
-        }
-        if(target < 0) { return false; }
-        return true;
-    }
-
     static const i64 collision_test_dist = 1;
 
     bool Terrain::valid_player_position(
@@ -679,16 +651,16 @@ namespace houseofatmos::world {
     }
 
     void Terrain::adjust_area_foliage(
-        i64 start_x, i64 start_z, i64 end_x, i64 end_z
+        i64 min_x, i64 min_z, i64 max_x, i64 max_z
     ) {
-        u64 min_x = (u64) std::max(start_x, (i64) 0);
-        u64 min_z = (u64) std::max(start_z, (i64) 0);
-        u64 max_x = std::min((u64) end_x, this->width_in_tiles() - 1);
-        u64 max_z = std::min((u64) end_z, this->height_in_tiles() - 1);
-        u64 min_ch_x = min_x / this->tiles_per_chunk();
-        u64 min_ch_z = min_z / this->tiles_per_chunk();
-        u64 max_ch_x = max_x / this->tiles_per_chunk();
-        u64 max_ch_z = max_z / this->tiles_per_chunk();
+        u64 c_min_x = (u64) std::max(min_x, (i64) 0);
+        u64 c_min_z = (u64) std::max(min_z, (i64) 0);
+        u64 c_max_x = std::min((u64) max_x, this->width_in_tiles() - 1);
+        u64 c_max_z = std::min((u64) max_z, this->height_in_tiles() - 1);
+        u64 min_ch_x = c_min_x / this->tiles_per_chunk();
+        u64 min_ch_z = c_min_z / this->tiles_per_chunk();
+        u64 max_ch_x = c_max_x / this->tiles_per_chunk();
+        u64 max_ch_z = c_max_z / this->tiles_per_chunk();
         for(u64 ch_x = min_ch_x; ch_x <= max_ch_x; ch_x += 1) {
             for(u64 ch_z = min_ch_z; ch_z <= max_ch_z; ch_z += 1) {
                 Terrain::ChunkData& chunk = this->chunk_at(ch_x, ch_z);
@@ -708,6 +680,155 @@ namespace houseofatmos::world {
             }
         }
     }
+
+    f64 Terrain::average_area_elevation(u64 s_x, u64 s_z, u64 w, u64 h) const {
+        u64 e_x = std::min(s_x + w, this->width_in_tiles());
+        u64 e_z = std::min(s_z + h, this->width_in_tiles());
+        f64 sum = 0;
+        for(u64 x = s_x; x <= e_x; x += 1) {
+            for(u64 z = s_z; z <= e_z; z += 1) {
+                sum += (f64) this->elevation_at(x, z);
+            }
+        }
+        u64 node_count = (e_x - s_x + 1) * (e_z - s_z + 1);
+        return sum / (f64) node_count;
+    }
+
+    bool Terrain::vert_area_elev_mutable(
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z,
+        std::function<bool (i16)> modified 
+    ) const {
+        // ensure that the ground beneath all buildings in a 1 chunk radius 
+        // don't get modified 
+        // (works as long as no building is larger than a chunk) 
+        u64 start_ch_x = min_x / this->tiles_per_chunk();
+        if(start_ch_x >= 1) { start_ch_x -= 1; }
+        u64 start_ch_z = min_z / this->tiles_per_chunk();
+        if(start_ch_z >= 1) { start_ch_z -= 1; }
+        u64 end_ch_x = (max_x / this->tiles_per_chunk()) + 1;
+        end_ch_x = std::min(end_ch_x, this->width_in_chunks() - 1);
+        u64 end_ch_z = (max_z / this->tiles_per_chunk()) + 1;
+        end_ch_z = std::min(end_ch_z, this->height_in_chunks() - 1);
+        for(u64 ch_x = start_ch_x; ch_x <= end_ch_x; ch_x += 1) {
+            for(u64 ch_z = start_ch_z; ch_z <= end_ch_z; ch_z += 1) {
+                const Terrain::ChunkData& chunk = this->chunk_at(ch_x, ch_z);
+                for(const Building& building: chunk.buildings) {
+                    const Building::TypeInfo& info = building.get_type_info();
+                    // determine the vertex bounds of the building
+                    u64 b_start_x = ch_x * this->tiles_per_chunk() + building.x;
+                    u64 b_start_z = ch_z * this->tiles_per_chunk() + building.z;
+                    u64 b_end_x = b_start_x + info.width;
+                    u64 b_end_z = b_start_z + info.height;
+                    // determine the intersection
+                    bool has_zero_overlap = min_x > b_end_x || min_z > b_end_z
+                        || max_x < b_start_x || max_z < b_start_z;
+                    if(has_zero_overlap) { continue; }
+                    u64 i_start_x = std::max(min_x, b_start_x);
+                    u64 i_start_z = std::max(min_z, b_start_z);
+                    u64 i_end_x = std::min(max_x, b_end_x);
+                    u64 i_end_z = std::min(max_z, b_end_z);
+                    // ensure that each point in the intersection does not get
+                    // modified
+                    bool any_modified = false;
+                    for(u64 i_x = i_start_x; i_x <= i_end_x; i_x += 1) {
+                        for(u64 i_z = i_start_z; i_z <= i_end_z; i_z += 1) {
+                            i16 elev = this->elevation_at(i_x, i_z);
+                            any_modified |= modified(elev);
+                            if(any_modified) { break; }
+                        }
+                        if(any_modified) { break; }
+                    }
+                    if(any_modified) { return false; }
+                }
+            }
+        }
+        // check the ground beneath all bridges
+        for(const Bridge& bridge: this->bridges) {
+            u64 b_end_x = bridge.end_x + 1;
+            u64 b_end_z = bridge.end_z + 1;
+            // determine the intersection
+            bool has_zero_overlap = min_x > b_end_x || min_z > b_end_z
+                || max_x < bridge.start_x || max_z < bridge.start_z;
+            if(has_zero_overlap) { continue; }
+            u64 i_start_x = std::max(min_x, bridge.start_x);
+            u64 i_start_z = std::max(min_z, bridge.start_z);
+            u64 i_end_x = std::min(max_x, b_end_x);
+            u64 i_end_z = std::min(max_z, b_end_z);
+            // ensure that each point in the intersection does not get
+            // modified
+            bool any_modified = false;
+            for(u64 i_x = i_start_x; i_x <= i_end_x; i_x += 1) {
+                for(u64 i_z = i_start_z; i_z <= i_end_z; i_z += 1) {
+                    i16 elev = this->elevation_at(i_x, i_z);
+                    any_modified |= modified(elev);
+                    if(any_modified) { break; }
+                }
+                if(any_modified) { break; }
+            }
+            if(any_modified) { return false; }
+        }
+        return true;
+    }
+
+    bool Terrain::vert_area_above_water(
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z
+    ) const {
+        for(u64 x = min_x; x <= max_x; x += 1) {
+            for(u64 z = min_z; z <= max_z; z += 1) {
+                if(this->elevation_at(x, z) < 0.0) { return false; }
+            }
+        }
+        return true;
+    }
+
+    void Terrain::set_area_elevation(
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z, i16 elev
+    ) {
+        for(u64 x = min_x; x <= max_x; x += 1) {
+            for(u64 z = min_z; z <= max_z; z += 1) {
+                this->elevation_at(x, z) = elev;
+            }
+        }
+    }
+
+    void Terrain::place_building(
+        Building::Type type, u64 tile_x, u64 tile_z, 
+        std::optional<ComplexId> complex,
+        std::optional<i16> elevation
+    ) {
+        const Building::TypeInfo& type_info = Building::types[(size_t) type];
+        i16 written_elev;
+        if(elevation.has_value()) { 
+            written_elev = *elevation;
+        } else {
+            written_elev = (i16) this->average_area_elevation(
+                tile_x, tile_z, type_info.width, type_info.height
+            );
+        }
+        this->set_area_elevation(
+            tile_x, tile_z, tile_x + type_info.width, tile_z + type_info.height, 
+            written_elev
+        );
+        for(u64 x = tile_x; x < tile_x + type_info.width; x += 1) {
+            for(u64 z = tile_z; z < tile_z + type_info.height; z += 1) {
+                this->remove_foliage_at((i64) x, (i64) z);    
+            }
+        }
+        this->adjust_area_foliage(
+            (i64) tile_x - 1, (i64) tile_z - 1, 
+            (i64) (tile_x + type_info.width + 1), 
+            (i64) (tile_z + type_info.height + 1)
+        );
+        u64 chunk_x = tile_x / this->tiles_per_chunk();
+        u64 chunk_z = tile_z / this->tiles_per_chunk();
+        Terrain::ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+        u64 rel_x = tile_x % this->tiles_per_chunk();
+        u64 rel_z = tile_z % this->tiles_per_chunk();
+        chunk.buildings.push_back((Building) {
+            type, (u8) rel_x, (u8) rel_z, complex
+        });
+    }
+    
 
     static const i64 tile_selection_range_chunks = 2;
 

@@ -110,7 +110,9 @@ namespace houseofatmos {
                 name, std::span(values), duration, 
                 &ui_background::note_error, &ui_font::bright
             );
-            this->scene->get<engine::Sound>(sound::error).play();
+            if(this->scene != nullptr) {
+                this->scene->get<engine::Sound>(sound::error).play();
+            }
         }
 
         States make_states() {

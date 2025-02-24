@@ -5,21 +5,6 @@
 
 namespace houseofatmos::world {
 
-    static i64 average_area_elevation(
-        const Terrain& terrain, u64 s_x, u64 s_z, u64 w, u64 h
-    ) {
-        u64 e_x = std::min(s_x + w, terrain.width_in_tiles());
-        u64 e_z = std::min(s_z + h, terrain.width_in_tiles());
-        i64 sum = 0;
-        for(u64 x = s_x; x <= e_x; x += 1) {
-            for(u64 z = s_z; z <= e_z; z += 1) {
-                sum += terrain.elevation_at(x, z);
-            }
-        }
-        u64 node_count = (e_x - s_x + 1) * (e_z - s_z + 1);
-        return sum / (i64) node_count;
-    }
-
     static f64 river_base_angle(f64 x, f64 z, const Terrain& terrain) {
         f64 d_left   = fabs(x - 0.0);
         f64 d_top    = fabs(z - 0.0);
@@ -139,61 +124,15 @@ namespace houseofatmos::world {
         return true;
     }
 
-    static bool area_occupied(
-        const Terrain& terrain, u64 s_x, u64 s_z, u64 w, u64 h
-    ) {
-        if(s_x + w > terrain.width_in_tiles()) { return true; }
-        if(s_z + h > terrain.height_in_tiles()) { return true; }
-        for(i64 bx = (i64) s_x - 1; bx < (i64) (s_x + w + 1); bx += 1) {
-            for(i64 bz = (i64) s_z - 1; bz < (i64) (s_z + h + 1); bz += 1) {
-                if(terrain.building_at(bx, bz) != nullptr) { return true; } 
-            }
-        }
-        for(u64 x = s_x; x <= s_x + w; x += 1) {
-            for(u64 z = s_z; z <= s_z + h; z += 1) {
-                if(terrain.elevation_at(x, z) < 0.0) { return true; } 
-            }
-        }
-        return false;
-    }
-
-    bool World::place_building(
-        Building::Type type, u64 tile_x, u64 tile_z, 
-        std::optional<ComplexId> complex
+    static bool building_placement_allowed(
+        const Terrain& terrain, u64 x, u64 z, Building::Type type
     ) {
         const Building::TypeInfo& type_info = Building::types[(size_t) type];
-        bool is_occupied = area_occupied(
-            this->terrain, tile_x, tile_z, type_info.width, type_info.height
+        return terrain.vert_area_above_water(
+            x, z, x + type_info.width, z + type_info.height
+        ) && terrain.vert_area_elev_mutable(
+            x, z, x + type_info.width, z + type_info.height
         );
-        if(is_occupied) { return false; }
-        i64 average_height = average_area_elevation(
-            this->terrain, tile_x, tile_z, type_info.width, type_info.height
-        );
-        for(u64 x = tile_x; x <= tile_x + type_info.width; x += 1) {
-            for(u64 z = tile_z; z <= tile_z + type_info.height; z += 1) {
-                this->terrain.elevation_at(x, z) = (i16) average_height;
-            }
-        }
-        for(u64 x = tile_x; x < tile_x + type_info.width; x += 1) {
-            for(u64 z = tile_z; z < tile_z + type_info.height; z += 1) {
-                this->terrain.remove_foliage_at((i64) x, (i64) z);    
-            }
-        }
-        this->terrain.adjust_area_foliage(
-            (i64) tile_x - 1, (i64) tile_z - 1, 
-            (i64) (tile_x + type_info.width + 1), 
-            (i64) (tile_z + type_info.height + 1)
-        );
-        // place the building
-        u64 chunk_x = tile_x / this->terrain.tiles_per_chunk();
-        u64 chunk_z = tile_z / this->terrain.tiles_per_chunk();
-        Terrain::ChunkData& chunk = this->terrain.chunk_at(chunk_x, chunk_z);
-        u64 rel_x = tile_x % this->terrain.tiles_per_chunk();
-        u64 rel_z = tile_z % this->terrain.tiles_per_chunk();
-        chunk.buildings.push_back((Building) {
-            type, (u8) rel_x, (u8) rel_z, complex
-        });
-        return true;
     }
 
     static const u64 settlement_min_spawn_radius = 6; // in tiles
@@ -241,14 +180,7 @@ namespace houseofatmos::world {
                         && this->terrain.elevation_at(curr_x,     curr_z + 1) >= 0
                         && this->terrain.elevation_at(curr_x + 1, curr_z + 1) >= 0;
                     if(!on_land) { continue; }
-                    u64 chunk_x = curr_x / this->terrain.tiles_per_chunk();
-                    u64 chunk_z = curr_z / this->terrain.tiles_per_chunk();
-                    Terrain::ChunkData& chunk = this->terrain
-                        .chunk_at(chunk_x, chunk_z);
-                    u64 rel_x = curr_x % this->terrain.tiles_per_chunk();
-                    u64 rel_z = curr_z % this->terrain.tiles_per_chunk();
-                    chunk.set_path_at(rel_x, rel_z, true);
-                    this->terrain.remove_foliage_at((i64) curr_x, (i64) curr_z);
+                    this->terrain.set_path_at(curr_x, curr_z);
                 }
                 pwalker_x += step_x;
                 pwalker_z += step_z;
@@ -267,7 +199,7 @@ namespace houseofatmos::world {
             Conversion({ { 1, Item::Armor } }, { { 60, Item::Coins } }, 0.1),
             Conversion({ { 1, Item::Tools } }, { { 30, Item::Coins } }, 0.1)
         }));
-        this->place_building(
+        this->terrain.place_building(
             Building::Plaza, plaza_x, plaza_z, plaza_complex_i
         );
         // generate houses
@@ -278,9 +210,12 @@ namespace houseofatmos::world {
                     || this->terrain.path_at((i64) x,     (i64) z - 1)
                     || this->terrain.path_at((i64) x,     (i64) z + 1);
                 bool is_valid = at_path
-                    && !this->terrain.path_at((i64) x, (i64) z);
+                    && !this->terrain.path_at((i64) x, (i64) z)
+                    && building_placement_allowed(
+                        this->terrain, x, z, Building::House
+                    );
                 if(!is_valid) { continue; }
-                this->place_building(Building::House, x, z, std::nullopt);
+                this->terrain.place_building(Building::House, x, z);
             }
         }
     }
@@ -293,9 +228,13 @@ namespace houseofatmos::world {
         for(;;) {
             u64 x = (u64) (cx + (i64) (cos(angle) * dist));
             u64 z = (u64) (cz + (i64) (sin(angle) * dist));
-            bool placed_mansion = this
-                ->place_building(Building::Mansion, x, z, std::nullopt);
-            if(placed_mansion) { return { x, z }; }
+            bool allowed = building_placement_allowed(
+                this->terrain, x, z, Building::Mansion
+            );
+            if(allowed) {
+                this->terrain.place_building(Building::Mansion, x, z);
+                return { x, z };
+            }
             if(angle < pi * 2.0) {
                 angle += pi / 12.0; // 30 degrees
                 continue;

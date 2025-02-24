@@ -156,6 +156,21 @@ namespace houseofatmos::world {
     }
 
     static i64 terrain_mod_amount(
+        i16 elev, TerraformMode::Mode mode, i16 start_elev
+    ) {
+        switch(mode) {
+            case TerraformMode::Flatten:
+                return (i64) start_elev - (i64) elev;
+            case TerraformMode::Raise:
+                return 1;
+            case TerraformMode::Lower:
+                return -1;
+            default:
+                return 0;
+        }
+    }
+
+    static i64 terrain_mod_amount(
         const Terrain& terrain, u64 x, u64 z,
         TerraformMode::Mode mode, i16 start_elev
     ) {
@@ -186,72 +201,6 @@ namespace houseofatmos::world {
             }
         }
         return sum;
-    }
-
-    static bool terrain_modification_is_valid(
-        const Terrain& terrain,
-        u64 min_x, u64 min_z, u64 max_x, u64 max_z,
-        TerraformMode::Mode mode, i16 s_elev
-    ) {
-        // ensure that the ground beneath all buildings in a 1 chunk radius 
-        // don't get modified 
-        // (works as long as no building is larger than a chunk) 
-        u64 start_ch_x = min_x / terrain.tiles_per_chunk();
-        if(start_ch_x >= 1) { start_ch_x -= 1; }
-        u64 start_ch_z = min_z / terrain.tiles_per_chunk();
-        if(start_ch_z >= 1) { start_ch_z -= 1; }
-        u64 end_ch_x = (max_x / terrain.tiles_per_chunk()) + 1;
-        end_ch_x = std::min(end_ch_x, terrain.width_in_chunks() - 1);
-        u64 end_ch_z = (max_z / terrain.tiles_per_chunk()) + 1;
-        end_ch_z = std::min(end_ch_z, terrain.height_in_chunks() - 1);
-        for(u64 ch_x = start_ch_x; ch_x <= end_ch_x; ch_x += 1) {
-            for(u64 ch_z = start_ch_z; ch_z <= end_ch_z; ch_z += 1) {
-                const Terrain::ChunkData& chunk = terrain.chunk_at(ch_x, ch_z);
-                for(const Building& building: chunk.buildings) {
-                    const Building::TypeInfo& info = building.get_type_info();
-                    // determine the vertex bounds of the building
-                    u64 b_start_x = ch_x * terrain.tiles_per_chunk() + building.x;
-                    u64 b_start_z = ch_z * terrain.tiles_per_chunk() + building.z;
-                    u64 b_end_x = b_start_x + info.width;
-                    u64 b_end_z = b_start_z + info.height;
-                    // determine the intersection
-                    bool has_zero_overlap = min_x > b_end_x || min_z > b_end_z
-                        || max_x < b_start_x || max_z < b_start_z;
-                    if(has_zero_overlap) { continue; }
-                    u64 i_start_x = std::max(min_x, b_start_x);
-                    u64 i_start_z = std::max(min_z, b_start_z);
-                    u64 i_end_x = std::min(max_x, b_end_x);
-                    u64 i_end_z = std::min(max_z, b_end_z);
-                    // ensure that each point in the intersection does not get
-                    // modified
-                    u64 i_mod = area_abs_terrain_mod_amount(
-                        terrain, mode, i_start_x, i_start_z, i_end_x, i_end_z, 
-                        s_elev
-                    );
-                    if(i_mod > 0) { return false; }
-                }
-            }
-        }
-        // check the ground beneath all bridges
-        for(const Bridge& bridge: terrain.bridges) {
-            u64 b_end_x = bridge.end_x + 1;
-            u64 b_end_z = bridge.end_z + 1;
-            // determine the intersection
-            bool has_zero_overlap = min_x > b_end_x || min_z > b_end_z
-                || max_x < bridge.start_x || max_z < bridge.start_z;
-            if(has_zero_overlap) { continue; }
-            u64 i_start_x = std::max(min_x, bridge.start_x);
-            u64 i_start_z = std::max(min_z, bridge.start_z);
-            u64 i_end_x = std::min(max_x, b_end_x);
-            u64 i_end_z = std::min(max_z, b_end_z);
-            // ensure that each point in the intersection does not get
-            // modified
-            u64 i_mod = area_abs_terrain_mod_amount(
-                terrain, mode, i_start_x, i_start_z, i_end_x, i_end_z, s_elev
-            );
-            if(i_mod > 0) { return false; }
-        }
-        return true;
     }
 
     static void apply_terrain_modification(
@@ -323,9 +272,11 @@ namespace houseofatmos::world {
                 this->world->terrain, 
                 this->mode, min_x, min_z, max_x, max_z, start_elev
             ) * terrain_mod_cost_per_unit;
-            bool is_valid = terrain_modification_is_valid(
-                this->world->terrain, min_x, min_z, max_x, max_z, 
-                this->mode, start_elev
+            bool is_valid = this->world->terrain.vert_area_elev_mutable(
+                min_x, min_z, max_x, max_z,
+                [this, start_elev](i16 elev) { 
+                    return terrain_mod_amount(elev, this->mode, start_elev) != 0; 
+                }
             );
             bool do_operation = is_valid 
                 && this->permitted
@@ -587,6 +538,35 @@ namespace houseofatmos::world {
         }
     }
 
+    static bool valid_building_location(
+        Terrain& terrain,
+        i64 tile_x, i64 tile_z, const Vec<3>& player_position, 
+        const Building::TypeInfo& building_type
+    ) {
+        i64 player_tile_x = (i64) player_position.x() / terrain.units_per_tile();
+        i64 player_tile_z = (i64) player_position.z() / terrain.units_per_tile();
+        i64 end_x = tile_x + (i64) building_type.width;
+        i64 end_z = tile_z + (i64) building_type.height;
+        if(tile_x < 0 || (u64) end_x > terrain.width_in_tiles()) { return false; }
+        if(tile_z < 0 || (u64) end_z > terrain.height_in_tiles()) { return false; }
+        i16 target = terrain.elevation_at((u64) tile_x, (u64) tile_z);
+        for(i64 x = tile_x; x <= end_x; x += 1) {
+            for(i64 z = tile_z; z <= end_z; z += 1) {
+                i16 elevation = terrain.elevation_at((u64) x, (u64) z);
+                if(elevation != target) { return false; }
+            }
+        }
+        for(i64 x = tile_x; x < end_x; x += 1) {
+            for(i64 z = tile_z; z < end_z; z += 1) {
+                if(x == player_tile_x && z == player_tile_z) { return false; }
+                if(terrain.building_at(x, z) != nullptr) { return false; }
+                if(terrain.bridge_at(x, z) != nullptr) { return false; }
+            }
+        }
+        if(target < 0) { return false; }
+        return true;
+    }
+
     static void place_building(
         u64 tile_x, u64 tile_z, Terrain& terrain, ComplexBank& complexes,
         Building::Type type, const Building::TypeInfo& type_info,
@@ -640,7 +620,8 @@ namespace houseofatmos::world {
         );
         this->selected_x = tile_x;
         this->selected_z = tile_z;
-        this->placement_valid = this->world->terrain.valid_building_location(
+        this->placement_valid = valid_building_location(
+            this->world->terrain,
             (i64) tile_x, (i64) tile_z, this->world->player.character.position, 
             type_info
         );
