@@ -62,6 +62,7 @@ namespace houseofatmos::world {
         };
 
         static inline const f64 max_building_dist = 4.0;
+        static inline const f64 max_diameter = 10.0;
 
 
         struct Serialized {
@@ -85,7 +86,11 @@ namespace houseofatmos::world {
         std::pair<u64, u64> closest_member_to(
             u64 tile_x, u64 tile_z, f64* dist_out = nullptr
         ) const;
+        std::pair<u64, u64> farthest_member_to(
+            u64 tile_x, u64 tile_z, f64* dist_out = nullptr
+        ) const;
         f64 distance_to(u64 tile_x, u64 tile_z) const;
+        f64 farthest_distance_to(u64 tile_x, u64 tile_z) const;
         void add_member(u64 tile_x, u64 tile_z, Member member);
         void remove_member(u64 tile_x, u64 tile_z);
         bool has_member_at(u64 tile_x, u64 tile_z) const;

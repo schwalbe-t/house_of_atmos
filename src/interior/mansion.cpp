@@ -219,7 +219,7 @@ namespace houseofatmos::interior {
         Vec<3>(-1, 1, 1).normalized() * 15.0,
         Mat<3>::rotate_y(pi / 4),
         {
-            (Interior::Interaction) { Vec<3>(0, 1.5, 9), &open_research_view }
+            (Interior::Interaction) { Vec<3>(2.5, 1.25, 4.5), &open_research_view }
         },
         {
             (Interior::CharacterConstructor) &create_maid

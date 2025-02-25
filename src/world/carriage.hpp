@@ -83,6 +83,7 @@ namespace houseofatmos::world {
             std::vector<Vec<3>> horse_offsets;
             std::vector<Driver> drivers;
             f64 wheel_radius;
+            u64 capacity;
         };
 
         static const inline std::vector<CarriageTypeInfo> carriage_types = {
@@ -101,7 +102,8 @@ namespace houseofatmos::world {
                         pi / 2.0 // 90 degrees
                     }
                 },
-                0.5 // wheel radius 
+                0.5, // wheel radius
+                100 // capacity
             }
         };
 
@@ -201,6 +203,13 @@ namespace houseofatmos::world {
             auto count = this->items.find(item);
             if(count == this->items.end()) { return 0; }
             return count->second;
+        }
+        u64 total_stored_count() const {
+            u64 count = 0;
+            for(const auto& stored: this->items) {
+                count += stored.second;
+            }
+            return count;
         }
         void add_stored(Item::Type item, u64 amount) { this->items[item] += amount; }
         void remove_stored(Item::Type item, u64 amount) { this->items[item] -= amount; }

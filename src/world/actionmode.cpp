@@ -582,8 +582,13 @@ namespace houseofatmos::world {
                 complex_id = complexes.create_complex();
             } else {
                 const Complex& nearest_complex = complexes.get(*complex_id);
-                f64 distance = nearest_complex.distance_to(tile_x, tile_z);
-                if(distance > Complex::max_building_dist) {
+                // find distances of nearest and farthest buildings in complex
+                f64 near_distance = nearest_complex.distance_to(tile_x, tile_z);
+                f64 far_distance = nearest_complex
+                    .farthest_distance_to(tile_x, tile_z);
+                bool join_existing = near_distance <= Complex::max_building_dist
+                    && far_distance <= Complex::max_diameter;
+                if(!join_existing) {
                     complex_id = complexes.create_complex();
                 }
             }

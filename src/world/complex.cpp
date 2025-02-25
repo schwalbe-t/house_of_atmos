@@ -111,9 +111,36 @@ namespace houseofatmos::world {
         return closest;
     }
 
+    std::pair<u64, u64> Complex::farthest_member_to(
+        u64 tile_x, u64 tile_z, f64* dist_out
+    ) const {
+        assert(this->members.size() > 0);
+        f64 max_distance = 0.0;
+        std::pair<u64, u64> farthest;
+        for(const auto& member: this->members) {
+            const auto& [member_x, member_z] = member.first;
+            Vec<2> difference = Vec<2>(member_x, member_z) 
+                - Vec<2>(tile_x, tile_z);
+            f64 distance = difference.len();
+            if(distance <= max_distance) { continue; }
+            max_distance = distance;
+            farthest = member.first;
+        }
+        if(dist_out != nullptr) {
+            *dist_out = max_distance;
+        }
+        return farthest;
+    }
+
     f64 Complex::distance_to(u64 tile_x, u64 tile_z) const {
         f64 distance;
         (void) this->closest_member_to(tile_x, tile_z, &distance);
+        return distance;
+    }
+
+    f64 Complex::farthest_distance_to(u64 tile_x, u64 tile_z) const {
+        f64 distance;
+        (void) this->farthest_member_to(tile_x, tile_z, &distance);
         return distance;
     }
 

@@ -109,6 +109,8 @@ namespace houseofatmos::world {
         ComplexBank& complexes, const Terrain& terrain,
         bool is_visible
     ) {
+        const CarriageTypeInfo& type_info 
+            = Carriage::carriage_types.at((size_t) this->type);
         this->moving = this->state == State::Travelling;
         if(this->state == State::Travelling) {
             // update position
@@ -171,12 +173,15 @@ namespace houseofatmos::world {
                         amount = (u64) (target.amount.percentage * s_amount); 
                         break;
                 }
-                amount = std::max(amount, s_amount);
+                amount = std::min(amount, s_amount);
                 switch(target.action) {
-                    case Carriage::LoadFixed: case Carriage::LoadPercentage:
+                    case Carriage::LoadFixed: case Carriage::LoadPercentage: {
+                        u64 remaining_space = type_info.capacity
+                            - this->total_stored_count();
+                        amount = std::min(amount, remaining_space);
                         complex.remove_stored(target.item, amount);
                         this->add_stored(target.item, amount);
-                        break;
+                    } break;
                     case Carriage::PutFixed: case Carriage::PutPercentage:
                         this->remove_stored(target.item, amount);
                         complex.add_stored(target.item, amount);
