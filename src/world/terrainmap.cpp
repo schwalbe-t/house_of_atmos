@@ -13,6 +13,7 @@ namespace houseofatmos::world {
     static const Color sand_color = Color(245, 237, 186);
     static const Color high_water_color = Color(110, 169, 167);
     static const Color low_water_color = Color(44, 101, 118); 
+    static const Color resource_color = Color(88, 69, 99);
     static const Color path_color = Color(154, 99, 72);
     static const Color building_color = Color(157, 48, 59);
     static const Color background_color = Color(84, 142, 148);
@@ -82,10 +83,15 @@ namespace houseofatmos::world {
                 bool is_water = elev_tl < 0 && elev_tr < 0 
                     && elev_bl < 0 && elev_br < 0;
                 if(is_water) { color = water_color; }
-                // if is path or building, make building
+                // if is resource
+                bool is_resource = this->world
+                    ->terrain.resource_at((i64) x, (i64) z);
+                if(is_resource) { color = resource_color; }
+                // if is path
                 bool is_path = this->world->terrain.path_at((i64) x, (i64) z)
                     || this->world->terrain.bridge_at((i64) x, (i64) z) != nullptr;
                 if(is_path) { color = path_color; }
+                // if is building
                 const Building* building = this->world->terrain.building_at(x, z);
                 if(building != nullptr) { color = building_color; }
                 bool selected = building != nullptr

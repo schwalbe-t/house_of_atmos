@@ -86,6 +86,39 @@ namespace houseofatmos::world {
         }
     }
 
+    void Terrain::generate_resources(u32 seed) {
+        auto rng = StatefulRNG(seed);
+        for(u64 tile_x = 0; tile_x < this->width; tile_x += 1) {
+            for(u64 tile_z = 0; tile_z < this->height; tile_z += 1) {
+                size_t r_type_count = Resource::types.size();
+                for(size_t r_type_i = 0; r_type_i < r_type_count; r_type_i += 1) {
+                    const Resource::TypeInfo& r_type = Resource::types[r_type_i];
+                    bool spawned = rng.next_f64() < r_type.spawn_chance;
+                    if(!spawned) { continue; }
+                    bool above_water = this->vert_area_above_water(
+                        tile_x, tile_z, tile_x + 1, tile_z + 1
+                    );
+                    if(!above_water) { continue; }
+                    i16 elev = (i16) this->average_area_elevation(
+                        tile_x, tile_z, 1, 1
+                    );
+                    this->set_area_elevation(
+                        tile_x, tile_z, tile_x + 1, tile_z + 1, elev
+                    );
+                    u64 chunk_x = tile_x / this->tiles_per_chunk();
+                    u64 chunk_z = tile_z / this->tiles_per_chunk();
+                    ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+                    u64 rel_x = tile_x % this->tiles_per_chunk();
+                    u64 rel_z = tile_z % this->tiles_per_chunk();
+                    chunk.resources.push_back({
+                        (Resource::Type) r_type_i, (u8) rel_x, (u8) rel_z
+                    });
+                    break;
+                }
+            }
+        }
+    }
+
     void Terrain::generate_foliage(u32 seed) {
         auto rng = StatefulRNG(seed);
         for(u64 tile_x = 0; tile_x < this->width; tile_x += 1) {
@@ -354,6 +387,32 @@ namespace houseofatmos::world {
         return instances;
     }
 
+    std::unordered_map<Resource::Type, std::vector<Mat<4>>>
+        Terrain::collect_resource_transforms(u64 chunk_x, u64 chunk_z) const {
+        std::unordered_map<Resource::Type, std::vector<Mat<4>>> instances;
+        const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
+        u64 chunk_t_x = chunk_x * this->tiles_per_chunk();
+        u64 chunk_t_z = chunk_z * this->tiles_per_chunk();
+        for(const Resource& resource: chunk_data.resources) {
+            u64 left = chunk_t_x + resource.x;
+            u64 top = chunk_t_z + resource.z;
+            u64 right = left + 1;
+            u64 bottom = top + 1;
+            if(chunk_data.path_at(resource.x, resource.z)) { continue; }
+            if(this->building_at((i64) left, (i64) top)) { continue; }
+            i64 elev = this->elevation_at(left, top);
+            if(elev != this->elevation_at(right, top)) { continue; }
+            if(elev != this->elevation_at(left, bottom)) { continue; }
+            if(elev != this->elevation_at(right, bottom)) { continue; }
+            Vec<3> offset = Vec<3>(left + 0.5, 0, top + 0.5) 
+                * this->units_per_tile();
+            offset.y() = elev;
+            Mat<4> inst = Mat<4>::translate(offset);
+            instances[resource.type].push_back(inst);
+        }
+        return instances;
+    }
+
     std::vector<std::shared_ptr<Interactable>> Terrain::create_chunk_interactables(
         u64 chunk_x, u64 chunk_z, 
         Interactables* interactables, engine::Window& window, 
@@ -403,6 +462,7 @@ namespace houseofatmos::world {
                 this->build_chunk_water_geometry(chunk_x, chunk_z),
                 std::unordered_map<Foliage::Type, std::vector<Mat<4>>>(),
                 std::unordered_map<Building::Type, std::vector<Mat<4>>>(),
+                std::unordered_map<Resource::Type, std::vector<Mat<4>>>(),
                 std::vector<std::shared_ptr<Interactable>>()
             };
         }
@@ -412,6 +472,7 @@ namespace houseofatmos::world {
             this->build_chunk_water_geometry(chunk_x, chunk_z),
             this->collect_foliage_transforms((u64) chunk_x, (u64) chunk_z),
             this->collect_building_transforms((u64) chunk_x, (u64) chunk_z),
+            this->collect_resource_transforms((u64) chunk_x, (u64) chunk_z),
             this->create_chunk_interactables(
                 (u64) chunk_x, (u64) chunk_z, interactables, window, world
             )
@@ -541,6 +602,22 @@ namespace houseofatmos::world {
             clostest_height_diff = height_diff;
         }
         return closest;
+    }
+
+    const Resource* Terrain::resource_at(i64 tile_x_s, i64 tile_z_s) const {
+        if(tile_x_s < 0 || tile_z_s < 0) { return nullptr; }
+        u64 tile_x = (u64) tile_x_s;
+        u64 tile_z = (u64) tile_z_s;
+        u64 chunk_x = tile_x / this->tiles_per_chunk();
+        u64 chunk_z = tile_z / this->tiles_per_chunk();
+        u64 rel_x = tile_x % this->tiles_per_chunk();
+        u64 rel_z = tile_z % this->tiles_per_chunk();
+        const ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+        for(const Resource& resource: chunk.resources) {
+            if(resource.x != rel_x || resource.z != rel_z) { continue; }
+            return &resource;
+        }
+        return nullptr;
     }
 
     static const i64 collision_test_dist = 1;
@@ -889,6 +966,7 @@ namespace houseofatmos::world {
             = scene.get<engine::Texture>(Terrain::ground_texture);
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage_instances;
         std::unordered_map<Building::Type, std::vector<Mat<4>>> building_instances;
+        std::unordered_map<Resource::Type, std::vector<Mat<4>>> resource_instances;
         for(LoadedChunk& chunk: this->loaded_chunks) {
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
@@ -903,6 +981,10 @@ namespace houseofatmos::world {
                 std::vector<Mat<4>>& b_inst = building_instances[building_type];
                 b_inst.insert(b_inst.end(), instances.begin(), instances.end());
             }
+            for(const auto& [resource_type, instances]: chunk.resources) {
+                std::vector<Mat<4>>& r_inst = resource_instances[resource_type];
+                r_inst.insert(r_inst.end(), instances.begin(), instances.end());
+            }
         }
         for(const auto& [foliage_type, instances]: foliage_instances) {
             engine::Model& model = scene.get<engine::Model>(
@@ -914,6 +996,20 @@ namespace houseofatmos::world {
             const Building::TypeInfo& type_info
                 = Building::types[(size_t) building_type];
             type_info.render_buildings(window, scene, renderer, instances);
+        }
+        for(const auto& [resource_type, instances]: resource_instances) {
+            const Resource::TypeInfo& type_info
+                = Resource::types[(size_t) resource_type];
+            engine::Model& model = scene.get<engine::Model>(type_info.model);
+            const engine::Texture& texture 
+                = scene.get<engine::Texture>(type_info.texture);
+            renderer.render(
+                model, resource_instances[resource_type],
+                nullptr, 0.0,
+                engine::FaceCulling::Enabled, engine::Rendering::Surfaces,
+                engine::DepthTesting::Enabled,
+                &texture
+            );
         }
         this->render_bridges(scene, renderer);
     }
@@ -1045,6 +1141,10 @@ namespace houseofatmos::world {
             serialized.paths_offset, serialized.paths_count,
             this->paths
         );
+        buffer.copy_array_at_into(
+            serialized.resources_offset, serialized.resources_count,
+            this->paths
+        );
     }
 
     Terrain::ChunkData::Serialized Terrain::ChunkData::serialize(
@@ -1053,7 +1153,8 @@ namespace houseofatmos::world {
         return {
             this->foliage.size(), buffer.alloc_array(this->foliage),
             this->buildings.size(), buffer.alloc_array(this->buildings),
-            this->paths.size(), buffer.alloc_array(this->paths)
+            this->paths.size(), buffer.alloc_array(this->paths),
+            this->resources.size(), buffer.alloc_array(this->resources)
         };
     }
 

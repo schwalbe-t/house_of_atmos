@@ -255,6 +255,7 @@ namespace houseofatmos::world {
             (u32) seed, terrain_falloff_distance, terrain_falloff_height
         );
         this->generate_rivers(rng, seed);
+        this->terrain.generate_resources();
         this->terrain.generate_foliage((u32) seed);
         std::vector<Vec<3>> created_settlements;
         u64 world_area = this->terrain.width_in_tiles()

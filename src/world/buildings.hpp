@@ -35,7 +35,6 @@ namespace houseofatmos::world {
             u8 width, height; // in tiles
             std::optional<LinkedInterior> interior;
             u64 cost; // in coins
-            i16 min_elev, max_elev;
             bool destructible;
             u64 workers;
             u64 residents;
@@ -95,7 +94,6 @@ namespace houseofatmos::world {
                 2, 2, // size
                 std::nullopt, // no interior
                 500, // building cost
-                0, 10, // min & max elevation
                 TypeInfo::allow_destruction,
                 5, // workers
                 0 // residents
@@ -116,7 +114,6 @@ namespace houseofatmos::world {
                 2, 2, // size
                 std::nullopt, // no interior
                 1000, // building cost
-                11, INT16_MAX, // min & max elevation
                 TypeInfo::allow_destruction,
                 15, // workers
                 0 // residents
@@ -134,7 +131,6 @@ namespace houseofatmos::world {
                 2, 2, // size
                 std::nullopt, // no interior
                 1000, // building cost
-                0, INT16_MAX, // min & max elevation
                 TypeInfo::allow_destruction,
                 5, // workers
                 0 // residents
@@ -152,7 +148,6 @@ namespace houseofatmos::world {
                 2, 1, // size
                 std::nullopt, // no interior
                 1000, // building cost
-                0, INT16_MAX, // min & max elevation
                 TypeInfo::allow_destruction,
                 25, // workers
                 0 // residents
@@ -170,7 +165,6 @@ namespace houseofatmos::world {
                 1, 1, // size
                 std::nullopt, // no interior
                 500, // building cost
-                0, INT16_MAX, // min & max elevation
                 TypeInfo::allow_destruction,
                 0, // workers
                 5 // residents
@@ -198,7 +192,6 @@ namespace houseofatmos::world {
                 3, 3, // size
                 std::nullopt, // no interior
                 2000, // building cost
-                0, INT16_MAX, // min & max elevation
                 TypeInfo::allow_destruction,
                 20, // workers
                 0 // residents
@@ -233,7 +226,6 @@ namespace houseofatmos::world {
                 3, 3, // size
                 std::nullopt, // no interior
                 0, // building cost (can't be built nor destroyed)
-                0, INT16_MAX, // min & max elevation
                 TypeInfo::indestructible,
                 0, // workers
                 0 // residents
@@ -255,7 +247,6 @@ namespace houseofatmos::world {
                 3, 2, // size
                 (LinkedInterior) { { 0, 1, 0 }, interior::mansion },
                 0, // building cost (can't be built nor destroyed)
-                0, INT16_MAX, // min & max elevation
                 TypeInfo::indestructible,
                 0, // workers
                 0 // residents

@@ -156,9 +156,14 @@ namespace houseofatmos::world {
 
     struct ConstructionMode: ActionMode {
 
+        struct BuildingVariant {
+            std::vector<Conversion> conversions = {};
+            std::optional<Resource::Type> required_resource = std::nullopt;
+        };
+
         u64 selected_x, selected_z;
         std::unique_ptr<Building::Type> selected_type;
-        std::unique_ptr<std::vector<Conversion>> selected_conversion;
+        std::unique_ptr<const BuildingVariant*> selected_variant;
         bool placement_valid;
 
         struct ChunkOverlay {

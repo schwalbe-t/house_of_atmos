@@ -324,89 +324,84 @@ namespace houseofatmos::world {
 
 
 
-    using BuildingVariant = std::vector<Conversion>;
     struct BuildingGroup {
         Building::Type type;
-        std::vector<BuildingVariant> variants;
+        std::vector<ConstructionMode::BuildingVariant> variants;
     };
     static const std::vector<BuildingGroup> buildable = {
         (BuildingGroup) { Building::House, {} },
         (BuildingGroup) { Building::Farmland, {
-            { (Conversion) { 
-                {}, 
-                { { 10, Item::Wheat } }, 
-                10.0 
-            } },
-            { (Conversion) { 
-                {}, 
-                { { 10, Item::Barley } }, 
-                10.0 
-            } }
+            { 
+                { (Conversion) { {}, { { 10, Item::Wheat } }, 10.0 } } 
+            },
+            { 
+                { (Conversion) { {}, { { 10, Item::Barley } }, 10.0 } } 
+            }
         } },
         (BuildingGroup) { Building::Mineshaft, {
-            { (Conversion) { 
-                {}, 
-                { { 1, Item::Hematite } }, 
-                1.0 
-            } },
-            { (Conversion) { 
-                {}, 
-                { { 1, Item::Coal } }, 
-                1.0 
-            } }
+            { 
+                { (Conversion) { {}, { { 1, Item::Hematite } }, 1.0 } },
+                Resource::Type::Hematite 
+            },
+            { 
+                { (Conversion) { {}, { { 1, Item::Coal } }, 1.0 } },
+                Resource::Type::Coal 
+            }
         } },
         (BuildingGroup) { Building::Windmill, {
-            { (Conversion) { 
+            { { (Conversion) { 
                 { { 4, Item::Barley } }, 
                 { { 1, Item::Malt } }, 
                 1.0 
-            } },
-            { (Conversion) { 
+            } } },
+            { { (Conversion) { 
                 { { 4, Item::Wheat } }, 
                 { { 1, Item::Flour } }, 
                 1.0 
-            } }
+            } } }
         } },
         (BuildingGroup) { Building::Factory, {
-            { (Conversion) { 
+            { { (Conversion) { 
                 { { 1, Item::Malt } }, 
                 { { 4, Item::Beer } }, 
                 4.0 
-            } },
-            { (Conversion) { 
+            } } },
+            { { (Conversion) { 
                 { { 1, Item::Flour } }, 
                 { { 2, Item::Bread } }, 
                 2.0 
-            } },
-            { (Conversion) { 
+            } } },
+            { { (Conversion) { 
                 { { 2, Item::Hematite }, { 1, Item::Coal } }, 
                 { { 2, Item::Steel } }, 
                 5.0 
-            } },
-            { (Conversion) { 
+            } } },
+            { { (Conversion) { 
                 { { 3, Item::Steel } }, 
                 { { 1, Item::Armor } }, 
                 10.0 
-            } },
-            { (Conversion) { 
+            } } },
+            { { (Conversion) { 
                 { { 2, Item::Steel } }, 
                 { { 1, Item::Tools } }, 
                 5.0 
-            } }
+            } } }
         } },
         (BuildingGroup) { Building::Stable, {} }
     };
 
     static ui::Element create_building_selector(
         ui::Manager* ui, ui::Element* dest, ui::Element* selected,
-        Building::Type* s_type, std::vector<Conversion>* s_conv,
+        Building::Type* s_type, 
+        const ConstructionMode::BuildingVariant** s_variant,
         const engine::Localization* local
     );
 
     static ui::Element create_variant_selector(
         ui::Manager* ui, ui::Element* dest, ui::Element* selected,
         const BuildingGroup& group,
-        Building::Type* s_type, std::vector<Conversion>* s_conv,
+        Building::Type* s_type,
+        const ConstructionMode::BuildingVariant** s_variant,
         const engine::Localization* local
     ) {
         ui::Element selector 
@@ -415,25 +410,24 @@ namespace houseofatmos::world {
             )
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .as_movable();
-        for(const BuildingVariant& variant: group.variants) {
-            if(variant.size() == 0) { continue; }
-            if(variant.at(0).outputs.size() == 0) { continue; }
+        for(const ConstructionMode::BuildingVariant& variant: group.variants) {
+            if(variant.conversions.size() == 0) { continue; }
+            if(variant.conversions.at(0).outputs.size() == 0) { continue; }
             const Item::TypeInfo& result = Item::items
-                .at((size_t) variant.at(0).outputs.at(0).item);
-            std::vector<Conversion> conversions = std::vector(variant);
+                .at((size_t) variant.conversions.at(0).outputs.at(0).item);
             selector.children.push_back(TerrainMap::create_selection_item(
                 result.icon, local->text(result.local_name), false,
                 [
-                    ui, dest, selected, s_type, s_conv, local, 
-                    type = group.type, conversions
+                    ui, dest, selected, s_type, s_variant, local, 
+                    type = group.type, variant = &variant
                 ]() {
                     *s_type = type;
-                    *s_conv = std::move(conversions);
+                    *s_variant = variant;
                     *dest = create_building_selector(
-                        ui, dest, selected, s_type, s_conv, local
+                        ui, dest, selected, s_type, s_variant, local
                     );
                     *selected = TerrainMap::display_building_info(
-                        *s_type, *s_conv, *local
+                        *s_type, variant->conversions, *local
                     );
                 }
             ));
@@ -443,7 +437,8 @@ namespace houseofatmos::world {
 
     static ui::Element create_building_selector(
         ui::Manager* ui, ui::Element* dest, ui::Element* selected,
-        Building::Type* s_type, std::vector<Conversion>* s_conv,
+        Building::Type* s_type, 
+        const ConstructionMode::BuildingVariant** s_variant,
         const engine::Localization* local
     ) {
         ui::Element selector 
@@ -458,20 +453,20 @@ namespace houseofatmos::world {
                 .at((size_t) group.type);
             selector.children.push_back(TerrainMap::create_selection_item(
                 type.icon, local->text(type.local_name), *s_type == group.type,
-                [ui, dest, selected, s_type, s_conv, local, group_ptr]() {
+                [ui, dest, selected, s_type, s_variant, local, group_ptr]() {
                     if(group_ptr->variants.size() == 0) {
                         *s_type = group_ptr->type;
-                        s_conv->clear();
+                        *s_variant = nullptr;
                         *selected = TerrainMap::display_building_info(
-                            *s_type, *s_conv, *local
+                            *s_type, std::span<Conversion>(), *local
                         );
                         *dest = create_building_selector(
-                            ui, dest, selected, s_type, s_conv, local
+                            ui, dest, selected, s_type, s_variant, local
                         );
                         return;
                     }
                     *dest = create_variant_selector(
-                        ui, dest, selected, *group_ptr, s_type, s_conv, local
+                        ui, dest, selected, *group_ptr, s_type, s_variant, local
                     );
                 }
             ));
@@ -485,7 +480,7 @@ namespace houseofatmos::world {
         this->selected_x = 0;
         this->selected_z = 0;
         this->selected_type = std::make_unique<Building::Type>(Building::House);
-        this->selected_conversion = std::make_unique<std::vector<Conversion>>();
+        this->selected_variant = std::make_unique<const BuildingVariant*>();
         this->placement_valid = false;
     }
 
@@ -496,11 +491,15 @@ namespace houseofatmos::world {
         ui::Element* selected = &this->ui.root.children.back();
         *selector = create_building_selector(
             &this->ui, selector, selected,
-            this->selected_type.get(), this->selected_conversion.get(),
+            this->selected_type.get(), this->selected_variant.get(),
             &local
         );
         *selected = TerrainMap::display_building_info(
-            *this->selected_type, *this->selected_conversion, local
+            *this->selected_type,
+            *this->selected_variant != nullptr
+                ? std::span((**this->selected_variant).conversions)
+                : std::span<Conversion>(), 
+            local
         );
     }
 
@@ -550,6 +549,7 @@ namespace houseofatmos::world {
         if(tile_x < 0 || (u64) end_x > terrain.width_in_tiles()) { return false; }
         if(tile_z < 0 || (u64) end_z > terrain.height_in_tiles()) { return false; }
         i16 target = terrain.elevation_at((u64) tile_x, (u64) tile_z);
+        if(target < 0) { return false; }
         for(i64 x = tile_x; x <= end_x; x += 1) {
             for(i64 z = tile_z; z <= end_z; z += 1) {
                 i16 elevation = terrain.elevation_at((u64) x, (u64) z);
@@ -563,20 +563,39 @@ namespace houseofatmos::world {
                 if(terrain.bridge_at(x, z) != nullptr) { return false; }
             }
         }
-        if(target < 0) { return false; }
         return true;
+    }
+
+    static bool required_resource_present(
+        Terrain& terrain,
+        i64 tile_x, i64 tile_z,
+        const Building::TypeInfo& building_type,
+        const ConstructionMode::BuildingVariant* building_variant
+    ) {
+        bool requires_resource = building_variant != nullptr
+            && building_variant->required_resource.has_value();
+        if(!requires_resource) { return true; }
+        for(i64 x = tile_x; x < tile_x + (i64) building_type.width; x += 1) {
+            for(i64 z = tile_z; z < tile_z +(i64)  building_type.height; z += 1) {
+                const Resource* resource = terrain.resource_at(x, z);
+                bool is_present = resource != nullptr
+                    && resource->type == *building_variant->required_resource;
+                if(is_present) { return true; }
+            }
+        }
+        return false;
     }
 
     static void place_building(
         u64 tile_x, u64 tile_z, Terrain& terrain, ComplexBank& complexes,
         Building::Type type, const Building::TypeInfo& type_info,
-        const std::vector<Conversion>& conversions
+        const ConstructionMode::BuildingVariant* building_variant
     ) {
         u64 chunk_x = tile_x / terrain.tiles_per_chunk();
         u64 chunk_z = tile_z / terrain.tiles_per_chunk();
         Terrain::ChunkData& chunk = terrain.chunk_at(chunk_x, chunk_z);
         std::optional<ComplexId> complex_id = std::nullopt;
-        if(conversions.size() > 0) {
+        if(building_variant != nullptr) {
             complex_id = complexes.closest_to(tile_x, tile_z);
             if(!complex_id.has_value()) {
                 complex_id = complexes.create_complex();
@@ -593,7 +612,9 @@ namespace houseofatmos::world {
                 }
             }
             Complex& complex = complexes.get(*complex_id);
-            complex.add_member(tile_x, tile_z, Complex::Member(conversions));
+            complex.add_member(
+                tile_x, tile_z, Complex::Member(building_variant->conversions)
+            );
         }
         chunk.buildings.push_back({
             type, 
@@ -630,22 +651,21 @@ namespace houseofatmos::world {
             (i64) tile_x, (i64) tile_z, this->world->player.character.position, 
             type_info
         );
-        bool high_enough = this->world->terrain.elevation_at(tile_x, tile_z) 
-            >= type_info.min_elev;
-        this->placement_valid &= high_enough;
-        bool low_enough = this->world->terrain.elevation_at(tile_x, tile_z) 
-            <= type_info.max_elev;
-        this->placement_valid &= low_enough;
         bool attempted = window.was_pressed(engine::Button::Left)
             && !this->ui.was_clicked();
         if(attempted && this->placement_valid) {
             i64 unemployment = this->world->terrain.compute_unemployment();
+            bool has_resource = required_resource_present(
+                this->world->terrain, tile_x, tile_z,
+                type_info, *this->selected_variant
+            );
             bool allowed = unemployment >= (i64) type_info.workers
+                && has_resource
                 && this->world->balance.pay_coins(type_info.cost, this->toasts);
             if(allowed) {
                 place_building(
                     tile_x, tile_z, this->world->terrain, this->world->complexes,
-                    *this->selected_type, type_info, *this->selected_conversion
+                    *this->selected_type, type_info, *this->selected_variant
                 );
                 this->world->carriages.refind_all_paths(
                     this->world->complexes, this->world->terrain, this->toasts
@@ -656,13 +676,15 @@ namespace houseofatmos::world {
                     std::to_string(unemployment), 
                     std::to_string(type_info.workers)
                 });
+            } else if(!has_resource) {
+                Resource::Type r_resource = *(**this->selected_variant)
+                    .required_resource;
+                this->toasts.add_error("toast_building_requires_resource", {
+                    local.text(Resource::types[(size_t) r_resource].local_name), 
+                });
             }
         }
-        if(attempted && !high_enough) {
-            this->toasts.add_error("toast_building_too_low", {});
-        } else if(attempted && !low_enough) {
-            this->toasts.add_error("toast_building_too_high", {});
-        } else if(attempted && !this->placement_valid) {
+        if(attempted && !this->placement_valid) {
             this->toasts.add_error("toast_invalid_building_placement", {});
         }
     }
@@ -969,7 +991,18 @@ namespace houseofatmos::world {
                 chunk.buildings.erase(chunk.buildings.begin() + building_idx);
                 u64 refunded = (u64) ((f64) b_type.cost * demolition_refund_factor);
                 this->world->balance.add_coins(refunded, this->toasts);
-                this->world->terrain.reload_chunk_at(building.chunk_x, building.chunk_z);
+                for(i64 ch_o_x = -1; ch_o_x <= 1; ch_o_x += 1) {
+                    for(i64 ch_o_z = -1; ch_o_z <= 1; ch_o_z += 1) {
+                        i64 ch_x = (i64) building.chunk_x + ch_o_x;
+                        i64 ch_z = (i64) building.chunk_z + ch_o_z;
+                        bool in_bounds = ch_x >= 0 && ch_z >= 0
+                            && (u64) ch_x < this->world->terrain.width_in_chunks()
+                            && (u64) ch_z < this->world->terrain.height_in_chunks();
+                        if(!in_bounds) { continue; }
+                        this->world->terrain
+                            .reload_chunk_at((u64) ch_x, (u64) ch_z);
+                    }
+                }
                 this->world->carriages.refind_all_paths(
                     this->world->complexes, this->world->terrain, this->toasts
                 );

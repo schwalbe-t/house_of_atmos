@@ -8,6 +8,7 @@
 #include "buildings.hpp"
 #include "foliage.hpp"
 #include "bridge.hpp"
+#include "resource.hpp"
 
 namespace houseofatmos::world {
 
@@ -52,6 +53,7 @@ namespace houseofatmos::world {
             engine::Mesh water; // water geometry
             std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage;
             std::unordered_map<Building::Type, std::vector<Mat<4>>> buildings;
+            std::unordered_map<Resource::Type, std::vector<Mat<4>>> resources;
             std::vector<std::shared_ptr<Interactable>> interactables;
         };
 
@@ -60,6 +62,7 @@ namespace houseofatmos::world {
                 u64 foliage_count, foliage_offset;
                 u64 building_count, building_offset;
                 u64 paths_count, paths_offset;
+                u64 resources_count, resources_offset;
             };
 
             ChunkData(u64 size_tiles) {
@@ -74,6 +77,7 @@ namespace houseofatmos::world {
             std::vector<Foliage> foliage;
             std::vector<Building> buildings;
             std::vector<u8> paths;
+            std::vector<Resource> resources;
             u64 size_tiles;
 
             void set_path_at(u64 rel_x, u64 rel_z, bool is_present) {
@@ -105,6 +109,8 @@ namespace houseofatmos::world {
             collect_foliage_transforms(u64 chunk_x, u64 chunk_z) const;
         std::unordered_map<Building::Type, std::vector<Mat<4>>>
             collect_building_transforms(u64 chunk_x, u64 chunk_z) const;
+        std::unordered_map<Resource::Type, std::vector<Mat<4>>>
+            collect_resource_transforms(u64 chunk_x, u64 chunk_z) const;
         std::vector<std::shared_ptr<Interactable>> create_chunk_interactables(
             u64 chunk_x, u64 chunk_z, 
             Interactables* interactables, engine::Window& window, 
@@ -222,6 +228,7 @@ namespace houseofatmos::world {
         const Bridge* bridge_at(
             i64 tile_x, i64 tile_z, f64 closest_to_height = 0.0
         ) const;
+        const Resource* resource_at(i64 tile_x, i64 tile_z) const;
         bool valid_player_position(
             const AbsCollider& player_collider, bool water_is_obstacle
         ) const;
@@ -255,6 +262,7 @@ namespace houseofatmos::world {
             f64 end_falloff_distance = 0.0,
             f64 falloff_target_height = 0.0
         );
+        void generate_resources(u32 seed = (u32) random_init());
         void generate_foliage(u32 seed = (u32) random_init());
 
         bool chunk_in_draw_distance(
