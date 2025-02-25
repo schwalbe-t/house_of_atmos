@@ -8,6 +8,7 @@
 #include "../ui_const.hpp"
 #include "../player.hpp"
 #include "../toasts.hpp"
+#include "../cutscene.hpp"
 #include "interiors.hpp"
 
 namespace houseofatmos::world {
@@ -28,6 +29,8 @@ namespace houseofatmos::interior {
 
         const Interior& interior;
 
+        Cutscene cutscene;
+
         Renderer renderer;
         Player player;
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
@@ -44,6 +47,9 @@ namespace houseofatmos::interior {
             std::shared_ptr<engine::Scene>&& outside
         );
         void load_resources();
+        void add_exit_interaction(engine::Window& window);
+        void add_interactions(engine::Window& window);
+        void add_characters();
 
         void init_ui(engine::Window& window);
 

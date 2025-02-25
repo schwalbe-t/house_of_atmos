@@ -31,4 +31,36 @@ namespace houseofatmos::tutorial {
         };
     }
 
+
+
+    Cutscene::Section move_character_to(
+        Character* character, Vec<3> dest, f64 speed
+    ) {
+        return Cutscene::Section(
+            0.0, 
+            [](auto& w) { (void) w; },
+            [character, dest, speed](engine::Window& window) {
+                (void) window;
+                Vec<3> offset = dest - character->position;
+                f64 duration = offset.len() / speed;
+                character->action = Character::Action(
+                    (u64) human::Animation::Walk, dest, duration
+                );
+                character->face_in_direction(offset);
+            }
+        );
+    }
+
+    Cutscene::Section await_delay(
+        std::function<void (engine::Window&)> on_update,
+        f64 delayed_seconds,
+        std::function<void (engine::Window&)> on_end
+    ) {
+        return Cutscene::Section(
+            delayed_seconds,
+            std::move(on_update),
+            std::move(on_end)
+        );
+    }
+
 }

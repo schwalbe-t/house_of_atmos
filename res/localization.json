@@ -815,8 +815,36 @@
         "_context": "Tells the user that the tutorial is done",
         "en": "Congratulations! You have completed the tutorial."
     },
-    "dialogue_tutorial_2_prompt_0": {
+    "dialogue_tutorial_2_maid_0": {
+        "_context": "The maid asks the player if they may enter",
+        "en": "My lordship, may I enter? I have urgent news to report."
+    },
+    "dialogue_tutorial_2_maid_1": {
+        "_context": "The maid reports that she has found very old books about something called 'Industrialization'",
+        "en": "While I was cleaning the mansion I found a book titled \"Industrialization\"."
+    },
+    "dialogue_tutorial_2_maid_2": {
+        "_context": "The maid tells the player that she has no idea what it means",
+        "en": "I have never heard of something like that before, and the book seems quite hard to read too..."
+    },
+    "dialogue_tutorial_2_maid_3": {
+        "_context": "The maid excuses herself for peeking into the book",
+        "en": "Oh! My lordship, please excuse me for peeking into the book! I couldn't hold myself back."
+    },
+    "dialogue_tutorial_2_maid_4": {
+        "_context": "The maid tells the count (player) that she will put the book into the bookshelf",
+        "en": "I will swiftly put it into the bookshelf."
+    },
+    "dialogue_tutorial_2_prompt_5": {
+        "_context": "Tells the user that they can interact with the bookshelf to read the books",
+        "en": "Interact with the bookshelves to read the book."
+    },
+    "dialogue_tutorial_2_prompt_6": {
         "_context": "Tells the user that they can press escape to pause the game",
         "en": "Press the escape key to pause the game and save, change settings or exit."
+    },
+    "dialogue_tutorial_2_prompt_7": {
+        "_context": "Tells the user that they are now free to do whatever they want",
+        "en": "You are now the count of this county and free to manage it however you like."
     }
 }

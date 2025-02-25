@@ -27,9 +27,7 @@ namespace houseofatmos::interior {
         this->renderer.shadow_map_resolution = 512;
         this->player.character.position = interior.player_start_pos;
         this->load_resources();
-        for(auto character_c: this->interior.characters) {
-            this->characters.push_back(character_c(*this));
-        }
+        this->add_characters();
     }
 
     void Scene::load_resources() {
@@ -44,17 +42,16 @@ namespace houseofatmos::interior {
         ));
     }
 
-
-    void Scene::init_ui(engine::Window& window) {
-        Toasts::States toast_states = this->toasts.make_states();
-        this->ui.root.children.clear();
-        this->ui.with_element(this->interactables.create_container());
+    void Scene::add_exit_interaction(engine::Window& window) {
         this->created_interactables.push_back(this->interactables.create(
             [this, window = &window]() {
                 window->set_scene(std::shared_ptr<engine::Scene>(this->outside));
             }, 
             this->interior.exit_interactable
         ));
+    }
+
+    void Scene::add_interactions(engine::Window& window) {
         for(const auto& interaction: this->interior.interactions) {
             this->created_interactables.push_back(this->interactables.create(
                 [handler = interaction.handler, this, window = &window]() {
@@ -63,6 +60,21 @@ namespace houseofatmos::interior {
                 interaction.position
             ));
         }
+    }
+
+    void Scene::add_characters() {
+        for(auto character_c: this->interior.characters) {
+            this->characters.push_back(character_c(*this));
+        }
+    }
+
+
+    void Scene::init_ui(engine::Window& window) {
+        Toasts::States toast_states = this->toasts.make_states();
+        this->ui.root.children.clear();
+        this->ui.with_element(this->interactables.create_container());
+        this->add_exit_interaction(window);
+        this->add_interactions(window);
         this->ui.with_element(
             this->world->balance.create_counter(&this->coin_counter)
         );
@@ -97,21 +109,6 @@ namespace houseofatmos::interior {
             this->init_ui(window);
         }
         this->dialogues.update(*this, window, this->player.character.position);
-        this->interactables.observe_from(
-            this->player.character.position, this->renderer, window
-        );
-        this->world->carriages.update_all(
-            Vec<3>(0.0, 0.0, 0.0), 0.0,
-            *this, window, 
-            this->world->complexes, this->world->terrain, this->toasts
-        );
-        this->world->complexes.update(
-            window, this->world->balance, this->world->research
-        );
-        this->world->research.check_completion(this->toasts);
-        this->world->balance.update_counter(*this->coin_counter);
-        this->toasts.update(*this);
-        this->ui.update(window);
         this->player.update(window);
         this->player.next_step 
             = this->interior.player_velocity_matrix * this->player.next_step;
@@ -124,6 +121,22 @@ namespace houseofatmos::interior {
             this->player.proceed_z();
         }
         this->player.apply_confirmed_step(*this, window);
+        this->interactables.observe_from(
+            this->player.character.position, this->renderer, window
+        );
+        this->cutscene.update(window);
+        this->world->carriages.update_all(
+            Vec<3>(0.0, 0.0, 0.0), 0.0,
+            *this, window, 
+            this->world->complexes, this->world->terrain, this->toasts
+        );
+        this->world->complexes.update(
+            window, this->world->balance, this->world->research
+        );
+        this->world->research.check_completion(this->toasts);
+        this->world->balance.update_counter(*this->coin_counter);
+        this->toasts.update(*this);
+        this->ui.update(window);
         this->renderer.camera.look_at = this->player.character.position 
             + Vec<3>(0, 1, 0);
         this->renderer.camera.position = this->player.character.position

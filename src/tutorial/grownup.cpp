@@ -156,93 +156,6 @@ namespace houseofatmos::tutorial {
 
 
 
-    static Cutscene::Section await_condition(
-        std::shared_ptr<world::Scene> scene,
-        std::shared_ptr<world::World> after,
-        std::function<bool (engine::Window&)> cond,
-        std::function<void (engine::Window&)> handler 
-            = [](auto& w) { (void) w; }
-    ) {
-        return Cutscene::Section(
-            INFINITY,
-            [scene, after, cond](engine::Window& window) {
-                if(window.was_pressed(engine::Key::Tab)) {
-                    window.set_scene(std::make_shared<world::Scene>(after));
-                }
-                if(cond(window)) {
-                    scene->cutscene.advance();
-                }
-            },
-            std::move(handler)
-        );
-    }
-
-    static Cutscene::Section await_distance_to_point(
-        std::shared_ptr<world::Scene> scene,
-        std::shared_ptr<world::World> after,
-        Vec<3> point, f64 max_distance,
-        std::function<void (engine::Window&)> handler 
-            = [](auto& w) { (void) w; }
-    ) {
-        return Cutscene::Section(
-            INFINITY,
-            [scene, after, point, max_distance](engine::Window& window) {
-                if(window.was_pressed(engine::Key::Tab)) {
-                    window.set_scene(std::make_shared<world::Scene>(after));
-                }
-                Vec<3> offset = point
-                    - scene->world->player.character.position;
-                if(offset.len() <= max_distance) {
-                    scene->cutscene.advance();
-                }
-            },
-            std::move(handler)
-        );
-    }
-
-    static Cutscene::Section say_dialogue(
-        std::shared_ptr<world::Scene> scene, const engine::Localization* local,
-        std::string name_key, std::string text_key,
-        const Dialogue::Voice& voice, f64 v_pitch, f64 v_speed
-    ) {
-        return Cutscene::Section(
-            0.0,
-            [](auto& w) { (void) w; },
-            [
-                scene, local, name_key, text_key,
-                voice = &voice, v_pitch, v_speed
-            ](auto& w) {
-                (void) w;
-                scene->dialogues.say(Dialogue(
-                    std::string(local->text(name_key)),
-                    std::string(local->text(text_key)),
-                    voice, v_pitch, v_speed,
-                    { 0, 0, 0 }, INFINITY
-                ));
-            }
-        );
-    }
-
-    static Cutscene::Section await_dialogue_end(
-        std::shared_ptr<world::Scene> scene,
-        std::shared_ptr<world::World> after,
-        std::function<void (engine::Window&)> handler 
-            = [](auto& w) { (void) w; }
-    ) {
-        return Cutscene::Section(
-            INFINITY,
-            [scene, after](engine::Window& window) {
-                if(window.was_pressed(engine::Key::Tab)) {
-                    window.set_scene(std::make_shared<world::Scene>(after));
-                }
-                if(scene->dialogues.is_empty()) {
-                    scene->cutscene.advance();
-                }
-            },
-            std::move(handler)
-        );
-    }
-
     static Cutscene create_cutscene(
         std::shared_ptr<world::Scene> scene,
         std::shared_ptr<world::World> after
@@ -259,9 +172,15 @@ namespace houseofatmos::tutorial {
             * scene->world->terrain.units_per_tile()
             + Vec<3>(0.0, 4.0, 0.0);
         father->face_in_direction({ 1, 0, 0 });
+        auto skip_on_tab = [scene, after](engine::Window& window) {
+            if(window.was_pressed(engine::Key::Tab)) {
+                after->settings = scene->world->settings;
+                window.set_scene(std::make_shared<world::Scene>(after));
+            }
+        };
         return {
             await_distance_to_point(
-                scene, after,
+                scene, skip_on_tab,
                 father->position, 3.0
             ),
             say_dialogue(
@@ -270,14 +189,14 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_father_0",
                 voice::voiced, father_v_pitch, father_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_father_name",
                 "dialogue_tutorial_1_father_1",
                 voice::voiced, father_v_pitch, father_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_father_name",
@@ -285,7 +204,7 @@ namespace houseofatmos::tutorial {
                 voice::voiced, father_v_pitch, father_v_speed
             ),
             await_dialogue_end(
-                scene, after,
+                scene, skip_on_tab,
                 [scene](auto& w) {
                     (void) w;
                     scene->world->balance.add_coins(99000, scene->toasts);
@@ -297,16 +216,16 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_prompt_3",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_4",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             await_distance_to_point(
-                scene, after,
+                scene, skip_on_tab,
                 Vec<3>(63.5, 0, 78.5) 
                     * scene->world->terrain.units_per_tile()
                     + Vec<3>(0.0, 4.0, 0.0), 
@@ -318,16 +237,16 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_instructions_5",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_instructions_name",
                 "dialogue_tutorial_1_instructions_6",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             await_distance_to_point(
-                scene, after,
+                scene, skip_on_tab,
                 Vec<3>(87.5, 0, 80.5) 
                     * scene->world->terrain.units_per_tile()
                     + Vec<3>(0.0, 4.0, 0.0), 
@@ -339,30 +258,30 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_instructions_7",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_8",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_9",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             await_condition(
-                scene, after,
+                scene, skip_on_tab,
                 [scene](auto& w) {
                     (void) w;
                     return scene->world->terrain.bridges.size() >= 2;
                 }
             ),
             await_distance_to_point(
-                scene, after,
+                scene, skip_on_tab,
                 Vec<3>(111.5, 0, 72.5) 
                     * scene->world->terrain.units_per_tile()
                     + Vec<3>(0.0, 4.0, 0.0), 
@@ -374,44 +293,44 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_instructions_10",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_instructions_name",
                 "dialogue_tutorial_1_instructions_11",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_12",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_13",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_14",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_15",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             await_condition(
-                scene, after,
+                scene, skip_on_tab,
                 [scene](auto& w) {
                     (void) w;
                     std::optional<world::ComplexId> farmland_id
@@ -432,23 +351,23 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_instructions_16",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_17",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_18",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             await_condition(
-                scene, after,
+                scene, skip_on_tab,
                 [scene](auto& w) {
                     (void) w;
                     for(u64 z = 72; z <= 80; z += 1) {
@@ -465,16 +384,16 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_instructions_19",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_instructions_name",
                 "dialogue_tutorial_1_instructions_20",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             await_condition(
-                scene, after,
+                scene, skip_on_tab,
                 [scene](auto& w) {
                     (void) w;
                     u64 chunk_w = scene->world->terrain.width_in_chunks();
@@ -499,23 +418,23 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_instructions_21",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_22",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_23",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             await_condition(
-                scene, after,
+                scene, skip_on_tab,
                 [scene](auto& w) {
                     (void) w;
                     return scene->world->carriages.carriages.size() > 0;
@@ -527,44 +446,44 @@ namespace houseofatmos::tutorial {
                 "dialogue_tutorial_1_instructions_24",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_25",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_26",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_27",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_28",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_prompt_name",
                 "dialogue_tutorial_1_prompt_29",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
-            await_dialogue_end(scene, after),
+            await_dialogue_end(scene, skip_on_tab),
             await_condition(
-                scene, after,
+                scene, skip_on_tab,
                 [scene](auto& w) {
                     (void) w;
                     std::optional<world::ComplexId> village_id
@@ -582,16 +501,10 @@ namespace houseofatmos::tutorial {
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
             await_dialogue_end(
-                scene, after,
-                [after, local](engine::Window& window) {
-                    auto new_scene = std::make_shared<world::Scene>(after);
-                    new_scene->dialogues.say(Dialogue(
-                        std::string(local->text("dialogue_tutorial_prompt_name")),
-                        std::string(local->text("dialogue_tutorial_2_prompt_0")),
-                        &voice::popped, prompt_v_pitch, prompt_v_speed,
-                        { 0, 0, 0 }, INFINITY
-                    ));
-                    window.set_scene(new_scene);
+                scene, skip_on_tab,
+                [scene, after](engine::Window& window) {
+                    after->settings = scene->world->settings;
+                    window.set_scene(create_discovery_scene(after));
                 }
             )
         };
@@ -606,7 +519,7 @@ namespace houseofatmos::tutorial {
             create_world(Settings(world_after->settings))
         );
         auto scene = std::make_shared<world::Scene>(std::move(world));
-        scene->cutscene.append(create_cutscene(scene, std::move(world_after)));
+        scene->cutscene.append(create_cutscene(scene, world_after));
         return scene;
     }
 

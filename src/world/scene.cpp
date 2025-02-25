@@ -360,7 +360,6 @@ namespace houseofatmos::world {
             this->update_ui();
             this->action_mode.acknowledge_change();
         }
-        this->cutscene.update(window);
         this->world->carriages.update_all(
             this->world->player.character.position, this->draw_distance_units(),
             *this, window, 
@@ -374,17 +373,6 @@ namespace houseofatmos::world {
         this->dialogues.update(
             *this, window, this->world->player.character.position
         );
-        this->interactables.observe_from(
-            this->world->player.character.position, this->renderer, window
-        );
-        this->toasts.update(*this);
-        this->ui.update(window);
-        if(this->action_mode.has_mode()) {
-            this->action_mode.current().permitted = !this->world->player.in_water
-                && !this->world->player.is_riding
-                && this->terrain_map.element()->hidden;
-        }
-        this->action_mode.update(window, *this, this->renderer);
         this->world->personal_horse.update(
             *this, window, this->world->terrain, this->world->player, 
             this->interactables, this->toasts
@@ -394,6 +382,18 @@ namespace houseofatmos::world {
             window, this->world->player, this->renderer.camera, this->camera_distance, 
             this->terrain_map.element()
         );
+        this->interactables.observe_from(
+            this->world->player.character.position, this->renderer, window
+        );
+        this->cutscene.update(window);
+        this->toasts.update(*this);
+        this->ui.update(window);
+        if(this->action_mode.has_mode()) {
+            this->action_mode.current().permitted = !this->world->player.in_water
+                && !this->world->player.is_riding
+                && this->terrain_map.element()->hidden;
+        }
+        this->action_mode.update(window, *this, this->renderer);
         for(Character& character: this->characters) {
             character.update(
                 *this, window, 

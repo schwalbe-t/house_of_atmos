@@ -18,4 +18,8 @@ namespace houseofatmos::tutorial {
         std::shared_ptr<world::World> world_after
     );
 
+    std::shared_ptr<engine::Scene> create_discovery_scene(
+        std::shared_ptr<world::World> world_after
+    );
+
 }
