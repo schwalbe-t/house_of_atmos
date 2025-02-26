@@ -720,19 +720,19 @@
     "bridge_name_wooden": {
         "_context": "Name for a bridge made out of wood",
         "de": "Holzbrücke",
-        "en": "Wooden bridge",
+        "en": "Wooden Bridge",
         "bg": "Дървен мост"
     },
     "bridge_name_stone": {
         "_context": "Name for a bridge made out of stone",
         "de": "Steinbrücke",
-        "en": "Stone bridge",
+        "en": "Stone Bridge",
         "bg": "Каменен мост"
     },
     "bridge_name_metal": {
         "_context": "Name for a bridge made out metal (iron, steel, ...)",
         "de": "Stahlbrücke",
-        "en": "Steel bridge",
+        "en": "Steel Bridge",
         "bg": "Железен мост"
     },
 
