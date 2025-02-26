@@ -233,6 +233,9 @@ namespace houseofatmos::research {
             blur.set_uniform("u_blur_rad", blur_rad);
             this->last_frame.blit(this->background->as_target(), blur);
         }
+        this->black_backdrop.resize_fast(window.width(), window.height());
+        this->black_backdrop.as_target().clear_color({ 0, 0, 0, 1 });
+        window.show_texture(this->black_backdrop);
         window.show_texture(*this->background);
         this->ui.render(*this, window);
         window.show_texture(this->ui.output());

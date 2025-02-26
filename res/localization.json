@@ -417,154 +417,239 @@
 
 
 
-    "research_name_metalworking": {
-        "_context": "Given to the player after setting up a basic steel production line",
-        "de": "Metallverarbeitung",
-        "en": "Metalworking",
-        "bg": "Металообработка"
-    },
-
-
-
     "item_name_wood": {
         "_context": "Name of the wood item",
-        "en": "Wood"
+        "en": "Wood",
+        "de": "Holz",
+        "bg": "Дърво"
     },
     "item_name_barley": {
         "_context": "Name of the barley item",
-        "en": "Barley"
+        "en": "Barley",
+        "de": "Gerste",
+        "bg": "Ечемик"
     },
     "item_name_wheat": {
         "_context": "Name of the wheat item",
-        "en": "Wheat"
+        "en": "Wheat",
+        "de": "Weizen",
+        "bg": "Пшеница"
     },
     "item_name_hops": {
         "_context": "Name of the hops item",
-        "en": "Hops"
+        "en": "Hops",
+        "de": "Hopfen",
+        "bg": "Хмел"
     },
     "item_name_coal": {
         "_context": "Name of the coal item and natural resource",
-        "en": "Coal"
+        "en": "Coal",
+        "de": "Kohle",
+        "bg": "Въглища"
     },
     "item_name_crude_oil": {
         "_context": "Name of the crude oil item and natural resource",
-        "en": "Crude Oil"
+        "en": "Crude Oil",
+        "de": "Rohöl",
+        "bg": "Суров петрол"
     },
     "item_name_salt": {
         "_context": "Name of the salt item and natural resource",
-        "en": "Salt"
+        "en": "Salt",
+        "de": "Salz",
+        "bg": "Сол"
     },
     "item_name_iron_ore": {
         "_context": "Name of the iron ore item and natural resource",
-        "en": "Iron Ore"
+        "en": "Iron Ore",
+        "de": "Eisenerz",
+        "bg": "Желязна руда"
     },
     "item_name_copper_ore": {
         "_context": "Name of the copper ore item and natural resource",
-        "en": "Copper Ore"
+        "en": "Copper Ore",
+        "de": "Kupfererz",
+        "bg": "Медна руда"
     },
     "item_name_zinc_ore": {
         "_context": "Name of the zinc ore item and natural resource",
-        "en": "Zinc Ore"
+        "en": "Zinc Ore",
+        "de": "Zinkerz",
+        "bg": "Цинкова руда"
     },
     "item_name_fabric": {
         "_context": "Name of the fabric item",
-        "en": "Fabric"
+        "en": "Fabric",
+        "de": "Stoff",
+        "bg": "Плат"
     },
     "item_name_milk": {
         "_context": "Name of the milk item",
-        "en": "Milk"
+        "en": "Milk",
+        "de": "Milch",
+        "bg": "Мляко"
     },
     "item_name_yarn": {
         "_context": "Name of the yarn item",
-        "en": "Yarn"
+        "en": "Yarn",
+        "de": "Garn",
+        "bg": "Прежда"
     },
     "item_name_cattle": {
         "_context": "Name of the cattle item",
-        "en": "Cattle"
+        "en": "Cattle",
+        "de": "Rinder",
+        "bg": "Говеда"
     },
     "item_name_beef": {
         "_context": "Name of the beef item",
-        "en": "Beef"
+        "en": "Beef",
+        "de": "Rindfleisch",
+        "bg": "Говеждо месо"
     },
     "item_name_flour": {
         "_context": "Name of the flour item",
-        "en": "Flour"
+        "en": "Flour",
+        "de": "Mehl",
+        "bg": "Брашно"
     },
     "item_name_leather": {
         "_context": "Name of the leather item",
-        "en": "Leather"
+        "en": "Leather",
+        "de": "Leder",
+        "bg": "Кожа"
     },
     "item_name_steel": {
         "_context": "Name of the steel item",
-        "en": "Steel"
+        "en": "Steel",
+        "de": "Stahl",
+        "bg": "Стомана"
     },
     "item_name_malt": {
         "_context": "Name of the malt item",
-        "en": "Malt"
+        "en": "Malt",
+        "de": "Malz",
+        "bg": "Малц"
     },
     "item_name_planks": {
         "_context": "Name of the planks item",
-        "en": "Planks"
+        "en": "Planks",
+        "de": "Bretter",
+        "bg": "Дъски"
     },
     "item_name_brass": {
         "_context": "Name of the brass item",
-        "en": "Brass"
+        "en": "Brass",
+        "de": "Messing",
+        "bg": "Месинг"
     },
     "item_name_brass_rods": {
         "_context": "Name of the brass rods item",
-        "en": "Brass Rods"
+        "en": "Brass Rods",
+        "de": "Messingstäbe",
+        "bg": "Месингови пръчки"
     },
     "item_name_brass_plates": {
         "_context": "Name of the brass plates item",
-        "en": "Brass Plates"
+        "en": "Brass Plates",
+        "de": "Messingplatten",
+        "bg": "Месингови плочи"
     },
     "item_name_brass_gears": {
         "_context": "Name of the brass gears item",
-        "en": "Brass Gears"
+        "en": "Brass Gears",
+        "de": "Messingzahnräder",
+        "bg": "Месингови зъбни колела"
     },
     "item_name_clothing": {
         "_context": "Name of the clothing item",
-        "en": "Clothing"
+        "en": "Clothing",
+        "de": "Kleidung",
+        "bg": "Дрехи"
     },
     "item_name_cheese": {
         "_context": "Name of the cheese item",
-        "en": "Cheese"
+        "en": "Cheese",
+        "de": "Käse",
+        "bg": "Сирене"
     },
     "item_name_steak": {
         "_context": "Name of the steak item",
-        "en": "Steak"
+        "en": "Steak",
+        "de": "Steak",
+        "bg": "Стек"
     },
     "item_name_oil": {
         "_context": "Name of the oil item",
-        "en": "Oil"
+        "en": "Oil",
+        "de": "Öl",
+        "bg": "Олио"
     },
     "item_name_beer": {
         "_context": "Name of the beer item",
-        "en": "Beer"
+        "en": "Beer",
+        "de": "Bier",
+        "bg": "Бира"
     },
     "item_name_armor": {
         "_context": "Name of the armor item",
-        "en": "Clothing"
+        "en": "Armor",
+        "de": "Rüstung",
+        "bg": "Броня"
     },
     "item_name_bread": {
         "_context": "Name of the bread item",
-        "en": "Bread"
+        "en": "Bread",
+        "de": "Brot",
+        "bg": "Хляб"
     },
     "item_name_tools": {
         "_context": "Name of the tools item",
-        "en": "Tools"
+        "en": "Tools",
+        "de": "Werkzeuge",
+        "bg": "Инструменти"
     },
     "item_name_brass_pots": {
         "_context": "Name of the brass pots item",
-        "en": "Brass Pots"
+        "en": "Brass Pots",
+        "de": "Messingtöpfe",
+        "bg": "Месингови съдове"
     },
     "item_name_oil_lanterns": {
-        "_context": "Name of the oil laterns item",
-        "en": "Oil Lanterns"
+        "_context": "Name of the oil lanterns item",
+        "en": "Oil Lanterns",
+        "de": "Öllampen",
+        "bg": "Маслени фенери"
     },
     "item_name_watches": {
         "_context": "Name of the watches (clock) item",
-        "en": "Watches"
+        "en": "Watches",
+        "de": "Uhren",
+        "bg": "Часовници"
+    },
+    "item_name_steel_beams": {
+        "_context": "Name of the steel beams item",
+        "en": "Steel Beams",
+        "de": "Stahlträger",
+        "bg": "Стоманени греди"
+    },
+    "item_name_power_looms": {
+        "_context": "Name of the power looms item, a mechanically powered loom used to make fabric",
+        "en": "Power Looms",
+        "de": "Mechanische Webstühle",
+        "bg": "Механични станове"
+    },
+    "item_name_steam_engines": {
+        "_context": "Name of the steam engines item, a machine that converts heat into rotational energy",
+        "en": "Steam Engines",
+        "de": "Dampfmaschinen",
+        "bg": "Парни машини"
+    },
+    "item_name_coins": {
+        "_context": "Name of the coins item",
+        "en": "Coins",
+        "de": "Münzen",
+        "bg": "Монети"
     },
 
 
@@ -616,6 +701,18 @@
         "de": "Herrenhaus",
         "en": "Mansion",
         "bg": "Мение"
+    },
+    "building_name_pasture": {
+        "_context": "Name of a patch of grass that is used for animals to graze (eat grass)",
+        "en": "Pasture",
+        "de": "Weide",
+        "bg": "Пасище"
+    },
+    "building_name_tree_farm": {
+        "_context": "Name of a piece of land that is used to raise trees for production of wood",
+        "en": "Tree Farm",
+        "de": "Baumfarm",
+        "bg": "Горска ферма"
     },
 
 

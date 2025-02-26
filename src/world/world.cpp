@@ -194,10 +194,15 @@ namespace houseofatmos::world {
         u64 plaza_x = center_x - plaza_info.width / 2;
         u64 plaza_z = center_z - plaza_info.height / 2;
         plaza_complex.add_member(plaza_x, plaza_z, Complex::Member(std::vector {
-            Conversion({ { 1, Item::Beer } }, { { 5, Item::Coins } }, 0.1),
-            Conversion({ { 1, Item::Bread } }, { { 3, Item::Coins } }, 0.1),
-            Conversion({ { 1, Item::Armor } }, { { 60, Item::Coins } }, 0.1),
-            Conversion({ { 1, Item::Tools } }, { { 30, Item::Coins } }, 0.1)
+            Conversion({ { 1, Item::Bread } }, { { 10, Item::Coins } }, 0.025),
+            Conversion({ { 1, Item::Cheese } }, { { 20, Item::Coins } }, 0.05),
+            Conversion({ { 1, Item::Steak } }, { { 30, Item::Coins } }, 0.1),
+            Conversion({ { 1, Item::Milk } }, { { 20, Item::Coins } }, 0.05),
+            Conversion({ { 1, Item::Beer } }, { { 30, Item::Coins } }, 0.1),
+            Conversion({ { 1, Item::Clothing } }, { { 50, Item::Coins } }, 0.125),
+            Conversion({ { 1, Item::Armor } }, { { 100, Item::Coins } }, 0.125),
+            Conversion({ { 1, Item::Tools } }, { { 50, Item::Coins } }, 0.125),
+            Conversion({ { 1, Item::Oil } }, { { 30, Item::Coins } }, 0.1)
         }));
         this->terrain.place_building(
             Building::Plaza, plaza_x, plaza_z, plaza_complex_i
@@ -297,7 +302,7 @@ namespace houseofatmos::world {
         Vec<3> player_spawn_tile = mansion_center_tile + Vec<3>(0, 0, 0.5);
         this->player.character.position = player_spawn_tile 
             * this->terrain.units_per_tile();
-        this->balance.coins = 20000;
+        this->balance.coins = 50000;
         Vec<3> horse_spawn_pos = (player_spawn_tile + Vec<3>(-0.25, 0, 0.5))
             * this->terrain.units_per_tile();
         this->personal_horse.set_free(horse_spawn_pos);

@@ -250,6 +250,52 @@ namespace houseofatmos::world {
                 TypeInfo::indestructible,
                 0, // workers
                 0 // residents
+            },
+            /* Type::Pasture */ {
+                "building_name_pasture",
+                &ui_icon::pasture,
+                TypeInfo::keep_terrain,
+                {
+                    "res/buildings/pasture.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
+                std::nullopt, 0.0,
+                {
+                    // corner fence
+                    RelCollider({ -4.625, -0.5, -4.625 }, { 0.25, 1, 6.25 }),
+                    RelCollider({ -4.625, -0.5, -4.625 }, { 3.25, 1, 0.25 }),
+                    // long fence
+                    RelCollider({  4.425, -0.5, -4.625 }, { 0.25, 1, 9.25 })
+                },
+                2, 2, // size
+                std::nullopt, // no interior
+                500, // building cost
+                TypeInfo::allow_destruction,
+                5, // workers
+                0 // residents
+            },
+            /* Type::TreeFarm */ {
+                "building_name_tree_farm",
+                &ui_icon::tree_farm,
+                TypeInfo::keep_terrain,
+                {
+                    "res/buildings/tree_farm.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Disabled
+                },
+                std::nullopt, 0.0,
+                {
+                    // corner fence
+                    RelCollider({ -4.625, -0.5, -4.625 }, { 0.25, 1, 6.25 }),
+                    RelCollider({ -4.625, -0.5, -4.625 }, { 3.25, 1, 0.25 }),
+                    // long fence
+                    RelCollider({  4.425, -0.5, -4.625 }, { 0.25, 1, 9.25 })
+                },
+                2, 2, // size
+                std::nullopt, // no interior
+                500, // building cost
+                TypeInfo::allow_destruction,
+                5, // workers
+                0 // residents
             }
         };
 
@@ -261,14 +307,16 @@ namespace houseofatmos::world {
 
 
         enum Type {
-            Farmland = 0,
-            Mineshaft = 1,
-            Windmill = 2,
-            Factory = 3,
-            House = 4,
-            Stable = 5,
-            Plaza = 6,
-            Mansion = 7
+            Farmland,
+            Mineshaft,
+            Windmill,
+            Factory,
+            House,
+            Stable,
+            Plaza,
+            Mansion,
+            Pasture,
+            TreeFarm
         };
 
         Type type;

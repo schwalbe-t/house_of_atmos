@@ -336,65 +336,275 @@ namespace houseofatmos::world {
             },
             { 
                 { (Conversion) { {}, { { 10, Item::Barley } }, 10.0 } } 
+            },
+            { 
+                { (Conversion) { {}, { { 10, Item::Hops } }, 10.0 } } 
             }
         } },
         (BuildingGroup) { Building::Mineshaft, {
+            { 
+                { (Conversion) { {}, { { 1, Item::Coal } }, 1.0 } },
+                Resource::Type::Coal 
+            },
+            { 
+                { (Conversion) { {}, { { 1, Item::CrudeOil } }, 1.0 } },
+                Resource::Type::CrudeOil 
+            },
+            { 
+                { (Conversion) { {}, { { 1, Item::Salt } }, 1.0 } },
+                Resource::Type::Salt 
+            },
             { 
                 { (Conversion) { {}, { { 1, Item::IronOre } }, 1.0 } },
                 Resource::Type::IronOre 
             },
             { 
-                { (Conversion) { {}, { { 1, Item::Coal } }, 1.0 } },
-                Resource::Type::Coal 
+                { (Conversion) { {}, { { 1, Item::CopperOre } }, 1.0 } },
+                Resource::Type::CopperOre 
+            },
+            { 
+                { (Conversion) { {}, { { 1, Item::ZincOre } }, 1.0 } },
+                Resource::Type::ZincOre 
             }
         } },
         (BuildingGroup) { Building::Windmill, {
-            { { (Conversion) { 
-                { { 4, Item::Barley } }, 
-                { { 1, Item::Malt } }, 
-                1.0 
-            } } },
-            { { (Conversion) { 
-                { { 4, Item::Wheat } }, 
-                { { 1, Item::Flour } }, 
-                1.0 
-            } } }
+            { 
+                { (Conversion) { 
+                    { { 4, Item::Wheat } }, 
+                    { { 1, Item::Flour } }, 
+                    1.0 
+                } } 
+            },
+            { 
+                { (Conversion) { 
+                    { { 4, Item::Barley } }, 
+                    { { 1, Item::Malt } }, 
+                    1.0 
+                } } 
+            }
         } },
         (BuildingGroup) { Building::Factory, {
+            { 
+                { (Conversion) { 
+                    { { 4, Item::Yarn } }, 
+                    { { 1, Item::Fabric } }, 
+                    4.0
+                } },
+                std::nullopt,
+                research::Research::RewardFabric
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Cattle } }, 
+                    { { 16, Item::Milk } }, 
+                    16.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Cattle } }, 
+                    { { 8, Item::Beef } }, 
+                    8.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Cattle } }, 
+                    { { 8, Item::Leather } }, 
+                    8.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 2, Item::IronOre }, { 1, Item::Coal } }, 
+                    { { 2, Item::Steel } }, 
+                    5.0 
+                } },
+                std::nullopt,
+                research::Research::RewardSteel
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Wood } }, 
+                    { { 4, Item::Planks } }, 
+                    4.0 
+                } },
+                std::nullopt,
+                research::Research::RewardPlanks
+            },
+            { 
+                { (Conversion) { 
+                    { { 2, Item::CopperOre }, { 1, Item::ZincOre }, { 1, Item::Coal } }, 
+                    { { 3, Item::Brass } }, 
+                    5.0 
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Brass } }, 
+                    { { 4, Item::BrassRods } }, 
+                    3.0 
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Brass } }, 
+                    { { 1, Item::BrassPlates } }, 
+                    5.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::BrassPlates }, { 4, Item::BrassRods } }, 
+                    { { 4, Item::BrassGears } }, 
+                    5.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Wood } }, 
+                    { { 1, Item::Coal } }, 
+                    4.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 2, Item::Fabric } }, 
+                    { { 1, Item::Clothing } }, 
+                    4.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 4, Item::Milk }, { 1, Item::Salt } }, 
+                    { { 4, Item::Cheese } }, 
+                    4.0
+                } },
+                std::nullopt,
+                research::Research::RewardCheese
+            },
+            { 
+                { (Conversion) { 
+                    { { 4, Item::Beef }, { 1, Item::Salt }, { 1, Item::Coal } }, 
+                    { { 4, Item::Steak } }, 
+                    4.0
+                } },
+                std::nullopt,
+                research::Research::RewardSteak
+            },
+            { 
+                { (Conversion) { 
+                    { { 2, Item::CrudeOil }, { 1, Item::Coal } }, 
+                    { { 2, Item::Oil } }, 
+                    4.0
+                } },
+                std::nullopt,
+                research::Research::RewardOil
+            },
+            { 
+                { (Conversion) { 
+                    { { 4, Item::Malt }, { 2, Item::Hops }, { 1, Item::Coal } }, 
+                    { { 5, Item::Beer } }, 
+                    5.0
+                } },
+                std::nullopt,
+                research::Research::RewardBeer
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Leather }, { 3, Item::Steel } }, 
+                    { { 1, Item::Armor } }, 
+                    4.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 4, Item::Flour }, { 1, Item::Coal } }, 
+                    { { 4, Item::Bread } }, 
+                    4.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::Planks }, { 2, Item::Steel } }, 
+                    { { 1, Item::Tools } }, 
+                    4.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 4, Item::BrassPlates } }, 
+                    { { 1, Item::BrassPots } }, 
+                    4.0
+                } },
+                std::nullopt,
+                research::Research::RewardBrassPots
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::BrassPlates }, { 1, Item::BrassRods } }, 
+                    { { 1, Item::OilLanterns } }, 
+                    4.0
+                } },
+                std::nullopt,
+                research::Research::RewardOilLanterns
+            },
+            { 
+                { (Conversion) { 
+                    { { 1, Item::BrassPlates }, { 4, Item::BrassGears } }, 
+                    { { 1, Item::Watches } }, 
+                    4.0
+                } },
+                std::nullopt,
+                research::Research::RewardWatches
+            },
+            { 
+                { (Conversion) { 
+                    { { 2, Item::Steel } }, 
+                    { { 1, Item::SteelBeams } }, 
+                    4.0
+                } }
+            },
+            { 
+                { (Conversion) { 
+                    { { 2, Item::Planks }, { 4, Item::BrassGears } }, 
+                    { { 1, Item::PowerLooms } }, 
+                    4.0
+                } }
+            },
+            {
+                { (Conversion) { 
+                    { { 4, Item::BrassPlates }, { 4, Item::BrassGears } }, 
+                    { { 1, Item::SteamEngines } }, 
+                    4.0
+                } }
+            }
+        } },
+        (BuildingGroup) { Building::Stable, {} },
+        (BuildingGroup) { Building::Pasture, {
             { { (Conversion) { 
-                { { 1, Item::Malt } }, 
-                { { 4, Item::Beer } }, 
-                4.0 
+                { { 4, Item::Wheat } }, 
+                { { 1, Item::Yarn } }, 
+                1.0 
             } } },
             { { (Conversion) { 
-                { { 1, Item::Flour } }, 
-                { { 2, Item::Bread } }, 
-                2.0 
-            } } },
-            { { (Conversion) { 
-                { { 2, Item::IronOre }, { 1, Item::Coal } }, 
-                { { 2, Item::Steel } }, 
-                5.0 
-            } } },
-            { { (Conversion) { 
-                { { 3, Item::Steel } }, 
-                { { 1, Item::Armor } }, 
-                10.0 
-            } } },
-            { { (Conversion) { 
-                { { 2, Item::Steel } }, 
-                { { 1, Item::Tools } }, 
-                5.0 
+                { { 8, Item::Wheat } }, 
+                { { 1, Item::Cattle } }, 
+                1.0 
             } } }
         } },
-        (BuildingGroup) { Building::Stable, {} }
+        (BuildingGroup) { Building::TreeFarm, {
+            { 
+                { (Conversion) { {}, { { 10, Item::Wood } }, 10.0 } } 
+            }
+        } }
     };
 
     static ui::Element create_building_selector(
         ui::Manager* ui, ui::Element* dest, ui::Element* selected,
         Building::Type* s_type, 
         const ConstructionMode::BuildingVariant** s_variant,
-        const engine::Localization* local
+        const engine::Localization* local, const research::Research* research
     );
 
     static ui::Element create_variant_selector(
@@ -402,7 +612,7 @@ namespace houseofatmos::world {
         const BuildingGroup& group,
         Building::Type* s_type,
         const ConstructionMode::BuildingVariant** s_variant,
-        const engine::Localization* local
+        const engine::Localization* local, const research::Research* research
     ) {
         ui::Element selector 
             = TerrainMap::create_selection_container(
@@ -411,6 +621,9 @@ namespace houseofatmos::world {
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .as_movable();
         for(const ConstructionMode::BuildingVariant& variant: group.variants) {
+            bool is_unlocked = !variant.required_advancement.has_value()
+                || research->is_unlocked(*variant.required_advancement);
+            if(!is_unlocked) { continue; }
             if(variant.conversions.size() == 0) { continue; }
             if(variant.conversions.at(0).outputs.size() == 0) { continue; }
             const Item::TypeInfo& result = Item::items
@@ -419,12 +632,12 @@ namespace houseofatmos::world {
                 result.icon, local->text(result.local_name), false,
                 [
                     ui, dest, selected, s_type, s_variant, local, 
-                    type = group.type, variant = &variant
+                    type = group.type, variant = &variant, research
                 ]() {
                     *s_type = type;
                     *s_variant = variant;
                     *dest = create_building_selector(
-                        ui, dest, selected, s_type, s_variant, local
+                        ui, dest, selected, s_type, s_variant, local, research
                     );
                     *selected = TerrainMap::display_building_info(
                         *s_type, variant->conversions, *local
@@ -439,7 +652,7 @@ namespace houseofatmos::world {
         ui::Manager* ui, ui::Element* dest, ui::Element* selected,
         Building::Type* s_type, 
         const ConstructionMode::BuildingVariant** s_variant,
-        const engine::Localization* local
+        const engine::Localization* local, const research::Research* research
     ) {
         ui::Element selector 
             = TerrainMap::create_selection_container(
@@ -453,7 +666,19 @@ namespace houseofatmos::world {
                 .at((size_t) group.type);
             selector.children.push_back(TerrainMap::create_selection_item(
                 type.icon, local->text(type.local_name), *s_type == group.type,
-                [ui, dest, selected, s_type, s_variant, local, group_ptr]() {
+                [
+                    ui, dest, selected, s_type, s_variant, local, group_ptr, 
+                    research
+                ]() {
+                    std::vector<size_t> unlocked_variants;
+                    size_t locked_var_c = group_ptr->variants.size();
+                    for(size_t var_i = 0; var_i < locked_var_c; var_i += 1) {
+                        const ConstructionMode::BuildingVariant& var
+                            = group_ptr->variants[var_i];
+                        bool is_unlocked = !var.required_advancement.has_value()
+                            || research->is_unlocked(*var.required_advancement);
+                        if(is_unlocked) { unlocked_variants.push_back(var_i); }
+                    }
                     if(group_ptr->variants.size() == 0) {
                         *s_type = group_ptr->type;
                         *s_variant = nullptr;
@@ -461,12 +686,38 @@ namespace houseofatmos::world {
                             *s_type, std::span<Conversion>(), *local
                         );
                         *dest = create_building_selector(
-                            ui, dest, selected, s_type, s_variant, local
+                            ui, dest, selected, s_type, s_variant, local, 
+                            research
+                        );
+                        return;
+                    }
+                    if(unlocked_variants.size() == 0) {
+                        *s_type = Building::Type::House;
+                        *s_variant = nullptr;
+                        *selected = TerrainMap::display_building_info(
+                            *s_type, std::span<Conversion>(), *local
+                        );
+                        *dest = create_building_selector(
+                            ui, dest, selected, s_type, s_variant, local, 
+                            research
+                        );
+                        return;
+                    }
+                    if(unlocked_variants.size() == 1) {
+                        *s_type = group_ptr->type;
+                        *s_variant = &group_ptr->variants[unlocked_variants[0]];
+                        *selected = TerrainMap::display_building_info(
+                            *s_type, (**s_variant).conversions, *local
+                        );
+                        *dest = create_building_selector(
+                            ui, dest, selected, s_type, s_variant, local,
+                            research
                         );
                         return;
                     }
                     *dest = create_variant_selector(
-                        ui, dest, selected, *group_ptr, s_type, s_variant, local
+                        ui, dest, selected, *group_ptr, s_type, s_variant, 
+                        local, research
                     );
                 }
             ));
@@ -492,7 +743,7 @@ namespace houseofatmos::world {
         *selector = create_building_selector(
             &this->ui, selector, selected,
             this->selected_type.get(), this->selected_variant.get(),
-            &local
+            &local, &this->world->research
         );
         *selected = TerrainMap::display_building_info(
             *this->selected_type,

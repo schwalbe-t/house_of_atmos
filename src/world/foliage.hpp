@@ -29,7 +29,7 @@ namespace houseofatmos::world {
                 },
                 RelCollider::none(),
                 10,
-                [](f64 n) { (void) n; return 1.0; } // chance is always 0.0
+                [](f64 n) { (void) n; return 1.0; } // chance is always 100%
             },
             /* Tree */ {
                 {
@@ -39,11 +39,20 @@ namespace houseofatmos::world {
                 RelCollider({ -5.0/16, -0.5, -5.0/16 }, { 10.0/16, 1, 10.0/16 }),
                 1,
                 [](f64 n) { 
-                    return n < 0.4? 0.05  // 40% of area =>  5% chance
-                         : n < 0.6? 0.50  // 20% of area => 50% chance
-                         :          0.80; // 40% of area => 80% chance
+                    return n < 0.4? 0.05  // for 40% of area =>  5% chance
+                         : n < 0.6? 0.50  // for 20% of area => 50% chance
+                         :          0.80; // for 40% of area => 80% chance
                 }
-            }
+            },
+            /* Rocks */ {
+                { 
+                    "res/foliage/rocks.glb", Renderer::model_attribs,
+                    engine::FaceCulling::Enabled
+                },
+                RelCollider({ -0.5, -0.5, -0.5 }, { 1, 1, 1 }),
+                1,
+                [](f64 n) { (void) n; return 0.10; } // chance is always 10%
+            },
         };
 
 

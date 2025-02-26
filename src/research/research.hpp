@@ -24,8 +24,24 @@ namespace houseofatmos::research {
         };
 
         enum Advancement {
-            Metalworking,
-            TestBeer, TestBread
+            SteamEngines,
+                RewardSteel,
+                RewardPlanks,
+                RewardOil,
+                RewardBrassPots,
+                RewardOilLanterns,
+                RewardWatches,
+
+            SteelBeams,
+                RewardSteelBridges,
+            
+            PowerLooms,
+                RewardFabric,
+            
+            BrassPots,
+                RewardCheese,
+                RewardSteak,
+                RewardBeer
         };
 
         struct AdvancementInfo {
@@ -37,30 +53,122 @@ namespace houseofatmos::research {
             std::vector<ItemCondition> item_conditions;
         };
 
-        static inline const f64 incr = 0.375;
+        static inline const f64 incr = 0.25;
 
         static inline const std::unordered_map<Advancement, AdvancementInfo> 
             advancements = {
-            { Advancement::Metalworking, {
-                "research_name_metalworking",
-                &ui_icon::steel,
-                { 0.5, 0.5 },
+
+            // Steam Engines and what it unlocks
+            { Advancement::SteamEngines, {
+                "item_name_steam_engines",
+                &ui_icon::steam_engines,
+                { 0.5 + 1 * incr, 0.5 + 0 * incr },
                 {},
-                { { world::Item::Steel, 25 } }
+                { { world::Item::SteamEngines, 25 } }
             } },
-            { Advancement::TestBeer, {
+            { Advancement::RewardSteel, {
+                "item_name_steel",
+                &ui_icon::steel,
+                { 0.5 + 2 * incr, 0.5 - 1 * incr },
+                { Advancement::SteamEngines },
+                {}
+            } },
+            { Advancement::RewardPlanks, {
+                "item_name_planks",
+                &ui_icon::planks,
+                { 0.5 + 2 * incr, 0.5 + 0 * incr },
+                { Advancement::SteamEngines },
+                {}
+            } },
+            { Advancement::RewardOil, {
+                "item_name_oil",
+                &ui_icon::oil,
+                { 0.5 + 2 * incr, 0.5 + 1 * incr },
+                { Advancement::SteamEngines },
+                {}
+            } },
+            { Advancement::RewardBrassPots, {
+                "item_name_brass_pots",
+                &ui_icon::brass_pots,
+                { 0.5 + 3 * incr, 0.5 - 1 * incr },
+                { Advancement::SteamEngines },
+                {}
+            } },
+            { Advancement::RewardOilLanterns, {
+                "item_name_oil_lanterns",
+                &ui_icon::oil_lanterns,
+                { 0.5 + 3 * incr, 0.5 + 0 * incr },
+                { Advancement::SteamEngines },
+                {}
+            } },
+            { Advancement::RewardWatches, {
+                "item_name_watches",
+                &ui_icon::watches,
+                { 0.5 + 3 * incr, 0.5 + 1 * incr },
+                { Advancement::SteamEngines },
+                {}
+            } },
+
+            // Steel Beams and what it unlocks
+            { Advancement::SteelBeams, {
+                "item_name_steel_beams",
+                &ui_icon::steel_beams,
+                { 0.5 + 0 * incr, 0.5 + 1 * incr },
+                { Advancement::SteamEngines },
+                { { world::Item::SteelBeams, 200 } }
+            } },
+            { Advancement::RewardSteelBridges, {
+                "bridge_name_metal",
+                &ui_icon::metal_bridge,
+                { 0.5 + 0 * incr, 0.5 + 2 * incr },
+                { Advancement::SteelBeams },
+                {}
+            } },
+
+            // Power Looms and what it unlocks
+            { Advancement::PowerLooms, {
+                "item_name_power_looms",
+                &ui_icon::power_looms,
+                { 0.5 - 1 * incr, 0.5 + 0 * incr },
+                { Advancement::SteamEngines },
+                { { world::Item::PowerLooms, 25 } }
+            } },
+            { Advancement::RewardFabric, {
+                "item_name_fabric",
+                &ui_icon::fabric,
+                { 0.5 - 2 * incr, 0.5 + 0 * incr },
+                { Advancement::PowerLooms },
+                {}
+            } },
+            
+            // Brass Pots and what it unlocks
+            { Advancement::BrassPots, {
+                "item_name_brass_pots",
+                &ui_icon::brass_pots,
+                { 0.5 + 0 * incr, 0.5 - 1 * incr },
+                { Advancement::SteamEngines },
+                { { world::Item::BrassPots, 50 } }
+            } },
+            { Advancement::RewardCheese, {
+                "item_name_cheese",
+                &ui_icon::cheese,
+                { 0.5 - 1 * incr, 0.5 - 2 * incr },
+                { Advancement::BrassPots },
+                {}
+            } },
+            { Advancement::RewardSteak, {
+                "item_name_steak",
+                &ui_icon::steak,
+                { 0.5 + 0 * incr, 0.5 - 2 * incr },
+                { Advancement::BrassPots },
+                {}
+            } },
+            { Advancement::RewardBeer, {
                 "item_name_beer",
                 &ui_icon::beer,
-                { 0.5 + incr, 0.5 },
-                { Advancement::Metalworking },
-                { { world::Item::Beer, 1000 } }
-            } },
-            { Advancement::TestBread, {
-                "item_name_bread",
-                &ui_icon::bread,
-                { 0.5, 0.5 + incr },
-                { Advancement::Metalworking },
-                { { world::Item::Bread, 1000 } }
+                { 0.5 + 1 * incr, 0.5 - 2 * incr },
+                { Advancement::BrassPots },
+                {}
             } }
         };
 
