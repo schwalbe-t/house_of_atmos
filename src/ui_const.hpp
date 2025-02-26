@@ -154,30 +154,84 @@ namespace houseofatmos::ui_icon {
     static inline const ui::Background terrain_vertex
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(176, 64), Vec<2>(8, 8));
 
-    static inline const ui::Background barley 
+    static inline const ui::Background wood 
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 88), Vec<2>(8, 8));
-    static inline const ui::Background malt 
+    static inline const ui::Background barley 
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 88), Vec<2>(8, 8));
-    static inline const ui::Background beer
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 88), Vec<2>(8, 8));
     static inline const ui::Background wheat 
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 96), Vec<2>(8, 8));
-    static inline const ui::Background flour 
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 96), Vec<2>(8, 8));
-    static inline const ui::Background bread
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 96), Vec<2>(8, 8));
-    static inline const ui::Background hematite 
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 104), Vec<2>(8, 8));
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 88), Vec<2>(8, 8));
+    static inline const ui::Background hops 
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(40, 88), Vec<2>(8, 8));
     static inline const ui::Background coal 
-        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 104), Vec<2>(8, 8));
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(56, 88), Vec<2>(8, 8));
+    static inline const ui::Background crude_oil 
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(64, 88), Vec<2>(8, 8));
+    static inline const ui::Background salt 
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(72, 88), Vec<2>(8, 8));
+    static inline const ui::Background iron_ore
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(80, 88), Vec<2>(8, 8));
+    static inline const ui::Background copper_ore
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(88, 88), Vec<2>(8, 8));
+    static inline const ui::Background zinc_ore
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(96, 88), Vec<2>(8, 8));
+    static inline const ui::Background fabric
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 96), Vec<2>(8, 8));
+    static inline const ui::Background milk
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 96), Vec<2>(8, 8));
+    static inline const ui::Background yarn
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 96), Vec<2>(8, 8));
+    static inline const ui::Background cattle
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(40, 96), Vec<2>(8, 8));
+    static inline const ui::Background beef
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(48, 96), Vec<2>(8, 8));
+    static inline const ui::Background flour
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(56, 96), Vec<2>(8, 8));
+    static inline const ui::Background leather
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(64, 96), Vec<2>(8, 8));
     static inline const ui::Background steel
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(72, 96), Vec<2>(8, 8));
+    static inline const ui::Background malt
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(80, 96), Vec<2>(8, 8));
+    static inline const ui::Background planks
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(88, 96), Vec<2>(8, 8));
+    static inline const ui::Background brass
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(96, 96), Vec<2>(8, 8));
+    static inline const ui::Background brass_rods
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(104, 96), Vec<2>(8, 8));
+    static inline const ui::Background brass_plates
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(112, 96), Vec<2>(8, 8));
+    static inline const ui::Background brass_gears
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(120, 96), Vec<2>(8, 8));
+    static inline const ui::Background clothing
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 104), Vec<2>(8, 8));
+    static inline const ui::Background cheese
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 104), Vec<2>(8, 8));
+    static inline const ui::Background steak
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 104), Vec<2>(8, 8));
-    static inline const ui::Background armor
+    static inline const ui::Background oil
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(40, 104), Vec<2>(8, 8));
-    static inline const ui::Background tools
+    static inline const ui::Background beer
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(48, 104), Vec<2>(8, 8));
-    static inline const ui::Background coins
+    static inline const ui::Background armor
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(56, 104), Vec<2>(8, 8));
+    static inline const ui::Background bread
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(64, 104), Vec<2>(8, 8));
+    static inline const ui::Background tools
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(72, 104), Vec<2>(8, 8));
+    static inline const ui::Background brass_pots
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(80, 104), Vec<2>(8, 8));
+    static inline const ui::Background oil_lanterns
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(88, 104), Vec<2>(8, 8));
+    static inline const ui::Background watches
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(96, 104), Vec<2>(8, 8));
+    static inline const ui::Background steel_beams
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 112), Vec<2>(8, 8));
+    static inline const ui::Background power_looms
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(24, 112), Vec<2>(8, 8));
+    static inline const ui::Background steam_engines
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(32, 112), Vec<2>(8, 8));
+    static inline const ui::Background coins
+        = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(40, 112), Vec<2>(8, 8));
 
     static inline const ui::Background farmland
         = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 128), Vec<2>(16, 16));

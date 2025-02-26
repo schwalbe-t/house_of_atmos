@@ -254,15 +254,16 @@ namespace houseofatmos::world {
                     this->remove_stored(item, consumed);
                 }
                 for(auto& [count, item]: conversion.outputs) {
+                    bool storable = Item::items[item].storable;
                     u64 produced = allowed_times * count;
-                    this->add_stored(item, produced);
                     research.report_item_production(item, produced);
+                    if(item == Item::Coins) {
+                        balance.coins += this->stored_count(Item::Coins);
+                    }
+                    if(!storable) { continue; }
+                    this->add_stored(item, produced);
                 }
             }
-        }
-        if(this->stored_count(Item::Coins) > 0) {
-            balance.coins += this->stored_count(Item::Coins);
-            this->set_stored(Item::Coins, 0);
         }
     }
 

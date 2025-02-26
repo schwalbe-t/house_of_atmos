@@ -340,8 +340,8 @@ namespace houseofatmos::world {
         } },
         (BuildingGroup) { Building::Mineshaft, {
             { 
-                { (Conversion) { {}, { { 1, Item::Hematite } }, 1.0 } },
-                Resource::Type::Hematite 
+                { (Conversion) { {}, { { 1, Item::IronOre } }, 1.0 } },
+                Resource::Type::IronOre 
             },
             { 
                 { (Conversion) { {}, { { 1, Item::Coal } }, 1.0 } },
@@ -372,7 +372,7 @@ namespace houseofatmos::world {
                 2.0 
             } } },
             { { (Conversion) { 
-                { { 2, Item::Hematite }, { 1, Item::Coal } }, 
+                { { 2, Item::IronOre }, { 1, Item::Coal } }, 
                 { { 2, Item::Steel } }, 
                 5.0 
             } } },

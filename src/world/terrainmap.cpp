@@ -736,6 +736,8 @@ namespace houseofatmos::world {
         return item;
     }
 
+    static const size_t max_column_items = 15;
+    
     ui::Element TerrainMap::display_item_selector(
         std::span<const Item::Type> items, 
         std::function<void (Item::Type)>&& passed_handler,
@@ -746,14 +748,28 @@ namespace houseofatmos::world {
                 std::move(passed_handler)
             );
         ui::Element container = TerrainMap::create_selection_container("")
+            .with_list_dir(ui::Direction::Horizontal)
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .as_movable();
-        for(Item::Type item: items) {
-            const Item::TypeInfo& item_info = Item::items.at((size_t) item);
-            container.children.push_back(TerrainMap::create_selection_item(
-                item_info.icon, local.text(item_info.local_name), false,
-                [item, handler]() { (*handler)(item); }
-            ));
+        size_t column_count = items.size() / max_column_items;
+        for(size_t column_i = 0; column_i < column_count; column_i += 1) {
+            ui::Element column = ui::Element()
+                .with_size(0, 0, ui::size::units_with_children)
+                .with_list_dir(ui::Direction::Vertical)
+                .as_movable();
+            size_t first_item_i = column_i * max_column_items;
+            size_t end_item_i = std::min(
+                first_item_i + max_column_items, items.size()
+            );
+            for(size_t item_i = first_item_i; item_i < end_item_i; item_i += 1) {
+                Item::Type item = items[item_i];
+                const Item::TypeInfo& item_info = Item::items.at((size_t) item);
+                column.children.push_back(TerrainMap::create_selection_item(
+                    item_info.icon, local.text(item_info.local_name), false,
+                    [item, handler]() { (*handler)(item); }
+                ));
+            }
+            container.children.push_back(std::move(column));
         }
         return container;
     }
@@ -923,9 +939,14 @@ namespace houseofatmos::world {
             .with_child(make_ui_button(this->local->text(local_item))
                 .with_click_handler([this, target]() {
                     this->adding_stop = false;
+                    std::vector<Item::Type> transferrable;
+                    for(size_t item_i = 0; item_i < Item::items.size(); item_i += 1) {
+                        if(!Item::items.at(item_i).storable) { continue; }
+                        transferrable.push_back((Item::Type) item_i);
+                    }
                     *this->selected_info_bottom 
                         = TerrainMap::display_item_selector(
-                            Item::transferrable, [this, target](auto selected) {
+                            transferrable, [this, target](auto selected) {
                                 target->item = selected;
                                 *this->selected_info_bottom = ui::Element()
                                     .as_phantom().as_movable();

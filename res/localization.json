@@ -426,77 +426,145 @@
 
 
 
+    "item_name_wood": {
+        "_context": "Name of the wood item",
+        "en": "Wood"
+    },
     "item_name_barley": {
         "_context": "Name of the barley item",
-        "de": "Gerste", 
-        "en": "Barley",
-        "bg": "Ечемик"
-    },
-    "item_name_malt": {
-        "_context": "Name of the malt item, which is a 'cereal grain that has been made to germinate by soaking in water'",
-        "de": "Malz", 
-        "en": "Malt",
-        "bg": "Малц"
-    },
-    "item_name_beer": {
-        "_context": "Name of the beer item",
-        "de": "Bier", 
-        "en": "Beer",
-        "bg": "Бири"
+        "en": "Barley"
     },
     "item_name_wheat": {
         "_context": "Name of the wheat item",
-        "de": "Weizen", 
-        "en": "Wheat",
-        "bg": "Пшеница"
+        "en": "Wheat"
+    },
+    "item_name_hops": {
+        "_context": "Name of the hops item",
+        "en": "Hops"
+    },
+    "item_name_coal": {
+        "_context": "Name of the coal item and natural resource",
+        "en": "Coal"
+    },
+    "item_name_crude_oil": {
+        "_context": "Name of the crude oil item and natural resource",
+        "en": "Crude Oil"
+    },
+    "item_name_salt": {
+        "_context": "Name of the salt item and natural resource",
+        "en": "Salt"
+    },
+    "item_name_iron_ore": {
+        "_context": "Name of the iron ore item and natural resource",
+        "en": "Iron Ore"
+    },
+    "item_name_copper_ore": {
+        "_context": "Name of the copper ore item and natural resource",
+        "en": "Copper Ore"
+    },
+    "item_name_zinc_ore": {
+        "_context": "Name of the zinc ore item and natural resource",
+        "en": "Zinc Ore"
+    },
+    "item_name_fabric": {
+        "_context": "Name of the fabric item",
+        "en": "Fabric"
+    },
+    "item_name_milk": {
+        "_context": "Name of the milk item",
+        "en": "Milk"
+    },
+    "item_name_yarn": {
+        "_context": "Name of the yarn item",
+        "en": "Yarn"
+    },
+    "item_name_cattle": {
+        "_context": "Name of the cattle item",
+        "en": "Cattle"
+    },
+    "item_name_beef": {
+        "_context": "Name of the beef item",
+        "en": "Beef"
     },
     "item_name_flour": {
         "_context": "Name of the flour item",
-        "de": "Mehl", 
-        "en": "Flour",
-        "bg": "Брашно"
+        "en": "Flour"
+    },
+    "item_name_leather": {
+        "_context": "Name of the leather item",
+        "en": "Leather"
+    },
+    "item_name_steel": {
+        "_context": "Name of the steel item",
+        "en": "Steel"
+    },
+    "item_name_malt": {
+        "_context": "Name of the malt item",
+        "en": "Malt"
+    },
+    "item_name_planks": {
+        "_context": "Name of the planks item",
+        "en": "Planks"
+    },
+    "item_name_brass": {
+        "_context": "Name of the brass item",
+        "en": "Brass"
+    },
+    "item_name_brass_rods": {
+        "_context": "Name of the brass rods item",
+        "en": "Brass Rods"
+    },
+    "item_name_brass_plates": {
+        "_context": "Name of the brass plates item",
+        "en": "Brass Plates"
+    },
+    "item_name_brass_gears": {
+        "_context": "Name of the brass gears item",
+        "en": "Brass Gears"
+    },
+    "item_name_clothing": {
+        "_context": "Name of the clothing item",
+        "en": "Clothing"
+    },
+    "item_name_cheese": {
+        "_context": "Name of the cheese item",
+        "en": "Cheese"
+    },
+    "item_name_steak": {
+        "_context": "Name of the steak item",
+        "en": "Steak"
+    },
+    "item_name_oil": {
+        "_context": "Name of the oil item",
+        "en": "Oil"
+    },
+    "item_name_beer": {
+        "_context": "Name of the beer item",
+        "en": "Beer"
+    },
+    "item_name_armor": {
+        "_context": "Name of the armor item",
+        "en": "Clothing"
     },
     "item_name_bread": {
         "_context": "Name of the bread item",
-        "de": "Brot", 
-        "en": "Bread", 
-        "bg": "Хлябове"
-    },
-    "item_name_hematite": {
-        "_context": "Name of the hematite item (a type of iron ore)",
-        "de": "Hematit",
-        "en": "Hematite",
-        "bg": "Хематит"
-    },
-    "item_name_coal": {
-        "_context": "Name of the coal item",
-        "de": "Kohle",
-        "en": "Coal",
-        "bg": "Въглища"
-    },
-    "item_name_steel": {
-        "_context": "Name of the steel item (the iron + carbon alloy)",
-        "de": "Stahl",
-        "en": "Steel",
-        "bg": "Стомана"
-    },
-    "item_name_armor": {
-        "_context": "Name of the armor item (armor for humans made of metal)",
-        "de": "Rüstung",
-        "en": "Armor",
-        "bg": "Брони"
+        "en": "Bread"
     },
     "item_name_tools": {
-        "_context": "Name of the tools item (tools made of metal, like a pickaxe or axe)",
-        "de": "Werkzeug",
-        "en": "Tools",
-        "bg": "Инструменти"
+        "_context": "Name of the tools item",
+        "en": "Tools"
     },
-    "item_name_coins": {
-        "_context": "Name of the coins item (once produced they are added to the player's balance, so they never exist stored as an item somewhere)",
-        "de": "Münzen",
-        "en": "Coins",
-        "bg": "Монети"
+    "item_name_brass_pots": {
+        "_context": "Name of the brass pots item",
+        "en": "Brass Pots"
+    },
+    "item_name_oil_lanterns": {
+        "_context": "Name of the oil laterns item",
+        "en": "Oil Lanterns"
+    },
+    "item_name_watches": {
+        "_context": "Name of the watches (clock) item",
+        "en": "Watches"
     },
 
 
