@@ -271,6 +271,30 @@ namespace houseofatmos::world {
 
 
 
+    static void update_ui_visibiliy(Scene& scene, const engine::Window& window) {
+        bool toggle_map = scene.dialogues.is_empty()
+            && scene.terrain_map.toggle_with_key(engine::Key::M, window);
+        if(scene.terrain_map.element() != nullptr) {
+            scene.terrain_map.element()->hidden |= !scene.dialogues.is_empty();
+        }
+        bool set_mode_default = !scene.dialogues.is_empty()
+            && scene.action_mode.has_mode()
+            && scene.action_mode.current_type() != ActionManager::Mode::Default;
+        set_mode_default |= toggle_map
+            && scene.action_mode.has_mode()
+            && scene.action_mode.current_type() != ActionManager::Mode::Default;
+        if(set_mode_default) {
+            scene.action_mode.set_mode(ActionManager::Mode::Default);
+        }
+        if(scene.action_mode.has_changed()) {
+            bool map_open = scene.terrain_map.element() != nullptr
+                && !scene.terrain_map.element()->hidden;
+            scene.update_ui();
+            scene.action_mode.acknowledge_change();
+            scene.terrain_map.element()->hidden = !map_open;
+        }
+    }
+
     static Vec<3> player_position(Vec<3> pos, const Terrain& terrain) {
         pos.y() = std::max(
             terrain.elevation_at(pos),
@@ -347,20 +371,7 @@ namespace houseofatmos::world {
                 this->interactables, local, this->dialogues
             );
         }
-        if(this->terrain_map.toggle_with_key(engine::Key::M, window)) {
-            if(!this->terrain_map.element()->hidden) {
-                this->action_mode.remove_mode();
-                this->update_ui();
-                this->action_mode.acknowledge_change();
-                this->terrain_map.element()->hidden = false;
-            } else {
-                this->action_mode.set_mode(ActionManager::Mode::Default);
-            }
-        }
-        if(this->action_mode.has_changed()) {
-            this->update_ui();
-            this->action_mode.acknowledge_change();
-        }
+        update_ui_visibiliy(*this, window);
         this->world->carriages.update_all(
             this->world->player.character.position, this->draw_distance_units(),
             *this, window, 

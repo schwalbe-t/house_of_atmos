@@ -194,6 +194,7 @@ namespace houseofatmos::world {
             }
             return nullptr;
         }
+        std::span<LoadedChunk> all_loaded_chunks() { return this->loaded_chunks; }
         Building* building_at(
             i64 tile_x, i64 tile_z, 
             u64* chunk_x_out = nullptr, u64* chunk_z_out = nullptr

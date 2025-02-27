@@ -186,8 +186,8 @@ namespace houseofatmos::world {
                 .carriages[*this->selected_carriage];
             Carriage::Target target;
             target.complex = *building->complex;
-            target.action = Carriage::LoadFixed;
-            target.amount.fixed = 0;
+            target.action = Carriage::LoadPercentage;
+            target.amount.percentage = 1.0;
             target.item = (Item::Type) 0;
             carriage.targets.push_back(target);
             this->adding_stop = false;

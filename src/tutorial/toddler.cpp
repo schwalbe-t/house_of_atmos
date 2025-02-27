@@ -59,6 +59,9 @@ namespace houseofatmos::tutorial {
                 after->settings = scene->world->settings;
                 window.set_scene(std::make_shared<world::Scene>(after));
             }
+            for(auto& chunk: scene->world->terrain.all_loaded_chunks()) {
+                chunk.interactables.clear();
+            }
         };
         auto await_father_standing = await_character_animation(
             scene, update_scene, father, (u64) human::Animation::Stand
