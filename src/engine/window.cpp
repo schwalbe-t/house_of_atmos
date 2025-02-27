@@ -123,7 +123,10 @@ namespace houseofatmos::engine {
     }
 
 
-    Window::Window(u64 width, u64 height, const std::string& name) {
+    Window::Window(
+        u64 width, u64 height, const std::string& name, 
+        std::optional<Image> icon
+    ) {
         if(width == 0 || height == 0) {
             error("Window width and height must both be larger than 0"
                 " (given was " + std::to_string(width)
@@ -150,6 +153,13 @@ namespace houseofatmos::engine {
         this->frame_delta = 0;
         this->current_scene = nullptr;
         this->next_scene = nullptr;
+        if(icon.has_value()) {
+            GLFWimage icon_img;
+            icon_img.width = icon->width();
+            icon_img.height = icon->height();
+            icon_img.pixels = (unsigned char*) icon->data();
+            glfwSetWindowIcon((GLFWwindow*) this->ptr, 1, &icon_img);
+        }
         center_window((GLFWwindow*) this->ptr, width, height);
         glfwMakeContextCurrent((GLFWwindow*) this->ptr);
         glfwSwapInterval(0);

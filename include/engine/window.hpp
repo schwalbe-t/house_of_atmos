@@ -53,7 +53,10 @@ namespace houseofatmos::engine {
 
 
         public:
-        Window(u64 width, u64 height, const std::string& name);
+        Window(
+            u64 width, u64 height, const std::string& name, 
+            std::optional<Image> icon = std::nullopt
+        );
         Window(const Window& other) = delete;
         Window(Window&& other) = delete;
         Window& operator=(const Window& other) = delete;
