@@ -4,7 +4,7 @@
 
 namespace houseofatmos::tutorial {
 
-    static const world::Complex::Member bread_plaza_cm = world::Complex::Member({
+    static world::Complex::Member bread_plaza_cm = world::Complex::Member({
         world::Conversion(
             { { 1, world::Item::Bread } }, 
             { { 3, world::Item::Coins } }, 
@@ -12,7 +12,7 @@ namespace houseofatmos::tutorial {
         )
     });
 
-    static const world::Complex::Member bread_factory_cm = world::Complex::Member({
+    static world::Complex::Member bread_factory_cm = world::Complex::Member({
         world::Conversion(
             { { 1, world::Item::Flour } }, 
             { { 2, world::Item::Bread } }, 
@@ -22,7 +22,7 @@ namespace houseofatmos::tutorial {
 
 
 
-    static const world::Complex::Member wheat_farm_cm = world::Complex::Member({
+    static world::Complex::Member wheat_farm_cm = world::Complex::Member({
         world::Conversion(
             {}, 
             { { 10, world::Item::Wheat } }, 

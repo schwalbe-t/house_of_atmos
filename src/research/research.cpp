@@ -30,9 +30,9 @@ namespace houseofatmos::research {
 
     Research::Research() {
         this->progress.reserve(Research::advancements.size());
-        for(const auto& [advancement, info]: Research::advancements) {
-            this->progress[advancement] = AdvancementProgress(
-                info.item_conditions.size()
+        for(size_t adv_i = 0; adv_i < this->progress.size(); adv_i += 1) {
+            this->progress[(Research::Advancement) adv_i] = AdvancementProgress(
+                Research::advancements[adv_i].item_conditions.size()
             );
         }
     }
@@ -43,10 +43,13 @@ namespace houseofatmos::research {
             serialized.items_offset, serialized.items_count, items
         );
         this->progress.reserve(items.size());
-        for(const auto& [advancement, info]: Research::advancements) {
+        for(size_t adv_i = 0; adv_i < this->progress.size(); adv_i += 1) {
+            auto advancement = (Research::Advancement) adv_i;
             this->progress[advancement] = items.contains(advancement)
                 ? AdvancementProgress(items[advancement], buffer)
-                : AdvancementProgress(info.item_conditions.size());
+                : AdvancementProgress(
+                    Research::advancements[adv_i].item_conditions.size()
+                );
         }
     }
 
@@ -64,7 +67,8 @@ namespace houseofatmos::research {
 
     void Research::report_item_production(world::Item::Type item, u64 count) {
         for(auto& [advancement, progress]: this->progress) {
-            const AdvancementInfo& info = Research::advancements.at(advancement);
+            const AdvancementInfo& info 
+                = Research::advancements[(size_t) advancement];
             size_t item_c_c = progress.item_conditions.size();
             for(size_t item_c_i = 0; item_c_i < item_c_c; item_c_i += 1) {
                 if(info.item_conditions[item_c_i].item != item) { continue; }
@@ -76,7 +80,8 @@ namespace houseofatmos::research {
     void Research::check_completion(Toasts& toasts) {
         for(auto& [advancement, progress]: this->progress) {
             if(progress.is_unlocked) { continue; }
-            const AdvancementInfo& info = Research::advancements.at(advancement);
+            const AdvancementInfo& info 
+                = Research::advancements[(size_t) advancement];
             progress.is_unlocked = this->parents_unlocked(advancement);
             size_t item_c_c = progress.item_conditions.size();
             for(size_t item_c_i = 0; item_c_i < item_c_c; item_c_i += 1) {

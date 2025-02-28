@@ -20,7 +20,7 @@ namespace houseofatmos::engine {
             auto value = values.find(args.locale);
             if(value == values.end()) {
                 engine::warning("Localization for locale '" 
-                    + args.locale
+                    + std::string(args.locale)
                     + "' does not include a value under the name '"
                     + name + "'!"
                 );

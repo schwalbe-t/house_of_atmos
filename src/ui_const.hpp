@@ -129,7 +129,7 @@ namespace houseofatmos::ui_icon {
 
 
     #define MAKE_HOA_UI_ICON(path, offset, size) (ui::Background) { \
-        (engine::Texture::LoadArgs) { std::string(path) }, \
+        (engine::Texture::LoadArgs) { std::string_view(path) }, \
         (offset), Vec<2>(0, 0), (size) \
     }
 

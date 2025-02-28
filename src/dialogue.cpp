@@ -91,7 +91,7 @@ namespace houseofatmos {
         const Dialogue& dialogue = this->queued[0];
         std::string remaining = dialogue.text.substr(this->current_offset);
         size_t char_size = utf8_char_size(remaining);
-        std::string_view next_char_s = remaining.substr(0, char_size);
+        std::string next_char_s = remaining.substr(0, char_size);
         char32_t next_char = utf8_char_to_char32(next_char_s);
         engine::Sound& sound = scene
             .get<engine::Sound>(dialogue.voice->get_sound_of(next_char));

@@ -127,7 +127,7 @@ namespace houseofatmos::world {
             TotalCount = 3
         };
 
-        static inline const std::vector<const ui::Background*> mode_icons = {
+        static inline const std::array<const ui::Background*, 3> mode_icons = {
             &ui_icon::terrain_flatten, 
             &ui_icon::terrain_raise, 
             &ui_icon::terrain_lower

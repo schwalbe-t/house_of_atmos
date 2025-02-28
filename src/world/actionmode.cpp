@@ -324,46 +324,83 @@ namespace houseofatmos::world {
 
 
 
+    using BuildingVariant = ConstructionMode::BuildingVariant;
     struct BuildingGroup {
         Building::Type type;
-        std::vector<ConstructionMode::BuildingVariant> variants;
+        std::vector<BuildingVariant> variants;
     };
-    static const std::vector<BuildingGroup> buildable = {
+    std::vector<BuildingGroup> buildable = {
         (BuildingGroup) { Building::House, {} },
         (BuildingGroup) { Building::Farmland, {
             { 
-                { (Conversion) { {}, { { 10, Item::Wheat } }, 10.0 } } 
+                { (Conversion) { 
+                    {}, 
+                    { { 10, Item::Wheat } }, 
+                    10.0 
+                } } 
             },
             { 
-                { (Conversion) { {}, { { 10, Item::Barley } }, 10.0 } } 
+                { (Conversion) {
+                    {}, 
+                    { { 10, Item::Barley } }, 
+                    10.0 
+                } } 
             },
             { 
-                { (Conversion) { {}, { { 10, Item::Hops } }, 10.0 } } 
+                { (Conversion) { 
+                    {}, 
+                    { { 10, Item::Hops } }, 
+                    10.0 
+                } } 
             }
         } },
         (BuildingGroup) { Building::Mineshaft, {
             { 
-                { (Conversion) { {}, { { 1, Item::Coal } }, 1.0 } },
+                { (Conversion) { 
+                    {}, 
+                    { { 1, Item::Coal } }, 
+                    1.0 
+                } },
                 Resource::Type::Coal 
             },
             { 
-                { (Conversion) { {}, { { 1, Item::CrudeOil } }, 1.0 } },
+                { (Conversion) { 
+                    {}, 
+                    { { 1, Item::CrudeOil } }, 
+                    1.0 
+                } },
                 Resource::Type::CrudeOil 
             },
             { 
-                { (Conversion) { {}, { { 1, Item::Salt } }, 1.0 } },
+                { (Conversion) { 
+                    {}, 
+                    { { 1, Item::Salt } }, 
+                    1.0 
+                } },
                 Resource::Type::Salt 
             },
             { 
-                { (Conversion) { {}, { { 1, Item::IronOre } }, 1.0 } },
+                { (Conversion) { 
+                    {}, 
+                    { { 1, Item::IronOre } }, 
+                    1.0 
+                } },
                 Resource::Type::IronOre 
             },
             { 
-                { (Conversion) { {}, { { 1, Item::CopperOre } }, 1.0 } },
+                { (Conversion) { 
+                    {}, 
+                    { { 1, Item::CopperOre } }, 
+                    1.0 
+                } },
                 Resource::Type::CopperOre 
             },
             { 
-                { (Conversion) { {}, { { 1, Item::ZincOre } }, 1.0 } },
+                { (Conversion) { 
+                    {}, 
+                    { { 1, Item::ZincOre } }, 
+                    1.0 
+                } },
                 Resource::Type::ZincOre 
             }
         } },
@@ -595,7 +632,11 @@ namespace houseofatmos::world {
         } },
         (BuildingGroup) { Building::TreeFarm, {
             { 
-                { (Conversion) { {}, { { 10, Item::Wood } }, 10.0 } } 
+                { (Conversion) { 
+                    {}, 
+                    { { 10, Item::Wood } }, 
+                    10.0 
+                } } 
             }
         } }
     };
@@ -643,8 +684,9 @@ namespace houseofatmos::world {
                 if(!is_unlocked) { continue; }
                 if(variant.conversions.size() == 0) { continue; }
                 if(variant.conversions.at(0).outputs.size() == 0) { continue; }
-                const Item::TypeInfo& result = Item::items
-                    .at((size_t) variant.conversions.at(0).outputs.at(0).item);
+                const Item::TypeInfo& result = Item::items[
+                    (size_t) variant.conversions.at(0).outputs[0].item
+                ];
                 column.children.push_back(TerrainMap::create_selection_item(
                     result.icon, local->text(result.local_name), false,
                     [
@@ -683,8 +725,9 @@ namespace houseofatmos::world {
             .as_movable();
         for(const BuildingGroup& group: buildable) {
             const BuildingGroup* group_ptr = &group;
-            const Building::TypeInfo& type = Building::types
-                .at((size_t) group.type);
+            const Building::TypeInfo& type = Building::types[
+                (size_t) group.type
+            ];
             selector.children.push_back(TerrainMap::create_selection_item(
                 type.icon, local->text(type.local_name), *s_type == group.type,
                 [
@@ -910,8 +953,8 @@ namespace houseofatmos::world {
         (void) scene;
         (void) renderer;
         if(!this->permitted) { return; }
-        const Building::TypeInfo& type_info = Building::types
-            .at((size_t) *this->selected_type);
+        const Building::TypeInfo& type_info 
+            = Building::types[(size_t) *this->selected_type];
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer,
             Vec<3>(type_info.width / 2.0, 0, type_info.height / 2.0)
@@ -1171,8 +1214,8 @@ namespace houseofatmos::world {
             -INT64_MAX, [](auto acc, auto h) { return std::max(acc, h); }
         );
         // determine if the placement is valid
-        const Bridge::TypeInfo& selected_type = Bridge::types
-            .at((size_t) *this->selected_type);
+        const Bridge::TypeInfo& selected_type 
+            = Bridge::types[(size_t) *this->selected_type];
         bool too_short = this->planned.length() <= 1;
         bool too_low = min_height < selected_type.min_height;
         bool too_high = max_height > selected_type.max_height;

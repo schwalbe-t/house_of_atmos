@@ -22,14 +22,14 @@ namespace houseofatmos::engine {
 
     static std::vector<i16> decode(
         const std::vector<char>& encoded, u8& channels, u64& sample_rate,
-        const std::string& path
+        std::string_view path
     ) {
         static_assert(sizeof(i16) == sizeof(short));
         stb_vorbis* decoder = stb_vorbis_open_memory(
             (unsigned char*) encoded.data(), encoded.size(), nullptr, nullptr
         );
         if(decoder == nullptr) {
-            error("Unable to decode the file '" + path + "' as OGG");
+            error("Unable to decode the file '" + std::string(path) + "' as OGG");
         }
         stb_vorbis_info info = stb_vorbis_get_info(decoder);
         channels = info.channels;

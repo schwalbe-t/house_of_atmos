@@ -14,12 +14,12 @@ namespace houseofatmos::world {
     struct Item {
 
         struct TypeInfo {
-            std::string local_name;
+            std::string_view local_name;
             const ui::Background* icon;
             bool storable = true;
         };
 
-        static inline const std::vector<TypeInfo> items = {
+        static inline const std::span<const TypeInfo> items = (TypeInfo[]) {
             /* Wood */ { "item_name_wood", &ui_icon::wood, true },
             /* Barley */ { "item_name_barley", &ui_icon::barley, true },
             /* Wheat */ { "item_name_wheat", &ui_icon::wheat, true },

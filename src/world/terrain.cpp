@@ -145,7 +145,7 @@ namespace houseofatmos::world {
                     seed, Vec<2>(tile_x / 25.0, tile_z / 25.0)
                 ) * 0.5 + 0.5; // normalize to 0..1
                 for(size_t type_i = 0; type_i < Foliage::types.size(); type_i += 1) {
-                    const Foliage::TypeInfo& type = Foliage::types.at(type_i);
+                    const Foliage::TypeInfo& type = Foliage::types[type_i];
                     f64 chance = type.spawn_chance(noise_val) * slope_factor;
                     for(u64 att_i = 0; att_i < type.attempt_count; att_i += 1) {
                         if(rng.next_f64() >= chance) { continue; }
@@ -559,8 +559,8 @@ namespace houseofatmos::world {
                 i64 chunk_offset_x = chunk_x * this->chunk_tiles;
                 i64 chunk_offset_z = chunk_z * this->chunk_tiles;
                 for(const Building& building: chunk.buildings) {
-                    const Building::TypeInfo& type = Building::types
-                        .at((size_t) building.type);
+                    const Building::TypeInfo& type 
+                        = Building::types[(size_t) building.type];
                     i64 start_x = chunk_offset_x + (i64) building.x;
                     i64 end_x = start_x + (i64) type.width;
                     i64 start_z = chunk_offset_z + (i64) building.z;
@@ -988,7 +988,7 @@ namespace houseofatmos::world {
         }
         for(const auto& [foliage_type, instances]: foliage_instances) {
             engine::Model& model = scene.get<engine::Model>(
-                Foliage::types.at((size_t) foliage_type).model
+                Foliage::types[(size_t) foliage_type].model
             );
             renderer.render(model, instances);
         }

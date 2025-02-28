@@ -19,19 +19,19 @@ namespace houseofatmos::world {
         };
 
         struct TypeInfo {
-            static inline bool remove_terrain = false;
-            static inline bool keep_terrain = true;
+            static inline const bool remove_terrain = false;
+            static inline const bool keep_terrain = true;
 
-            static inline bool indestructible = false;
-            static inline bool allow_destruction = true;
+            static inline const bool indestructible = false;
+            static inline const bool allow_destruction = true;
 
-            std::string local_name;
+            std::string_view local_name;
             const ui::Background* icon;
             bool terrain_under_building; // false = remove terrain under building
             engine::Model::LoadArgs model;
-            std::optional<std::string> animation;
+            std::optional<std::string_view> animation;
             f64 animation_speed;
-            std::vector<RelCollider> colliders; // in game units
+            std::span<const RelCollider> colliders; // in game units
             u8 width, height; // in tiles
             std::optional<LinkedInterior> interior;
             u64 cost; // in coins
@@ -59,7 +59,7 @@ namespace houseofatmos::world {
                     return;
                 }
                 const engine::Animation& anim = model
-                    .animation(*this->animation);
+                    .animation(std::string(*this->animation));
                 f64 timestamp = fmod(
                     window.time() * this->animation_speed, anim.length()
                 );
@@ -74,7 +74,7 @@ namespace houseofatmos::world {
             }
         };
 
-        static inline const std::vector<TypeInfo> types = {
+        static inline const std::span<const TypeInfo> types = (TypeInfo[]) {
             /* Type::Farmland */ {
                 "building_name_farmland",
                 &ui_icon::farmland,
@@ -84,7 +84,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled
                 },
                 std::nullopt, 0.0,
-                {
+                (RelCollider[]) {
                     // corner fence
                     RelCollider({ -4.625, -0.5, -4.625 }, { 0.25, 1, 6.25 }),
                     RelCollider({ -4.625, -0.5, -4.625 }, { 3.25, 1, 0.25 }),
@@ -107,7 +107,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled
                 },
                 std::nullopt, 0.0,
-                { 
+                (RelCollider[]) { 
                     RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }),
                     RelCollider({  3, -0.5, -1 }, { 2, 1, 2 }) 
                 },
@@ -127,7 +127,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled
                 },
                 "blades", 1.0,
-                { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
+                (RelCollider[]) { RelCollider({ -3, -0.5, -3 }, { 6, 1, 6 }) },
                 2, 2, // size
                 std::nullopt, // no interior
                 1000, // building cost
@@ -144,7 +144,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled
                 },
                 std::nullopt, 0.0,
-                { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
+                (RelCollider[]) { RelCollider({ -5, -0.5, -2.5 }, { 10, 1, 5 }) },
                 2, 1, // size
                 std::nullopt, // no interior
                 1000, // building cost
@@ -161,7 +161,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled    
                 },
                 "door", 0.0, // speed = 0 -> will always be the first frame
-                { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
+                (RelCollider[]) { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
                 1, 1, // size
                 std::nullopt, // no interior
                 500, // building cost
@@ -178,7 +178,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled
                 },
                 std::nullopt, 0.0,
-                { 
+                (RelCollider[]) { 
                     // building
                     RelCollider({ -7.500, -0.5, -7.500 }, { 15.00, 1, 5.00 }),
                     RelCollider({ -5.500, -0.5, -2.500 }, {  6.00, 1, 3.00 }),
@@ -205,7 +205,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled    
                 },
                 std::nullopt, 0.0,
-                { 
+                (RelCollider[]) { 
                     // well
                     RelCollider({ -2.50, -0.5, -2.50 }, { 5.0, 1, 5.0 }),
                     // left stand
@@ -239,7 +239,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled
                 },
                 std::nullopt, 0.0,
-                { 
+                (RelCollider[]) { 
                     RelCollider({ -7.5, -0.5, -5.0 }, { 15.0, 1,  5.0 }),
                     RelCollider({ -7.5, -0.5, -5.0 }, {  5.0, 1, 10.0 }),
                     RelCollider({  2.5, -0.5, -5.0 }, {  5.0, 1, 10.0 })
@@ -260,7 +260,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled
                 },
                 std::nullopt, 0.0,
-                {
+                (RelCollider[]) {
                     // corner fence
                     RelCollider({ -4.625, -0.5, -4.625 }, { 0.25, 1, 6.25 }),
                     RelCollider({ -4.625, -0.5, -4.625 }, { 3.25, 1, 0.25 }),
@@ -283,7 +283,7 @@ namespace houseofatmos::world {
                     engine::FaceCulling::Disabled
                 },
                 std::nullopt, 0.0,
-                {
+                (RelCollider[]) {
                     // corner fence
                     RelCollider({ -4.625, -0.5, -4.625 }, { 0.25, 1, 6.25 }),
                     RelCollider({ -4.625, -0.5, -4.625 }, { 3.25, 1, 0.25 }),
@@ -325,7 +325,7 @@ namespace houseofatmos::world {
 
 
         const TypeInfo& get_type_info() const {
-            return Building::types.at((size_t) this->type);
+            return Building::types[(size_t) this->type];
         }
 
     };

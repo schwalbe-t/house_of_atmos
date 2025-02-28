@@ -20,7 +20,7 @@ namespace houseofatmos::engine::math {
     struct Vec {
         T elements[N];
 
-        Vec() {
+        constexpr Vec() {
             static_assert(N >= 1, "Must at least have one element!");
             for(size_t i = 0; i < N; i += 1) {
                 this->elements[i] = 0.0;
@@ -31,12 +31,8 @@ namespace houseofatmos::engine::math {
             typename... Args,
             typename = typename std::enable_if<sizeof...(Args) == N>::type
         >
-        Vec(Args... values) {
+        constexpr Vec(Args... values) : elements{ static_cast<T>(values)... } {
             static_assert(N >= 1, "Must at least have one element!");
-            T args[] = { static_cast<T>(values)... };
-            for(size_t i = 0; i < N; i += 1) {
-                this->elements[i] = args[i];
-            }
         }
 
         template<typename U>

@@ -135,7 +135,7 @@ namespace houseofatmos {
         const engine::Localization& local = this
             ->get<engine::Localization>(this->world->settings.localization());
         this->ui.with_element(this->world->settings.create_menu(
-            local, *this,
+            local,
             [this, window = &window]() {
                 this->world->settings.save_to(Settings::default_path);
                 this->show_root_menu(*window);

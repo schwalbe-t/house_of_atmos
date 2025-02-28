@@ -8,7 +8,7 @@ namespace houseofatmos::world {
     struct Resource {
 
         struct TypeInfo {
-            std::string local_name;
+            std::string_view local_name;
             engine::Model::LoadArgs model;
             engine::Texture::LoadArgs texture;
 
@@ -20,7 +20,7 @@ namespace houseofatmos::world {
             engine::FaceCulling::Enabled
         };
 
-        static inline const std::vector<TypeInfo> types = {
+        static inline const std::span<const TypeInfo> types = (TypeInfo[]) {
             // The 'true' in each texture loader is there to flip the loaded
             // texture vertically - this is needed since GLTF uses them flipped
             /* Coal */ {

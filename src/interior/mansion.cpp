@@ -26,23 +26,23 @@ namespace houseofatmos::interior {
 
     struct MaidTarget {
         Vec<3> position;
-        std::vector<u8> connections;
+        std::span<const u8> connections;
     };
 
     static const std::vector<MaidTarget> maid_targets = {
         // entrance hall
-        /* [0] */ (MaidTarget) { { -7.0, 0,  0.0 }, { 1, 2    } }, // center
-        /* [1] */ (MaidTarget) { { -6.0, 0, -3.0 }, { 0       } }, // plant
+        /* [0] */ (MaidTarget) { { -7.0, 0,  0.0 }, (u8[]) { 1, 2    } }, // center
+        /* [1] */ (MaidTarget) { { -6.0, 0, -3.0 }, (u8[]) { 0       } }, // plant
         // hallway
-        /* [2] */ (MaidTarget) { {  0.0, 0,  0.0 }, { 0, 3, 6 } }, // center
+        /* [2] */ (MaidTarget) { {  0.0, 0,  0.0 }, (u8[]) { 0, 3, 6 } }, // center
         // office
-        /* [3] */ (MaidTarget) { {  0.0, 0,  6.0 }, { 2, 4, 5 } }, // center
-        /* [4] */ (MaidTarget) { { -1.0, 0,  4.0 }, { 3       } }, // plant
-        /* [5] */ (MaidTarget) { {  1.5, 0,  4.5 }, { 3       } }, // bookshelf
+        /* [3] */ (MaidTarget) { {  0.0, 0,  6.0 }, (u8[]) { 2, 4, 5 } }, // center
+        /* [4] */ (MaidTarget) { { -1.0, 0,  4.0 }, (u8[]) { 3       } }, // plant
+        /* [5] */ (MaidTarget) { {  1.5, 0,  4.5 }, (u8[]) { 3       } }, // bookshelf
         // bedroom
-        /* [6] */ (MaidTarget) { {  5.0, 0,  0.0 }, { 2, 7, 8 } }, // center
-        /* [7] */ (MaidTarget) { {  5.0, 0, -2.5 }, { 6       } }, // bed
-        /* [8] */ (MaidTarget) { {  5.0, 0,  2.5 }, { 6       } }, // heater
+        /* [6] */ (MaidTarget) { {  5.0, 0,  0.0 }, (u8[]) { 2, 7, 8 } }, // center
+        /* [7] */ (MaidTarget) { {  5.0, 0, -2.5 }, (u8[]) { 6       } }, // bed
+        /* [8] */ (MaidTarget) { {  5.0, 0,  2.5 }, (u8[]) { 6       } }, // heater
     };
     static const u64 maid_start_target = 2;
 
@@ -142,7 +142,7 @@ namespace houseofatmos::interior {
             (Interior::Room) {
                 "entrance",
                 RelCollider({ -11, -1, -5 }, { 7, 6, 10 }),
-                {
+                (RelCollider[]) {
                     // wall colliders
                     RelCollider({  -4, -1, -5.5 }, { 1, 6,  4 }),
                     RelCollider({ -11, -1, -5.5 }, { 8, 6,  1 }),
@@ -157,7 +157,7 @@ namespace houseofatmos::interior {
             (Interior::Room) {
                 "hallway",
                 RelCollider({ -1004, -1, -1000 }, { 1008, 6, 2000 }),
-                {
+                (RelCollider[]) {
                     // wall colliders
                     RelCollider({ -4.00, -1, -2.5 }, { 8.00, 6, 1.0 }),
                     RelCollider({ -4.00, -1, -1.5 }, { 0.25, 6, 0.5 }),
@@ -171,7 +171,7 @@ namespace houseofatmos::interior {
             (Interior::Room) {
                 "bedroom",
                 RelCollider({ -1000, -1, -1000 }, { 2000, 6, 2000 }),
-                {
+                (RelCollider[]) {
                     // wall colliders
                     RelCollider({  3, -1, -5.5 }, { 1, 6,  4 }),
                     RelCollider({  3, -1,  1.5 }, { 1, 6,  4 }),
@@ -188,7 +188,7 @@ namespace houseofatmos::interior {
             (Interior::Room) {
                 "office",
                 RelCollider({ -3.5, -1, 2 }, { 7, 6, 10 }),
-                {
+                (RelCollider[]) {
                     // wall colliders
                     RelCollider({ -4.00, -1,   1.5 }, { 3.00, 6,  1.0 }),
                     RelCollider({ -4.00, -1,   1.5 }, { 1.00, 6, 11.0 }),

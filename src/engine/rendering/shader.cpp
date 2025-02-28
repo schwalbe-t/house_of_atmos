@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 namespace houseofatmos::engine {
 
     static std::string expand_shader_includes(
-        const std::string& source, const std::string& source_path
+        const std::string& source, std::string_view source_path
     ) {
         const std::string include_start = "#include ";
         std::string result = source;
@@ -37,7 +37,9 @@ namespace houseofatmos::engine {
                 path = include_path.string();
             }
             if(!fs::exists(path)) {
-                info("While expanding include from '" + source_path + "':");
+                info("While expanding include from '" 
+                    + std::string(source_path) + "':"
+                );
             }
             std::string contents = GenericResource::read_string(path);
             std::string expanded = expand_shader_includes(contents, path);
@@ -49,14 +51,14 @@ namespace houseofatmos::engine {
     }
 
     static GLint compile_shader(
-        std::string raw_source, const std::string& source_path, GLenum type
+        std::string_view raw_source, std::string_view source_path, GLenum type
     ) {
         GLint id = glCreateShader(type);
         if(id == 0) {
             error("Unable to initialize shader");
         }
         std::string expanded_source = expand_shader_includes(
-            raw_source, source_path
+            std::string(raw_source), source_path
         );
         const char* expanded_source_cstr = expanded_source.c_str();
         glShaderSource(id, 1, &expanded_source_cstr, NULL);
@@ -70,7 +72,9 @@ namespace houseofatmos::engine {
                 glDeleteShader(id);
                 std::string type_str = type == GL_VERTEX_SHADER
                     ? "vertex shader" : "fragment shader";
-                info("While compiling "+type_str+" at '"+source_path+"':");
+                info("While compiling " + type_str + " at '"
+                    + std::string(source_path) + "':"
+                );
                 error("Unable to compile shader (no log available)");
             }
             auto message = std::string(message_len, '\0');
@@ -79,7 +83,9 @@ namespace houseofatmos::engine {
             glDeleteShader(id);
             std::string type_str = type == GL_VERTEX_SHADER
                 ? "vertex shader" : "fragment shader";
-            info("While compiling "+type_str+" at '"+source_path+"':");
+            info("While compiling " + type_str + " at '"
+                + std::string(source_path) + "':"
+            );
             error("Unable to compile shader:\n" + message);
         }
         return id;
@@ -87,7 +93,7 @@ namespace houseofatmos::engine {
 
     static GLint link_shaders(
         GLint vert_id, GLint frag_id,
-        const std::string& vertex_path, const std::string& fragment_path
+        std::string_view vertex_path, std::string_view fragment_path
     ) {
         GLint id = glCreateProgram();
         if(id == 0) {
@@ -105,8 +111,8 @@ namespace houseofatmos::engine {
                 glDeleteShader(vert_id);
                 glDeleteShader(frag_id);
                 glDeleteProgram(id);
-                info("While linking program from '" + vertex_path
-                    + "' and '" + fragment_path + "':"
+                info("While linking program from '" + std::string(vertex_path)
+                    + "' and '" + std::string(fragment_path) + "':"
                 );
                 error("Unable to link shaders (no log available)");
             }
@@ -116,8 +122,8 @@ namespace houseofatmos::engine {
             glDeleteShader(vert_id);
             glDeleteShader(frag_id);
             glDeleteProgram(id);
-            info("While linking program from '" + vertex_path
-                + "' and '" + fragment_path + "':"
+            info("While linking program from '" + std::string(vertex_path)
+                + "' and '" + std::string(fragment_path) + "':"
             );
             error("Unable to link shaders:\n" + message);
         }
@@ -125,15 +131,15 @@ namespace houseofatmos::engine {
     }
 
     Shader::Shader(
-        const std::string& vertex_src, const std::string& fragment_src,
-        const std::string& vertex_file, const std::string& fragment_file
+        std::string_view vertex_src, std::string_view fragment_src,
+        std::string_view vertex_file, std::string_view fragment_file
     ) {
         this->next_slot = 0;
         this->vert_id = compile_shader(
-            vertex_src.data(), vertex_file, GL_VERTEX_SHADER
+            vertex_src, vertex_file, GL_VERTEX_SHADER
         );
         this->frag_id = compile_shader(
-            fragment_src.data(), fragment_file, GL_FRAGMENT_SHADER
+            fragment_src, fragment_file, GL_FRAGMENT_SHADER
         );
         this->prog_id = link_shaders(
             this->vert_id, this->frag_id, vertex_file, fragment_file
@@ -145,7 +151,8 @@ namespace houseofatmos::engine {
         std::string vertex_src = GenericResource::read_string(args.vertex_path);
         std::string fragment_src = GenericResource::read_string(args.fragment_path);
         return Shader(
-            vertex_src, fragment_src, args.vertex_path, args.fragment_path
+            vertex_src, fragment_src, 
+            args.vertex_path, args.fragment_path
         );
     }
 

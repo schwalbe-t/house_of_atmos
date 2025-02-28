@@ -36,12 +36,10 @@ namespace houseofatmos {
         Vec<3> offset;
         Vec<3> size;
     
-        RelCollider(Vec<3> offset, Vec<3> size) {
-            this->offset = offset;
-            this->size = size;
-        }
+        constexpr RelCollider(Vec<3> offset, Vec<3> size): 
+            offset(offset), size(size) {}
 
-        static RelCollider none() {
+        static constexpr RelCollider none() {
             Vec<3> inf = Vec<3>(INFINITY, INFINITY, INFINITY);
             return RelCollider(inf, inf);
         }

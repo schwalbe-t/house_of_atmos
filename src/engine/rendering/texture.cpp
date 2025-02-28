@@ -78,7 +78,7 @@ namespace houseofatmos::engine {
 
     Texture::Texture(u64 width, u64 height) {
         this->moved = true;
-        *this = std::move(Texture(width, height, nullptr));
+        *this = Texture(width, height, nullptr);
     }
 
     Texture::Texture(const Image& img) {
@@ -86,9 +86,9 @@ namespace houseofatmos::engine {
         // 'Image' stores the image vertically flipped to how OpenGL expects it
         Image img_flipped = img;
         img_flipped.mirror_vertical();
-        *this = std::move(Texture(
+        *this = Texture(
             img.width(), img.height(), (const u8*) img_flipped.data()
-        ));
+        );
     }
 
     Texture Texture::from_resource(const Texture::LoadArgs& args) {
@@ -146,7 +146,7 @@ namespace houseofatmos::engine {
         if(this->width() == width && this->height() == height && !this->moved) {
             return;
         }
-        *this = std::move(Texture(width, height));
+        *this = Texture(width, height);
     }
 
     void Texture::resize(u64 width, u64 height) {

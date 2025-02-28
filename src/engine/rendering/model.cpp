@@ -183,7 +183,7 @@ namespace houseofatmos::engine {
 
     static Mesh gltf_assemble_mesh(
         size_t mesh_i,
-        const std::vector<std::pair<Model::Attrib, Mesh::Attrib>>& attribs,
+        std::span<const std::pair<Model::Attrib, Mesh::Attrib>> attribs,
         const std::vector<GltfBufferView>& attribs_data,
         GltfBufferView indices
     ) {
@@ -241,7 +241,7 @@ namespace houseofatmos::engine {
     static void gltf_collect_primitives(
         tinygltf::Model& model, std::vector<Model::Primitive>& primitives,
         std::unordered_map<u64, size_t>& primitive_indices,
-        const std::vector<std::pair<Model::Attrib, Mesh::Attrib>>& attribs,
+        std::span<const std::pair<Model::Attrib, Mesh::Attrib>> attribs,
         const std::string& path
     ) {
         for(size_t mesh_i = 0; mesh_i < model.meshes.size(); mesh_i += 1) {
@@ -644,8 +644,8 @@ namespace houseofatmos::engine {
 
 
     Model Model::from_resource(const Model::LoadArgs& args) {
-        const std::string& path = args.path;
-        const std::vector<std::pair<Attrib, Mesh::Attrib>>& attribs 
+        std::string path = std::string(args.path);
+        std::span<const std::pair<Attrib, Mesh::Attrib>> attribs 
             = args.vertex_attributes;
         tinygltf::TinyGLTF loader;
         tinygltf::Model model;

@@ -9,15 +9,16 @@ namespace houseofatmos::engine {
 
     struct Localization {
         
-        static inline const std::string no_locale = "";
+        static inline const std::string_view no_locale = "";
 
         struct LoadArgs {
-            std::string path;
-            std::string locale;
+            std::string_view path;
+            std::string_view locale;
             
-            std::string identifier() const { return path + "|||" + locale; }
+            std::string identifier() const { return pretty_identifier(); }
             std::string pretty_identifier() const {
-                return "Localization[" + locale + "]@'" + path + "'"; 
+                return "Localization[" + std::string(locale) + "]@'" 
+                    + std::string(path) + "'"; 
             }
         };
         using Loader = Resource<Localization, LoadArgs>;
@@ -36,8 +37,8 @@ namespace houseofatmos::engine {
         static inline const std::string missing_local 
             = "[missing localization; check console]";
 
-        const std::string& text(const std::string& name) const {
-            auto value = this->values.find(name);
+        const std::string& text(std::string_view name) const {
+            auto value = this->values.find(std::string(name));
             if(value == this->values.end()) { return missing_local; }
             return value->second;
         }
@@ -45,9 +46,9 @@ namespace houseofatmos::engine {
         static inline const std::string placeholder = "{}";
 
         const std::string pattern(
-            const std::string& name, std::span<const std::string> values
+            std::string_view name, std::span<const std::string> values
         ) const {
-            auto pattern_pos = this->values.find(name);
+            auto pattern_pos = this->values.find(std::string(name));
             if(pattern_pos == this->values.end()) { return missing_local; }
             std::string result = pattern_pos->second;
             size_t ph_idx;
@@ -63,7 +64,7 @@ namespace houseofatmos::engine {
         }
 
         const std::string pattern(
-            const std::string& name, std::initializer_list<const std::string> values
+            std::string_view name, std::initializer_list<const std::string> values
         ) const {
             return this->pattern(name, std::span(values));
         }

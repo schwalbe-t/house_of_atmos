@@ -28,7 +28,8 @@ namespace houseofatmos::world {
             engine::Texture::LoadArgs texture;
         };
 
-        static const inline std::vector<HorseTypeInfo> horse_types = {
+        static const inline std::span<const HorseTypeInfo> horse_types
+                = (HorseTypeInfo[]) {
             // The 'true' in each texture loader is there to flip the loaded
             // texture vertically - this is needed since GLTF uses them flipped
             /* White */ {
@@ -80,23 +81,24 @@ namespace houseofatmos::world {
             
             engine::Model::LoadArgs model;
             Vec<3> carriage_offset;
-            std::vector<Vec<3>> horse_offsets;
-            std::vector<Driver> drivers;
+            std::span<const Vec<3>> horse_offsets;
+            std::span<const Driver> drivers;
             f64 wheel_radius;
             u64 capacity;
         };
 
-        static const inline std::vector<CarriageTypeInfo> carriage_types = {
+        static const inline std::span<const CarriageTypeInfo> carriage_types 
+                = (CarriageTypeInfo[]) {
             /* Round */ {
                 (engine::Model::LoadArgs) {
                     "res/entities/round_carriage.glb", Renderer::model_attribs,
                     engine::FaceCulling::Disabled
                 },
                 Vec<3>(0.0, 0.0, -1.5),
-                { // horses
+                (Vec<3>[]) { // horses
                     Vec<3>(0.0, 0.0, 4.5)
                 },
-                {
+                (CarriageTypeInfo::Driver[]) {
                     (CarriageTypeInfo::Driver) {
                         Vec<3>(0.0, 1.2, 2.35),
                         pi / 2.0 // 90 degrees

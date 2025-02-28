@@ -25,14 +25,16 @@ namespace houseofatmos {
 
     struct Renderer {
 
-        static const inline std::vector<engine::Mesh::Attrib> mesh_attribs = {
+        static const inline std::span<const engine::Mesh::Attrib> mesh_attribs 
+                = (engine::Mesh::Attrib[]) {
             { engine::Mesh::F32, 3 }, 
             { engine::Mesh::F32, 2 }, 
             { engine::Mesh::F32, 3 },
             { engine::Mesh::U8, 4 },
             { engine::Mesh::F32, 4 }
         };
-        static const inline std::vector<ModelAttrib> model_attribs = {
+        static const inline std::span<const ModelAttrib> model_attribs
+                = (ModelAttrib[]) {
             { engine::Model::Position, { engine::Mesh::F32, 3 } }, 
             { engine::Model::UvMapping, { engine::Mesh::F32, 2 } }, 
             { engine::Model::Normal, { engine::Mesh::F32, 3 } },

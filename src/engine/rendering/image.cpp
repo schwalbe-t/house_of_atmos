@@ -25,7 +25,9 @@ namespace houseofatmos::engine {
             &width, &height, nullptr, STBI_rgb_alpha
         );
         if(data == nullptr) {
-            error("The file '" + args.path + "' contains invalid image data!");
+            error("The file '" + std::string(args.path) 
+                + "' contains invalid image data!"
+            );
         }
         auto result = Image(width, height, (const u8*) data);
         stbi_image_free((void*) data);

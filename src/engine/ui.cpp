@@ -416,6 +416,7 @@ namespace houseofatmos::engine::ui {
         Manager& manager, Scene& scene, f64 unit
     ) const {
         if(this->font == nullptr) { return; }
+        if(!this->font->char_offsets_x.has_value()) { return; }
         if(this->text.size() == 0) { return; }
         Texture& tex = scene.get<Texture>(this->font->texture);
         std::vector<Manager::Instance> instances;
@@ -441,7 +442,7 @@ namespace houseofatmos::engine::ui {
             size_t idx = utf8_find_char_pos(this->font->chars, c);
             if(idx == std::string::npos) { idx = 0; }
             f64 width = this->font->char_widths[idx];
-            f64 src_offset_x = this->font->char_offsets_x[idx];
+            f64 src_offset_x = this->font->char_offsets_x->at(idx);
             Vec<2> src_size = Vec<2>(width, this->font->height);
             instances.push_back((Manager::Instance) {
                 this->font->offset + Vec<2>(src_offset_x, 0), 

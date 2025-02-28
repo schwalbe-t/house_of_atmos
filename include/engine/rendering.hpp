@@ -16,11 +16,11 @@ namespace houseofatmos::engine {
 
     struct Image {
         struct LoadArgs {
-            std::string path;
+            std::string_view path;
 
-            std::string identifier() const { return path; }
+            std::string identifier() const { return std::string(path); }
             std::string pretty_identifier() const {
-                return "Image@'" + path + "'"; 
+                return "Image@'" + std::string(path) + "'"; 
             }
         };
         using Loader = Resource<Image, LoadArgs>;
@@ -97,17 +97,18 @@ namespace houseofatmos::engine {
         static inline const bool no_mirror = true;
 
         struct LoadArgs {
-            std::string path;
+            std::string_view path;
             bool mirror_vertical = false;
 
             std::string identifier() const {
-                return this->path + "|" + (this->mirror_vertical? "v" : "n"); 
+                return std::string(this->path) 
+                    + "|" + (this->mirror_vertical? "v" : "n"); 
             }
             std::string pretty_identifier() const {
                 return std::string("Texture[") +
                     + (this->mirror_vertical? "vertical mirror" : "no mirror")
                     + "]@'" 
-                    + this->path 
+                    + std::string(this->path) 
                     + "'"; 
             }
         };
@@ -218,14 +219,16 @@ namespace houseofatmos::engine {
 
     struct Shader {
         struct LoadArgs {
-            std::string vertex_path;
-            std::string fragment_path;
+            std::string_view vertex_path;
+            std::string_view fragment_path;
 
             std::string identifier() const {
-                return vertex_path + "|||" + fragment_path;
+                return std::string(vertex_path) 
+                    + "|||" + std::string(fragment_path);
             }
             std::string pretty_identifier() const {
-                return "Shader@'" + vertex_path + "'&'" + fragment_path + "'";
+                return "Shader@'" + std::string(vertex_path) + "'&'" 
+                    + std::string(fragment_path) + "'";
             }
         };
         using Loader = Resource<Shader, LoadArgs>;
@@ -251,9 +254,9 @@ namespace houseofatmos::engine {
 
         public:
         Shader(
-            const std::string& vertex_src, const std::string& fragment_src,
-            const std::string& vertex_file = "<unknown>",
-            const std::string& fragment_file = "<unknown>"
+            std::string_view vertex_src, std::string_view fragment_src,
+            std::string_view vertex_file = "<unknown>",
+            std::string_view fragment_file = "<unknown>"
         );
         static Shader from_resource(const LoadArgs& args);
         Shader(const Shader& other) = delete;
