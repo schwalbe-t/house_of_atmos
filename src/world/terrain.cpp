@@ -1143,7 +1143,7 @@ namespace houseofatmos::world {
         );
         buffer.copy_array_at_into(
             serialized.resources_offset, serialized.resources_count,
-            this->paths
+            this->resources
         );
     }
 

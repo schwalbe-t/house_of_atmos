@@ -607,6 +607,8 @@ namespace houseofatmos::world {
         const engine::Localization* local, const research::Research* research
     );
 
+    static const size_t max_column_variants = 15;
+
     static ui::Element create_variant_selector(
         ui::Manager* ui, ui::Element* dest, ui::Element* selected,
         const BuildingGroup& group,
@@ -620,31 +622,50 @@ namespace houseofatmos::world {
             )
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .as_movable();
-        for(const ConstructionMode::BuildingVariant& variant: group.variants) {
-            bool is_unlocked = !variant.required_advancement.has_value()
-                || research->is_unlocked(*variant.required_advancement);
-            if(!is_unlocked) { continue; }
-            if(variant.conversions.size() == 0) { continue; }
-            if(variant.conversions.at(0).outputs.size() == 0) { continue; }
-            const Item::TypeInfo& result = Item::items
-                .at((size_t) variant.conversions.at(0).outputs.at(0).item);
-            selector.children.push_back(TerrainMap::create_selection_item(
-                result.icon, local->text(result.local_name), false,
-                [
-                    ui, dest, selected, s_type, s_variant, local, 
-                    type = group.type, variant = &variant, research
-                ]() {
-                    *s_type = type;
-                    *s_variant = variant;
-                    *dest = create_building_selector(
-                        ui, dest, selected, s_type, s_variant, local, research
-                    );
-                    *selected = TerrainMap::display_building_info(
-                        *s_type, variant->conversions, *local
-                    );
-                }
-            ));
+        ui::Element container = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .as_movable();
+        size_t column_count = (group.variants.size() / max_column_variants) + 1;
+        for(size_t column_i = 0; column_i < column_count; column_i += 1) {
+            ui::Element column = ui::Element()
+                .with_size(0, 0, ui::size::units_with_children)
+                .with_list_dir(ui::Direction::Vertical)
+                .as_movable();
+            size_t first_var_i = column_i * max_column_variants;
+            size_t end_var_i = std::min(
+                first_var_i + max_column_variants, group.variants.size()
+            );
+            for(size_t var_i = first_var_i; var_i < end_var_i; var_i += 1) {
+                const auto& variant = group.variants[var_i];
+                bool is_unlocked = !variant.required_advancement.has_value()
+                    || research->is_unlocked(*variant.required_advancement);
+                if(!is_unlocked) { continue; }
+                if(variant.conversions.size() == 0) { continue; }
+                if(variant.conversions.at(0).outputs.size() == 0) { continue; }
+                const Item::TypeInfo& result = Item::items
+                    .at((size_t) variant.conversions.at(0).outputs.at(0).item);
+                column.children.push_back(TerrainMap::create_selection_item(
+                    result.icon, local->text(result.local_name), false,
+                    [
+                        ui, dest, selected, s_type, s_variant, local, 
+                        type = group.type, variant = &variant, research
+                    ]() {
+                        *s_type = type;
+                        *s_variant = variant;
+                        *dest = create_building_selector(
+                            ui, dest, selected, s_type, s_variant, 
+                            local, research
+                        );
+                        *selected = TerrainMap::display_building_info(
+                            *s_type, variant->conversions, *local
+                        );
+                    }
+                ));
+            }
+            container.children.push_back(std::move(column));
         }
+        selector.children.push_back(std::move(container));
         return selector;
     }   
 
@@ -997,10 +1018,17 @@ namespace houseofatmos::world {
 
 
 
+    static const std::vector<std::optional<research::Research::Advancement>> 
+            required_bridge_advancements = {
+        std::nullopt, // Bridge::Type::Wooden
+        std::nullopt, // Bridge::Type::Stone
+        research::Research::RewardSteelBridges
+    };
+
     static ui::Element create_bridge_selector(
         ui::Manager* ui, ui::Element* dest,
         Bridge::Type* s_type,
-        const engine::Localization* local
+        const engine::Localization* local, const research::Research* research
     ) {
         ui::Element selector 
             = TerrainMap::create_selection_container(
@@ -1009,13 +1037,19 @@ namespace houseofatmos::world {
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .as_movable();
         for(size_t type_id = 0; type_id < Bridge::types.size(); type_id += 1) {
-            const Bridge::TypeInfo& type = Bridge::types[(size_t) type_id];
+            auto r_advancement = required_bridge_advancements[type_id];
+            bool unlocked = !r_advancement.has_value()
+                || research->is_unlocked(*r_advancement);
+            if(!unlocked) { continue; }
+            const Bridge::TypeInfo& type = Bridge::types[type_id];
             selector.children.push_back(TerrainMap::create_selection_item(
                 type.icon, local->text(type.local_name), 
                 (size_t) *s_type == type_id,
-                [ui, dest, s_type, local, type_id]() {
+                [ui, dest, s_type, local, research, type_id]() {
                     *s_type = (Bridge::Type) type_id;
-                    *dest = create_bridge_selector(ui, dest, s_type, local);
+                    *dest = create_bridge_selector(
+                        ui, dest, s_type, local, research
+                    );
                 }
             ));
         }
@@ -1030,7 +1064,8 @@ namespace houseofatmos::world {
         this->ui.root.children.push_back(ui::Element());
         ui::Element* selector = &this->ui.root.children.back();
         *selector = create_bridge_selector(
-            &this->ui, selector, this->selected_type.get(), &local
+            &this->ui, selector, this->selected_type.get(), 
+            &local, &this->world->research
         );
     }
 

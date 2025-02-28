@@ -751,7 +751,7 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Horizontal)
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .as_movable();
-        size_t column_count = items.size() / max_column_items;
+        size_t column_count = (items.size() / max_column_items) + 1;
         for(size_t column_i = 0; column_i < column_count; column_i += 1) {
             ui::Element column = ui::Element()
                 .with_size(0, 0, ui::size::units_with_children)

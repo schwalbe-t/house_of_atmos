@@ -258,7 +258,7 @@ namespace houseofatmos::world {
                     u64 produced = allowed_times * count;
                     research.report_item_production(item, produced);
                     if(item == Item::Coins) {
-                        balance.coins += this->stored_count(Item::Coins);
+                        balance.coins += produced;
                     }
                     if(!storable) { continue; }
                     this->add_stored(item, produced);
