@@ -923,9 +923,9 @@
     },
     "dialogue_tutorial_1_prompt_8": {
         "_context": "Explains to the user that they can create bridges by clicking the bridge icon in the bottom left",
-        "en": "Click the bridge icon in the bottom left of the screen to open the bridge menu.",
-        "de": "Klicke das Brückensymbol unten links, um das Brückenmenü zu öffnen.",
-        "bg": "Кликни върху иконата на моста в долния ляв ъгъл, за да отвориш менюто за мостове."
+        "en": "Click the bridge icon in the bottom left of the screen or press [B] to open the bridge menu.",
+        "de": "Klicke das Brückensymbol unten links oder drücke [M], um das Brückenmenü zu öffnen.",
+        "bg": "Кликни върху иконата на моста в долния ляв ъгъл или натисни [B], за да отвориш менюто за мостове."
     },
     "dialogue_tutorial_1_prompt_9": {
         "_context": "Continuation of 'dialogue_tutorial_1_prompt_9'",
@@ -947,9 +947,9 @@
     },
     "dialogue_tutorial_1_prompt_12": {
         "_context": "Informs the user how to open the build menu.",
-        "en": "Clicking the hammer icon in the bottom left of the screen opens the construction menu.",
-        "de": "Klicke auf das Hammersymbol unten links, um das Baumenü zu öffnen.",
-        "bg": "Кликни върху иконата с чук в долния ляв ъгъл, за да отвориш строителното меню."
+        "en": "Clicking the hammer icon in the bottom left of the screen or pressing [C] opens the construction menu.",
+        "de": "Klicke auf das Hammersymbol unten links oder drücke [C], um das Baumenü zu öffnen.",
+        "bg": "Кликни върху иконата с чук в долния ляв ъгъл или натисни [C], за да отвориш строителното меню."
     },
     "dialogue_tutorial_1_prompt_13": {
         "_context": "Informs the user about the production statistics in the map.",
@@ -977,9 +977,9 @@
     },
     "dialogue_tutorial_1_prompt_17": {
         "_context": "Informs the user how to add / remove paths.",
-        "en": "Open the pathing menu by clicking the trowel (right-most) icon in the bottom left.",
-        "de": "Öffne das Pfadmenü, indem du das Kellensymbol (ganz rechts) unten links anklickst.",
-        "bg": "Отвори менюто за пътеки, като кликнеш върху иконата с мистрия (най-вдясно) в долния ляв ъгъл."
+        "en": "Open the pathing menu by clicking the trowel (right-most) icon in the bottom left or by pressing [V].",
+        "de": "Öffne das Pfadmenü, indem du das Kellensymbol (ganz rechts) unten links anklickst oder [V] drückst.",
+        "bg": "Отвори менюто за пътеки, като кликнеш върху иконата с мистрия (най-вдясно) в долния ляв ъгъл или натиснеш [V]."
     },
     "dialogue_tutorial_1_prompt_18": {
         "_context": "Informs the user how to use the pathing mode.",

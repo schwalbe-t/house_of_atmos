@@ -340,22 +340,22 @@ namespace houseofatmos::world {
             { 
                 { Conversion(
                     {}, 
-                    { { 10, Item::Wheat } }, 
-                    10.0 
+                    { { 8, Item::Wheat } }, 
+                    8.0 
                 ) }
             },
             { 
                 { Conversion(
                     {}, 
-                    { { 10, Item::Barley } }, 
-                    10.0 
+                    { { 8, Item::Barley } }, 
+                    8.0 
                 ) }
             },
             { 
                 { Conversion(
                     {}, 
-                    { { 10, Item::Hops } }, 
-                    10.0 
+                    { { 8, Item::Hops } }, 
+                    8.0 
                 ) }
             }
         }),
@@ -438,21 +438,21 @@ namespace houseofatmos::world {
             { 
                 { Conversion( 
                     { { 1, Item::Cattle } }, 
-                    { { 16, Item::Milk } }, 
-                    16.0
+                    { { 8, Item::Milk } }, 
+                    4.0
                 ) }
             },
             { 
                 { Conversion( 
                     { { 1, Item::Cattle } }, 
-                    { { 8, Item::Beef } }, 
-                    8.0
+                    { { 4, Item::Beef } }, 
+                    4.0
                 ) }
             },
             { 
                 { Conversion( 
                     { { 1, Item::Cattle } }, 
-                    { { 8, Item::Leather } }, 
+                    { { 2, Item::Leather } }, 
                     8.0
                 ) }
             },
@@ -460,7 +460,7 @@ namespace houseofatmos::world {
                 { Conversion( 
                     { { 2, Item::IronOre }, { 1, Item::Coal } }, 
                     { { 2, Item::Steel } }, 
-                    5.0 
+                    4.0 
                 ) },
                 std::nullopt,
                 research::Research::RewardSteel
@@ -478,28 +478,28 @@ namespace houseofatmos::world {
                 { Conversion( 
                     { { 2, Item::CopperOre }, { 1, Item::ZincOre }, { 1, Item::Coal } }, 
                     { { 3, Item::Brass } }, 
-                    5.0 
+                    4.0 
                 ) }
             },
             { 
                 { Conversion( 
                     { { 1, Item::Brass } }, 
                     { { 4, Item::BrassRods } }, 
-                    3.0 
+                    2.0 
                 ) }
             },
             { 
                 { Conversion( 
                     { { 1, Item::Brass } }, 
                     { { 1, Item::BrassPlates } }, 
-                    5.0
+                    2.0
                 ) }
             },
             { 
                 { Conversion( 
                     { { 1, Item::BrassPlates }, { 4, Item::BrassRods } }, 
                     { { 4, Item::BrassGears } }, 
-                    5.0
+                    2.0
                 ) }
             },
             { 
@@ -518,9 +518,9 @@ namespace houseofatmos::world {
             },
             { 
                 { Conversion( 
-                    { { 4, Item::Milk }, { 1, Item::Salt } }, 
+                    { { 8, Item::Milk }, { 1, Item::Salt } }, 
                     { { 4, Item::Cheese } }, 
-                    4.0
+                    8.0
                 ) },
                 std::nullopt,
                 research::Research::RewardCheese
@@ -546,8 +546,8 @@ namespace houseofatmos::world {
             { 
                 { Conversion( 
                     { { 4, Item::Malt }, { 2, Item::Hops }, { 1, Item::Coal } }, 
-                    { { 5, Item::Beer } }, 
-                    5.0
+                    { { 4, Item::Beer } }, 
+                    8.0
                 ) },
                 std::nullopt,
                 research::Research::RewardBeer
@@ -643,8 +643,8 @@ namespace houseofatmos::world {
             { 
                 { Conversion( 
                     {}, 
-                    { { 10, Item::Wood } }, 
-                    10.0 
+                    { { 8, Item::Wood } }, 
+                    8.0 
                 ) }
             }
         })
