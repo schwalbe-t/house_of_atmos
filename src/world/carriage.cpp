@@ -5,16 +5,83 @@
 
 namespace houseofatmos::world {
 
+    static std::vector<Carriage::HorseTypeInfo> horse_infos = {
+        // The 'true' in each texture loader is there to flip the loaded
+        // texture vertically - this is needed since GLTF uses them flipped
+        /* White */ {
+            (engine::Texture::LoadArgs) { 
+                "res/entities/horse_white.png", 
+                engine::Texture::vertical_mirror
+            }
+        },
+        /* WhiteSpotted */ {
+            (engine::Texture::LoadArgs) { 
+                "res/entities/horse_white_spotted.png",
+                engine::Texture::vertical_mirror
+            }
+        },
+        /* Brown */ {
+            (engine::Texture::LoadArgs) { 
+                "res/entities/horse_brown.png",
+                engine::Texture::vertical_mirror
+            }
+        },
+        /* BrownSpotted */ {
+            (engine::Texture::LoadArgs) { 
+                "res/entities/horse_brown_spotted.png",
+                engine::Texture::vertical_mirror
+            }
+        },
+        /* BlackSpotted */ {
+            (engine::Texture::LoadArgs) { 
+                "res/entities/horse_black_spotted.png",
+                engine::Texture::vertical_mirror
+            }
+        }
+    };
+
+    const std::vector<Carriage::HorseTypeInfo>& Carriage::horse_types() {
+        return horse_infos;
+    }
+
+    static std::vector<Carriage::CarriageTypeInfo> carriage_infos = {
+        /* Round */ {
+            engine::Model::LoadArgs(
+                "res/entities/round_carriage.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            ),
+            Vec<3>(0.0, 0.0, -1.5),
+            { // horses
+                Vec<3>(0.0, 0.0, 4.5)
+            },
+            {
+                (Carriage::CarriageTypeInfo::Driver) {
+                    Vec<3>(0.0, 1.2, 2.35),
+                    pi / 2.0 // 90 degrees
+                }
+            },
+            0.5, // wheel radius
+            100 // capacity
+        }
+    };
+
+    const std::vector<Carriage::CarriageTypeInfo>& Carriage::carriage_types() {
+        return carriage_infos;
+    }
+
+
+
     Carriage::Carriage(
         CarriageType type, Vec<3> position,
         StatefulRNG rng
     ) {
         this->type = type;
-        CarriageTypeInfo type_info = Carriage::carriage_types[(size_t) type];
+        CarriageTypeInfo type_info = Carriage::carriage_types()
+            .at((size_t) type);
         this->horses = std::vector<HorseType>(type_info.horse_offsets.size());
         for(size_t horse_i = 0; horse_i < this->horses.size(); horse_i += 1) {
             this->horses.at(horse_i) = (HorseType) (
-                rng.next_u64() % Carriage::horse_types.size()
+                rng.next_u64() % Carriage::horse_types().size()
             );
         }
         this->curr_target_i = 0;
@@ -110,7 +177,7 @@ namespace houseofatmos::world {
         bool is_visible
     ) {
         const CarriageTypeInfo& type_info 
-            = Carriage::carriage_types[(size_t) this->type];
+            = Carriage::carriage_types().at((size_t) this->type);
         this->moving = this->state == State::Travelling;
         if(this->state == State::Travelling) {
             // update position
@@ -215,14 +282,14 @@ namespace houseofatmos::world {
         const engine::Texture* override_texture
     ) {
         CarriageTypeInfo carriage_info 
-            = Carriage::carriage_types[(size_t) this->type];
+            = Carriage::carriage_types().at((size_t) this->type);
         // render horses
         engine::Model& horse_model = scene
             .get<engine::Model>(Carriage::horse_model);
         for(size_t horse_i = 0; horse_i < this->horses.size(); horse_i += 1) {
             HorseType horse_type = this->horses.at(horse_i);
             HorseTypeInfo horse_info 
-                = Carriage::horse_types[(size_t) horse_type];
+                = Carriage::horse_types().at((size_t) horse_type);
             const engine::Texture& horse_texture = scene
                 .get<engine::Texture>(horse_info.texture);
             const engine::Animation& horse_animation = this->moving

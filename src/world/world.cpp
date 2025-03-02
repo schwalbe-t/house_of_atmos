@@ -127,7 +127,8 @@ namespace houseofatmos::world {
     static bool building_placement_allowed(
         const Terrain& terrain, u64 x, u64 z, Building::Type type
     ) {
-        const Building::TypeInfo& type_info = Building::types[(size_t) type];
+        const Building::TypeInfo& type_info = Building::types()
+            .at((size_t) type);
         return terrain.vert_area_above_water(
             x, z, x + type_info.width, z + type_info.height
         ) && terrain.vert_area_elev_mutable(
@@ -141,6 +142,20 @@ namespace houseofatmos::world {
     static const u64 pwalk_min_step = 3; // minimum step size of a path walker
     static const u64 pwalk_max_step = 5; // maximum step size of a path walker
     static const u64 pwalk_step_count = 20; // fairly large value
+    static Complex::Member settlement_plaza_cm = Complex::Member({
+        Conversion({ { 1, Item::Bread } }, { { 10, Item::Coins } }, 0.05),
+        Conversion({ { 1, Item::Milk } }, { { 10, Item::Coins } }, 0.05),
+        Conversion({ { 1, Item::Cheese } }, { { 30, Item::Coins } }, 0.1),
+        Conversion({ { 1, Item::Steak } }, { { 30, Item::Coins } }, 0.1),
+        Conversion({ { 1, Item::Beer } }, { { 30, Item::Coins } }, 0.1),
+        Conversion({ { 1, Item::Oil } }, { { 30, Item::Coins } }, 0.1),
+        Conversion({ { 1, Item::OilLanterns} }, { { 30, Item::Coins } }, 0.1),
+        Conversion({ { 1, Item::Clothing } }, { { 50, Item::Coins } }, 0.2),
+        Conversion({ { 1, Item::Tools } }, { { 75, Item::Coins } }, 0.4),
+        Conversion({ { 1, Item::Watches } }, { { 75, Item::Coins } }, 0.4),
+        Conversion({ { 1, Item::Armor } }, { { 100, Item::Coins } }, 0.5),
+        Conversion({ { 1, Item::BrassPots } }, { { 100, Item::Coins } }, 0.5)
+    });
 
     void World::generate_settlement(
         u64 center_x, u64 center_z, StatefulRNG& rng
@@ -188,22 +203,12 @@ namespace houseofatmos::world {
         }
         // generate plaza
         const Building::TypeInfo& plaza_info
-            = Building::types[(size_t) Building::Plaza];
+            = Building::types().at((size_t) Building::Plaza);
         ComplexId plaza_complex_i = this->complexes.create_complex();
         Complex& plaza_complex = this->complexes.get(plaza_complex_i);
         u64 plaza_x = center_x - plaza_info.width / 2;
         u64 plaza_z = center_z - plaza_info.height / 2;
-        plaza_complex.add_member(plaza_x, plaza_z, Complex::Member(std::vector {
-            Conversion({ { 1, Item::Bread } }, { { 10, Item::Coins } }, 0.025),
-            Conversion({ { 1, Item::Cheese } }, { { 20, Item::Coins } }, 0.05),
-            Conversion({ { 1, Item::Steak } }, { { 30, Item::Coins } }, 0.1),
-            Conversion({ { 1, Item::Milk } }, { { 20, Item::Coins } }, 0.05),
-            Conversion({ { 1, Item::Beer } }, { { 30, Item::Coins } }, 0.1),
-            Conversion({ { 1, Item::Clothing } }, { { 50, Item::Coins } }, 0.125),
-            Conversion({ { 1, Item::Armor } }, { { 100, Item::Coins } }, 0.125),
-            Conversion({ { 1, Item::Tools } }, { { 50, Item::Coins } }, 0.125),
-            Conversion({ { 1, Item::Oil } }, { { 30, Item::Coins } }, 0.1)
-        }));
+        plaza_complex.add_member(plaza_x, plaza_z, settlement_plaza_cm);
         this->terrain.place_building(
             Building::Plaza, plaza_x, plaza_z, plaza_complex_i
         );
@@ -296,7 +301,7 @@ namespace houseofatmos::world {
         }
         auto [mansion_x, mansion_z] = this->generate_mansion();
         const Building::TypeInfo& mansion 
-            = Building::types[(size_t) Building::Mansion];
+            = Building::types().at((size_t) Building::Mansion);
         Vec<3> mansion_center_tile = Vec<3>(mansion_x, 0, mansion_z)
             + Vec<3>(mansion.width / 2.0, 0, mansion.height / 2.0);
         Vec<3> player_spawn_tile = mansion_center_tile + Vec<3>(0, 0, 0.5);

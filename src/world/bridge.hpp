@@ -18,97 +18,17 @@ namespace houseofatmos::world {
             const ui::Background* icon;
             engine::Model::LoadArgs model;
             // in-game units, relative to center
-            std::span<const RelCollider> horizontal_colliders;
-            std::span<const RelCollider> vertical_colliders;
+            std::vector<RelCollider> horizontal_colliders;
+            std::vector<RelCollider> vertical_colliders;
             i64 min_height;
             i64 max_height;
             u64 cost_per_tile;
         };
 
-        static inline const std::span<const TypeInfo> types = (TypeInfo[]) {
-            /* Type::Wooden */ {
-                "bridge_name_wooden",
-                &ui_icon::wooden_bridge,
-                { 
-                    "res/bridges/wooden_bridge.glb", Renderer::model_attribs,
-                    engine::FaceCulling::Enabled
-                },
-                (RelCollider[]) {
-                    RelCollider({ -2.5, -3.0, -2.5 }, { 5.0, 2.5, 5.0 }),
-                    RelCollider({ -2.5 - 0.125, 0, -2.5 - 0.125 }, { 5.0 + 0.25, 1, 0.25 }),
-                    RelCollider({ -2.5 - 0.125, 0,  2.5 - 0.125 }, { 5.0 + 0.25, 1, 0.25 }),
-
-                    RelCollider({ -2.5 - 0.125, -12,  -2.5 - 0.125 }, { 0.25, 12, 0.25 }),
-                    RelCollider({ -2.5 - 0.125, -12,   2.5 - 0.125 }, { 0.25, 12, 0.25 }),
-                    RelCollider({  2.5 - 0.125, -12,  -2.5 - 0.125 }, { 0.25, 12, 0.25 }),
-                    RelCollider({  2.5 - 0.125, -12,   2.5 - 0.125 }, { 0.25, 12, 0.25 })
-                },
-                (RelCollider[]) {
-                    RelCollider({ -2.5, -3.0, -2.5 }, { 5.0, 2.5, 5.0 }),
-                    RelCollider({ -2.5 - 0.125, 0, -2.5 - 0.125 }, { 0.25, 1, 5.0 + 0.25 }),
-                    RelCollider({  2.5 - 0.125, 0, -2.5 - 0.125 }, { 0.25, 1, 5.0 + 0.25 }),
-
-                    RelCollider({ -2.5 - 0.125, 0,  -2.5 - 0.125 }, { 0.25, 1, 0.25 }),
-                    RelCollider({ -2.5 - 0.125, 0,   2.5 - 0.125 }, { 0.25, 1, 0.25 }),
-                    RelCollider({  2.5 - 0.125, 0,  -2.5 - 0.125 }, { 0.25, 1, 0.25 }),
-                    RelCollider({  2.5 - 0.125, 0,   2.5 - 0.125 }, { 0.25, 1, 0.25 })
-                },
-                // min and max height (distance of terrain / water to bridge floor)
-                3, 12, 
-                1000 // cost of bridge per tile
-            },
-            /* Type::Stone */ {
-                "bridge_name_stone",
-                &ui_icon::stone_bridge,
-                { 
-                    "res/bridges/stone_bridge.glb", Renderer::model_attribs, 
-                    engine::FaceCulling::Enabled 
-                },
-                (RelCollider[]) {
-                    RelCollider({ -2.5, -1.0, -2.5 }, { 5.0, 0.5, 5.0 }),
-                    RelCollider({ -2.5, 0, -2.5 }, { 5.0, 1, 0.5 }),
-                    RelCollider({ -2.5, 0,  2.0 }, { 5.0, 1, 0.5 }),
-
-                    RelCollider({ -2.5, -18, -2.5 }, { 0.5, 17, 5.0 }),
-                    RelCollider({  2.0, -18, -2.5 }, { 0.5, 17, 5.0 })
-                },
-                (RelCollider[]) {
-                    RelCollider({ -2.5, -1.0, -2.5 }, { 5.0, 0.5, 5.0 }),
-                    RelCollider({ -2.5, 0, -2.5 }, { 0.5, 1, 5.0 }),
-                    RelCollider({  2.0, 0, -2.5 }, { 0.5, 1, 5.0 }),
-
-                    RelCollider({ -2.5, -18, -2.5 }, { 5.0, 17, 0.5 }),
-                    RelCollider({ -2.5, -18,  2.0 }, { 5.0, 17, 0.5 })
-                },
-                // min and max height (distance of terrain / water to bridge floor)
-                2, 18,
-                2000 // cost of bridge per tile
-            },
-            /* Type::Metal */ {
-                "bridge_name_metal",
-                &ui_icon::metal_bridge,
-                { 
-                    "res/bridges/metal_bridge.glb", Renderer::model_attribs,
-                    engine::FaceCulling::Disabled
-                },
-                (RelCollider[]) {
-                    RelCollider({ -2.5, -1.0, -2.5 }, { 5.0, 0.5, 5.0 }),
-                    RelCollider({ -2.5 - 0.25, 0, -2.5 - 0.25 }, { 5.0 + 0.5, 1, 0.5 }),
-                    RelCollider({ -2.5 - 0.25, 0,  2.5 - 0.25 }, { 5.0 + 0.5, 1, 0.5 }),
-                },
-                (RelCollider[]) {
-                    RelCollider({ -2.5, -1.0, -2.5 }, { 5.0, 0.5, 5.0 }),
-                    RelCollider({ -2.5 - 0.25, 0, -2.5 - 0.25 }, { 0.5, 1, 5.0 + 0.5 }),
-                    RelCollider({  2.5 - 0.25, 0, -2.5 - 0.25 }, { 0.5, 1, 5.0 + 0.5 }),
-                },
-                // min and max height (distance of terrain / water to bridge floor)
-                1, 1024,
-                3000 // cost of bridge per tile
-            }
-        };
+        static const std::vector<TypeInfo>& types();
 
         static void load_models(engine::Scene& scene) {
-            for(const TypeInfo& type: Bridge::types) {
+            for(const TypeInfo& type: Bridge::types()) {
                 scene.load(engine::Model::Loader(type.model));
             }
         }
@@ -127,7 +47,7 @@ namespace houseofatmos::world {
         i16 floor_y; // elevation of the bridge floor
 
         const TypeInfo& get_type_info() const {
-            return Bridge::types[(size_t) this->type];
+            return Bridge::types().at((size_t) this->type);
         }
 
         bool is_vertical() const {
@@ -147,7 +67,7 @@ namespace houseofatmos::world {
                 + (this->end_z - this->start_z);
         }
 
-        const std::span<const RelCollider> colliders() const {
+        std::span<const RelCollider> colliders() const {
             if(this->is_vertical()) { 
                 return this->get_type_info().vertical_colliders; 
             }

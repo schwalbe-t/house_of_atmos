@@ -438,7 +438,7 @@ namespace houseofatmos::world {
         Item::Type type, const std::string& count, 
         const engine::Localization& local, f64* text_v_pad_out
     ) {
-        const Item::TypeInfo& item = Item::items[(size_t) type];
+        const Item::TypeInfo& item = Item::types().at((size_t) type);
         std::string text = count + " "
             + local.text(item.local_name) + " ";
         f64 txt_pad = (item.icon->edge_size.y() - ui_font::dark.height) / 2;
@@ -541,7 +541,7 @@ namespace houseofatmos::world {
         Building::Type type, std::span<const Conversion> conversions,
         const engine::Localization& local
     ) {
-        const Building::TypeInfo& building = Building::types[(size_t) type];
+        const Building::TypeInfo& building = Building::types().at((size_t) type);
         std::string worker_info = building.residents > building.workers
             ? local.pattern(
                 "ui_provided_workers", 
@@ -763,7 +763,7 @@ namespace houseofatmos::world {
             );
             for(size_t item_i = first_item_i; item_i < end_item_i; item_i += 1) {
                 Item::Type item = items[item_i];
-                const Item::TypeInfo& item_info = Item::items[(size_t) item];
+                const Item::TypeInfo& item_info = Item::types().at((size_t) item);
                 column.children.push_back(TerrainMap::create_selection_item(
                     item_info.icon, local.text(item_info.local_name), false,
                     [item, handler]() { (*handler)(item); }
@@ -813,7 +813,7 @@ namespace houseofatmos::world {
                 break;
         }
         std::string_view local_item 
-            = Item::items[(size_t) target->item].local_name;
+            = Item::types().at((size_t) target->item).local_name;
         ui::Element info = ui::Element()
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
@@ -940,8 +940,8 @@ namespace houseofatmos::world {
                 .with_click_handler([this, target]() {
                     this->adding_stop = false;
                     std::vector<Item::Type> transferrable;
-                    for(size_t item_i = 0; item_i < Item::items.size(); item_i += 1) {
-                        if(!Item::items[item_i].storable) { continue; }
+                    for(size_t item_i = 0; item_i < Item::types().size(); item_i += 1) {
+                        if(!Item::types().at(item_i).storable) { continue; }
                         transferrable.push_back((Item::Type) item_i);
                     }
                     *this->selected_info_bottom 

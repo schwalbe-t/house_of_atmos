@@ -19,7 +19,7 @@ namespace houseofatmos::world {
         Vec<3> pos;
         bool found_pos = false;
         const Building::TypeInfo& stable
-            = Building::types[(size_t) Building::Stable];
+            = Building::types().at((size_t) Building::Stable);
         i64 start_x = stable_x - carr_spawn_d;
         i64 start_z = stable_z - carr_spawn_d;
         i64 end_x = stable_x + stable.width + carr_spawn_d;
@@ -693,9 +693,9 @@ namespace houseofatmos::world {
                 if(!is_unlocked) { continue; }
                 if(variant.conversions.size() == 0) { continue; }
                 if(variant.conversions.at(0).outputs.size() == 0) { continue; }
-                const Item::TypeInfo& result = Item::items[
+                const Item::TypeInfo& result = Item::types().at(
                     (size_t) variant.conversions.at(0).outputs[0].item
-                ];
+                );
                 column.children.push_back(TerrainMap::create_selection_item(
                     result.icon, local->text(result.local_name), false,
                     [
@@ -734,9 +734,8 @@ namespace houseofatmos::world {
             .as_movable();
         for(const BuildingGroup& group: buildable) {
             const BuildingGroup* group_ptr = &group;
-            const Building::TypeInfo& type = Building::types[
-                (size_t) group.type
-            ];
+            const Building::TypeInfo& type = Building::types()
+                .at((size_t) group.type);
             selector.children.push_back(TerrainMap::create_selection_item(
                 type.icon, local->text(type.local_name), *s_type == group.type,
                 [
@@ -835,6 +834,8 @@ namespace houseofatmos::world {
         bool matches_current = viewed_chunk_x == this->last_viewed_chunk_x
             && viewed_chunk_z == this->last_viewed_chunk_z;
         if(matches_current) { return; }
+        this->last_viewed_chunk_x = viewed_chunk_x;
+        this->last_viewed_chunk_z = viewed_chunk_z;
         this->chunk_overlays.clear();
         u64 s_chunk_x = (u64) std::max(
             (i64) viewed_chunk_x - terrain_overlay_r, (i64) 0
@@ -963,7 +964,7 @@ namespace houseofatmos::world {
         (void) renderer;
         if(!this->permitted) { return; }
         const Building::TypeInfo& type_info 
-            = Building::types[(size_t) *this->selected_type];
+            = Building::types().at((size_t) *this->selected_type);
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer,
             Vec<3>(type_info.width / 2.0, 0, type_info.height / 2.0)
@@ -1004,7 +1005,9 @@ namespace houseofatmos::world {
                 Resource::Type r_resource = *(**this->selected_variant)
                     .required_resource;
                 this->toasts.add_error("toast_building_requires_resource", {
-                    local.text(Resource::types[(size_t) r_resource].local_name), 
+                    local.text(
+                        Resource::types().at((size_t) r_resource).local_name
+                    ), 
                 });
             }
         }
@@ -1088,12 +1091,12 @@ namespace houseofatmos::world {
             )
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .as_movable();
-        for(size_t type_id = 0; type_id < Bridge::types.size(); type_id += 1) {
+        for(size_t type_id = 0; type_id < Bridge::types().size(); type_id += 1) {
             auto r_advancement = required_bridge_advancements[type_id];
             bool unlocked = !r_advancement.has_value()
                 || research->is_unlocked(*r_advancement);
             if(!unlocked) { continue; }
-            const Bridge::TypeInfo& type = Bridge::types[type_id];
+            const Bridge::TypeInfo& type = Bridge::types().at(type_id);
             selector.children.push_back(TerrainMap::create_selection_item(
                 type.icon, local->text(type.local_name), 
                 (size_t) *s_type == type_id,
@@ -1224,7 +1227,7 @@ namespace houseofatmos::world {
         );
         // determine if the placement is valid
         const Bridge::TypeInfo& selected_type 
-            = Bridge::types[(size_t) *this->selected_type];
+            = Bridge::types().at((size_t) *this->selected_type);
         bool too_short = this->planned.length() <= 1;
         bool too_low = min_height < selected_type.min_height;
         bool too_high = max_height > selected_type.max_height;
@@ -1273,7 +1276,7 @@ namespace houseofatmos::world {
                 ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
                 : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
         engine::Model& model = scene.get<engine::Model>(
-            Bridge::types[(size_t) *this->selected_type].model
+            Bridge::types().at((size_t) *this->selected_type).model
         );
         renderer.render(
             model, 
@@ -1467,6 +1470,7 @@ namespace houseofatmos::world {
         const Renderer& renderer
     ) {
         (void) scene;
+        if(!this->permitted) { return; }
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );

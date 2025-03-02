@@ -74,7 +74,7 @@ namespace houseofatmos {
 
     void Renderer::set_shadow_uniforms(engine::Shader& shader) const {
         if(this->lights.size() > Renderer::max_light_c) {
-            engine::debug("Scene has more lights than currently supported!");
+            engine::warning("Scene has more lights than currently supported!");
         }
         shader.set_uniform("u_light_count", (i64) this->lights.size());
         shader.set_uniform("u_light_view_proj", this->collect_light_view_proj());

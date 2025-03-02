@@ -254,7 +254,7 @@ namespace houseofatmos::world {
                     this->remove_stored(item, consumed);
                 }
                 for(auto& [count, item]: conversion.outputs) {
-                    bool storable = Item::items[item].storable;
+                    bool storable = Item::types().at(item).storable;
                     u64 produced = allowed_times * count;
                     research.report_item_production(item, produced);
                     if(item == Item::Coins) {

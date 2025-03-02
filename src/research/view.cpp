@@ -55,7 +55,7 @@ namespace houseofatmos::research {
         const Research& research, Research::Advancement advancement
     ) {
         const Research::AdvancementInfo& advancement_info 
-            = Research::advancements[(size_t) advancement];
+            = Research::advancements().at((size_t) advancement);
         const Research::AdvancementProgress& progress 
             = research.progress.at(advancement);
         bool parents_unlocked = research.parents_unlocked(advancement);
@@ -86,7 +86,7 @@ namespace houseofatmos::research {
         );
         for(Research::Advancement parent: advancement_info.parents) {
             const Research::AdvancementInfo& parent_info 
-                = Research::advancements[(size_t) parent];
+                = Research::advancements().at((size_t) parent);
             std::string text = local.text(parent_info.local_name);
             if(research.is_unlocked(parent)) { text += " ✅"; }
             requirements.children.push_back(
@@ -99,9 +99,8 @@ namespace houseofatmos::research {
         for(size_t item_i = 0; item_i < item_c; item_i += 1) {
             u64 produced = progress.item_conditions[item_i].produced_count;
             u64 required = advancement_info.item_conditions[item_i].required_count;
-            const world::Item::TypeInfo& item_info = world::Item::items[
-                (size_t) advancement_info.item_conditions[item_i].item
-            ];
+            const world::Item::TypeInfo& item_info = world::Item::types()
+                .at((size_t) advancement_info.item_conditions[item_i].item);
             std::string text = std::to_string(produced);
             text += "/" + std::to_string(required);
             text += " " + local.text(item_info.local_name);
@@ -143,7 +142,7 @@ namespace houseofatmos::research {
             .with_pos(0.5, 0.5, ui::position::parent_offset_fract)
             .with_size(1.0, 1.0, ui::size::window_fract)
             .as_movable();
-        for(size_t adv_i = 0; adv_i < Research::advancements.size(); adv_i += 1) {
+        for(size_t adv_i = 0; adv_i < Research::advancements().size(); adv_i += 1) {
             view.children.push_back(create_research_item(
                 local, 
                 this->world->research, (Research::Advancement) adv_i

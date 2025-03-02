@@ -94,13 +94,7 @@ namespace houseofatmos::audio_const {
 
     using Soundtrack = houseofatmos::engine::Soundtrack;
 
-    static inline const Soundtrack::LoadArgs soundtrack = (Soundtrack::LoadArgs) {
-        (std::string_view[]) {
-            "res/soundtrack/track_1.ogg",
-            "res/soundtrack/track_2.ogg"
-        },
-        Soundtrack::no_repetition
-    };
+    extern const Soundtrack::LoadArgs soundtrack;
 
 
     inline void load_all(engine::Scene& scene) {

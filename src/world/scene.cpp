@@ -18,10 +18,10 @@ namespace houseofatmos::world {
 
     static ui::Element create_mode_selector(Scene* scene) {
         ui::Element mode_list = ui::Element()
-            .with_pos(0.05, 0.95, ui::position::window_fract)
+            .with_pos(0.05, 0.90, ui::position::window_fract)
             .with_size(0, 0, ui::size::units_with_children)
             .with_background(&ui_background::note)
-            .with_list_dir(ui::Direction::Horizontal)
+            .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(u64 mode_i = 0; mode_i < action_modes.size(); mode_i += 1) {
             const auto& [mode_icon, mode] = action_modes[mode_i];

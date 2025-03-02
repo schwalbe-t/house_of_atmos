@@ -118,7 +118,7 @@ namespace houseofatmos::engine {
         static inline const bool no_repetition = false; 
 
         struct LoadArgs {
-            std::span<const std::string_view> track_sources;
+            std::vector<std::string_view> track_sources;
             bool allow_repetition;
 
             std::string identifier() const {  return this->pretty_identifier(); }

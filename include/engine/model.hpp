@@ -25,7 +25,7 @@ namespace houseofatmos::engine {
 
         struct LoadArgs {
             std::string_view path;
-            std::span<const std::pair<Attrib, Mesh::Attrib>> vertex_attributes;
+            std::vector<std::pair<Attrib, Mesh::Attrib>> vertex_attributes;
             FaceCulling face_culling;
 
             std::string pretty_identifier() const { 

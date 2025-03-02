@@ -38,10 +38,10 @@ namespace houseofatmos::human {
     static const inline CharacterAnimation sit_female = { "sit_female" };
 
     static const inline CharacterType male = {
-        (engine::Model::LoadArgs) {
+        engine::Model::LoadArgs(
             "res/entities/human.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
-        },
+        ),
         Mat<4>(),
         Vec<3>(0, 0, 1), // the direction the model faces without rotation
         {
@@ -54,10 +54,10 @@ namespace houseofatmos::human {
     };
 
     static const inline CharacterType female = {
-        (engine::Model::LoadArgs) {
+        engine::Model::LoadArgs(
             "res/entities/human.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
-        },
+        ),
         Mat<4>(),
         Vec<3>(0, 0, 1), // the direction the model faces without rotation
         {
@@ -70,10 +70,10 @@ namespace houseofatmos::human {
     };
 
     static const inline CharacterType toddler = {
-        (engine::Model::LoadArgs) {
+        engine::Model::LoadArgs(
             "res/entities/human.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
-        },
+        ),
         Mat<4>::scale(Vec<3>(0.5, 0.5, 0.5)), // model transform
         Vec<3>(0, 0, 1), // the direction the model faces without rotation
         {

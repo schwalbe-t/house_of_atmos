@@ -90,9 +90,10 @@ namespace houseofatmos::world {
         auto rng = StatefulRNG(seed);
         for(u64 tile_x = 0; tile_x < this->width; tile_x += 1) {
             for(u64 tile_z = 0; tile_z < this->height; tile_z += 1) {
-                size_t r_type_count = Resource::types.size();
+                size_t r_type_count = Resource::types().size();
                 for(size_t r_type_i = 0; r_type_i < r_type_count; r_type_i += 1) {
-                    const Resource::TypeInfo& r_type = Resource::types[r_type_i];
+                    const Resource::TypeInfo& r_type = Resource::types()
+                        .at(r_type_i);
                     bool spawned = rng.next_f64() < r_type.spawn_chance;
                     if(!spawned) { continue; }
                     bool above_water = this->vert_area_above_water(
@@ -144,8 +145,8 @@ namespace houseofatmos::world {
                 f64 noise_val = perlin_noise(
                     seed, Vec<2>(tile_x / 25.0, tile_z / 25.0)
                 ) * 0.5 + 0.5; // normalize to 0..1
-                for(size_t type_i = 0; type_i < Foliage::types.size(); type_i += 1) {
-                    const Foliage::TypeInfo& type = Foliage::types[type_i];
+                for(size_t type_i = 0; type_i < Foliage::types().size(); type_i += 1) {
+                    const Foliage::TypeInfo& type = Foliage::types().at(type_i);
                     f64 chance = type.spawn_chance(noise_val) * slope_factor;
                     for(u64 att_i = 0; att_i < type.attempt_count; att_i += 1) {
                         if(rng.next_f64() >= chance) { continue; }
@@ -560,7 +561,7 @@ namespace houseofatmos::world {
                 i64 chunk_offset_z = chunk_z * this->chunk_tiles;
                 for(const Building& building: chunk.buildings) {
                     const Building::TypeInfo& type 
-                        = Building::types[(size_t) building.type];
+                        = Building::types().at((size_t) building.type);
                     i64 start_x = chunk_offset_x + (i64) building.x;
                     i64 end_x = start_x + (i64) type.width;
                     i64 start_z = chunk_offset_z + (i64) building.z;
@@ -873,7 +874,8 @@ namespace houseofatmos::world {
         std::optional<ComplexId> complex,
         std::optional<i16> elevation
     ) {
-        const Building::TypeInfo& type_info = Building::types[(size_t) type];
+        const Building::TypeInfo& type_info = Building::types()
+            .at((size_t) type);
         i16 written_elev;
         if(elevation.has_value()) { 
             written_elev = *elevation;
@@ -988,18 +990,18 @@ namespace houseofatmos::world {
         }
         for(const auto& [foliage_type, instances]: foliage_instances) {
             engine::Model& model = scene.get<engine::Model>(
-                Foliage::types[(size_t) foliage_type].model
+                Foliage::types().at((size_t) foliage_type).model
             );
             renderer.render(model, instances);
         }
         for(const auto& [building_type, instances]: building_instances) {
             const Building::TypeInfo& type_info
-                = Building::types[(size_t) building_type];
+                = Building::types().at((size_t) building_type);
             type_info.render_buildings(window, scene, renderer, instances);
         }
         for(const auto& [resource_type, instances]: resource_instances) {
             const Resource::TypeInfo& type_info
-                = Resource::types[(size_t) resource_type];
+                = Resource::types().at((size_t) resource_type);
             engine::Model& model = scene.get<engine::Model>(type_info.model);
             const engine::Texture& texture 
                 = scene.get<engine::Texture>(type_info.texture);
@@ -1039,7 +1041,7 @@ namespace houseofatmos::world {
         i64 view_end_z = (this->viewed_chunk_z() + tile_selection_range_chunks) 
             * (i64) this->tiles_per_chunk();
         std::vector<std::vector<Mat<4>>> instances;
-        instances.resize(Bridge::types.size());
+        instances.resize(Bridge::types().size());
         for(const Bridge& bridge: this->bridges) {
             bool not_visible = (i64) bridge.end_x < view_start_x
                 || (i64) bridge.start_x > view_end_x
@@ -1056,7 +1058,7 @@ namespace houseofatmos::world {
         }
         for(size_t type_id = 0; type_id < instances.size(); type_id += 1) {
             if(instances[type_id].size() == 0) { continue; }
-            const Bridge::TypeInfo& type = Bridge::types[type_id];
+            const Bridge::TypeInfo& type = Bridge::types().at(type_id);
             engine::Model& model = scene.get<engine::Model>(type.model);
             renderer.render(model, instances[type_id]);
         }

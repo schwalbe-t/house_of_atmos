@@ -546,20 +546,20 @@
     "item_name_brass_rods": {
         "_context": "Name of the brass rods item",
         "en": "Brass Rods",
-        "de": "Messingstäbe",
-        "bg": "Месингови пръчки"
+        "de": "Ms. Stäbe",
+        "bg": "М. пръчки"
     },
     "item_name_brass_plates": {
         "_context": "Name of the brass plates item",
         "en": "Brass Plates",
-        "de": "Messingplatten",
-        "bg": "Месингови плочи"
+        "de": "Ms. Platten",
+        "bg": "М. плочи"
     },
     "item_name_brass_gears": {
         "_context": "Name of the brass gears item",
         "en": "Brass Gears",
-        "de": "Messingzahnräder",
-        "bg": "Месингови зъбни колела"
+        "de": "Ms. Zahnräder",
+        "bg": "М. зъбни колела"
     },
     "item_name_clothing": {
         "_context": "Name of the clothing item",
@@ -613,7 +613,7 @@
         "_context": "Name of the brass pots item",
         "en": "Brass Pots",
         "de": "Messingtöpfe",
-        "bg": "Месингови съдове"
+        "bg": "Мес. съдове"
     },
     "item_name_oil_lanterns": {
         "_context": "Name of the oil lanterns item",
@@ -636,8 +636,8 @@
     "item_name_power_looms": {
         "_context": "Name of the power looms item, a mechanically powered loom used to make fabric",
         "en": "Power Looms",
-        "de": "Mechanische Webstühle",
-        "bg": "Механични станове"
+        "de": "Mech. Webstühle",
+        "bg": "Мех. станове"
     },
     "item_name_steam_engines": {
         "_context": "Name of the steam engines item, a machine that converts heat into rotational energy",

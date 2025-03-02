@@ -22,7 +22,7 @@ namespace houseofatmos::interior {
         struct Room {
             std::string_view name;
             RelCollider trigger;
-            std::span<const RelCollider> colliders;
+            std::vector<RelCollider> colliders;
         };
 
         struct Interaction {
