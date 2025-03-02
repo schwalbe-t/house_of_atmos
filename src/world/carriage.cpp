@@ -10,7 +10,7 @@ namespace houseofatmos::world {
         StatefulRNG rng
     ) {
         this->type = type;
-        CarriageTypeInfo type_info = Carriage::carriage_types.at((size_t) type);
+        CarriageTypeInfo type_info = Carriage::carriage_types[(size_t) type];
         this->horses = std::vector<HorseType>(type_info.horse_offsets.size());
         for(size_t horse_i = 0; horse_i < this->horses.size(); horse_i += 1) {
             this->horses.at(horse_i) = (HorseType) (
@@ -110,7 +110,7 @@ namespace houseofatmos::world {
         bool is_visible
     ) {
         const CarriageTypeInfo& type_info 
-            = Carriage::carriage_types.at((size_t) this->type);
+            = Carriage::carriage_types[(size_t) this->type];
         this->moving = this->state == State::Travelling;
         if(this->state == State::Travelling) {
             // update position
@@ -214,15 +214,15 @@ namespace houseofatmos::world {
         engine::Rendering rendering,
         const engine::Texture* override_texture
     ) {
-        CarriageTypeInfo carriage_info = Carriage::carriage_types
-            .at((size_t) this->type);
+        CarriageTypeInfo carriage_info 
+            = Carriage::carriage_types[(size_t) this->type];
         // render horses
         engine::Model& horse_model = scene
             .get<engine::Model>(Carriage::horse_model);
         for(size_t horse_i = 0; horse_i < this->horses.size(); horse_i += 1) {
             HorseType horse_type = this->horses.at(horse_i);
-            HorseTypeInfo horse_info = Carriage::horse_types
-                .at((size_t) horse_type);
+            HorseTypeInfo horse_info 
+                = Carriage::horse_types[(size_t) horse_type];
             const engine::Texture& horse_texture = scene
                 .get<engine::Texture>(horse_info.texture);
             const engine::Animation& horse_animation = this->moving
@@ -236,7 +236,7 @@ namespace houseofatmos::world {
                 = Mat<4>::translate(this->position)
                 * Mat<4>::rotate_y(this->yaw)
                 * Mat<4>::rotate_x(this->pitch)
-                * Mat<4>::translate(carriage_info.horse_offsets.at(horse_i))
+                * Mat<4>::translate(carriage_info.horse_offsets[horse_i])
                 * Mat<4>::translate(carriage_info.carriage_offset);
             renderer.render(
                 horse_model, std::array { horse_transform },
@@ -348,7 +348,7 @@ namespace houseofatmos::world {
     static u64 cheapest_explorable_tile(
         const std::vector<SearchedTile>& explorable
     ) {
-        f64 cheapest_cost = UINT64_MAX;
+        f64 cheapest_cost = INFINITY;
         u64 cheapest_i = UINT64_MAX;
         for(u64 search_i = 0; search_i < explorable.size(); search_i += 1) {
             const SearchedTile& searched = explorable[search_i];

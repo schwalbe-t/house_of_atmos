@@ -24,8 +24,8 @@ namespace houseofatmos::engine {
         virtual void load() = 0;
         bool loaded() const { return this->has_value; }
     
-        static std::vector<char> read_bytes(const std::string& path);
-        static std::string read_string(const std::string& path);
+        static std::vector<char> read_bytes(std::string_view path);
+        static std::string read_string(std::string_view path);
     };
 
     template<typename T, typename A>

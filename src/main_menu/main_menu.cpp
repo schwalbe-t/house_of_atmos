@@ -241,7 +241,7 @@ namespace houseofatmos {
     ) {
         this->ui.root.children.clear();
         this->ui.with_element(this->settings.create_menu(
-            local, *this,
+            local,
             [this, local = &local, window = &window]() {
                 this->settings.save_to(Settings::default_path);
                 this->show_title_screen(*local, *window);

@@ -11,7 +11,7 @@ namespace houseofatmos {
 
     using json = nlohmann::json;
 
-    Settings Settings::read_from_path(const std::string& path) {
+    Settings Settings::read_from_path(std::string_view path) {
         if(!std::filesystem::exists(path)) { return Settings(); }
         std::string text = engine::GenericResource::read_string(path);
         json json = json::parse(text);
@@ -27,7 +27,7 @@ namespace houseofatmos {
         return settings;
     }
 
-    void Settings::save_to(const std::string& path) const {
+    void Settings::save_to(std::string_view path) const {
         json serialized = json::object();
         serialized["locale"] = this->locale;
         serialized["fullscreen"] = this->fullscreen;
@@ -39,7 +39,7 @@ namespace houseofatmos {
             last_games.push_back(game);
         }
         serialized["last_games"] = std::move(last_games);
-        auto fout = std::ofstream(path);
+        auto fout = std::ofstream(std::string(path));
         fout << serialized.dump(4);
         fout.close();
     }
@@ -144,7 +144,7 @@ namespace houseofatmos {
     }
 
     ui::Element Settings::create_menu(
-        const engine::Localization& local, engine::Scene& scene,
+        const engine::Localization& local, 
         std::function<void ()>&& close_handler
     ) {
         ui::Element menu = ui::Element()
@@ -174,7 +174,7 @@ namespace houseofatmos {
         ui::Element music_volume = Settings::create_slider(
             64.0, 8.0, 24.0,
             0, 100, 5, this->music_volume * 100.0, 
-            "%", [this, scene = &scene](f64 percentage) {
+            "%", [this](f64 percentage) {
                 this->music_volume = percentage / 100.0; 
             }
         );

@@ -6,7 +6,7 @@ namespace houseofatmos::ui_font {
     static const engine::Texture::LoadArgs font_texture
         = (engine::Texture::LoadArgs) { "res/ui.png" };
 
-    static const std::string font_chars = "\t "
+    static const std::string_view font_chars = "\t "
         "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ"
         "abcdefghijklmnopqrstuvwxyzäöüß"
         "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЮЯ"
@@ -14,7 +14,7 @@ namespace houseofatmos::ui_font {
         "0123456789:-+*/%()[]{}\"'?!._<>;#$@&^,\\"
         "→↑↓🪙💾🗑✅";
 
-    static const std::vector<f64> font_char_widths = { 
+    static const std::span<const f64> font_char_widths = (f64[]) { 
         5,2, 
         4,4,4,4,4,4,4,4,3,4,4,4,5,4,4,4,4,4,4,3,4,5,5,4,4,4,4,4,4,
         4,4,3,4,4,3,4,4,3,3,3,3,5,4,4,4,4,3,4,3,4,3,5,4,4,4,4,4,4,4,
@@ -24,25 +24,23 @@ namespace houseofatmos::ui_font {
         7,5,5,5,5,5,5
     };
 
-    ui::Font dark = (ui::Font) {
+    ui::Font dark = ui::Font(
         font_texture,
         Vec<2>(8, 184), // offset
         5, // height
         1, // padding
         font_chars,
-        font_char_widths,
-        std::vector<f64>()
-    };
+        font_char_widths
+    );
 
-    ui::Font bright = (ui::Font) {
+    ui::Font bright = ui::Font(
         font_texture,
         Vec<2>(8, 192), // offset
         5, // height
         1, // padding
         font_chars,
-        font_char_widths,
-        std::vector<f64>()
-    };
+        font_char_widths
+    );
 
 
     void load_textures(engine::Scene& scene) {

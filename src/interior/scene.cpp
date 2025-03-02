@@ -161,7 +161,7 @@ namespace houseofatmos::interior {
                 .at(this->player.character.position)
                 .collides_with(room.trigger.at(origin));
             if(!room_visible && !render_all_rooms) { continue; }
-            auto [primitive, texture, anim] = model.mesh(room.name);
+            auto [primitive, texture, anim] = model.mesh(std::string(room.name));
             this->renderer.render(
                 primitive.geometry, texture, primitive.local_transform,
                 std::array { Mat<4>() }

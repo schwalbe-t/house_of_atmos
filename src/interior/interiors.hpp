@@ -20,9 +20,9 @@ namespace houseofatmos::interior {
     struct Interior {
 
         struct Room {
-            std::string name;
+            std::string_view name;
             RelCollider trigger;
-            std::vector<RelCollider> colliders;
+            std::span<const RelCollider> colliders;
         };
 
         struct Interaction {

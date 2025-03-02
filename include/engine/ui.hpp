@@ -47,15 +47,25 @@ namespace houseofatmos::engine::ui {
         Vec<2> offset;
         f64 height;
         f64 char_padding;
-        std::string chars;
-        std::vector<f64> char_widths;
-        std::vector<f64> char_offsets_x;
+        std::string_view chars;
+        std::span<const f64> char_widths;
+        std::optional<std::vector<f64>> char_offsets_x;
+
+        constexpr Font(
+            Texture::LoadArgs texture, Vec<2> offset, 
+            f64 height, f64 char_padding,
+            std::string_view chars, std::span<const f64> char_widths
+        ): texture(texture), offset(offset), 
+            height(height), char_padding(char_padding), 
+            chars(chars), char_widths(char_widths), 
+            char_offsets_x(std::nullopt) {}
 
         void compute_char_offsets() {
-            this->char_offsets_x.reserve(this->char_widths.size());
+            this->char_offsets_x = std::vector<f64>();
+            this->char_offsets_x->reserve(this->char_widths.size());
             f64 offset = 0;
             for(f64 char_width: this->char_widths) {
-                this->char_offsets_x.push_back(offset);
+                this->char_offsets_x->push_back(offset);
                 offset += char_width + char_padding;
             }
         }

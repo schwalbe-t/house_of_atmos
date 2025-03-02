@@ -21,7 +21,7 @@ namespace houseofatmos::world {
             ProbabilityFunc spawn_chance;
         };
 
-        static inline const std::vector<TypeInfo> types = {
+        static inline const std::span<const TypeInfo> types = (TypeInfo[]) {
             /* Grass */ {
                 { 
                     "res/foliage/grass.glb", Renderer::model_attribs,
@@ -74,7 +74,7 @@ namespace houseofatmos::world {
         }
 
         TypeInfo get_type_info() const {
-            return Foliage::types.at((size_t) this->type);
+            return Foliage::types[(size_t) this->type];
         }
 
     };

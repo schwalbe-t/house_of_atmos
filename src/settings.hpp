@@ -13,10 +13,10 @@ namespace houseofatmos {
 
     struct Settings {
         
-        static const inline std::string default_path = "settings.json";
+        static const inline std::string_view default_path = "settings.json";
 
 
-        std::string locale = engine::Localization::no_locale;
+        std::string locale = std::string(engine::Localization::no_locale);
         bool fullscreen = false;
         f64 music_volume = 1.0;
         f64 sound_volume = 1.0;
@@ -24,8 +24,8 @@ namespace houseofatmos {
         std::vector<std::string> last_games;
 
         Settings() {}
-        static Settings read_from_path(const std::string& path);
-        void save_to(const std::string& path) const;
+        static Settings read_from_path(std::string_view path);
+        void save_to(std::string_view path) const;
 
         void add_recent_game(std::string&& path);
 
@@ -41,7 +41,7 @@ namespace houseofatmos {
             std::string suffix, std::function<void (f64)>&& handler
         );
         ui::Element create_menu(
-            const engine::Localization& local, engine::Scene& scene,
+            const engine::Localization& local,
             std::function<void ()>&& close_handler
         );
 

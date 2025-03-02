@@ -17,7 +17,7 @@ namespace houseofatmos {
 
         struct Instance {
 
-            friend class Interactables;
+            friend struct Interactables;
 
             public:
             std::function<void ()> handler;
