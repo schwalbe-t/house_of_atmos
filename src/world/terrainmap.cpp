@@ -193,8 +193,8 @@ namespace houseofatmos::world {
             this->adding_stop = false;
             return;
         } 
-        this->selected_info_bottom->hidden = true;
-        this->selected_info_right->hidden = true;
+        *this->selected_info_bottom = ui::Element().as_phantom().as_movable();
+        *this->selected_info_right = ui::Element().as_phantom().as_movable();
         this->selected_complex = std::nullopt;
         this->selected_carriage = std::nullopt;
         this->adding_stop = false;
@@ -601,6 +601,7 @@ namespace houseofatmos::world {
     ui::Element TerrainMap::display_complex_info(
         const Complex& complex, const engine::Localization& local
     ) {
+        static const f64 display_prec = 1000;
         static const f64 display_epsilon = 0.00001;
         std::unordered_map<Item::Type, f64> throughput 
             = complex.compute_throughput();
@@ -609,9 +610,10 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [item, freq]: throughput) {
-            if(freq >= -display_epsilon) { continue; }
+            f64 d_freq = trunc(freq * display_prec) / display_prec;
+            if(d_freq >= -display_epsilon) { continue; }
             inputs.children.push_back(TerrainMap::display_item_stack(
-                item, std::format("{}", fabs(freq)), local
+                item, std::format("{}", fabs(d_freq)), local
             ));
         }
         ui::Element outputs = ui::Element()
@@ -619,9 +621,10 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [item, freq]: throughput) {
-            if(freq <= display_epsilon) { continue; }
+            f64 d_freq = trunc(freq * display_prec) / display_prec;
+            if(d_freq <= display_epsilon) { continue; }
             outputs.children.push_back(TerrainMap::display_item_stack(
-                item, std::format("{}", freq), local
+                item, std::format("{}", d_freq), local
             ));
         }
         ui::Element storage = ui::Element()

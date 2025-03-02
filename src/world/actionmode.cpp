@@ -113,7 +113,7 @@ namespace houseofatmos::world {
 
     void TerraformMode::init_ui() {
         this->ui.with_element(ui::Element()
-            .with_pos(0.05, 0.80, ui::position::window_fract)
+            .with_pos(50, 15, ui::position::window_bl_units)
             .with_size(0, 0, ui::size::units_with_children)
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Horizontal)

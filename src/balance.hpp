@@ -39,7 +39,7 @@ namespace houseofatmos {
                     &ui_font::dark
                 )
                 .with_padding(1.0)
-                .with_pos(0.95, 0.05, ui::position::window_fract)
+                .with_pos(15, 15, ui::position::window_tr_units)
                 .with_background(&ui_background::note)
                 .as_movable();
             return counter;

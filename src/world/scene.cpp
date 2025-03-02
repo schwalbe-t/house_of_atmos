@@ -18,7 +18,7 @@ namespace houseofatmos::world {
 
     static ui::Element create_mode_selector(Scene* scene) {
         ui::Element mode_list = ui::Element()
-            .with_pos(0.05, 0.90, ui::position::window_fract)
+            .with_pos(15, 15, ui::position::window_bl_units)
             .with_size(0, 0, ui::size::units_with_children)
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Vertical)
@@ -271,6 +271,34 @@ namespace houseofatmos::world {
 
 
 
+    static void implement_mode_keybinds(
+        Scene& scene, const engine::Window& window
+    ) {
+        if(!scene.action_mode.has_mode()) { return; }
+        std::optional<ActionManager::Mode> selected = std::nullopt;
+        if(window.was_pressed(engine::Key::T)) {
+            selected = ActionManager::Mode::Terraform;
+        }
+        if(window.was_pressed(engine::Key::C)) {
+            selected = ActionManager::Mode::Construction;
+        }
+        if(window.was_pressed(engine::Key::B)) {
+            selected = ActionManager::Mode::Bridging;
+        }
+        if(window.was_pressed(engine::Key::R)) {
+            selected = ActionManager::Mode::Demolition;
+        }
+        if(window.was_pressed(engine::Key::V)) {
+            selected = ActionManager::Mode::Pathing;
+        }
+        if(!selected.has_value()) { return; }
+        scene.action_mode.set_mode(
+            scene.action_mode.current_type() == *selected
+                ? ActionManager::Mode::Default
+                : *selected
+        );
+    }
+
     static void update_ui_visibiliy(Scene& scene, const engine::Window& window) {
         bool toggle_map = scene.dialogues.is_empty()
             && scene.terrain_map.toggle_with_key(engine::Key::M, window);
@@ -371,6 +399,7 @@ namespace houseofatmos::world {
                 this->interactables, local, this->dialogues
             );
         }
+        implement_mode_keybinds(*this, window);
         update_ui_visibiliy(*this, window);
         this->world->carriages.update_all(
             this->world->player.character.position, this->draw_distance_units(),
