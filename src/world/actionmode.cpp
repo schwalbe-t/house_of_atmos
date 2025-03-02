@@ -328,317 +328,326 @@ namespace houseofatmos::world {
     struct BuildingGroup {
         Building::Type type;
         std::vector<BuildingVariant> variants;
+
+        BuildingGroup(Building::Type type, std::vector<BuildingVariant>&& variants) {
+            this->type = type;
+            this->variants = std::move(variants);
+        }
     };
-    std::vector<BuildingGroup> buildable = {
-        (BuildingGroup) { Building::House, {} },
-        (BuildingGroup) { Building::Farmland, {
+    static const std::vector<BuildingGroup> buildable = {
+        BuildingGroup(Building::House, {}),
+        BuildingGroup(Building::Farmland, {
             { 
-                { (Conversion) { 
+                { Conversion(
                     {}, 
                     { { 10, Item::Wheat } }, 
                     10.0 
-                } } 
+                ) }
             },
             { 
-                { (Conversion) {
+                { Conversion(
                     {}, 
                     { { 10, Item::Barley } }, 
                     10.0 
-                } } 
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion(
                     {}, 
                     { { 10, Item::Hops } }, 
                     10.0 
-                } } 
+                ) }
             }
-        } },
-        (BuildingGroup) { Building::Mineshaft, {
+        }),
+        BuildingGroup(Building::Mineshaft, {
             { 
-                { (Conversion) { 
+                { Conversion( 
                     {}, 
                     { { 1, Item::Coal } }, 
                     1.0 
-                } },
+                ) },
                 Resource::Type::Coal 
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     {}, 
                     { { 1, Item::CrudeOil } }, 
                     1.0 
-                } },
+                ) },
                 Resource::Type::CrudeOil 
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     {}, 
                     { { 1, Item::Salt } }, 
                     1.0 
-                } },
+                ) },
                 Resource::Type::Salt 
             },
             { 
-                { (Conversion) { 
+                { Conversion(  
                     {}, 
                     { { 1, Item::IronOre } }, 
                     1.0 
-                } },
+                ) },
                 Resource::Type::IronOre 
             },
             { 
-                { (Conversion) { 
+                { Conversion(  
                     {}, 
                     { { 1, Item::CopperOre } }, 
                     1.0 
-                } },
+                ) },
                 Resource::Type::CopperOre 
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     {}, 
                     { { 1, Item::ZincOre } }, 
                     1.0 
-                } },
+                ) },
                 Resource::Type::ZincOre 
             }
-        } },
-        (BuildingGroup) { Building::Windmill, {
+        }),
+        BuildingGroup(Building::Windmill, {
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::Wheat } }, 
                     { { 1, Item::Flour } }, 
                     1.0 
-                } } 
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::Barley } }, 
                     { { 1, Item::Malt } }, 
                     1.0 
-                } } 
+                ) }
             }
-        } },
-        (BuildingGroup) { Building::Factory, {
+        }),
+        BuildingGroup(Building::Factory, {
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::Yarn } }, 
                     { { 1, Item::Fabric } }, 
                     4.0
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardFabric
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Cattle } }, 
                     { { 16, Item::Milk } }, 
                     16.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Cattle } }, 
                     { { 8, Item::Beef } }, 
                     8.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Cattle } }, 
                     { { 8, Item::Leather } }, 
                     8.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 2, Item::IronOre }, { 1, Item::Coal } }, 
                     { { 2, Item::Steel } }, 
                     5.0 
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardSteel
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Wood } }, 
                     { { 4, Item::Planks } }, 
                     4.0 
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardPlanks
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 2, Item::CopperOre }, { 1, Item::ZincOre }, { 1, Item::Coal } }, 
                     { { 3, Item::Brass } }, 
                     5.0 
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Brass } }, 
                     { { 4, Item::BrassRods } }, 
                     3.0 
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Brass } }, 
                     { { 1, Item::BrassPlates } }, 
                     5.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::BrassPlates }, { 4, Item::BrassRods } }, 
                     { { 4, Item::BrassGears } }, 
                     5.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Wood } }, 
                     { { 1, Item::Coal } }, 
                     4.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 2, Item::Fabric } }, 
                     { { 1, Item::Clothing } }, 
                     4.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::Milk }, { 1, Item::Salt } }, 
                     { { 4, Item::Cheese } }, 
                     4.0
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardCheese
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::Beef }, { 1, Item::Salt }, { 1, Item::Coal } }, 
                     { { 4, Item::Steak } }, 
                     4.0
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardSteak
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 2, Item::CrudeOil }, { 1, Item::Coal } }, 
                     { { 2, Item::Oil } }, 
                     4.0
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardOil
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::Malt }, { 2, Item::Hops }, { 1, Item::Coal } }, 
                     { { 5, Item::Beer } }, 
                     5.0
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardBeer
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Leather }, { 3, Item::Steel } }, 
                     { { 1, Item::Armor } }, 
                     4.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::Flour }, { 1, Item::Coal } }, 
                     { { 4, Item::Bread } }, 
                     4.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::Planks }, { 2, Item::Steel } }, 
                     { { 1, Item::Tools } }, 
                     4.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::BrassPlates } }, 
                     { { 1, Item::BrassPots } }, 
                     4.0
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardBrassPots
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::BrassPlates }, { 1, Item::BrassRods } }, 
                     { { 1, Item::OilLanterns } }, 
                     4.0
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardOilLanterns
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 1, Item::BrassPlates }, { 4, Item::BrassGears } }, 
                     { { 1, Item::Watches } }, 
                     4.0
-                } },
+                ) },
                 std::nullopt,
                 research::Research::RewardWatches
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 2, Item::Steel } }, 
                     { { 1, Item::SteelBeams } }, 
                     4.0
-                } }
+                ) }
             },
             { 
-                { (Conversion) { 
+                { Conversion( 
                     { { 2, Item::Planks }, { 4, Item::BrassGears } }, 
                     { { 1, Item::PowerLooms } }, 
                     4.0
-                } }
+                ) }
             },
             {
-                { (Conversion) { 
+                { Conversion( 
                     { { 4, Item::BrassPlates }, { 4, Item::BrassGears } }, 
                     { { 1, Item::SteamEngines } }, 
                     4.0
-                } }
+                ) }
             }
-        } },
-        (BuildingGroup) { Building::Stable, {} },
-        (BuildingGroup) { Building::Pasture, {
-            { { (Conversion) { 
-                { { 4, Item::Wheat } }, 
-                { { 1, Item::Yarn } }, 
-                1.0 
-            } } },
-            { { (Conversion) { 
-                { { 8, Item::Wheat } }, 
-                { { 1, Item::Cattle } }, 
-                1.0 
-            } } }
-        } },
-        (BuildingGroup) { Building::TreeFarm, {
+        }),
+        BuildingGroup(Building::Stable, {}),
+        BuildingGroup(Building::Pasture, {
             { 
-                { (Conversion) { 
+                { Conversion( 
+                    { { 4, Item::Wheat } }, 
+                    { { 1, Item::Yarn } }, 
+                    1.0 
+                ) } 
+            },
+            { 
+                { Conversion( 
+                    { { 8, Item::Wheat } }, 
+                    { { 1, Item::Cattle } }, 
+                    1.0 
+                ) } 
+            }
+        }),
+        BuildingGroup(Building::TreeFarm, {
+            { 
+                { Conversion( 
                     {}, 
                     { { 10, Item::Wood } }, 
                     10.0 
-                } } 
+                ) }
             }
-        } }
+        })
     };
 
     static ui::Element create_building_selector(

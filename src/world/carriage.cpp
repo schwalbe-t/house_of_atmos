@@ -348,7 +348,7 @@ namespace houseofatmos::world {
     static u64 cheapest_explorable_tile(
         const std::vector<SearchedTile>& explorable
     ) {
-        f64 cheapest_cost = UINT64_MAX;
+        f64 cheapest_cost = INFINITY;
         u64 cheapest_i = UINT64_MAX;
         for(u64 search_i = 0; search_i < explorable.size(); search_i += 1) {
             const SearchedTile& searched = explorable[search_i];

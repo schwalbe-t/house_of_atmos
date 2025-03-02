@@ -295,8 +295,8 @@ namespace houseofatmos::world {
             return;
         }
         auto [mansion_x, mansion_z] = this->generate_mansion();
-        const Building::TypeInfo& mansion = Building::types
-            .at((size_t) Building::Mansion);
+        const Building::TypeInfo& mansion 
+            = Building::types[(size_t) Building::Mansion];
         Vec<3> mansion_center_tile = Vec<3>(mansion_x, 0, mansion_z)
             + Vec<3>(mansion.width / 2.0, 0, mansion.height / 2.0);
         Vec<3> player_spawn_tile = mansion_center_tile + Vec<3>(0, 0, 0.5);

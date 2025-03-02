@@ -103,7 +103,7 @@ namespace houseofatmos::world {
                 this->rendered_img.pixel_at(x, z) = color;
             }
         }
-        this->rendered_tex = std::move(engine::Texture(this->rendered_img));
+        this->rendered_tex = engine::Texture(this->rendered_img);
     }
 
 
@@ -812,12 +812,13 @@ namespace houseofatmos::world {
                 unit = "%";
                 break;
         }
-        std::string local_item = Item::items[(size_t) target->item].local_name;
+        std::string_view local_item 
+            = Item::items[(size_t) target->item].local_name;
         ui::Element info = ui::Element()
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .with_child(make_ui_button("🗑")
-                .with_click_handler([carriage, target_i, this]() {
+                .with_click_handler([carriage, target_i]() {
                     carriage->targets.erase(carriage->targets.begin() + target_i);
                     carriage->wrap_around_target_i();
                     carriage->try_find_path();
