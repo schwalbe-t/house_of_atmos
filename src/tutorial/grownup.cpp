@@ -120,7 +120,7 @@ namespace houseofatmos::tutorial {
         village_center.add_member(63, 83, bread_factory_cm);
         village_center.add_member(63, 84, bread_factory_cm);
         village_center.add_member(63, 85, bread_factory_cm);
-        // structres west of the rivers
+        // structures west of the rivers
         for_line(96, 80, 111, 80, set_path_at(world.terrain));
         world.terrain.set_path_at(111, 79);
         world.terrain.set_path_at(111, 77);
@@ -146,7 +146,7 @@ namespace houseofatmos::tutorial {
         farmland_center.add_member(112, 70, wheat_farm_cm);
         // other stuff
         world.saving_allowed = false;
-        world.player.character.position = Vec<3>(13.5, 0, 50.5)
+        world.player.character.position = Vec<3>(13.5, 0, 51.5)
             * world.terrain.units_per_tile();
         world.balance.coins = 0;
         world.personal_horse.pos = Vec<3>(14.25, 0, 52.25)
@@ -182,10 +182,7 @@ namespace houseofatmos::tutorial {
             }
         };
         return {
-            await_distance_to_point(
-                scene, update_scene,
-                father->position, 3.0
-            ),
+            await_delay(update_scene, 1.0),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_father_name",
