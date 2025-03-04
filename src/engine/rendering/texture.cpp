@@ -180,7 +180,7 @@ namespace houseofatmos::engine {
             "in vec2 f_uv; \n"
             "uniform sampler2D u_texture; \n"
             "void main() { \n"
-            "    gl_FragColor = texture2D(u_texture, f_uv); \n"
+            "    gl_FragColor = texture(u_texture, f_uv); \n"
             "}"
         );
         Mesh quad = Mesh { { Mesh::F32, 2 } };

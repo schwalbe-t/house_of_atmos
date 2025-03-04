@@ -50,6 +50,11 @@ namespace houseofatmos::world {
             "res/shaders/terrain_overlay_frag.glsl"
         };
 
+        static inline const engine::Shader::LoadArgs path_overlay_shader = {
+            "res/shaders/path_overlay_vert.glsl",
+            "res/shaders/path_overlay_frag.glsl"
+        };
+
         static void load_resources(engine::Scene& scene) {
             scene.load(engine::Texture::Loader(wireframe_info_texture));
             scene.load(engine::Texture::Loader(wireframe_add_texture));
@@ -57,6 +62,7 @@ namespace houseofatmos::world {
             scene.load(engine::Texture::Loader(wireframe_valid_texture));
             scene.load(engine::Texture::Loader(wireframe_error_texture));
             scene.load(engine::Shader::Loader(terrain_overlay_shader));
+            scene.load(engine::Shader::Loader(path_overlay_shader));
         }
 
 
@@ -271,11 +277,15 @@ namespace houseofatmos::world {
     struct PathingMode: ActionMode {
 
         u64 selected_tile_x, selected_tile_z;
+        std::optional<engine::Mesh> overlay;
 
         PathingMode(ActionContext ctx): ActionMode(ctx) {
             this->selected_tile_x = 0;
             this->selected_tile_z = 0;
+            this->overlay = std::nullopt;
         }
+
+        void update_overlay();
 
         void update(
             const engine::Window& window, engine::Scene& scene, 
@@ -284,11 +294,7 @@ namespace houseofatmos::world {
         void render(
             const engine::Window& window, engine::Scene& scene, 
             Renderer& renderer
-        ) override {
-            (void) window;
-            (void) scene;
-            (void) renderer;
-        }
+        ) override;
 
     };
 

@@ -24,7 +24,7 @@ void main() {
             point_uv.y = min(max(point_uv.y, 0.0), 1.0 - px.y);
             float exponent = float(-(ox * ox + oy * oy)) / (2.0 * sigma * sigma);
             float kernel_val = pow(E, exponent) / (2.0 * PI * sigma * sigma);
-            o_color += texture2D(u_texture, point_uv) * kernel_val;
+            o_color += texture(u_texture, point_uv) * kernel_val;
         }
     }
 }

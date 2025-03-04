@@ -12,5 +12,5 @@ out vec4 o_color;
 
 void main() {
     vec2 uv = f_uv * u_src_scales[f_instance_id] + u_src_offsets[f_instance_id];
-    o_color = texture2D(u_texture, uv);
+    o_color = texture(u_texture, uv);
 }

@@ -25,7 +25,7 @@ const vec2 NMAP_B_SCROLL = vec2(0.005, 0.02);
 void main() {
     vec2 nmap_a_uv = f_w_pos.xz * u_nmap_scale + NMAP_A_SCROLL * u_time;
     vec2 nmap_b_uv = f_w_pos.xz * u_nmap_scale + NMAP_B_SCROLL * u_time;
-    vec3 normal = texture2D(u_nmap, nmap_a_uv).rgb * texture2D(u_nmap, nmap_b_uv).rgb;
+    vec3 normal = texture(u_nmap, nmap_a_uv).rgb * texture(u_nmap, nmap_b_uv).rgb;
     bool in_shadow = is_in_shadow(f_w_pos);
     o_color = u_base_color;
     if(normal.y > LIGHT_MIN_Y && !in_shadow) { o_color = u_light_color; }
