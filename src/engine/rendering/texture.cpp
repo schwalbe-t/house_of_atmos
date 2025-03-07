@@ -7,12 +7,12 @@
 
 namespace houseofatmos::engine {
 
-    void Texture::destruct_tex(u64& tex_id) {
+    void Texture::destruct_tex(const u64& tex_id) {
         GLuint tex_gl_id = tex_id;
         glDeleteTextures(1, &tex_gl_id);
     }
 
-    void Texture::destruct_fbo(FboHandles& fbo) {
+    void Texture::destruct_fbo(const FboHandles& fbo) {
         GLuint fbo_id = fbo.fbo_id;
         glDeleteFramebuffers(1, &fbo_id);
         GLuint dbo_id = fbo.dbo_id;

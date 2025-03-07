@@ -9,7 +9,7 @@ namespace fs = std::filesystem;
 
 namespace houseofatmos::engine {
 
-    void Shader::destruct(Handles& handles) {
+    void Shader::destruct(const Handles& handles) {
         glDeleteShader(handles.vert_id);
         glDeleteShader(handles.frag_id);
         glDeleteProgram(handles.prog_id);

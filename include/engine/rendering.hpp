@@ -119,8 +119,8 @@ namespace houseofatmos::engine {
         struct FboHandles {
             u64 fbo_id, dbo_id;
         };
-        static void destruct_tex(u64& tex_id);
-        static void destruct_fbo(FboHandles& fbo);
+        static void destruct_tex(const u64& tex_id);
+        static void destruct_fbo(const FboHandles& fbo);
         
         util::Handle<u64, &destruct_tex> tex;
         util::Handle<FboHandles, &destruct_fbo> fbo;
@@ -170,7 +170,7 @@ namespace houseofatmos::engine {
             u64 tex_id;
             std::vector<Layer> layers;
         };
-        static void destruct(Handles& handles);
+        static void destruct(const Handles& handles);
 
         u64 width_px;
         u64 height_px;
@@ -224,7 +224,7 @@ namespace houseofatmos::engine {
         struct Handles {
             u64 vert_id, frag_id, prog_id;
         };
-        static void destruct(Handles& handles);
+        static void destruct(const Handles& handles);
 
         util::Handle<Handles, &destruct> handles;
         // <uniform name> -> <tex id>
@@ -335,7 +335,7 @@ namespace houseofatmos::engine {
         struct Handles {
             u64 vbo_id, ebo_id;
         };
-        static void destruct(Handles& handles);
+        static void destruct(const Handles& handles);
 
         util::Handle<Handles, &destruct> handles;
         std::vector<Attrib> attributes;

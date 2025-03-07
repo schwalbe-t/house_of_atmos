@@ -8,16 +8,9 @@
 
 namespace houseofatmos::engine {
 
-    Audio::Audio(Audio&& other) noexcept {
-        if(other.moved) {
-            error("Attempted to move an already moved 'Audio'");
-        }
-        this->data_channels = other.data_channels;
-        this->data_sample_rate = other.data_sample_rate;
-        this->buffer_id = other.buffer_id;
-        this->source_id = other.source_id;
-        this->moved = false;
-        other.moved = true;
+    void Audio::destruct_buffer(const u64& buffer_id) {
+        ALuint buffer_al_id = buffer_id;
+        alDeleteBuffers(1, &buffer_al_id);
     }
 
     static std::vector<i16> decode(
@@ -64,71 +57,11 @@ namespace houseofatmos::engine {
             decoded.size() * sizeof(i16), 
             sample_rate
         );
-        ALuint source_id;
-        alGenSources(1, &source_id);
-        alSourcei(source_id, AL_BUFFER, buffer_id);
         Audio result;
+        result.buffer = util::Handle<u64, &Audio::destruct_buffer>(buffer_id);
         result.data_channels = channels;
         result.data_sample_rate = sample_rate;
-        result.buffer_id = buffer_id;
-        result.source_id = source_id;
-        result.moved = false;
         return result;
-    }
-
-    Audio& Audio::operator=(Audio&& other) noexcept {
-        if(this == &other) { return *this; }
-        if(other.moved) {
-            error("Attempted to move an already moved 'Audio'");
-        }
-        if(!this->moved) {
-            ALuint buffer_id = this->buffer_id;
-            alDeleteBuffers(1, &buffer_id);
-            ALuint source_id = this->source_id;
-            alDeleteBuffers(1, &source_id);
-        }
-        this->data_channels = other.data_channels;
-        this->data_sample_rate = other.data_sample_rate;
-        this->buffer_id = other.buffer_id;
-        this->source_id = other.source_id;
-        this->moved = false;
-        other.moved = true;
-        return *this;
-    }
-
-    Audio::~Audio() {
-        if(this->moved) { return; }
-        ALuint buffer_id = this->buffer_id;
-        alDeleteBuffers(1, &buffer_id);
-        ALuint source_id = this->source_id;
-        alDeleteBuffers(1, &source_id);
-    }
-
-    // Technically the following methods could be marked as 'const',
-    // but I shall not since they modify OpenAL state
-    // (passing a 'const Audio&' somewhere should mean they can't
-    //  modify the player in any way)
-
-    void Audio::play() {
-        alSourcePlay(this->source_id);
-    }
-
-    void Audio::stop() {
-        alSourceStop(this->source_id);
-    }
-
-    void Audio::set_pitch(f64 value) {
-        alSourcef(this->source_id, AL_PITCH, value);
-    }
-
-    void Audio::set_gain(f64 value) {
-        alSourcef(this->source_id, AL_GAIN, value);
-    }
-
-    bool Audio::is_playing() const {
-        ALint state;
-        alGetSourcei(this->source_id, AL_SOURCE_STATE, &state);
-        return state == AL_PLAYING;
     }
 
 }

@@ -7,7 +7,7 @@
 namespace houseofatmos::engine::util {
 
     template<typename T>
-    using HandleDestructor = void (*)(T&);
+    using HandleDestructor = void (*)(const T&);
 
     // implements moving and destruction of a resource
     template<typename T, HandleDestructor<T> Destructor>

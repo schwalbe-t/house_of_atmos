@@ -98,7 +98,7 @@ namespace houseofatmos::audio_const {
             "res/soundtrack/track_1.ogg",
             "res/soundtrack/track_2.ogg"
         },
-        Soundtrack::no_repetition
+        Soundtrack::Repetition::Allowed
     );
 
 }
