@@ -54,12 +54,19 @@ namespace houseofatmos::engine {
     }
 
 
+
     size_t Mesh::max_attributes() {
         GLint max_attribs;
         glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &max_attribs);
         return (size_t) max_attribs;
     }
 
+    void Mesh::destruct(Handles& handles) {
+        GLuint vbo_id = handles.vbo_id;
+        glDeleteBuffers(1, &vbo_id);
+        GLuint ebo_id = handles.ebo_id;
+        glDeleteBuffers(1, &ebo_id);
+    }
 
     static size_t compute_vertex_size(const std::vector<Mesh::Attrib>& attribs) {
         size_t sum = 0;
@@ -83,56 +90,10 @@ namespace houseofatmos::engine {
         this->current_attrib = 0;
         this->init_buffers();
         this->modified = false;
-        this->moved = false;
     }
 
     Mesh::Mesh(std::initializer_list<Attrib> attrib_sizes) {
-        this->moved = true;
         *this = Mesh(std::span(attrib_sizes));
-    }
-
-    Mesh::Mesh(Mesh&& other) noexcept {
-        if(other.moved) {
-            error("Attempted to move an already moved 'Mesh'");
-        }
-        this->attributes = std::move(other.attributes);
-        this->vertex_size = other.vertex_size;
-        this->vertex_data = std::move(other.vertex_data);
-        this->vertices = other.vertices;
-        this->current_attrib = other.current_attrib;
-        this->elements = std::move(other.elements);
-        this->vbo_id = other.vbo_id;
-        this->ebo_id = other.ebo_id;
-        this->modified = other.modified;
-        this->moved = false;
-        other.moved = true;
-    }
-
-    Mesh& Mesh::operator=(Mesh&& other) noexcept {
-        if(this == &other) { return *this; }
-        if(other.moved) {
-            error("Attempted to move an already moved 'Mesh'");
-        }
-        if(!this->moved) {
-            this->delete_buffers();
-        }
-        this->attributes = std::move(other.attributes);
-        this->vertex_size = other.vertex_size;
-        this->vertex_data = std::move(other.vertex_data);
-        this->vertices = other.vertices;
-        this->current_attrib = other.current_attrib;
-        this->elements = std::move(other.elements);
-        this->vbo_id = other.vbo_id;
-        this->ebo_id = other.ebo_id;
-        this->modified = other.modified;
-        this->moved = false;
-        other.moved = true;
-        return *this;
-    }
-
-    Mesh::~Mesh() {
-        if(this->moved) { return; }
-        this->delete_buffers();
     }
 
 
@@ -175,7 +136,6 @@ namespace houseofatmos::engine {
     }
 
     void Mesh::put_f32(std::span<const f32> values) {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         assert_current_attrib(
             this->attributes, this->current_attrib, { Mesh::F32, values.size() }
         );
@@ -185,7 +145,6 @@ namespace houseofatmos::engine {
     void Mesh::put_f32(std::initializer_list<f32> values) { this->put_f32(std::span(values)); }
 
     void Mesh::put_i8(std::span<const i8> values) {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         assert_current_attrib(
             this->attributes, this->current_attrib, { Mesh::I8, values.size() }
         );
@@ -195,7 +154,6 @@ namespace houseofatmos::engine {
     void Mesh::put_i8(std::initializer_list<i8> values) { this->put_i8(std::span(values)); }
 
     void Mesh::put_i16(std::span<const i16> values) {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         assert_current_attrib(
             this->attributes, this->current_attrib, { Mesh::I16, values.size() }
         );
@@ -205,7 +163,6 @@ namespace houseofatmos::engine {
     void Mesh::put_i16(std::initializer_list<i16> values) { this->put_i16(std::span(values)); }
 
     void Mesh::put_i32(std::span<const i32> values) {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         assert_current_attrib(
             this->attributes, this->current_attrib, { Mesh::I32, values.size() }
         );
@@ -215,7 +172,6 @@ namespace houseofatmos::engine {
     void Mesh::put_i32(std::initializer_list<i32> values) { this->put_i32(std::span(values)); }
 
     void Mesh::put_u8(std::span<const u8> values) {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         assert_current_attrib(
             this->attributes, this->current_attrib, { Mesh::U8, values.size() }
         );
@@ -225,7 +181,6 @@ namespace houseofatmos::engine {
     void Mesh::put_u8(std::initializer_list<u8> values) { this->put_u8(std::span(values)); }
 
     void Mesh::put_u16(std::span<const u16> values) {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         assert_current_attrib(
             this->attributes, this->current_attrib, { Mesh::U16, values.size() }
         );
@@ -235,7 +190,6 @@ namespace houseofatmos::engine {
     void Mesh::put_u16(std::initializer_list<u16> values) { this->put_u16(std::span(values)); }
 
     void Mesh::put_u32(std::span<const u32> values) {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         assert_current_attrib(
             this->attributes, this->current_attrib, { Mesh::U32, values.size() }
         );
@@ -245,7 +199,6 @@ namespace houseofatmos::engine {
     void Mesh::put_u32(std::initializer_list<u32> values) { this->put_u32(std::span(values)); }
 
     void Mesh::unsafe_put_raw(std::span<const u8> data) {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         append_attrib_data(this->vertex_data, data);
     }
 
@@ -254,7 +207,6 @@ namespace houseofatmos::engine {
     }
 
     u16 Mesh::complete_vertex() {
-        if(this->moved) { error("Attempted to use a moved 'Mesh'"); }
         if(this->current_attrib < this->attributes.size()) {
             const Attrib& attribute = this->attributes[this->current_attrib];
             error("Mesh expected "
@@ -271,16 +223,10 @@ namespace houseofatmos::engine {
 
 
     u16 Mesh::vertex_count() const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Mesh'");
-        }
         return this->vertices;
     }
 
     void Mesh::add_element(u16 a, u16 b, u16 c) {
-        if(this->moved) {
-            error("Attempted to use a moved 'Mesh'");
-        }
         if(a >= this->vertices || b >= this->vertices || c >= this->vertices) {
             error("we fucked up big time");
         }
@@ -291,16 +237,10 @@ namespace houseofatmos::engine {
     }
 
     u32 Mesh::element_count() const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Mesh'");
-        }
         return this->elements.size() / 3;
     }
 
     void Mesh::clear() {
-        if(this->moved) {
-            error("Attempted to use a moved 'Mesh'");
-        }
         this->vertex_data.clear();
         this->vertices = 0;
         this->current_attrib = 0;
@@ -312,10 +252,11 @@ namespace houseofatmos::engine {
     void Mesh::init_buffers() {
         GLuint vbo_id;
         glGenBuffers(1, &vbo_id);
-        this->vbo_id = vbo_id;
         GLuint ebo_id;
         glGenBuffers(1, &ebo_id);
-        this->ebo_id = ebo_id;
+        this->handles = util::Handle<Handles, &Mesh::destruct>(
+            Handles(vbo_id, ebo_id)
+        );
     }
 
     void Mesh::bind_properties() const {
@@ -346,21 +287,11 @@ namespace houseofatmos::engine {
         }
     }
 
-    void Mesh::delete_buffers() const {
-        GLuint vbo_id = this->vbo_id;
-        glDeleteBuffers(1, &vbo_id);
-        GLuint ebo_id = this->ebo_id;
-        glDeleteBuffers(1, &ebo_id);
-    }
-
 
     void Mesh::submit() {
-        if(this->moved) {
-            error("Attempted to use a moved 'Mesh'");
-        }
         if(!this->modified) { return; }
         if(this->vertices > 0 && this->elements.size() > 0) {
-            glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
+            glBindBuffer(GL_ARRAY_BUFFER, this->handles->vbo_id);
             glBufferData(
                 GL_ARRAY_BUFFER,
                 this->vertex_data.size(),
@@ -370,7 +301,7 @@ namespace houseofatmos::engine {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         if(this->vertices > 0 && this->elements.size() > 0) {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->handles->ebo_id);
             glBufferData(
                 GL_ELEMENT_ARRAY_BUFFER,
                 this->elements.size() * sizeof(u16),
@@ -388,9 +319,6 @@ namespace houseofatmos::engine {
         DepthTesting depth_testing
     ) {
         if(count == 0) { return; }
-        if(this->moved) {
-            error("Attempted to use a moved 'Mesh'");
-        }
         if(this->modified) { this->submit(); }
         if(face_culling == FaceCulling::Enabled) {
             glEnable(GL_CULL_FACE);
@@ -405,8 +333,8 @@ namespace houseofatmos::engine {
         glBindFramebuffer(GL_FRAMEBUFFER, dest.fbo_id);
         glViewport(0, 0, dest.width(), dest.height());
         shader.internal_bind();
-        glBindBuffer(GL_ARRAY_BUFFER, this->vbo_id);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo_id);
+        glBindBuffer(GL_ARRAY_BUFFER, this->handles->vbo_id);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->handles->ebo_id);
         this->bind_properties();
         if(count == 1) {
             glDrawElements(

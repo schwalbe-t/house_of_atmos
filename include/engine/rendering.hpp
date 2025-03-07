@@ -3,6 +3,7 @@
 
 #include "math.hpp"
 #include "scene.hpp"
+#include "util.hpp"
 #include <vector>
 #include <span>
 #include <unordered_map>
@@ -115,52 +116,43 @@ namespace houseofatmos::engine {
         using Loader = Resource<Texture, LoadArgs>;
 
         private:
+        struct FboHandles {
+            u64 fbo_id, dbo_id;
+        };
+        static void destruct_tex(u64& tex_id);
+        static void destruct_fbo(FboHandles& fbo);
+        
+        util::Handle<u64, &destruct_tex> tex;
+        util::Handle<FboHandles, &destruct_fbo> fbo;
         u64 width_px;
         u64 height_px;
-
-        u64 fbo_id;
-        u64 tex_id;
-        u64 dbo_id;
-        bool moved;
 
         public:
         Texture(u64 width, u64 height, const u8* data);
         Texture(u64 width, u64 height);
         Texture(const Image& image);
         static Texture from_resource(const LoadArgs& arg);
-        Texture(const Texture& other) = delete;
-        Texture(Texture&& other) noexcept;
-        Texture& operator=(const Texture& other) = delete;
-        Texture& operator=(Texture&& other) noexcept;
-        ~Texture();
 
         u64 width() const { return this->width_px; }
         u64 height() const { return this->height_px; }
 
-        u64 internal_tex_id() const {
-            if(this->moved) {
-                error("Attempted to use a moved 'Texture'");
-            }
-            return this->tex_id; 
+        void force_init_fbo();
+
+        u64 internal_tex_id() const { return *this->tex; }
+        u64 internal_fbo_id() { 
+            this->force_init_fbo();
+            return this->fbo->fbo_id;
         }
-        u64 internal_fbo_id() const {
-            if(this->moved) {
-                error("Attempted to use a moved 'Texture'");
-            }
-            return this->fbo_id; 
+
+        RenderTarget as_target() {
+            this->force_init_fbo();
+            return (RenderTarget) { 
+                this->fbo->fbo_id, this->width_px, this->height_px 
+            };
         }
 
         void resize_fast(u64 width, u64 height);
         void resize(u64 width, u64 height);
-
-        RenderTarget as_target() {
-            if(this->moved) {
-                error("Attempted to use a moved 'Texture'");
-            }
-            return (RenderTarget) { 
-                this->fbo_id, this->width_px, this->height_px 
-            };
-        }
 
         void blit(RenderTarget dest, f64 x, f64 y, f64 w, f64 h) const;
         void blit(RenderTarget, Shader& shader) const;
@@ -171,46 +163,41 @@ namespace houseofatmos::engine {
     struct TextureArray {
 
         private:
+        struct Handles {
+            struct Layer {
+                u64 fbo_id, dbo_id;
+            };
+            u64 tex_id;
+            std::vector<Layer> layers;
+        };
+        static void destruct(Handles& handles);
+
         u64 width_px;
         u64 height_px;
-        u64 tex_id;
-        std::vector<u64> fbo_ids;
-        std::vector<u64> dbo_ids;
-        bool moved;
+        util::Handle<Handles, &destruct> handles;
 
         void init(
             u64 width, u64 height, size_t layers, 
-            std::span<const Texture*> textures
+            std::span<Texture*> textures
         );
-        void deallocate() const;
 
         public:
         TextureArray(u64 width, u64 height, size_t layers);
-        TextureArray(std::span<const Texture*> textures = std::span<const engine::Texture*>());
-        TextureArray(std::span<const Texture> textures);
-        TextureArray(const TextureArray& other) = delete;
-        TextureArray(TextureArray&& other) noexcept;
-        TextureArray& operator=(const TextureArray& other) = delete;
-        TextureArray& operator=(TextureArray&& other) noexcept;
-        ~TextureArray();
+        TextureArray(std::span<Texture*> textures = std::span<engine::Texture*>());
+        TextureArray(std::span<Texture> textures);
 
         u64 width() const { return this->width_px; }
         u64 height() const { return this->height_px; }
-        size_t size() const { return this->fbo_ids.size(); }
-
-        u64 internal_tex_id() const {
-            if(this->moved) {
-                error("Attempted to use a moved 'TextureArray'");
-            }
-            return this->tex_id; 
+        size_t size() const {
+            return this->handles.is_empty()? 0 : this->handles->layers.size();
         }
 
+        u64 internal_tex_id() const { return this->handles->tex_id; }
+
         RenderTarget as_target(size_t layer_idx) {
-            if(this->moved) {
-                error("Attempted to use a moved 'TextureArray'");
-            }
             return (RenderTarget) {
-                this->fbo_ids.at(layer_idx), this->width_px, this->height_px
+                this->handles->layers.at(layer_idx).fbo_id, 
+                this->width_px, this->height_px
             };
         }
 
@@ -234,6 +221,12 @@ namespace houseofatmos::engine {
         using Loader = Resource<Shader, LoadArgs>;
 
         private:
+        struct Handles {
+            u64 vert_id, frag_id, prog_id;
+        };
+        static void destruct(Handles& handles);
+
+        util::Handle<Handles, &destruct> handles;
         // <uniform name> -> <tex id>
         std::unordered_map<std::string, u64> uniform_textures;
         // <tex id> -> <count of uniforms using it>
@@ -243,11 +236,6 @@ namespace houseofatmos::engine {
         // free tex slots
         std::vector<u64> free_tex_slots;
         u64 next_slot;
-
-        u64 vert_id;
-        u64 frag_id;
-        u64 prog_id;
-        bool moved;
 
         u64 allocate_texture_slot(std::string name, u64 tex_id, bool is_array);
 
@@ -259,11 +247,6 @@ namespace houseofatmos::engine {
             std::string_view fragment_file = "<unknown>"
         );
         static Shader from_resource(const LoadArgs& args);
-        Shader(const Shader& other) = delete;
-        Shader(Shader&& other) noexcept;
-        Shader& operator=(const Shader& other) = delete;
-        Shader& operator=(Shader&& other) noexcept;
-        ~Shader();
 
         void internal_bind() const;
         void internal_unbind() const;
@@ -349,32 +332,27 @@ namespace houseofatmos::engine {
         };
 
         private:
+        struct Handles {
+            u64 vbo_id, ebo_id;
+        };
+        static void destruct(Handles& handles);
+
+        util::Handle<Handles, &destruct> handles;
         std::vector<Attrib> attributes;
         size_t vertex_size;
         std::vector<u8> vertex_data;
         size_t vertices;
         size_t current_attrib;
         std::vector<u16> elements;
-        
-        u64 vbo_id;
-        u64 ebo_id;
         bool modified;
-        bool moved;
 
         void init_buffers();
         void bind_properties() const;
         void unbind_properties() const;
-        void delete_buffers() const;
-
 
         public:
         Mesh(std::span<const Attrib> attributes);
         Mesh(std::initializer_list<Attrib> attributes);
-        Mesh(const Mesh& other) = delete;
-        Mesh(Mesh&& other) noexcept;
-        Mesh& operator=(const Mesh& other) = delete;
-        Mesh& operator=(Mesh&& other) noexcept;
-        ~Mesh();
 
         static size_t max_attributes();
 
@@ -410,10 +388,6 @@ namespace houseofatmos::engine {
             Rendering rendering = Rendering::Surfaces, 
             DepthTesting depth_testing = DepthTesting::Enabled
         );
-
-        bool was_moved() {
-            return this->moved;
-        }
 
     };
 

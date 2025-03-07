@@ -7,6 +7,18 @@
 
 namespace houseofatmos::engine {
 
+    void Texture::destruct_tex(u64& tex_id) {
+        GLuint tex_gl_id = tex_id;
+        glDeleteTextures(1, &tex_gl_id);
+    }
+
+    void Texture::destruct_fbo(FboHandles& fbo) {
+        GLuint fbo_id = fbo.fbo_id;
+        glDeleteFramebuffers(1, &fbo_id);
+        GLuint dbo_id = fbo.dbo_id;
+        glDeleteRenderbuffers(1, &dbo_id);
+    }
+
     static GLuint init_fbo() {
         GLuint fbo_id;
         glGenFramebuffers(1, &fbo_id);
@@ -49,40 +61,16 @@ namespace houseofatmos::engine {
         }
         this->width_px = width;
         this->height_px = height;
-        this->fbo_id = init_fbo();
-        this->tex_id = init_tex(width, height, (void*) data);
-        this->dbo_id = init_dbo(width, height);
-        glFramebufferRenderbuffer(
-            GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, this->dbo_id
+        this->tex = util::Handle<u64, &Texture::destruct_tex>(
+            init_tex(width, height, (void*) data)
         );
-        glFramebufferTexture(
-            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, this->tex_id, 0
-        );
-        bool success = glCheckFramebufferStatus(GL_FRAMEBUFFER)
-            == GL_FRAMEBUFFER_COMPLETE;
-        if(!success) {
-            GLuint fbo_id = this->fbo_id;
-            glDeleteFramebuffers(1, &fbo_id);
-            GLuint tex_id = this->tex_id;
-            glDeleteTextures(1, &tex_id);
-            GLuint dbo_id = this->dbo_id;
-            glDeleteRenderbuffers(1, &dbo_id);
-            error(std::string("Unable to initialize a texture.")
-                + " GPU capabilities may be insufficient."
-            );
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        this->moved = false;
     }
 
     Texture::Texture(u64 width, u64 height) {
-        this->moved = true;
         *this = Texture(width, height, nullptr);
     }
 
     Texture::Texture(const Image& img) {
-        this->moved = true;
         // 'Image' stores the image vertically flipped to how OpenGL expects it
         Image img_flipped = img;
         img_flipped.mirror_vertical();
@@ -99,60 +87,41 @@ namespace houseofatmos::engine {
         return Texture(image);
     }
 
-    Texture::Texture(Texture&& other) noexcept {
-        if(other.moved) {
-            error("Attempted to move an already moved 'Texture'");
+    void Texture::force_init_fbo() {
+        if(!this->fbo.is_empty()) { return; }
+        GLuint fbo_id = init_fbo();
+        GLuint dbo_id = init_dbo(this->width_px, this->height_px);
+        glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, dbo_id
+        );
+        glFramebufferTexture(
+            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *this->tex, 0
+        );
+        bool success = glCheckFramebufferStatus(GL_FRAMEBUFFER)
+            == GL_FRAMEBUFFER_COMPLETE;
+        if(!success) {
+            glDeleteFramebuffers(1, &fbo_id);
+            glDeleteRenderbuffers(1, &dbo_id);
+            error("Unable to initialize a texture."
+                " GPU capabilities may be insufficient."
+            );
         }
-        this->width_px = other.width_px;
-        this->height_px = other.height_px;
-        this->fbo_id = other.fbo_id;
-        this->tex_id = other.tex_id;
-        this->dbo_id = other.dbo_id;
-        this->moved = false;
-        other.moved = true;
-    }
-
-    static void delete_resources(GLuint fbo_id, GLuint tex_id, GLuint dbo_id) {
-        glDeleteFramebuffers(1, &fbo_id);
-        glDeleteTextures(1, &tex_id);
-        glDeleteRenderbuffers(1, &dbo_id);
-    }
-
-    Texture& Texture::operator=(Texture&& other) noexcept {
-        if(this == &other) { return *this; }
-        if(other.moved) {
-            error("Attempted to move an already moved 'Texture'");
-        }
-        if(!this->moved) {
-            delete_resources(this->fbo_id, this->tex_id, this->dbo_id);
-        };
-        this->width_px = other.width_px;
-        this->height_px = other.height_px;
-        this->fbo_id = other.fbo_id;
-        this->tex_id = other.tex_id;
-        this->dbo_id = other.dbo_id;
-        this->moved = false;
-        other.moved = true;
-        return *this;
-    }
-
-    Texture::~Texture() {
-        if(this->moved) { return; }
-        delete_resources(this->fbo_id, this->tex_id, this->dbo_id);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        this->fbo = util::Handle<FboHandles, &Texture::destruct_fbo>(
+            FboHandles(fbo_id, dbo_id)
+        );
     }
 
 
     void Texture::resize_fast(u64 width, u64 height) {
-        if(this->width() == width && this->height() == height && !this->moved) {
+        if(this->width() == width && this->height() == height) {
             return;
         }
         *this = Texture(width, height);
     }
 
     void Texture::resize(u64 width, u64 height) {
-        if(this->moved) {
-            error("Attempted to use a moved 'Texture'");
-        }
         if(this->width() == width && this->height() == height) {
             return;
         }
@@ -206,9 +175,6 @@ namespace houseofatmos::engine {
         RenderTarget dest,
         f64 x, f64 y, f64 w, f64 h
     ) const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Texture'");
-        }
         if(!blit_shader || !blit_quad) { init_blit_resources(); }
         Vec<2> scale = Vec<2>(w, h)
             / Vec<2>(dest.width(), dest.height())
@@ -227,9 +193,6 @@ namespace houseofatmos::engine {
     }
 
     void Texture::blit(RenderTarget dest, Shader& shader) const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Texture'");
-        }
         if(!blit_quad) { init_blit_resources(); }
         shader.set_uniform("u_texture", *this);
         blit_quad.value().render(

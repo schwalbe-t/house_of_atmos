@@ -9,6 +9,12 @@ namespace fs = std::filesystem;
 
 namespace houseofatmos::engine {
 
+    void Shader::destruct(Handles& handles) {
+        glDeleteShader(handles.vert_id);
+        glDeleteShader(handles.frag_id);
+        glDeleteProgram(handles.prog_id);
+    }
+
     static std::string expand_shader_includes(
         const std::string& source, std::string_view source_path
     ) {
@@ -135,16 +141,18 @@ namespace houseofatmos::engine {
         std::string_view vertex_file, std::string_view fragment_file
     ) {
         this->next_slot = 0;
-        this->vert_id = compile_shader(
+        u64 vert_id = compile_shader(
             vertex_src, vertex_file, GL_VERTEX_SHADER
         );
-        this->frag_id = compile_shader(
+        u64 frag_id = compile_shader(
             fragment_src, fragment_file, GL_FRAGMENT_SHADER
         );
-        this->prog_id = link_shaders(
-            this->vert_id, this->frag_id, vertex_file, fragment_file
+        u64 prog_id = link_shaders(
+            vert_id, frag_id, vertex_file, fragment_file
         );
-        this->moved = false;
+        this->handles = util::Handle<Handles, &Shader::destruct>(
+            Handles(vert_id, frag_id, prog_id)
+        );
     }
 
     Shader Shader::from_resource(const Shader::LoadArgs& args) {
@@ -156,58 +164,9 @@ namespace houseofatmos::engine {
         );
     }
 
-    Shader::Shader(Shader&& other) noexcept {
-        if(other.moved) {
-            error("Attempted to move an already moved 'Shader'");
-        }
-        this->uniform_textures = std::move(other.uniform_textures);
-        this->texture_uniform_count = std::move(other.texture_uniform_count);
-        this->texture_slots = std::move(other.texture_slots);
-        this->free_tex_slots = std::move(other.free_tex_slots);
-        this->next_slot = other.next_slot;
-        this->vert_id = other.vert_id;
-        this->frag_id = other.frag_id;
-        this->prog_id = other.prog_id;
-        this->moved = false;
-        other.moved = true;
-    }
-
-    Shader& Shader::operator=(Shader&& other) noexcept {
-        if(this == &other) { return *this; }
-        if(other.moved) {
-            error("Attempted to move an already moved 'Shader'");
-        }
-        if(!this->moved) {
-            glDeleteShader(this->vert_id);
-            glDeleteShader(this->frag_id);
-            glDeleteProgram(this->prog_id);
-        }
-        this->uniform_textures = std::move(other.uniform_textures);
-        this->texture_uniform_count = std::move(other.texture_uniform_count);
-        this->texture_slots = std::move(other.texture_slots);
-        this->free_tex_slots = std::move(other.free_tex_slots);
-        this->next_slot = other.next_slot;
-        this->vert_id = other.vert_id;
-        this->frag_id = other.frag_id;
-        this->prog_id = other.prog_id;
-        this->moved = false;
-        other.moved = true;
-        return *this;
-    }
-
-    Shader::~Shader() {
-        if(this->moved) { return; }
-        glDeleteShader(this->vert_id);
-        glDeleteShader(this->frag_id);
-        glDeleteProgram(this->prog_id);
-    }
-
 
     void Shader::internal_bind() const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Shader'");
-        }
-        glUseProgram(this->prog_id);
+        glUseProgram(this->handles->prog_id);
         for(const auto& [tex_id, slot_info]: this->texture_slots) {
             const auto& [slot, is_array] = slot_info;
             glActiveTexture(GL_TEXTURE0 + slot);
@@ -216,9 +175,6 @@ namespace houseofatmos::engine {
     }
 
     void Shader::internal_unbind() const {
-        if(this->moved) {
-            error("Attempted to use a moved 'Shader'");
-        }
         for(const auto& [tex_id, slot_info]: this->texture_slots) {
             const auto& [slot, is_array] = slot_info;
             glActiveTexture(GL_TEXTURE0 + slot);
@@ -235,12 +191,7 @@ namespace houseofatmos::engine {
     }
 
 
-    static GLint binded_uniform_loc(
-        bool moved, GLuint program, std::string_view name
-    ) {
-        if(moved) {
-            error("Attempted to use a moved 'Shader'");
-        }
+    static GLint binded_uniform_loc(GLuint program, std::string_view name) {
         GLint current_program;
         glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
         if(static_cast<GLuint>(current_program) != program) {
@@ -307,13 +258,10 @@ namespace houseofatmos::engine {
     }
 
     void Shader::set_uniform(std::string_view name_v, const Texture& texture) {
-        if(this->moved) {
-            error("Attempted to use a moved 'Shader'");
-        }
         auto name = std::string(name_v);
         u64 tex_id = texture.internal_tex_id();
         u64 slot = this->allocate_texture_slot(name, tex_id, false /* not tex array */);
-        GLint location = binded_uniform_loc(this->moved, this->prog_id, name);
+        GLint location = binded_uniform_loc(this->handles->prog_id, name);
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, tex_id);
         glUniform1i(location, slot);
@@ -322,14 +270,11 @@ namespace houseofatmos::engine {
     void Shader::set_uniform(
         std::string_view name_v, const TextureArray& textures
     ) {
-        if(this->moved) {
-            error("Attempted to use a moved 'Shader'");
-        }
         if(textures.size() == 0) { return; }
         auto name = std::string(name_v);
         u64 tex_id = textures.internal_tex_id();
         u64 slot = this->allocate_texture_slot(name, tex_id, true /* is tex array */);
-        GLint location = binded_uniform_loc(this->moved, this->prog_id, name);
+        GLint location = binded_uniform_loc(this->handles->prog_id, name);
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D_ARRAY, tex_id);
         glUniform1i(location, slot);
@@ -360,139 +305,139 @@ namespace houseofatmos::engine {
 
     void Shader::set_uniform(std::string_view name, f64 v) {
         glUniform1f(
-            binded_uniform_loc(this->moved, this->prog_id, name), v
+            binded_uniform_loc(this->handles->prog_id, name), v
         );
     }
     void Shader::set_uniform(std::string_view name, Vec<2> v) {
         glUniform2f(
-            binded_uniform_loc(this->moved, this->prog_id, name), v.x(), v.y()
+            binded_uniform_loc(this->handles->prog_id, name), v.x(), v.y()
         );
     }
     void Shader::set_uniform(std::string_view name, Vec<3> v) {
         glUniform3f(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             v.x(), v.y(), v.z()
         );
     }
     void Shader::set_uniform(std::string_view name, Vec<4> v) {
         glUniform4f(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             v.x(), v.y(), v.z(), v.w()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const f64> value) {
         glUniform1fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             cast_array<f64, GLfloat>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Vec<2>> value) {
         glUniform2fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<2, f64, GLfloat>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Vec<3>> value) {
         glUniform3fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<3, f64, GLfloat>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Vec<4>> value) {
         glUniform4fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<4, f64, GLfloat>(value).data()
         );
     }
 
 
     void Shader::set_uniform(std::string_view name, i64 v) {
-        glUniform1i(binded_uniform_loc(this->moved, this->prog_id, name), v);
+        glUniform1i(binded_uniform_loc(this->handles->prog_id, name), v);
     }
     void Shader::set_uniform(std::string_view name, IVec<2> v) {
         glUniform2i(
-            binded_uniform_loc(this->moved, this->prog_id, name), v.x(), v.y()
+            binded_uniform_loc(this->handles->prog_id, name), v.x(), v.y()
         );
     }
     void Shader::set_uniform(std::string_view name, IVec<3> v) {
         glUniform3i(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             v.x(), v.y(), v.z()
         );
     }
     void Shader::set_uniform(std::string_view name, IVec<4> v) {
         glUniform4i(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             v.x(), v.y(), v.z(), v.w()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const i64> value) {
         glUniform1iv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             cast_array<i64, GLint>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const IVec<2>> value) {
         glUniform2iv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<2, i64, GLint>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const IVec<3>> value) {
         glUniform3iv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<3, i64, GLint>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const IVec<4>> value) {
         glUniform4iv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<4, i64, GLint>(value).data()
         );
     }
 
 
     void Shader::set_uniform(std::string_view name, u64 v) {
-        glUniform1i(binded_uniform_loc(this->moved, this->prog_id, name), v);
+        glUniform1i(binded_uniform_loc(this->handles->prog_id, name), v);
     }
     void Shader::set_uniform(std::string_view name, UVec<2> v) {
         glUniform2i(
-            binded_uniform_loc(this->moved, this->prog_id, name), v.x(), v.y()
+            binded_uniform_loc(this->handles->prog_id, name), v.x(), v.y()
         );
     }
     void Shader::set_uniform(std::string_view name, UVec<3> v) {
         glUniform3i(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             v.x(), v.y(), v.z()
         );
     }
     void Shader::set_uniform(std::string_view name, UVec<4> v) {
         glUniform4i(
-            binded_uniform_loc(this->moved, this->prog_id, name),
+            binded_uniform_loc(this->handles->prog_id, name),
             v.x(), v.y(), v.z(), v.w()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const u64> value) {
         glUniform1uiv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             cast_array<u64, GLuint>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const UVec<2>> value) {
         glUniform2uiv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<2, u64, GLuint>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const UVec<3>> value) {
         glUniform3uiv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<3, u64, GLuint>(value).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const UVec<4>> value) {
         glUniform4uiv(
-            binded_uniform_loc(this->moved, this->prog_id, name), value.size(),
+            binded_uniform_loc(this->handles->prog_id, name), value.size(),
             flatten_array<4, u64, GLuint>(value).data()
         );
     }
@@ -514,118 +459,118 @@ namespace houseofatmos::engine {
 
     void Shader::set_uniform(std::string_view name, const Mat<2>& value) {
         glUniformMatrix2fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<2, 2>(&value, 1).data()
         );
     }
     void Shader::set_uniform(std::string_view name, const Mat<3>& value) {
         glUniformMatrix3fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<3, 3>(&value, 1).data()
         );
     }
     void Shader::set_uniform(std::string_view name, const Mat<4>& value) {
         glUniformMatrix4fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<4, 4>(&value, 1).data()
         );
     }
     void Shader::set_uniform(std::string_view name, const Mat<2, 3>& value) {
         glUniformMatrix3x2fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<2, 3>(&value, 1).data()
         );
     }
     void Shader::set_uniform(std::string_view name, const Mat<3, 2>& value) {
         glUniformMatrix2x3fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<3, 2>(&value, 1).data()
         );
     }
     void Shader::set_uniform(std::string_view name, const Mat<2, 4>& value) {
         glUniformMatrix4x2fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<2, 4>(&value, 1).data()
         );
     }
     void Shader::set_uniform(std::string_view name, const Mat<4, 2>& value) {
         glUniformMatrix2x4fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<4, 2>(&value, 1).data()
         );
     }
     void Shader::set_uniform(std::string_view name, const Mat<3, 4>& value) {
         glUniformMatrix4x3fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<3, 4>(&value, 1).data()
         );
     }
     void Shader::set_uniform(std::string_view name, const Mat<4, 3>& value) {
         glUniformMatrix3x4fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 1, GL_FALSE,
+            binded_uniform_loc(this->handles->prog_id, name), 1, GL_FALSE,
             flatten_matrices<4, 3>(&value, 1).data()
         );
     }
 
     void Shader::set_uniform(std::string_view name, std::span<const Mat<2>> value) {
         glUniformMatrix2fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<2, 2>(value.data(), value.size()).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Mat<3>> value) {
         glUniformMatrix3fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<3, 3>(value.data(), value.size()).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Mat<4>> value) {
         glUniformMatrix4fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<4, 4>(value.data(), value.size()).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Mat<2, 3>> value) {
         glUniformMatrix3x2fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<2, 3>(value.data(), value.size()).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Mat<3, 2>> value) {
         glUniformMatrix2x3fv(
-            binded_uniform_loc(this->moved, this->prog_id, name), 
+            binded_uniform_loc(this->handles->prog_id, name), 
             value.size(), GL_FALSE,
             flatten_matrices<3, 2>(value.data(), value.size()).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Mat<2, 4>> value) {
         glUniformMatrix4x2fv(
-            binded_uniform_loc(this->moved, this->prog_id, name),
+            binded_uniform_loc(this->handles->prog_id, name),
             value.size(), GL_FALSE,
             flatten_matrices<2, 4>(value.data(), value.size()).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Mat<4, 2>> value) {
         glUniformMatrix2x4fv(
-            binded_uniform_loc(this->moved, this->prog_id, name),
+            binded_uniform_loc(this->handles->prog_id, name),
             value.size(), GL_FALSE,
             flatten_matrices<4, 2>(value.data(), value.size()).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Mat<3, 4>> value) {
         glUniformMatrix4x3fv(
-            binded_uniform_loc(this->moved, this->prog_id, name),
+            binded_uniform_loc(this->handles->prog_id, name),
             value.size(), GL_FALSE,
             flatten_matrices<3, 4>(value.data(), value.size()).data()
         );
     }
     void Shader::set_uniform(std::string_view name, std::span<const Mat<4, 3>> value) {
         glUniformMatrix3x4fv(
-            binded_uniform_loc(this->moved, this->prog_id, name),
+            binded_uniform_loc(this->handles->prog_id, name),
             value.size(), GL_FALSE,
             flatten_matrices<4, 3>(value.data(), value.size()).data()
         );

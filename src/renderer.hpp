@@ -54,7 +54,7 @@ namespace houseofatmos {
         private:
         engine::Texture target = engine::Texture(100, 100);
         engine::TextureArray shadow_maps
-            = engine::TextureArray(std::span<const engine::Texture>()); 
+            = engine::TextureArray(std::span<engine::Texture>()); 
         bool rendering_shadow_maps = false;
 
         public:
