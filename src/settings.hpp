@@ -18,8 +18,10 @@ namespace houseofatmos {
 
         std::string locale = std::string(engine::Localization::no_locale);
         bool fullscreen = false;
-        f64 music_volume = 1.0;
-        f64 sound_volume = 1.0;
+        std::shared_ptr<engine::Volume> ost_volume 
+            = std::make_shared<engine::Volume>(engine::Volume(1.0));
+        std::shared_ptr<engine::Volume> sfx_volume
+            = std::make_shared<engine::Volume>(engine::Volume(1.0));
         u64 view_distance = 2;
         std::vector<std::string> last_games;
 
@@ -30,9 +32,9 @@ namespace houseofatmos {
         void add_recent_game(std::string&& path);
 
         engine::Localization::LoadArgs localization() const {
-            return (engine::Localization::LoadArgs) {
-                "res/localization.json", this->locale 
-            };
+            return engine::Localization::LoadArgs(
+                "res/localization.json", this->locale
+            );
         }
 
         static ui::Element create_slider(

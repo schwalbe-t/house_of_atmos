@@ -224,7 +224,7 @@ namespace houseofatmos::world {
     }
 
     void TerrainMap::update(const engine::Window& window, engine::Scene& scene) {
-        this->local = &scene.get<engine::Localization>(this->local_ref);
+        this->local = &scene.get(this->local_ref);
         if(this->container == nullptr) { return; }
         if(this->container->hidden) { return; }
         this->update_view(window);

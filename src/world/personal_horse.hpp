@@ -4,6 +4,7 @@
 #include "../player.hpp"
 #include "../interactable.hpp"
 #include "../toasts.hpp"
+#include "../settings.hpp"
 #include "terrain.hpp"
 
 namespace houseofatmos::world {
@@ -21,8 +22,8 @@ namespace houseofatmos::world {
         };
 
         static void load_resources(engine::Scene& scene) {
-            scene.load(engine::Model::Loader(PersonalHorse::horse_model));
-            scene.load(engine::Texture::Loader(PersonalHorse::horse_texture));
+            scene.load(PersonalHorse::horse_model);
+            scene.load(PersonalHorse::horse_texture);
         }
 
 
@@ -46,15 +47,20 @@ namespace houseofatmos::world {
         Player* player = nullptr;
         engine::Scene* scene = nullptr;
         
+        engine::Speaker speaker = engine::Speaker(
+            engine::Speaker::Space::World, 10.0
+        );
         std::shared_ptr<Interactable> interactable = nullptr;
         
-        PersonalHorse(Vec<3> pos = Vec<3>(0, 0, 0)) {
+        PersonalHorse(const Settings& settings, Vec<3> pos = Vec<3>(0, 0, 0)) {
             this->set_free(pos);
+            this->speaker.volume = settings.sfx_volume;
         }
 
-        PersonalHorse(const Serialized& serialized) {
+        PersonalHorse(const Settings& settings, const Serialized& serialized) {
             this->set_free(serialized.pos);
             this->angle = serialized.angle;
+            this->speaker.volume = settings.sfx_volume;
         }
 
         void set_free(Vec<3> at_pos);

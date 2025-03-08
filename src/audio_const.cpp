@@ -3,13 +3,14 @@
 
 namespace houseofatmos::voice {
 
-    #define MAKE_VOICED(c, f) \
-        { (c), { ("res/sounds/dialogue_voiced/" f), 1.0, 0.05 } }
+    #define MAKE_VOICED(c, f) { \
+        (c), engine::Sound::LoadArgs(("res/sounds/dialogue_voiced/" f), 0.05) \
+    }
 
     const Dialogue::Voice voiced = {
         { // sounds specified for each letter
-            { U' ', { "res/sounds/silence.ogg", 1.0, 0.0 } },
-            { U'\n', { "res/sounds/silence.ogg", 1.0, 0.0 } },
+            { U' ', engine::Sound::LoadArgs("res/sounds/silence.ogg", 0.0) },
+            { U'\n', engine::Sound::LoadArgs("res/sounds/silence.ogg", 0.0) },
 
             MAKE_VOICED(U'A', "a.ogg"), MAKE_VOICED(U'a', "a.ogg"),
             MAKE_VOICED(U'B', "b.ogg"), MAKE_VOICED(U'b', "b.ogg"),
@@ -75,16 +76,18 @@ namespace houseofatmos::voice {
             MAKE_VOICED(U'ь', "e.ogg"),
             MAKE_VOICED(U'ѝ', "i.ogg"),
         },
-        { "res/sounds/dialogue_pop.ogg", 1.0, 0.05 }, // default fallback sound
+        // default fallback sound
+        engine::Sound::LoadArgs("res/sounds/dialogue_pop.ogg", 0.05),
         0.1 // base duration of each charater
     };
 
     const Dialogue::Voice popped = {
         { // sounds specified for each letter
-            { U' ', { "res/sounds/silence.ogg", 1.0, 0.0 } },
-            { U'\n', { "res/sounds/silence.ogg", 1.0, 0.0 } },
+            { U' ', engine::Sound::LoadArgs("res/sounds/silence.ogg", 0.0) },
+            { U'\n', engine::Sound::LoadArgs("res/sounds/silence.ogg", 0.0) },
         },
-        { "res/sounds/dialogue_pop.ogg", 1.0, 0.05 }, // default fallback sound
+        // default fallback sound
+        engine::Sound::LoadArgs("res/sounds/dialogue_pop.ogg", 0.05),
         0.1 // base duration of each character
     };
 
@@ -98,7 +101,7 @@ namespace houseofatmos::audio_const {
             "res/soundtrack/track_1.ogg",
             "res/soundtrack/track_2.ogg"
         },
-        Soundtrack::no_repetition
+        Soundtrack::Repetition::Allowed
     );
 
 }

@@ -129,9 +129,9 @@ namespace houseofatmos::world {
 
 
         static void load_resources(engine::Scene& scene) {
-            scene.load(engine::Texture::Loader(Terrain::ground_texture));
-            scene.load(engine::Texture::Loader(Terrain::water_texture));
-            scene.load(engine::Shader::Loader(Terrain::water_shader));
+            scene.load(Terrain::ground_texture);
+            scene.load(Terrain::water_texture);
+            scene.load(Terrain::water_shader);
         }
 
         Terrain(u64 width, u64 height, u64 tile_size, u64 chunk_tiles) {

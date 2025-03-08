@@ -4,17 +4,6 @@
 
 namespace houseofatmos {
 
-    void DialogueManager::stop_voice_sounds(engine::Scene& scene) const {
-        if(this->queued.size() == 0) { return; }
-        const Dialogue::Voice& voice = *this->queued[0].voice;
-        for(const auto& [c, sound]: voice.sounds) {
-            scene.get<engine::Sound>(sound).stop();
-        }
-        scene.get<engine::Sound>(voice.default_sound).stop();
-    }
-
-
-
     ui::Element DialogueManager::create_container() {
         ui::Element container = ui::Element()
             .with_handle(&this->container)
@@ -74,9 +63,11 @@ namespace houseofatmos {
         return c;
     }
 
-    void DialogueManager::skip(engine::Scene& scene) {
+    void DialogueManager::skip() {
         if(this->is_empty()) { return; }
-        this->stop_voice_sounds(scene);
+        for(engine::Speaker& speaker: this->speakers) {
+            speaker.stop();
+        }
         this->queued[0].handler();
         this->queued.erase(this->queued.begin());
         this->current_offset = 0;
@@ -93,14 +84,13 @@ namespace houseofatmos {
         size_t char_size = utf8_char_size(remaining);
         std::string next_char_s = remaining.substr(0, char_size);
         char32_t next_char = utf8_char_to_char32(next_char_s);
-        engine::Sound& sound = scene
-            .get<engine::Sound>(dialogue.voice->get_sound_of(next_char));
-        sound.set_base_pitch(dialogue.pitch);
-        sound.play();
+        engine::Speaker& speaker = this->speakers[this->next_speaker];
+        speaker.pitch = dialogue.pitch;
+        speaker.play(scene.get(dialogue.voice->get_sound_of(next_char)));
+        this->next_speaker = (this->next_speaker + 1) % this->speakers.size();
         this->current_offset += char_size;
         std::string displayed = dialogue.text.substr(0, this->current_offset);
-        const engine::Localization local = scene
-            .get<engine::Localization>(this->local_ref);
+        const engine::Localization local = scene.get(this->local_ref);
         this->set_displayed_lines("[" + dialogue.name + "]" 
             + "\n\n" + displayed 
             + (this->waiting()
@@ -113,6 +103,9 @@ namespace houseofatmos {
         engine::Scene& scene, const engine::Window& window, 
         const Vec<3>& observer
     ) {
+        for(engine::Speaker& speaker: this->speakers) {
+            speaker.update();
+        }
         bool has_work = this->container != nullptr
             && this->lines != nullptr
             && this->queued.size() > 0;
@@ -136,7 +129,7 @@ namespace houseofatmos {
         bool skipped = (this->waiting() && requested_skip)
             || distance > dialogue.max_distance;
         if(skipped) {
-            this->skip(scene);
+            this->skip();
         }
     }
 

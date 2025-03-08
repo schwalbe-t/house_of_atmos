@@ -48,10 +48,8 @@ namespace houseofatmos {
     ) {
         resize_output_texture(this->target, window, this->resolution);
         clear_output_texture(this->target.as_target(), this->fog_color);
-        this->shadow_shader = &scene
-            .get<engine::Shader>(Renderer::shadow_shader_args);
-        this->geometry_shader = &scene
-            .get<engine::Shader>(Renderer::geometry_shader_args);
+        this->shadow_shader = &scene.get(Renderer::shadow_shader_args);
+        this->geometry_shader = &scene.get(Renderer::geometry_shader_args);
         this->set_fog_uniforms(*this->geometry_shader);
     }
 

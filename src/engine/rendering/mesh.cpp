@@ -61,7 +61,7 @@ namespace houseofatmos::engine {
         return (size_t) max_attribs;
     }
 
-    void Mesh::destruct(Handles& handles) {
+    void Mesh::destruct(const Handles& handles) {
         GLuint vbo_id = handles.vbo_id;
         glDeleteBuffers(1, &vbo_id);
         GLuint ebo_id = handles.ebo_id;

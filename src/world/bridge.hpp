@@ -29,7 +29,7 @@ namespace houseofatmos::world {
 
         static void load_models(engine::Scene& scene) {
             for(const TypeInfo& type: Bridge::types()) {
-                scene.load(engine::Model::Loader(type.model));
+                scene.load(type.model);
             }
         }
 

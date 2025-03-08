@@ -8,9 +8,9 @@
 
 namespace houseofatmos {
 
-    MainMenu::MainMenu(Settings&& settings) {
-        this->settings = std::move(settings);
-        this->local_ref = this->settings.localization();
+    MainMenu::MainMenu(Settings&& settings):
+            settings(std::move(settings)), 
+            local_ref(this->settings.localization()) {
         u32 background_seed = random_init();
         this->terrain.generate_elevation(background_seed);
         this->terrain.generate_foliage(background_seed);
@@ -32,9 +32,9 @@ namespace houseofatmos {
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
-        this->load(engine::Localization::Loader(this->local_ref));
-        this->load(engine::Texture::Loader(MainMenu::title_sprite.texture));
-        this->load(engine::Shader::Loader(MainMenu::blur_shader));
+        this->load(this->local_ref);
+        this->load(MainMenu::title_sprite.texture);
+        this->load(MainMenu::blur_shader);
     }
 
     static ui::Element make_button(
@@ -65,7 +65,7 @@ namespace houseofatmos {
     static void load_game_from(
         const std::string& path, engine::Window& window, Settings settings 
     ) {
-        std::vector<char> data = engine::GenericResource::read_bytes(path);
+        std::vector<char> data = engine::GenericLoader::read_bytes(path);
         auto buffer = engine::Arena(data);
         auto world = std::make_shared<world::World>(std::move(settings), buffer);
         world->save_path = path;
@@ -255,11 +255,11 @@ namespace houseofatmos {
 
     void MainMenu::update(engine::Window& window) {
         this->settings.apply(*this, window);
-        this->get<engine::Soundtrack>(audio_const::soundtrack).update();
+        this->get(audio_const::soundtrack).update();
         this->before_next_frame();
         this->before_next_frame = []() {};
         if(this->ui.root.children.size() == 0) {
-            const auto& local = this->get<engine::Localization>(this->local_ref);
+            const auto& local = this->get(this->local_ref);
             if(this->settings.locale == engine::Localization::no_locale) {
                 this->show_language_selection(window);
             } else {
@@ -289,7 +289,7 @@ namespace houseofatmos {
         this->background.resize_fast(
             this->renderer.output().width(), this->renderer.output().height()
         );
-        engine::Shader& blur = this->get<engine::Shader>(MainMenu::blur_shader);
+        engine::Shader& blur = this->get(MainMenu::blur_shader);
         blur.set_uniform("u_texture_w", (i64) this->background.width());
         blur.set_uniform("u_texture_h", (i64) this->background.height());
         i64 blur_rad = (i64) (std::min(window.width(), window.height()) / 100.0);

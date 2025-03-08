@@ -6,6 +6,8 @@
 
 namespace houseofatmos::world {
 
+    static const f64 max_speaker_dist = 25.0 * World::units_per_tile;
+
     static const std::vector<
         std::pair<const ui::Background*, ActionManager::Mode>
     > action_modes = {
@@ -73,8 +75,8 @@ namespace houseofatmos::world {
         world->settings.localization(), 
         world, this->ui
     ))
-    , toasts(Toasts(world->settings.localization()))
-    , dialogues(DialogueManager(world->settings.localization())) {
+    , toasts(Toasts(world->settings))
+    , dialogues(DialogueManager(world->settings)) {
         this->world = world;
         this->renderer.lights.push_back(Scene::create_sun({ 0, 0, 0 }));
         this->sun = &this->renderer.lights.back();
@@ -97,9 +99,7 @@ namespace houseofatmos::world {
         ui_background::load_textures(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
-        this->load(engine::Localization::Loader(
-            this->world->settings.localization()
-        ));
+        this->load(this->world->settings.localization());
     }
 
     DirectionalLight Scene::create_sun(const Vec<3>& focus_point) {
@@ -125,6 +125,7 @@ namespace houseofatmos::world {
 
 
     static Character create_roaming_human(
+        const Settings& settings,
         const CharacterType& type,
         const CharacterVariant::LoadArgs& variant,
         Vec<3> origin, std::shared_ptr<StatefulRNG> rng,
@@ -139,7 +140,7 @@ namespace houseofatmos::world {
         Vec<3> spawn_position = origin
             + Vec<3>(cos(spawn_angle), 0.0, sin(spawn_angle)) * spawn_distance;
         return Character(
-            &type, &variant, spawn_position, no_action,
+            &type, &variant, spawn_position, no_action, &settings,
             [origin, rng, terrain = &terrain, window = &window, 
                 roam_distance, roam_vel, 
                 player = &player, player_stop_dist,
@@ -210,10 +211,11 @@ namespace houseofatmos::world {
     static const size_t peasant_dialogue_count = 5;
     static const f64 peasant_male_pitch = 1.9;
     static const f64 peasant_female_pitch = 2.2;
-    static const f64 peasant_male_speed = 1.6;
-    static const f64 peasant_female_speed = 1.75;
+    static const f64 peasant_male_speed = 3.0;
+    static const f64 peasant_female_speed = 3.2;
 
     static void create_peasants(
+        const Settings& settings,
         const Terrain& terrain, const engine::Window& window, 
         const Character& player, std::vector<Character>& characters,
         Interactables& interactables, const engine::Localization& local,
@@ -256,6 +258,7 @@ namespace houseofatmos::world {
                         }
                     );
                     characters.push_back(create_roaming_human(
+                        settings,
                         is_male? human::male : human::female,
                         is_male? human::peasant_man : human::peasant_woman,
                         origin, rng, terrain, window,
@@ -378,7 +381,7 @@ namespace houseofatmos::world {
     void Scene::update(engine::Window& window) {
         this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
-        this->get<engine::Soundtrack>(audio_const::soundtrack).update();
+        this->get(audio_const::soundtrack).update();
         bool paused_game = window.was_pressed(engine::Key::Escape)
             && this->terrain_map.element()->hidden;
         if(paused_game) {
@@ -390,10 +393,9 @@ namespace houseofatmos::world {
             this->terrain_map.hide();
         }
         if(this->characters.size() == 0) {
-            const auto& local = this->get<engine::Localization>(
-                this->world->settings.localization()
-            );
+            const auto& local = this->get(this->world->settings.localization());
             create_peasants(
+                this->world->settings,
                 this->world->terrain, window, 
                 this->world->player.character, this->characters,
                 this->interactables, local, this->dialogues
@@ -423,6 +425,9 @@ namespace houseofatmos::world {
             window, this->world->player, this->renderer.camera, this->camera_distance, 
             this->terrain_map.element()
         );
+        this->listener.position = this->renderer.camera.position;
+        this->listener.look_at = this->renderer.camera.look_at;
+        this->listener.max_speaker_distance = max_speaker_dist;
         this->interactables.observe_from(
             this->world->player.character.position, this->renderer, window
         );
@@ -439,7 +444,7 @@ namespace houseofatmos::world {
             character.update(
                 *this, window, 
                 this->world->player.character.position,
-                this->draw_distance_units(), 0.0
+                this->draw_distance_units()
             );
         }
         this->terrain_map.update(window, *this);

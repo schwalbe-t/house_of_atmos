@@ -1,7 +1,8 @@
 
 #pragma once
 
-#include "scene.hpp"
+#include "resources.hpp"
+#include <unordered_map>
 #include <span>
 #include <initializer_list>
 
@@ -12,16 +13,19 @@ namespace houseofatmos::engine {
         static inline const std::string_view no_locale = "";
 
         struct LoadArgs {
+            using ResourceType = Localization;
+
             std::string_view path;
             std::string_view locale;
+            std::string_view fallback = "en";
             
             std::string identifier() const { return pretty_identifier(); }
             std::string pretty_identifier() const {
-                return "Localization[" + std::string(locale) + "]@'" 
-                    + std::string(path) + "'"; 
+                return "Localization[" + std::string(locale) 
+                    + " (" + std::string(fallback)
+                    + ")]@'" + std::string(path) + "'"; 
             }
         };
-        using Loader = Resource<Localization, LoadArgs>;
 
 
         private:

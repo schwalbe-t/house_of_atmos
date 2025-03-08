@@ -20,7 +20,7 @@ namespace houseofatmos::interior {
     static const std::string maid_dialogue_key_base = "dialogue_maid_";
     static const size_t maid_dialogue_count = 3;
     static const f64 maid_voice_pitch = 2.3;
-    static const f64 maid_voice_speed = 1.8;
+    static const f64 maid_voice_speed = 3.3;
     static const f64 maid_player_stop_dist = 3.0;
     static const f64 maid_walk_speed = 2.5;
 
@@ -47,7 +47,7 @@ namespace houseofatmos::interior {
     static const u64 maid_start_target = 2;
 
     static std::pair<Character, Interior::CharacterUpdate> create_maid(
-        Scene& scene
+        Scene& scene, const Settings& settings
     ) {
         auto rng = std::make_shared<StatefulRNG>();
         auto dialogue_origin = std::make_shared<Vec<3>>();
@@ -57,8 +57,7 @@ namespace houseofatmos::interior {
                     + std::to_string(rng->next_u64() % maid_dialogue_count);
                 const engine::Localization::LoadArgs local_ref = scene->world
                     ->settings.localization();
-                const engine::Localization& local = scene
-                    ->get<engine::Localization>(local_ref);
+                const engine::Localization& local = scene->get(local_ref);
                 scene->dialogues.say(Dialogue(
                     std::string(local.text("dialogue_maid_name")), 
                     std::string(local.text(dialogue_key)),
@@ -68,10 +67,12 @@ namespace houseofatmos::interior {
                 ));
             }
         );
+        u64 start_target_i = (u64) (rng->next_f64() * (f64) maid_targets.size());
         static const u64 no_action = UINT64_MAX;
         Character character = Character(
             &human::female, &human::maid,
-            { 0, 0, 0 }, no_action
+            maid_targets[start_target_i].position, no_action,
+            &settings
         );
         auto current_target = std::make_shared<u64>(maid_start_target);
         return {

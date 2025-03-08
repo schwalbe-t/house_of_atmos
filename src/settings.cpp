@@ -13,13 +13,13 @@ namespace houseofatmos {
 
     Settings Settings::read_from_path(std::string_view path) {
         if(!std::filesystem::exists(path)) { return Settings(); }
-        std::string text = engine::GenericResource::read_string(path);
+        std::string text = engine::GenericLoader::read_string(path);
         json json = json::parse(text);
         Settings settings;
         settings.locale = json.at("locale");
         settings.fullscreen = json.at("fullscreen");
-        settings.music_volume = json.at("music_volume");
-        settings.sound_volume = json.at("sound_volume");
+        settings.ost_volume->gain = json.at("music_volume");
+        settings.sfx_volume->gain = json.at("sound_volume");
         settings.view_distance = json.at("view_distance");
         for(const auto& path: json.at("last_games")) {
             settings.last_games.push_back(path);
@@ -31,8 +31,8 @@ namespace houseofatmos {
         json serialized = json::object();
         serialized["locale"] = this->locale;
         serialized["fullscreen"] = this->fullscreen;
-        serialized["music_volume"] = this->music_volume;
-        serialized["sound_volume"] = this->sound_volume;
+        serialized["music_volume"] = this->ost_volume->gain;
+        serialized["sound_volume"] = this->sfx_volume->gain;
         serialized["view_distance"] = this->view_distance;
         json last_games = json::array();
         for(const std::string& game: this->last_games) {
@@ -171,23 +171,23 @@ namespace houseofatmos {
             change_window_mode.with_padding(2.0).as_movable()
         );        
         menu.children.push_back(create_text(local.text("menu_music_volume")));
-        ui::Element music_volume = Settings::create_slider(
+        ui::Element ost_volume = Settings::create_slider(
             64.0, 8.0, 24.0,
-            0, 100, 5, this->music_volume * 100.0, 
+            0, 100, 5, this->ost_volume->gain * 100.0, 
             "%", [this](f64 percentage) {
-                this->music_volume = percentage / 100.0; 
+                this->ost_volume->gain = percentage / 100.0; 
             }
         );
-        menu.children.push_back(music_volume.with_padding(4.0).as_movable());
+        menu.children.push_back(ost_volume.with_padding(4.0).as_movable());
         menu.children.push_back(create_text(local.text("menu_sound_volume")));
-        ui::Element sound_volume = Settings::create_slider(
+        ui::Element sfx_volume = Settings::create_slider(
             64.0, 8.0, 24.0,
-            0, 100, 5, this->sound_volume * 100.0, 
+            0, 100, 5, this->sfx_volume->gain * 100.0, 
             "%", [this](f64 percentage) { 
-                this->sound_volume = percentage / 100.0; 
+                this->sfx_volume->gain = percentage / 100.0; 
             }
         );
-        menu.children.push_back(sound_volume.with_padding(4.0).as_movable());
+        menu.children.push_back(sfx_volume.with_padding(4.0).as_movable());
         menu.children.push_back(create_text(local.text("menu_view_distance")));
         ui::Element view_distance = Settings::create_slider(
             64.0, 8.0, 24.0,
@@ -210,18 +210,15 @@ namespace houseofatmos {
         return menu;
     }
 
-    void Settings::apply(
-        engine::Scene& scene, engine::Window& window
-    ) const {
+    void Settings::apply(engine::Scene& scene, engine::Window& window) const {
         if(this->fullscreen && !window.is_fullscreen()) { 
             window.set_fullscreen(); 
         }
         if(!this->fullscreen && window.is_fullscreen()) {
             window.set_windowed();
         }
-        scene.get<engine::Soundtrack>(audio_const::soundtrack)
-            .set_gain(this->music_volume);
-        audio_const::set_sfx_gain(scene, this->sound_volume);
+        scene.get(audio_const::soundtrack).speaker.volume = this->ost_volume;
+        // other speakers contain references to their respective controlling volumes
         // view distance needs to be respected by the specific scene
     }
 

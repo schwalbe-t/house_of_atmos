@@ -1,15 +1,27 @@
 
 #pragma once
 
-#include "scene.hpp"
-#include "nums.hpp"
+#include "resources.hpp"
+#include "math.hpp"
 #include "rng.hpp"
+#include "util.hpp"
 #include <vector>
+#include <memory>
 
 namespace houseofatmos::engine {
 
+    using namespace houseofatmos::engine::math;
+
+
+    struct Volume {
+        f64 gain = 1.0;
+    };
+
+
     struct Audio {
         struct LoadArgs {
+            using ResourceType = Audio;
+
             std::string_view path;
 
             std::string identifier() const { return std::string(path); }
@@ -17,115 +29,130 @@ namespace houseofatmos::engine {
                 return "Audio@'" + std::string(path) + "'";
             }   
         };
-        using Loader = Resource<Audio, LoadArgs>;
 
         private:
+        static void destruct_buffer(const u64& buffer_id);
+
+        util::Handle<u64, &destruct_buffer> buffer;
         u8 data_channels;
         u64 data_sample_rate;
-        u64 buffer_id;
-        u64 source_id;
-        bool moved;
         
         Audio() {}
 
-
         public:
-        Audio(const Audio& other) = delete;
-        Audio(Audio&& other) noexcept;
         static Audio from_resource(const LoadArgs& arg);
-        Audio& operator=(const Audio& other) = delete;
-        Audio& operator=(Audio&& other) noexcept;
-        ~Audio();
-
+        
         u8 channels() const { return this->data_channels; }
         u64 sample_rate() const { return this->data_sample_rate; }
-        
-        void play();
-        void stop();
-        void set_pitch(f64 value);
-        void set_gain(f64 value);
-        
-        bool is_playing() const;
-    };
 
+        u64 internal_buffer_id() const { return *this->buffer; }
+    };
 
     struct Sound {
         struct LoadArgs {
+            using ResourceType = Sound;
+
             std::string_view path;
-            f64 base_pitch;
-            f64 pitch_variation;
+            f64 pitch_var;
+            f64 base_pitch = 1.0;
 
             std::string identifier() const { 
                 return std::string(this->path) 
-                    + "|||" + std::to_string(this->base_pitch)
-                    + "|||" + std::to_string(this->pitch_variation);
+                    + "|||" + std::to_string(this->pitch_var)
+                    + "|||" + std::to_string(this->base_pitch);
             }
             std::string pretty_identifier() const {
                 return "Sound[" + std::to_string(this->base_pitch)
-                    + " +/- " + std::to_string(this->pitch_variation) + "]"
+                    + " +/- " + std::to_string(this->pitch_var) + "]"
                     "@'" + std::string(this->path) + "'";
             }
         };
-        using Loader = Resource<Sound, LoadArgs>;
 
-        private:
-        Audio player;
-        f64 curr_base_pitch;
-        f64 curr_pitch_variation;
+        Audio audio;
+        f64 base_pitch;
+        f64 pitch_variation;
 
-        public:
-        Sound(
-            Audio&& audio, f64 base_pitch, f64 pitch_variation
-        ): player(std::move(audio)) {
-            this->curr_base_pitch = base_pitch;
-            this->curr_pitch_variation = pitch_variation;
-            this->randomize_pitch();
-        }
+        Sound(Audio&& audio, f64 base_pitch, f64 pitch_variation): 
+            audio(std::move(audio)), 
+            base_pitch(base_pitch), pitch_variation(pitch_variation) {}
 
         static Sound from_resource(const LoadArgs& args);
 
-        void randomize_pitch();
+        f64 generate_pitch() const;
+    };
 
-        void play() {
-            this->randomize_pitch();
-            this->player.play();
+
+    struct Listener {
+        Vec<3> position = { 0, 0, 0 };
+        Vec<3> look_at = { 0, 0, -1 };
+        Vec<3> up = { 0, 1, 0 };
+        f64 max_speaker_distance = INFINITY;
+
+        void internal_make_current() const;
+        static const Vec<3>& internal_position();
+        static f64 internal_max_source_dist();
+    };
+
+    struct Speaker {
+        enum struct Space { World, Listener };
+
+        private:
+        static void destruct_source(const u64& source_id);
+
+        util::Handle<u64, &destruct_source> source;
+
+        public:
+        Space space;
+        Vec<3> position;
+        std::shared_ptr<const Volume> volume;
+        f64 gain;
+        f64 pitch;
+        f64 range;
+
+        Speaker(
+            Space space = Space::Listener, 
+            f64 range = 1.0,
+            Vec<3> position = Vec<3>(0, 0, 0),
+            std::shared_ptr<Volume> volume = nullptr,
+            f64 gain = 1.0, f64 pitch = 1.0
+        ): space(space), position(position), volume(volume), 
+            gain(gain), pitch(pitch), range(range) {}
+        
+        Vec<3> absolute_position() const {
+            return this->space == Space::World? this->position
+                : this->position + Listener::internal_position();
         }
 
-        void stop() { this->player.stop(); }
-        void set_gain(f64 value) { this->player.set_gain(value); }
-
-        void set_base_pitch(f64 base_pitch) {
-            this->curr_base_pitch = base_pitch;
-            this->randomize_pitch();
+        Vec<3> relative_position() const {
+            return this->space == Space::Listener? this->position
+                : this->position - Listener::internal_position();
         }
 
-        void set_pitch_variation(f64 pitch_variation) {
-            this->curr_pitch_variation = pitch_variation;
-            this->randomize_pitch();
-        }
+        void update(); // must be called every frame
 
-        f64 base_pitch() const { return this->curr_base_pitch; }
-        f64 pitch_variation() const { return this->curr_pitch_variation; }
-        bool is_playing() const { return this->player.is_playing(); }
-        const Audio& audio() const { return this->player; }
-
+        void play(const Audio& audio);
+        void play(const Sound& sound);
+        bool is_playing() const;
+        void stop();
     };
 
 
     struct Soundtrack {
 
-        static inline const bool repetition_allowed = true;
-        static inline const bool no_repetition = false; 
+        enum struct Repetition {
+            Allowed, Forbidden
+        };
 
         struct LoadArgs {
+            using ResourceType = Soundtrack;
+
             std::vector<std::string_view> track_sources;
-            bool allow_repetition;
+            Repetition repetition = Repetition::Forbidden;
 
             std::string identifier() const {  return this->pretty_identifier(); }
-
             std::string pretty_identifier() const {
                 std::string result = "Soundtrack[" 
-                    + std::string(this->allow_repetition
+                    + std::string(this->repetition == Repetition::Allowed
                         ? "repetition allowed"
                         : "no repetition"
                     )
@@ -139,60 +166,44 @@ namespace houseofatmos::engine {
                 return result + ")";
             }
         };
-        using Loader = Resource<Soundtrack, LoadArgs>;
 
         private:
-        std::vector<Audio> tracks;
-        bool allow_repetition;
-        math::StatefulRNG rng;
         u64 last_played_idx = UINT64_MAX;
 
-        bool any_is_playing() {
-            for(const Audio& track: this->tracks) {
-                if(track.is_playing()) { return true; }
-            }
-            return false;
-        }
-
         public:
+        Speaker speaker;
+        std::vector<Audio> tracks;
+        Repetition repetition;
+        math::StatefulRNG rng;
+        
         Soundtrack(
-            std::vector<Audio>&& tracks, 
-            bool allow_repetition = Soundtrack::no_repetition,
+            std::vector<Audio> tracks, 
+            Repetition repetition = Repetition::Forbidden,
             math::StatefulRNG rng = math::StatefulRNG()
-        ): tracks(std::move(tracks)) {
-            this->allow_repetition = allow_repetition;
-            this->rng = rng;
-        }
+        ): tracks(std::move(tracks)), repetition(repetition), rng(rng) {}
 
         static Soundtrack from_resource(const LoadArgs& args) {
             std::vector<Audio> tracks;
             tracks.reserve(args.track_sources.size());
             for(std::string_view track_source: args.track_sources) {
-                auto track = Audio::from_resource(
-                    (Audio::LoadArgs) { track_source }
-                );
+                auto track = Audio::from_resource({ track_source });
                 tracks.push_back(std::move(track));
             }
-            return Soundtrack(std::move(tracks), args.allow_repetition);
-        }
-
-        void set_gain(f64 value) {
-            for(Audio& track: this->tracks) {
-                track.set_gain(value);
-            }
+            return Soundtrack(std::move(tracks), args.repetition);
         }
 
         void update() {
-            if(this->any_is_playing()) { return; }
+            this->speaker.update();
+            if(this->speaker.is_playing()) { return; }
             for(;;) {
                 u64 track_idx = (u64) (
                     this->rng.next_f64() * (f64) this->tracks.size()
                 ) % this->tracks.size();
-                bool is_valid = this->allow_repetition
+                bool is_valid = this->repetition == Repetition::Allowed
                     || track_idx != this->last_played_idx;
                 if(!is_valid) { continue; }
                 this->last_played_idx = track_idx;
-                this->tracks[track_idx].play();
+                this->speaker.play(this->tracks[track_idx]);
                 break;
             }
         }

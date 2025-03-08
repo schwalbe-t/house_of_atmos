@@ -10,16 +10,14 @@ namespace houseofatmos {
         std::shared_ptr<world::World>&& world,
         std::shared_ptr<Scene>&& previous, 
         const engine::Texture& last_frame
-    ): last_frame(last_frame), toasts(Toasts(world->settings.localization())) {
+    ): last_frame(last_frame), toasts(Toasts(world->settings)) {
         this->world = std::move(world);
         this->previous = std::move(previous);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
-        this->load(engine::Localization::Loader(
-            this->world->settings.localization()
-        ));
-        this->load(engine::Shader::Loader(PauseMenu::blur_shader));
+        this->load(this->world->settings.localization());
+        this->load(PauseMenu::blur_shader);
     }
 
     void PauseMenu::save_game(engine::Window& window, bool is_new_save) {
@@ -56,8 +54,8 @@ namespace houseofatmos {
     void PauseMenu::show_root_menu(engine::Window& window) {
         Toasts::States toast_states = this->toasts.make_states();
         this->ui.root.children.clear();
-        const engine::Localization& local = this
-            ->get<engine::Localization>(this->world->settings.localization());
+        const engine::Localization& local 
+            = this->get(this->world->settings.localization());
         this->ui.with_element(ui::Element()
             .with_pos(0.5, 0.2, ui::position::window_fract)
             .with_size(0.0, 0.0, ui::size::unwrapped_text)
@@ -132,8 +130,8 @@ namespace houseofatmos {
     void PauseMenu::show_settings(engine::Window& window) {
         Toasts::States toast_states = this->toasts.make_states();
         this->ui.root.children.clear();
-        const engine::Localization& local = this
-            ->get<engine::Localization>(this->world->settings.localization());
+        const engine::Localization& local
+            = this->get(this->world->settings.localization());
         this->ui.with_element(this->world->settings.create_menu(
             local,
             [this, window = &window]() {
@@ -149,7 +147,7 @@ namespace houseofatmos {
     void PauseMenu::update(engine::Window& window) {
         this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
-        this->get<engine::Soundtrack>(audio_const::soundtrack).update();
+        this->get(audio_const::soundtrack).update();
         if(this->ui.root.children.size() == 0) {
             this->show_root_menu(window);
         }
@@ -166,7 +164,7 @@ namespace houseofatmos {
                 this->last_frame.width(), this->last_frame.height()
             );
             engine::Shader& blur = this
-                ->get<engine::Shader>(PauseMenu::blur_shader);
+                ->get(PauseMenu::blur_shader);
             blur.set_uniform("u_texture_w", (i64) this->background->width());
             blur.set_uniform("u_texture_h", (i64) this->background->height());
             i64 blur_rad = (i64) ((window.width() + window.height()) / 200.0);

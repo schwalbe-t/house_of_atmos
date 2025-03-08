@@ -39,8 +39,8 @@ namespace houseofatmos::tutorial {
         std::shared_ptr<world::World> after
     ) {
         // this is only legal because the main menu already loads this :/
-        const engine::Localization* local = &scene
-            ->get<engine::Localization>(scene->world->settings.localization());
+        const engine::Localization* local
+            = &scene->get(scene->world->settings.localization());
         scene->characters.push_back(Character(
             &human::male, &human::count, { 0, 0, 0 },
             (u64) human::Animation::Stand

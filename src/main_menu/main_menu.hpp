@@ -19,7 +19,7 @@ namespace houseofatmos {
     struct MainMenu: engine::Scene {
 
         static const inline ui::Background title_sprite
-            = MAKE_HOA_UI_ICON("res/ui.png", Vec<2>(16, 240), Vec<2>(71, 40));
+            = MAKE_HOA_UI_ICON(Vec<2>(16, 240), Vec<2>(71, 40));
 
         static inline const engine::Shader::LoadArgs blur_shader = {
             "res/shaders/blur_vert.glsl", "res/shaders/blur_frag.glsl"

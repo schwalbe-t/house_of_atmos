@@ -4,7 +4,7 @@
 
 namespace houseofatmos::engine {
 
-    void TextureArray::destruct(Handles& handles) {
+    void TextureArray::destruct(const Handles& handles) {
         for(size_t layer_i = 0; layer_i < handles.layers.size(); layer_i += 1) {
             GLuint fbo_id = handles.layers[layer_i].fbo_id;
             glDeleteFramebuffers(1, &fbo_id);

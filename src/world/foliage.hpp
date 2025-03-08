@@ -38,7 +38,7 @@ namespace houseofatmos::world {
 
         static void load_models(engine::Scene& scene) {
             for(const TypeInfo& type_model: Foliage::types()) {
-                scene.load(engine::Model::Loader(type_model.model));
+                scene.load(type_model.model);
             }
         }
 

@@ -20,15 +20,15 @@ namespace houseofatmos::tutorial {
 
 
     static const f64 maid_v_pitch = 2.3;
-    static const f64 maid_v_speed = 1.8;
+    static const f64 maid_v_speed = 3.3;
 
     static Cutscene create_cutscene(
         std::shared_ptr<interior::Scene> scene,
         std::shared_ptr<world::Scene> after
     ) {
         // this is only legal because the previous scene already loads this :/
-        const engine::Localization* local = &scene
-            ->get<engine::Localization>(scene->world->settings.localization());
+        const engine::Localization* local 
+            = &scene->get(scene->world->settings.localization());
         auto force_player_sit = [scene, after](engine::Window& window) {
             if(window.was_pressed(engine::Key::Tab)) {
                 after->world->settings = scene->world->settings;

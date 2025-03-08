@@ -13,7 +13,7 @@ namespace houseofatmos::world {
     static const u64 carr_spawn_d = 1;
 
     static void summon_carriage(
-        engine::Scene& scene, World& world, 
+        engine::Scene& scene, World& world, engine::Speaker& speaker,
         u64 stable_x, u64 stable_z, Toasts& toasts
     ) {
         Vec<3> pos;
@@ -47,8 +47,11 @@ namespace houseofatmos::world {
             return;
         }
         if(!world.balance.pay_coins(carriage_buy_cost, toasts)) { return; }
-        world.carriages.carriages.push_back((Carriage) { Carriage::Round, pos });
-        scene.get<engine::Sound>(sound::horse).play();
+        world.carriages.carriages.push_back(
+            Carriage(world.settings, Carriage::Round, pos)
+        );
+        speaker.position = pos;
+        speaker.play(scene.get(sound::horse));
     }
 
     static const f64 max_carriage_summon_dist = 5; // in tiles
@@ -58,6 +61,7 @@ namespace houseofatmos::world {
         const Renderer& renderer
     ) {
         (void) renderer;
+        this->speaker.update();
         if(!this->permitted) { return; }
         auto [s_tile_x, s_tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
@@ -96,13 +100,31 @@ namespace houseofatmos::world {
                         return;
                     }
                     summon_carriage(
-                        *scene, *this->world, asx, asz, this->toasts
+                        *scene, *this->world, this->speaker, 
+                        asx, asz, this->toasts
                     );
                 })
                 .as_movable();
         } else if(clicked_world) {
             this->button->hidden = true;
         }
+    }
+
+
+
+    static Vec<3> tile_bounded_position(
+        u64 min_x, u64 min_z, u64 max_x, u64 max_z,
+        const Vec<3>& pos, const Terrain& terrain
+    ) {
+        Vec<3> min = Vec<3>(min_x, 0, min_z) * terrain.units_per_tile();
+        Vec<3> max = Vec<3>(max_x, 0, max_z) * terrain.units_per_tile();
+        Vec<3> result = Vec<3>(
+            std::min(std::max(pos.x(), min.x()), max.x()),
+            0,
+            std::min(std::max(pos.z(), min.z()), max.z())
+        );
+        result.y() = terrain.elevation_at(result);
+        return result;
     }
 
 
@@ -239,6 +261,7 @@ namespace houseofatmos::world {
     ) {
         (void) scene;
         (void) renderer;
+        this->speaker.update();
         // figure out the selection area
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0, 0, 0)
@@ -289,7 +312,12 @@ namespace houseofatmos::world {
                 this->world->terrain.adjust_area_foliage(
                     min_x - 1, min_z - 1, max_x + 1, max_z + 1
                 );
-                scene.get<engine::Sound>(sound::terrain_mod).play();
+                this->speaker.position = tile_bounded_position(
+                    min_x, min_z, max_x, max_z,
+                    this->world->player.character.position,
+                    this->world->terrain
+                );
+                this->speaker.play(scene.get(sound::terrain_mod));
             }
             if(!is_valid) {
                 this->toasts.add_error("toast_terrain_occupied", {});
@@ -962,6 +990,7 @@ namespace houseofatmos::world {
     ) {
         (void) scene;
         (void) renderer;
+        this->speaker.update();
         if(!this->permitted) { return; }
         const Building::TypeInfo& type_info 
             = Building::types().at((size_t) *this->selected_type);
@@ -995,7 +1024,13 @@ namespace houseofatmos::world {
                 this->world->carriages.refind_all_paths(
                     this->world->complexes, this->world->terrain, this->toasts
                 );
-                scene.get<engine::Sound>(sound::build).play();
+                this->speaker.position = tile_bounded_position(
+                    tile_x, tile_z, 
+                    tile_x + type_info.width, tile_z + type_info.height,
+                    this->world->player.character.position,
+                    this->world->terrain
+                );
+                this->speaker.play(scene.get(sound::build));
             } else if(unemployment < (i64) type_info.workers) {
                 this->toasts.add_error("toast_missing_unemployment", {
                     std::to_string(unemployment), 
@@ -1027,7 +1062,7 @@ namespace houseofatmos::world {
         );
         // render overlay
         engine::Shader& terrain_overlay_shader = scene
-            .get<engine::Shader>(ActionMode::terrain_overlay_shader);
+            .get(ActionMode::terrain_overlay_shader);
         terrain_overlay_shader.set_uniform(
             "u_view_proj", renderer.compute_view_proj()
         );
@@ -1049,8 +1084,8 @@ namespace houseofatmos::world {
         }
         // render building
         const engine::Texture& wireframe_texture = this->placement_valid
-            ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
-            : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
+            ? scene.get(ActionMode::wireframe_valid_texture)
+            : scene.get(ActionMode::wireframe_error_texture);
         u64 chunk_x = this->selected_x / this->world->terrain.tiles_per_chunk();
         u64 chunk_z = this->selected_z / this->world->terrain.tiles_per_chunk();
         u64 chunk_rel_x = this->selected_x % this->world->terrain.tiles_per_chunk();
@@ -1203,6 +1238,7 @@ namespace houseofatmos::world {
         const Renderer& renderer
     ) {
         (void) scene;
+        this->speaker.update();
         // update the selection area
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0, 0, 0)
@@ -1258,7 +1294,13 @@ namespace houseofatmos::world {
                 this->world->carriages.refind_all_paths(
                     this->world->complexes, this->world->terrain, this->toasts
                 );
-                scene.get<engine::Sound>(sound::build).play();
+                this->speaker.position = tile_bounded_position(
+                    this->planned.start_x, this->planned.start_z, 
+                    this->planned.end_x, this->planned.end_z,
+                    this->world->player.character.position,
+                    this->world->terrain
+                );
+                this->speaker.play(scene.get(sound::build));
             }
         }
         this->has_selection &= !attempted_placement;
@@ -1271,11 +1313,11 @@ namespace houseofatmos::world {
         (void) window;
         this->planned = this->get_planned();
         const engine::Texture& wireframe_texture = !this->has_selection
-            ? scene.get<engine::Texture>(ActionMode::wireframe_info_texture)
+            ? scene.get(ActionMode::wireframe_info_texture)
             : this->placement_valid
-                ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
-                : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
-        engine::Model& model = scene.get<engine::Model>(
+                ? scene.get(ActionMode::wireframe_valid_texture)
+                : scene.get(ActionMode::wireframe_error_texture);
+        engine::Model& model = scene.get(
             Bridge::types().at((size_t) *this->selected_type).model
         );
         renderer.render(
@@ -1314,6 +1356,13 @@ namespace houseofatmos::world {
                     });
                     return;
                 }
+                this->speaker.position = tile_bounded_position(
+                    building.tile_x, building.tile_z, 
+                    building.tile_x + b_type.width, 
+                    building.tile_z + b_type.height,
+                    this->world->player.character.position,
+                    this->world->terrain
+                );
                 Terrain::ChunkData& chunk = this->world->terrain
                     .chunk_at(building.chunk_x, building.chunk_z);
                 if(building.selected->complex.has_value()) {
@@ -1348,12 +1397,18 @@ namespace houseofatmos::world {
                     this->world->complexes, this->world->terrain, this->toasts
                 );
                 this->selection.type = Selection::None;
-                scene.get<engine::Sound>(sound::demolish).play();
+                this->speaker.play(scene.get(sound::demolish));
                 return;
             }
             case Selection::Bridge: {
                 const Bridge* bridge = this->selection.value.bridge;
                 const Bridge::TypeInfo& b_type = bridge->get_type_info();
+                this->speaker.position = tile_bounded_position(
+                    bridge->start_x, bridge->start_z, 
+                    bridge->end_x, bridge->end_z,
+                    this->world->player.character.position,
+                    this->world->terrain
+                );
                 u64 build_cost = bridge->length() * b_type.cost_per_tile;
                 u64 refunded = (u64) ((f64) build_cost * demolition_refund_factor);
                 size_t bridge_idx = bridge - this->world->terrain.bridges.data();
@@ -1365,7 +1420,7 @@ namespace houseofatmos::world {
                     this->world->complexes, this->world->terrain, this->toasts
                 );
                 this->selection.type = Selection::None;
-                scene.get<engine::Sound>(sound::demolish).play();
+                this->speaker.play(scene.get(sound::demolish));
                 return;
             }
         }
@@ -1376,6 +1431,7 @@ namespace houseofatmos::world {
         const Renderer& renderer
     ) {
         (void) scene;
+        this->speaker.update();
         this->selection.type = Selection::None;
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
@@ -1414,8 +1470,8 @@ namespace houseofatmos::world {
         const engine::Window& window, engine::Scene& scene, 
         Renderer& renderer
     ) {
-        const engine::Texture& wireframe_texture = scene
-            .get<engine::Texture>(ActionMode::wireframe_error_texture);
+        const engine::Texture& wireframe_texture 
+            = scene.get(ActionMode::wireframe_error_texture);
         switch(this->selection.type) {
             case Selection::None: return;
             case Selection::Building: {
@@ -1437,9 +1493,9 @@ namespace houseofatmos::world {
             case Selection::Bridge: {
                 const Bridge* bridge = this->selection.value.bridge;
                 const Bridge::TypeInfo& b_type = bridge->get_type_info();
-                engine::Model& model = scene.get<engine::Model>(b_type.model);
                 renderer.render(
-                    model, bridge->get_instances(this->world->terrain.units_per_tile()),
+                    scene.get(b_type.model), 
+                    bridge->get_instances(this->world->terrain.units_per_tile()),
                     nullptr, 0.0,
                     engine::FaceCulling::Enabled,
                     engine::Rendering::Wireframe,
@@ -1512,6 +1568,7 @@ namespace houseofatmos::world {
         const Renderer& renderer
     ) {
         (void) scene;
+        this->speaker.update();
         if(!this->permitted) { return; }
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
@@ -1539,7 +1596,10 @@ namespace houseofatmos::world {
             this->world->carriages.refind_all_paths(
                 this->world->complexes, this->world->terrain, this->toasts
             );
-            scene.get<engine::Sound>(sound::terrain_mod).play();
+            this->speaker.position = Vec<3>(tile_x, 0, tile_z)
+                * this->world->terrain.units_per_tile()
+                + Vec<3>(0, this->world->terrain.elevation_at(tile_x, tile_z), 0);
+            this->speaker.play(scene.get(sound::terrain_mod));
         } else if(has_path && window.is_down(engine::Button::Right)) {
             chunk.set_path_at(rel_x, rel_z, false);
             this->world->terrain.reload_chunk_at(chunk_x, chunk_z);
@@ -1547,7 +1607,10 @@ namespace houseofatmos::world {
                 this->world->complexes, this->world->terrain, this->toasts
             );
             this->world->balance.add_coins(path_removal_refund, this->toasts);
-            scene.get<engine::Sound>(sound::terrain_mod).play();
+            this->speaker.position = Vec<3>(tile_x, 0, tile_z)
+                * this->world->terrain.units_per_tile()
+                + Vec<3>(0, this->world->terrain.elevation_at(tile_x, tile_z), 0);
+            this->speaker.play(scene.get(sound::terrain_mod));
         }
     }
 
@@ -1559,7 +1622,7 @@ namespace houseofatmos::world {
         if(!this->permitted) { return; }
         if(!this->overlay.has_value()) { return; }
         engine::Shader& path_overlay_shader = scene
-            .get<engine::Shader>(ActionMode::path_overlay_shader);
+            .get(ActionMode::path_overlay_shader);
         path_overlay_shader.set_uniform(
             "u_view_proj", renderer.compute_view_proj()
         );

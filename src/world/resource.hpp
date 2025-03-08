@@ -28,8 +28,8 @@ namespace houseofatmos::world {
 
         static void load_resources(engine::Scene& scene) {
             for(const TypeInfo& type_info: Resource::types()) {
-                scene.load(engine::Model::Loader(type_info.model));
-                scene.load(engine::Texture::Loader(type_info.texture));
+                scene.load(type_info.model);
+                scene.load(type_info.texture);
             }
         }
 

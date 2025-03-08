@@ -7,6 +7,7 @@
 #include <engine/rng.hpp>
 #include "../renderer.hpp"
 #include "../toasts.hpp"
+#include "../settings.hpp"
 #include "complex.hpp"
 #include "terrain.hpp"
 
@@ -61,12 +62,12 @@ namespace houseofatmos::world {
 
 
         static void load_resources(engine::Scene& scene) {
-            scene.load(engine::Model::Loader(Carriage::horse_model));
+            scene.load(Carriage::horse_model);
             for(const HorseTypeInfo& horse_type: Carriage::horse_types()) {
-                scene.load(engine::Texture::Loader(horse_type.texture));
+                scene.load(horse_type.texture);
             }
             for(const CarriageTypeInfo& carriage_type: Carriage::carriage_types()) {
-                scene.load(engine::Model::Loader(carriage_type.model));
+                scene.load(carriage_type.model);
             }
         }
 
@@ -102,6 +103,9 @@ namespace houseofatmos::world {
 
 
         private:
+        engine::Speaker speaker = engine::Speaker(
+            engine::Speaker::Space::World, 5.0
+        );
         CarriageType type;
         std::vector<HorseType> horses;
         std::unordered_map<Item::Type, u64> items;
@@ -121,10 +125,14 @@ namespace houseofatmos::world {
         Vec<3> position;
 
         Carriage(
+            const Settings& settings,
             CarriageType type, Vec<3> position,
             StatefulRNG rng = StatefulRNG()
         );
-        Carriage(const Serialized& serialized, const engine::Arena& buffer);
+        Carriage(
+            const Settings& settings, 
+            const Serialized& serialized, const engine::Arena& buffer
+        );
 
         void clear_path() { this->curr_path.clear(); }
         bool has_path() const { return this->curr_path.size() > 0; }
@@ -216,6 +224,7 @@ namespace houseofatmos::world {
         CarriageManager() {}
         CarriageManager(const Terrain& terrain);
         CarriageManager(
+            const Settings& settings,
             const Serialized& serialized, const engine::Arena& buffer,
             const Terrain& terrain
         );

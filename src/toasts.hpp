@@ -25,6 +25,7 @@ namespace houseofatmos {
 
         private:
         const engine::Localization::LoadArgs local_ref;
+        engine::Speaker speaker;
         engine::Scene* scene = nullptr;
         ui::Element* toasts_container = nullptr;
         std::vector<f64> toast_timers;
@@ -36,7 +37,9 @@ namespace houseofatmos {
         }
 
         public:
-        Toasts(engine::Localization::LoadArgs l): local_ref(l) {}
+        Toasts(const Settings& settings): local_ref(settings.localization()) {
+            this->speaker.volume = settings.sfx_volume;
+        }
 
         const engine::Localization& localization() const {
             if(this->scene == nullptr) {
@@ -44,7 +47,7 @@ namespace houseofatmos {
                     "a scene was configured using 'Toasts::set_scene'!"
                 );
             }
-            return this->scene->get<engine::Localization>(this->local_ref); 
+            return this->scene->get(this->local_ref); 
         }
 
         void set_scene(engine::Scene* scene) {
@@ -111,7 +114,7 @@ namespace houseofatmos {
                 &ui_background::note_error, &ui_font::bright
             );
             if(this->scene != nullptr) {
-                this->scene->get<engine::Sound>(sound::error).play();
+                this->speaker.play(this->scene->get(sound::error));
             }
         }
 
@@ -131,6 +134,7 @@ namespace houseofatmos {
         }
 
         void update(engine::Scene& scene) {
+            this->speaker.update();
             this->scene = &scene;
             if(this->toasts_container == nullptr) {
                 this->toast_timers.clear();

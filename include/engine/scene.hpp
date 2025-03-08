@@ -3,6 +3,8 @@
 
 #include "nums.hpp"
 #include "logging.hpp"
+#include "audio.hpp"
+#include "resources.hpp"
 #include <unordered_map>
 #include <optional>
 #include <vector>
@@ -11,61 +13,17 @@
 
 namespace houseofatmos::engine {
 
-    struct GenericResource {
-
-        protected:
-        bool has_value = false;
-
-
-        public:
-        GenericResource& operator=(GenericResource&& other) = default;
-        virtual ~GenericResource() = default;
-
-        virtual void load() = 0;
-        bool loaded() const { return this->has_value; }
-    
-        static std::vector<char> read_bytes(std::string_view path);
-        static std::string read_string(std::string_view path);
-    };
-
-    template<typename T, typename A>
-    struct Resource: GenericResource {
-
-        private:
-        std::optional<T> loaded_value;
-        A args;
-
-
-        public:
-        constexpr Resource(A arg) {
-            this->args = arg;
-            this->loaded_value = std::nullopt;
-        }
-        Resource(Resource&& other) {
-            this->has_value = other.has_value;
-            this->args = std::move(other.args);
-            this->loaded_value = std::move(other.loaded_value);
-        }
-        ~Resource() override = default;
-
-
-        void load() override {
-            this->has_value = true;
-            this->loaded_value = T::from_resource(this->args);
-        }
-        const A& arg() const { return this->args; }
-        T& value() { return this->loaded_value.value(); }
-    };
-
     struct Window;
 
     struct Scene {
 
         private:
-        std::unordered_map<std::string, std::shared_ptr<GenericResource>> resources;
+        std::unordered_map<std::string, std::shared_ptr<GenericLoader>> resources;
 
 
         public:
+        Listener listener;
+
         Scene();
         Scene(const Scene& other) = delete;
         Scene(Scene&& other) = delete;
@@ -73,30 +31,32 @@ namespace houseofatmos::engine {
         Scene& operator=(Scene&& other) = delete;
         virtual ~Scene() = default;
 
-        static std::shared_ptr<GenericResource> get_cached_resource(
+        static std::shared_ptr<GenericLoader> get_cached_resource(
             const std::string& iden
         );
 
         static void put_cached_resource(
-            std::string iden, std::shared_ptr<GenericResource>& resource
+            std::string iden, std::shared_ptr<GenericLoader>& resource
         );
 
         static void clean_cached_resources();
 
-        template<typename T, typename A>
-        void load(Resource<T, A>&& res) {
-            std::string iden = res.arg().identifier();
-            std::shared_ptr<GenericResource> generic_res 
+        template<typename A>
+        void load(A arg) {
+            using R = typename A::ResourceType;
+            std::string iden = arg.identifier();
+            std::shared_ptr<GenericLoader> cached 
                 = Scene::get_cached_resource(iden);
-            if(generic_res == nullptr) {
-                generic_res = std::make_shared<Resource<T, A>>(std::move(res));
-                Scene::put_cached_resource(iden, generic_res);
+            if(cached == nullptr) {
+                cached = std::make_shared<ResourceLoader<R, A>>(std::move(arg));
+                Scene::put_cached_resource(iden, cached);
             }
-            this->resources[iden] = std::move(generic_res);
+            this->resources[iden] = std::move(cached);
         }
 
-        template<typename T, typename A>
-        T& get(const A& arg) {
+        template<typename A>
+        auto& get(const A& arg) {
+            using R = typename A::ResourceType;
             std::string iden = arg.identifier();
             auto res_ref = this->resources.find(iden);
             if(res_ref == this->resources.end()) {
@@ -105,8 +65,8 @@ namespace houseofatmos::engine {
                     + " has not been registered, but access was attempted"
                 );
             }
-            GenericResource* dr = res_ref->second.get();
-            auto res = dynamic_cast<Resource<T, A>*>(dr);
+            GenericLoader* dr = res_ref->second.get();
+            auto res = dynamic_cast<ResourceLoader<R, A>*>(dr);
             if(!res->loaded()) {
                 error("Resource "
                     + arg.pretty_identifier()

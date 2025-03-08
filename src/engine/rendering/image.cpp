@@ -18,7 +18,7 @@ namespace houseofatmos::engine {
     }
 
     Image Image::from_resource(const LoadArgs& args) {
-        std::vector<char> bytes = GenericResource::read_bytes(args.path);
+        std::vector<char> bytes = GenericLoader::read_bytes(args.path);
         int width, height;
         stbi_uc* data = stbi_load_from_memory(
             (stbi_uc*) bytes.data(), bytes.size(), 

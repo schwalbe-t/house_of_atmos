@@ -4,9 +4,9 @@
 namespace houseofatmos::tutorial {
 
     static inline const f64 father_v_pitch = 1.8;
-    static inline const f64 father_v_speed = 2.0;
+    static inline const f64 father_v_speed = 3.0;
     static inline const f64 prompt_v_pitch = 2.0;
-    static inline const f64 prompt_v_speed = 2.0;
+    static inline const f64 prompt_v_speed = 3.0;
 
 
     void for_line(
