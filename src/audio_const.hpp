@@ -43,23 +43,23 @@ namespace houseofatmos::sound {
 
 
     inline void load_sounds(engine::Scene& scene) {
-        scene.load(Sound::Loader(build));
-        scene.load(Sound::Loader(demolish));
-        scene.load(Sound::Loader(terrain_mod));
-        scene.load(Sound::Loader(error));
-        scene.load(Sound::Loader(step));
-        scene.load(Sound::Loader(swim));
-        scene.load(Sound::Loader(horse));
+        scene.load(build);
+        scene.load(demolish);
+        scene.load(terrain_mod);
+        scene.load(error);
+        scene.load(step);
+        scene.load(swim);
+        scene.load(horse);
     }
 
     inline void set_gain(engine::Scene& scene, f64 value) {
-        scene.get<engine::Sound>(build).set_gain(value);
-        scene.get<engine::Sound>(demolish).set_gain(value);
-        scene.get<engine::Sound>(terrain_mod).set_gain(value);
-        scene.get<engine::Sound>(error).set_gain(value);
-        scene.get<engine::Sound>(step).set_gain(value);
-        scene.get<engine::Sound>(swim).set_gain(value);
-        scene.get<engine::Sound>(horse).set_gain(value);
+        scene.get(build).set_gain(value);
+        scene.get(demolish).set_gain(value);
+        scene.get(terrain_mod).set_gain(value);
+        scene.get(error).set_gain(value);
+        scene.get(step).set_gain(value);
+        scene.get(swim).set_gain(value);
+        scene.get(horse).set_gain(value);
     }
 
 }
@@ -100,7 +100,7 @@ namespace houseofatmos::audio_const {
     inline void load_all(engine::Scene& scene) {
         sound::load_sounds(scene);
         voice::load_voices(scene);
-        scene.load(Soundtrack::Loader(soundtrack));
+        scene.load(soundtrack);
     }
 
     inline void set_sfx_gain(engine::Scene& scene, f64 value) {

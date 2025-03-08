@@ -9,34 +9,34 @@ namespace houseofatmos::world {
         // The 'true' in each texture loader is there to flip the loaded
         // texture vertically - this is needed since GLTF uses them flipped
         /* White */ {
-            (engine::Texture::LoadArgs) { 
+            engine::Texture::LoadArgs(
                 "res/entities/horse_white.png", 
                 engine::Texture::vertical_mirror
-            }
+            )
         },
         /* WhiteSpotted */ {
-            (engine::Texture::LoadArgs) { 
+            engine::Texture::LoadArgs(
                 "res/entities/horse_white_spotted.png",
                 engine::Texture::vertical_mirror
-            }
+            )
         },
         /* Brown */ {
-            (engine::Texture::LoadArgs) { 
+            engine::Texture::LoadArgs(
                 "res/entities/horse_brown.png",
                 engine::Texture::vertical_mirror
-            }
+            )
         },
         /* BrownSpotted */ {
-            (engine::Texture::LoadArgs) { 
+            engine::Texture::LoadArgs(
                 "res/entities/horse_brown_spotted.png",
                 engine::Texture::vertical_mirror
-            }
+            )
         },
         /* BlackSpotted */ {
-            (engine::Texture::LoadArgs) { 
+            engine::Texture::LoadArgs(
                 "res/entities/horse_black_spotted.png",
                 engine::Texture::vertical_mirror
-            }
+            )
         }
     };
 
@@ -209,13 +209,13 @@ namespace houseofatmos::world {
             // change state and play sound if at end
             if(at_end) { this->state = State::Loading; }
             if(at_end && is_visible && this->targets.size() > 1) {
-                scene.get<engine::Sound>(sound::horse).play();
+                scene.get(sound::horse).play();
             }
             // play step sounds
             f64 next_sound_time 
                 = fmod(window.time() + sound_timer_offset, sound_period);
             if(next_sound_time < this->sound_timer && is_visible) {
-                scene.get<engine::Sound>(sound::step).play();
+                scene.get(sound::step).play();
             }
             this->sound_timer = next_sound_time;
         }
@@ -260,7 +260,7 @@ namespace houseofatmos::world {
                 this->clear_path();
                 this->state = State::Travelling;
                 if(is_visible && this->targets.size() > 1) {
-                    scene.get<engine::Sound>(sound::horse).play();
+                    scene.get(sound::horse).play();
                 }
                 this->load_timer = 0.0;
             } 
@@ -284,14 +284,13 @@ namespace houseofatmos::world {
         CarriageTypeInfo carriage_info 
             = Carriage::carriage_types().at((size_t) this->type);
         // render horses
-        engine::Model& horse_model = scene
-            .get<engine::Model>(Carriage::horse_model);
+        engine::Model& horse_model = scene.get(Carriage::horse_model);
         for(size_t horse_i = 0; horse_i < this->horses.size(); horse_i += 1) {
             HorseType horse_type = this->horses.at(horse_i);
             HorseTypeInfo horse_info 
                 = Carriage::horse_types().at((size_t) horse_type);
-            const engine::Texture& horse_texture = scene
-                .get<engine::Texture>(horse_info.texture);
+            const engine::Texture& horse_texture 
+                = scene.get(horse_info.texture);
             const engine::Animation& horse_animation = this->moving
                 ? horse_model.animation("walk")
                 : horse_model.animation("idle");
@@ -328,8 +327,7 @@ namespace houseofatmos::world {
             driver.render(scene, window, renderer);
         }
         // render carriage
-        engine::Model& carriage_model = scene
-            .get<engine::Model>(carriage_info.model);
+        engine::Model& carriage_model = scene.get(carriage_info.model);
         Mat<4> carriage_transform 
             = Mat<4>::translate(this->position)
             * Mat<4>::rotate_y(this->yaw)

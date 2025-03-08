@@ -98,7 +98,7 @@ namespace houseofatmos::interior {
     void Scene::update(engine::Window& window) {
         this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
-        this->get<engine::Soundtrack>(audio_const::soundtrack).update();
+        this->get(audio_const::soundtrack).update();
         if(window.was_pressed(engine::Key::Escape)) {
             window.set_scene(std::make_shared<PauseMenu>(
                 std::shared_ptr<world::World>(this->world), 
@@ -155,7 +155,7 @@ namespace houseofatmos::interior {
     void Scene::render_geometry(
         const engine::Window& window, bool render_all_rooms
     ) {
-        engine::Model& model = this->get<engine::Model>(this->interior.model);
+        engine::Model& model = this->get(this->interior.model);
         for(const Interior::Room& room: this->interior.rooms) {
             bool room_visible = human::collider
                 .at(this->player.character.position)

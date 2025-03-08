@@ -56,8 +56,8 @@ namespace houseofatmos {
     void PauseMenu::show_root_menu(engine::Window& window) {
         Toasts::States toast_states = this->toasts.make_states();
         this->ui.root.children.clear();
-        const engine::Localization& local = this
-            ->get<engine::Localization>(this->world->settings.localization());
+        const engine::Localization& local 
+            = this->get(this->world->settings.localization());
         this->ui.with_element(ui::Element()
             .with_pos(0.5, 0.2, ui::position::window_fract)
             .with_size(0.0, 0.0, ui::size::unwrapped_text)

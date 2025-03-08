@@ -4,7 +4,7 @@
 namespace houseofatmos::ui_font {
 
     static const engine::Texture::LoadArgs font_texture
-        = (engine::Texture::LoadArgs) { "res/ui.png" };
+        = engine::Texture::LoadArgs("res/ui.png");
 
     static const std::string_view font_chars = "\t "
         "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ"
@@ -44,7 +44,7 @@ namespace houseofatmos::ui_font {
 
 
     void load_textures(engine::Scene& scene) {
-        scene.load(engine::Texture::Loader(font_texture));
+        scene.load(font_texture);
         dark.compute_char_offsets();
         bright.compute_char_offsets();
     }

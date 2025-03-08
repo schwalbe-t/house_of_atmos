@@ -65,7 +65,7 @@ namespace houseofatmos {
     static void load_game_from(
         const std::string& path, engine::Window& window, Settings settings 
     ) {
-        std::vector<char> data = engine::GenericResource::read_bytes(path);
+        std::vector<char> data = engine::GenericLoader::read_bytes(path);
         auto buffer = engine::Arena(data);
         auto world = std::make_shared<world::World>(std::move(settings), buffer);
         world->save_path = path;

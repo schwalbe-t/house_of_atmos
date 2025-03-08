@@ -333,7 +333,6 @@ namespace houseofatmos::engine::ui {
             ? this->background_hover : this->background;
         if(bkg == nullptr) { bkg = this->background; }
         if(bkg == nullptr) { return; }
-        const Texture& tex = scene.get<Texture>(bkg->texture);
         std::vector<Manager::Instance> instances; 
         render_background_corners(
             instances, unit, this->final_pos(), this->final_size(), *bkg
@@ -344,7 +343,7 @@ namespace houseofatmos::engine::ui {
         render_inner_background(
             instances, unit, this->final_pos(), this->final_size(), *bkg
         );
-        manager.blit_texture(tex, instances);
+        manager.blit_texture(scene.get(bkg->texture), instances);
     }    
 
     static size_t utf8_char_length(std::string_view text) {
@@ -418,7 +417,7 @@ namespace houseofatmos::engine::ui {
         if(this->font == nullptr) { return; }
         if(!this->font->char_offsets_x.has_value()) { return; }
         if(this->text.size() == 0) { return; }
-        Texture& tex = scene.get<Texture>(this->font->texture);
+        Texture& tex = scene.get(this->font->texture);
         std::vector<Manager::Instance> instances;
         instances.reserve(this->text.size()); 
         Vec<2> char_offset;
@@ -674,7 +673,7 @@ namespace houseofatmos::engine::ui {
             this->target.resize_fast(window.width(), window.height());
         }
         this->target.as_target().clear_color(Vec<4>(0.0, 0.0, 0.0, 0.0));
-        this->shader = &scene.get<Shader>(Manager::shader_args);
+        this->shader = &scene.get(Manager::shader_args);
         this->unit_size_px = window.height() * this->unit_fract_size;
         this->root.render_root(*this, scene, window, this->unit_size_px);
     }

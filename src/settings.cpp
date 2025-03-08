@@ -13,7 +13,7 @@ namespace houseofatmos {
 
     Settings Settings::read_from_path(std::string_view path) {
         if(!std::filesystem::exists(path)) { return Settings(); }
-        std::string text = engine::GenericResource::read_string(path);
+        std::string text = engine::GenericLoader::read_string(path);
         json json = json::parse(text);
         Settings settings;
         settings.locale = json.at("locale");
@@ -219,8 +219,7 @@ namespace houseofatmos {
         if(!this->fullscreen && window.is_fullscreen()) {
             window.set_windowed();
         }
-        scene.get<engine::Soundtrack>(audio_const::soundtrack)
-            .set_gain(this->music_volume);
+        scene.get(audio_const::soundtrack).set_gain(this->music_volume);
         audio_const::set_sfx_gain(scene, this->sound_volume);
         // view distance needs to be respected by the specific scene
     }

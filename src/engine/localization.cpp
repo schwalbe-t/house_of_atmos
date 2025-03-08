@@ -8,7 +8,7 @@ namespace houseofatmos::engine {
 
 
     Localization Localization::from_resource(const LoadArgs& args) {
-        std::string raw = GenericResource::read_string(args.path);
+        std::string raw = GenericLoader::read_string(args.path);
         json parsed = json::parse(raw);
         Localization result;
         result.locale = args.locale;
@@ -18,15 +18,19 @@ namespace houseofatmos::engine {
         for(auto& [name, values]: parsed.items()) {
             if(name.size() == 0) { continue; }
             auto value = values.find(args.locale);
-            if(value == values.end()) {
-                engine::warning("Localization for locale '" 
-                    + std::string(args.locale)
-                    + "' does not include a value under the name '"
-                    + name + "'!"
-                );
+            if(value != values.end()) {
+                result.values[name] = (std::string) *value;
                 continue;
             }
-            result.values[name] = (std::string) *value;
+            engine::warning("Localization for locale '" 
+                + std::string(args.locale)
+                + "' does not include a value under the name '"
+                + name + "'!"
+            );
+            auto fallback = values.find(args.fallback);
+            if(fallback != values.end()) {
+                result.values[name] = (std::string) *fallback;
+            }
         }
         return result;
     }

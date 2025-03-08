@@ -17,14 +17,16 @@ namespace houseofatmos::engine {
 
     struct Image {
         struct LoadArgs {
+            using ResourceType = Image;
+
             std::string_view path;
+            LoadArgs(std::string_view path): path(path) {}
 
             std::string identifier() const { return std::string(path); }
             std::string pretty_identifier() const {
                 return "Image@'" + std::string(path) + "'"; 
             }
         };
-        using Loader = Resource<Image, LoadArgs>;
 
         struct Color {
             u8 r, g, b, a; 
@@ -98,8 +100,12 @@ namespace houseofatmos::engine {
         static inline const bool no_mirror = true;
 
         struct LoadArgs {
+            using ResourceType = Texture;
+
             std::string_view path;
-            bool mirror_vertical = false;
+            bool mirror_vertical;
+            LoadArgs(std::string_view path, bool mirror = false)
+                : path(path), mirror_vertical(mirror) {}
 
             std::string identifier() const {
                 return std::string(this->path) 
@@ -113,7 +119,6 @@ namespace houseofatmos::engine {
                     + "'"; 
             }
         };
-        using Loader = Resource<Texture, LoadArgs>;
 
         private:
         struct FboHandles {
@@ -206,8 +211,13 @@ namespace houseofatmos::engine {
 
     struct Shader {
         struct LoadArgs {
+            using ResourceType = Shader;
+
             std::string_view vertex_path;
             std::string_view fragment_path;
+            LoadArgs(
+                std::string_view vertex_path, std::string_view fragment_path
+            ): vertex_path(vertex_path), fragment_path(fragment_path) {}
 
             std::string identifier() const {
                 return std::string(vertex_path) 
@@ -218,7 +228,6 @@ namespace houseofatmos::engine {
                     + std::string(fragment_path) + "'";
             }
         };
-        using Loader = Resource<Shader, LoadArgs>;
 
         private:
         struct Handles {

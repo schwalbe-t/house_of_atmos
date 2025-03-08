@@ -51,7 +51,7 @@ namespace houseofatmos::engine::ui {
         std::vector<f64> char_widths;
         std::optional<std::vector<f64>> char_offsets_x;
 
-        constexpr Font(
+        Font(
             Texture::LoadArgs texture, Vec<2> offset, 
             f64 height, f64 char_padding,
             std::string_view chars, std::vector<f64> char_widths

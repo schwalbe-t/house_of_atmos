@@ -44,7 +44,7 @@ namespace houseofatmos {
                     "a scene was configured using 'Toasts::set_scene'!"
                 );
             }
-            return this->scene->get<engine::Localization>(this->local_ref); 
+            return this->scene->get(this->local_ref); 
         }
 
         void set_scene(engine::Scene* scene) {
@@ -111,7 +111,7 @@ namespace houseofatmos {
                 &ui_background::note_error, &ui_font::bright
             );
             if(this->scene != nullptr) {
-                this->scene->get<engine::Sound>(sound::error).play();
+                this->scene->get(sound::error).play();
             }
         }
 

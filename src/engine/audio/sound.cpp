@@ -9,7 +9,7 @@ namespace houseofatmos::engine {
 
     Sound Sound::from_resource(const Sound::LoadArgs& args) {
         auto audio = engine::Audio::from_resource({ args.path });
-        return Sound(std::move(audio), args.base_pitch, args.pitch_variation);
+        return Sound(std::move(audio), args.base_pitch, args.pitch_var);
     }
 
     static StatefulRNG pitch_rng;

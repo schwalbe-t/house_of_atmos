@@ -47,7 +47,7 @@ namespace houseofatmos::engine {
                     + std::string(source_path) + "':"
                 );
             }
-            std::string contents = GenericResource::read_string(path);
+            std::string contents = GenericLoader::read_string(path);
             std::string expanded = expand_shader_includes(contents, path);
             result = result.substr(0, macro_start_p)
                 + expanded
@@ -156,8 +156,8 @@ namespace houseofatmos::engine {
     }
 
     Shader Shader::from_resource(const Shader::LoadArgs& args) {
-        std::string vertex_src = GenericResource::read_string(args.vertex_path);
-        std::string fragment_src = GenericResource::read_string(args.fragment_path);
+        std::string vertex_src = GenericLoader::read_string(args.vertex_path);
+        std::string fragment_src = GenericLoader::read_string(args.fragment_path);
         return Shader(
             vertex_src, fragment_src, 
             args.vertex_path, args.fragment_path

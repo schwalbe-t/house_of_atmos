@@ -21,16 +21,16 @@ namespace houseofatmos {
 
             inline void load(engine::Scene& scene) const {
                 for(const auto& [c, sound]: this->sounds) {
-                    scene.load(engine::Sound::Loader(sound));
+                    scene.load(sound);
                 }
-                scene.load(engine::Sound::Loader(this->default_sound));
+                scene.load(this->default_sound);
             }
 
             inline void set_gain(engine::Scene& scene, f64 value) const {
                 for(const auto& [c, sound]: this->sounds) {
-                    scene.get<engine::Sound>(sound).set_gain(value);
+                    scene.get(sound).set_gain(value);
                 }
-                scene.get<engine::Sound>(this->default_sound).set_gain(value);
+                scene.get(this->default_sound).set_gain(value);
             }
 
             inline const engine::Sound::LoadArgs& get_sound_of(char32_t c) const {

@@ -123,14 +123,14 @@ namespace houseofatmos::human {
 
 
     static inline void load_resources(engine::Scene& scene) {
-        scene.load(engine::Model::Loader(male.model));
-        scene.load(engine::Model::Loader(female.model));
-        scene.load(engine::Model::Loader(toddler.model));
-        scene.load(CharacterVariant::Loader(count));
-        scene.load(CharacterVariant::Loader(father));
-        scene.load(CharacterVariant::Loader(peasant_woman));
-        scene.load(CharacterVariant::Loader(peasant_man));
-        scene.load(CharacterVariant::Loader(maid));
+        scene.load(male.model);
+        scene.load(female.model);
+        scene.load(toddler.model);
+        scene.load(count);
+        scene.load(father);
+        scene.load(peasant_woman);
+        scene.load(peasant_man);
+        scene.load(maid);
     }
 
 

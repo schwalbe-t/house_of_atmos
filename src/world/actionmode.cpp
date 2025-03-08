@@ -48,7 +48,7 @@ namespace houseofatmos::world {
         }
         if(!world.balance.pay_coins(carriage_buy_cost, toasts)) { return; }
         world.carriages.carriages.push_back((Carriage) { Carriage::Round, pos });
-        scene.get<engine::Sound>(sound::horse).play();
+        scene.get(sound::horse).play();
     }
 
     static const f64 max_carriage_summon_dist = 5; // in tiles
@@ -289,7 +289,7 @@ namespace houseofatmos::world {
                 this->world->terrain.adjust_area_foliage(
                     min_x - 1, min_z - 1, max_x + 1, max_z + 1
                 );
-                scene.get<engine::Sound>(sound::terrain_mod).play();
+                scene.get(sound::terrain_mod).play();
             }
             if(!is_valid) {
                 this->toasts.add_error("toast_terrain_occupied", {});
@@ -995,7 +995,7 @@ namespace houseofatmos::world {
                 this->world->carriages.refind_all_paths(
                     this->world->complexes, this->world->terrain, this->toasts
                 );
-                scene.get<engine::Sound>(sound::build).play();
+                scene.get(sound::build).play();
             } else if(unemployment < (i64) type_info.workers) {
                 this->toasts.add_error("toast_missing_unemployment", {
                     std::to_string(unemployment), 
@@ -1027,7 +1027,7 @@ namespace houseofatmos::world {
         );
         // render overlay
         engine::Shader& terrain_overlay_shader = scene
-            .get<engine::Shader>(ActionMode::terrain_overlay_shader);
+            .get(ActionMode::terrain_overlay_shader);
         terrain_overlay_shader.set_uniform(
             "u_view_proj", renderer.compute_view_proj()
         );
@@ -1049,8 +1049,8 @@ namespace houseofatmos::world {
         }
         // render building
         const engine::Texture& wireframe_texture = this->placement_valid
-            ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
-            : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
+            ? scene.get(ActionMode::wireframe_valid_texture)
+            : scene.get(ActionMode::wireframe_error_texture);
         u64 chunk_x = this->selected_x / this->world->terrain.tiles_per_chunk();
         u64 chunk_z = this->selected_z / this->world->terrain.tiles_per_chunk();
         u64 chunk_rel_x = this->selected_x % this->world->terrain.tiles_per_chunk();
@@ -1258,7 +1258,7 @@ namespace houseofatmos::world {
                 this->world->carriages.refind_all_paths(
                     this->world->complexes, this->world->terrain, this->toasts
                 );
-                scene.get<engine::Sound>(sound::build).play();
+                scene.get(sound::build).play();
             }
         }
         this->has_selection &= !attempted_placement;
@@ -1271,11 +1271,11 @@ namespace houseofatmos::world {
         (void) window;
         this->planned = this->get_planned();
         const engine::Texture& wireframe_texture = !this->has_selection
-            ? scene.get<engine::Texture>(ActionMode::wireframe_info_texture)
+            ? scene.get(ActionMode::wireframe_info_texture)
             : this->placement_valid
-                ? scene.get<engine::Texture>(ActionMode::wireframe_valid_texture)
-                : scene.get<engine::Texture>(ActionMode::wireframe_error_texture);
-        engine::Model& model = scene.get<engine::Model>(
+                ? scene.get(ActionMode::wireframe_valid_texture)
+                : scene.get(ActionMode::wireframe_error_texture);
+        engine::Model& model = scene.get(
             Bridge::types().at((size_t) *this->selected_type).model
         );
         renderer.render(
@@ -1348,7 +1348,7 @@ namespace houseofatmos::world {
                     this->world->complexes, this->world->terrain, this->toasts
                 );
                 this->selection.type = Selection::None;
-                scene.get<engine::Sound>(sound::demolish).play();
+                scene.get(sound::demolish).play();
                 return;
             }
             case Selection::Bridge: {
@@ -1365,7 +1365,7 @@ namespace houseofatmos::world {
                     this->world->complexes, this->world->terrain, this->toasts
                 );
                 this->selection.type = Selection::None;
-                scene.get<engine::Sound>(sound::demolish).play();
+                scene.get(sound::demolish).play();
                 return;
             }
         }
@@ -1414,8 +1414,8 @@ namespace houseofatmos::world {
         const engine::Window& window, engine::Scene& scene, 
         Renderer& renderer
     ) {
-        const engine::Texture& wireframe_texture = scene
-            .get<engine::Texture>(ActionMode::wireframe_error_texture);
+        const engine::Texture& wireframe_texture 
+            = scene.get(ActionMode::wireframe_error_texture);
         switch(this->selection.type) {
             case Selection::None: return;
             case Selection::Building: {
@@ -1437,9 +1437,9 @@ namespace houseofatmos::world {
             case Selection::Bridge: {
                 const Bridge* bridge = this->selection.value.bridge;
                 const Bridge::TypeInfo& b_type = bridge->get_type_info();
-                engine::Model& model = scene.get<engine::Model>(b_type.model);
                 renderer.render(
-                    model, bridge->get_instances(this->world->terrain.units_per_tile()),
+                    scene.get(b_type.model), 
+                    bridge->get_instances(this->world->terrain.units_per_tile()),
                     nullptr, 0.0,
                     engine::FaceCulling::Enabled,
                     engine::Rendering::Wireframe,
@@ -1547,7 +1547,7 @@ namespace houseofatmos::world {
                 this->world->complexes, this->world->terrain, this->toasts
             );
             this->world->balance.add_coins(path_removal_refund, this->toasts);
-            scene.get<engine::Sound>(sound::terrain_mod).play();
+            scene.get(sound::terrain_mod).play();
         }
     }
 
@@ -1559,7 +1559,7 @@ namespace houseofatmos::world {
         if(!this->permitted) { return; }
         if(!this->overlay.has_value()) { return; }
         engine::Shader& path_overlay_shader = scene
-            .get<engine::Shader>(ActionMode::path_overlay_shader);
+            .get(ActionMode::path_overlay_shader);
         path_overlay_shader.set_uniform(
             "u_view_proj", renderer.compute_view_proj()
         );

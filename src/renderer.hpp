@@ -72,8 +72,8 @@ namespace houseofatmos {
         engine::Shader* geometry_shader = nullptr;
 
         static void load_shaders(engine::Scene& scene) {
-            scene.load(engine::Shader::Loader(Renderer::shadow_shader_args));
-            scene.load(engine::Shader::Loader(Renderer::geometry_shader_args));
+            scene.load(Renderer::shadow_shader_args);
+            scene.load(Renderer::geometry_shader_args);
         }
 
         Mat<4> compute_view_matrix() const;

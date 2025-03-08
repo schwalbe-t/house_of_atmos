@@ -24,9 +24,17 @@ namespace houseofatmos::engine {
         static std::string gltf_attrib_name(Model::Attrib attrib);
 
         struct LoadArgs {
+            using ResourceType = Model;
+
             std::string_view path;
             std::vector<std::pair<Attrib, Mesh::Attrib>> vertex_attributes;
             FaceCulling face_culling;
+            LoadArgs(
+                std::string_view path, 
+                std::vector<std::pair<Attrib, Mesh::Attrib>> vertex_attribs, 
+                FaceCulling face_culling = FaceCulling::Disabled
+            ): path(path), vertex_attributes(std::move(vertex_attribs)), 
+                face_culling(face_culling) {}
 
             std::string pretty_identifier() const { 
                 std::string r = "Model[";
@@ -44,8 +52,6 @@ namespace houseofatmos::engine {
                 return this->pretty_identifier(); 
             }
         };
-
-        using Loader = Resource<Model, LoadArgs>;
 
 
         struct Primitive {

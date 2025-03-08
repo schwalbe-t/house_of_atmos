@@ -42,7 +42,7 @@ namespace houseofatmos::engine {
     }
 
     Audio Audio::from_resource(const LoadArgs& arg) {
-        std::vector<char> encoded = GenericResource::read_bytes(arg.path);
+        std::vector<char> encoded = GenericLoader::read_bytes(arg.path);
         u8 channels;
         u64 sample_rate;
         std::vector<i16> decoded = decode(

@@ -43,7 +43,6 @@ namespace houseofatmos {
             }
             std::string identifier() const { return pretty_identifier(); }
         };
-        using Loader = engine::Resource<CharacterVariant, LoadArgs>;
 
         std::vector<TextureOverride> texture_overrides;
 
@@ -157,7 +156,7 @@ namespace houseofatmos {
                     / (anim_impl.sound_period / this->last_velocity);
                 f64 sound_ts = fmod(sound_complete_c, 1.0);
                 if(sound_ts < this->last_sound_ts) {
-                    scene.get<engine::Sound>(*anim_impl.sound).play();
+                    scene.get(*anim_impl.sound).play();
                 }
                 this->last_sound_ts = sound_ts;
             }
@@ -170,7 +169,7 @@ namespace houseofatmos {
         ) const {
             f64 distance = (this->position - observer).len();
             if(distance > draw_distance) { return; }
-            engine::Model& model = scene.get<engine::Model>(this->type->model);
+            engine::Model& model = scene.get(this->type->model);
             Mat<4> model_transf = Mat<4>::translate(this->position)
                 * Mat<4>::rotate_y(this->angle)
                 * this->type->model_transform;
@@ -179,8 +178,7 @@ namespace houseofatmos {
             f64 anim_complete_c = (window.time() + anim_impl.anim_offset)
                 / (anim_impl.anim_period / this->last_velocity);
             f64 anim_ts = fmod(anim_complete_c, 1.0) * anim.length();
-            const CharacterVariant& variant 
-                = scene.get<CharacterVariant>(*this->variant);
+            const CharacterVariant& variant = scene.get(*this->variant);
             for(const auto& [name, tex_overr]: variant.texture_overrides) {
                 auto [primitive, unused_tex, skeleton] = model.mesh(name);
                 renderer.render(

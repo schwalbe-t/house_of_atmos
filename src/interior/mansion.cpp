@@ -57,8 +57,7 @@ namespace houseofatmos::interior {
                     + std::to_string(rng->next_u64() % maid_dialogue_count);
                 const engine::Localization::LoadArgs local_ref = scene->world
                     ->settings.localization();
-                const engine::Localization& local = scene
-                    ->get<engine::Localization>(local_ref);
+                const engine::Localization& local = scene->get(local_ref);
                 scene->dialogues.say(Dialogue(
                     std::string(local.text("dialogue_maid_name")), 
                     std::string(local.text(dialogue_key)),

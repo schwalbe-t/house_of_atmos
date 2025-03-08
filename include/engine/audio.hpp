@@ -19,14 +19,16 @@ namespace houseofatmos::engine {
 
     struct Audio {
         struct LoadArgs {
+            using ResourceType = Audio;
+
             std::string_view path;
+            LoadArgs(std::string_view path): path(path) {}
 
             std::string identifier() const { return std::string(path); }
             std::string pretty_identifier() const {
                 return "Audio@'" + std::string(path) + "'";
             }   
         };
-        using Loader = Resource<Audio, LoadArgs>;
 
         private:
         static void destruct_buffer(const u64& buffer_id);
@@ -48,22 +50,26 @@ namespace houseofatmos::engine {
 
     struct Sound {
         struct LoadArgs {
+            using ResourceType = Sound;
+
             std::string_view path;
+            f64 pitch_var;
             f64 base_pitch;
-            f64 pitch_variation;
+            LoadArgs(
+                std::string_view path, f64 pitch_var, f64 base_pitch = 1.0
+            ): path(path), base_pitch(base_pitch), pitch_var(pitch_var) {}
 
             std::string identifier() const { 
                 return std::string(this->path) 
-                    + "|||" + std::to_string(this->base_pitch)
-                    + "|||" + std::to_string(this->pitch_variation);
+                    + "|||" + std::to_string(this->pitch_var)
+                    + "|||" + std::to_string(this->base_pitch);
             }
             std::string pretty_identifier() const {
                 return "Sound[" + std::to_string(this->base_pitch)
-                    + " +/- " + std::to_string(this->pitch_variation) + "]"
+                    + " +/- " + std::to_string(this->pitch_var) + "]"
                     "@'" + std::string(this->path) + "'";
             }
         };
-        using Loader = Resource<Sound, LoadArgs>;
 
         Audio audio;
         f64 base_pitch;
@@ -131,11 +137,16 @@ namespace houseofatmos::engine {
         };
 
         struct LoadArgs {
+            using ResourceType = Soundtrack;
+
             std::vector<std::string_view> track_sources;
             Repetition repetition;
+            LoadArgs(
+                std::vector<std::string_view>&& track_sources, 
+                Repetition repetition = Repetition::Forbidden
+            ): track_sources(std::move(track_sources)), repetition(repetition) {}
 
             std::string identifier() const {  return this->pretty_identifier(); }
-
             std::string pretty_identifier() const {
                 std::string result = "Soundtrack[" 
                     + std::string(this->repetition == Repetition::Allowed
@@ -152,7 +163,6 @@ namespace houseofatmos::engine {
                 return result + ")";
             }
         };
-        using Loader = Resource<Soundtrack, LoadArgs>;
 
         private:
         Speaker speaker;
@@ -163,7 +173,7 @@ namespace houseofatmos::engine {
 
         public:
         Soundtrack(
-            std::vector<Audio>&& tracks, 
+            std::vector<Audio> tracks, 
             Repetition repetition = Repetition::Forbidden,
             math::StatefulRNG rng = math::StatefulRNG()
         ): tracks(std::move(tracks)), repetition(repetition), rng(rng) {}
@@ -172,9 +182,7 @@ namespace houseofatmos::engine {
             std::vector<Audio> tracks;
             tracks.reserve(args.track_sources.size());
             for(std::string_view track_source: args.track_sources) {
-                auto track = Audio::from_resource(
-                    (Audio::LoadArgs) { track_source }
-                );
+                auto track = Audio::from_resource({ track_source });
                 tracks.push_back(std::move(track));
             }
             return Soundtrack(std::move(tracks), args.repetition);
