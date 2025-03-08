@@ -56,17 +56,18 @@ namespace houseofatmos::world {
         };
 
         static void load_resources(engine::Scene& scene) {
-            scene.load(engine::Texture::Loader(wireframe_info_texture));
-            scene.load(engine::Texture::Loader(wireframe_add_texture));
-            scene.load(engine::Texture::Loader(wireframe_sub_texture));
-            scene.load(engine::Texture::Loader(wireframe_valid_texture));
-            scene.load(engine::Texture::Loader(wireframe_error_texture));
-            scene.load(engine::Shader::Loader(terrain_overlay_shader));
-            scene.load(engine::Shader::Loader(path_overlay_shader));
+            scene.load(wireframe_info_texture);
+            scene.load(wireframe_add_texture);
+            scene.load(wireframe_sub_texture);
+            scene.load(wireframe_valid_texture);
+            scene.load(wireframe_error_texture);
+            scene.load(terrain_overlay_shader);
+            scene.load(path_overlay_shader);
         }
 
 
         public:
+        engine::Speaker speaker;
         std::shared_ptr<World>& world;
         ui::Manager& ui;
         Toasts& toasts;
@@ -75,7 +76,9 @@ namespace houseofatmos::world {
 
         ActionMode(ActionContext ctx): 
             world(*ctx.world), ui(*ctx.ui), 
-            toasts(*ctx.toasts), local(*ctx.local) {}
+            toasts(*ctx.toasts), local(*ctx.local) {
+            this->speaker.volume = this->world->settings.sfx_volume;
+        }
 
         virtual ~ActionMode() = default;
 

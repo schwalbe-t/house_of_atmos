@@ -72,9 +72,11 @@ namespace houseofatmos::world {
 
 
     Carriage::Carriage(
+        const Settings& settings,
         CarriageType type, Vec<3> position,
         StatefulRNG rng
     ) {
+        this->speaker.volume = settings.sfx_volume;
         this->type = type;
         CarriageTypeInfo type_info = Carriage::carriage_types()
             .at((size_t) type);
@@ -96,8 +98,10 @@ namespace houseofatmos::world {
     }
 
     Carriage::Carriage(
+        const Settings& settings, 
         const Serialized& serialized, const engine::Arena& buffer
     ) {
+        this->speaker.volume = settings.sfx_volume;
         this->type = serialized.type;
         buffer.copy_array_at_into(
             serialized.horses_offset, serialized.horses_count,
@@ -209,13 +213,13 @@ namespace houseofatmos::world {
             // change state and play sound if at end
             if(at_end) { this->state = State::Loading; }
             if(at_end && is_visible && this->targets.size() > 1) {
-                scene.get(sound::horse).play();
+                this->speaker.play(scene.get(sound::horse));
             }
             // play step sounds
             f64 next_sound_time 
                 = fmod(window.time() + sound_timer_offset, sound_period);
             if(next_sound_time < this->sound_timer && is_visible) {
-                scene.get(sound::step).play();
+                this->speaker.play(scene.get(sound::step));
             }
             this->sound_timer = next_sound_time;
         }
@@ -260,7 +264,7 @@ namespace houseofatmos::world {
                 this->clear_path();
                 this->state = State::Travelling;
                 if(is_visible && this->targets.size() > 1) {
-                    scene.get(sound::horse).play();
+                    this->speaker.play(scene.get(sound::horse));
                 }
                 this->load_timer = 0.0;
             } 
@@ -369,6 +373,7 @@ namespace houseofatmos::world {
     }
 
     CarriageManager::CarriageManager(
+        const Settings& settings,
         const Serialized& serialized, const engine::Arena& buffer,
         const Terrain& terrain
     ) {
@@ -379,7 +384,7 @@ namespace houseofatmos::world {
         );
         this->carriages.reserve(carriages.size());
         for(const Carriage::Serialized& carriage: carriages) {
-            this->carriages.push_back(Carriage(carriage, buffer));
+            this->carriages.push_back(Carriage(settings, carriage, buffer));
         }
         this->fill_obstacle_data(terrain);
     }

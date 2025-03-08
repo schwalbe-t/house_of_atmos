@@ -28,13 +28,7 @@ namespace houseofatmos::engine {
 
             std::string_view path;
             std::vector<std::pair<Attrib, Mesh::Attrib>> vertex_attributes;
-            FaceCulling face_culling;
-            LoadArgs(
-                std::string_view path, 
-                std::vector<std::pair<Attrib, Mesh::Attrib>> vertex_attribs, 
-                FaceCulling face_culling = FaceCulling::Disabled
-            ): path(path), vertex_attributes(std::move(vertex_attribs)), 
-                face_culling(face_culling) {}
+            FaceCulling face_culling = FaceCulling::Disabled;
 
             std::string pretty_identifier() const { 
                 std::string r = "Model[";

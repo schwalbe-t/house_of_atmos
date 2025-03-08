@@ -319,12 +319,16 @@ namespace houseofatmos::world {
         terrain(Terrain(
             width, height, World::units_per_tile, World::tiles_per_chunk
         )), 
-        carriages(CarriageManager(this->terrain)) {}
+        player(Player(this->settings)), 
+        carriages(CarriageManager(this->terrain)), 
+        personal_horse(PersonalHorse(this->settings)) {}
 
 
-    World::World(Settings&& settings, const engine::Arena& buffer)
-    : terrain(Terrain(0, 0, 0, 0)) {
-        this->settings = std::move(settings);
+    World::World(Settings&& settings, const engine::Arena& buffer): 
+            settings(std::move(settings)), 
+            terrain(Terrain(0, 0, 0, 0)), 
+            player(Player(this->settings)), 
+            personal_horse(PersonalHorse(this->settings)) {
         const auto& serialized = buffer.value_at<World::Serialized>(0);
         this->save_path = std::string(std::string_view(
             buffer.array_at<char>(
@@ -337,12 +341,14 @@ namespace houseofatmos::world {
             buffer
         );
         this->complexes = ComplexBank(serialized.complexes, buffer);
-        this->player = Player(serialized.player);
+        this->player = Player(this->settings, serialized.player);
         this->balance = serialized.balance;
         this->carriages = CarriageManager(
-            serialized.carriages, buffer, this->terrain
+            this->settings, serialized.carriages, buffer, this->terrain
         );
-        this->personal_horse = PersonalHorse(serialized.personal_horse);
+        this->personal_horse = PersonalHorse(
+            this->settings, serialized.personal_horse
+        );
         this->research = research::Research(serialized.research, buffer);
     }
 

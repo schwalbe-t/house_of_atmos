@@ -37,7 +37,7 @@ namespace houseofatmos::interior {
             Character&, Scene&, const engine::Window& window
         )>;
         using CharacterConstructor = std::pair<Character, CharacterUpdate> (*)(
-            Scene&
+            Scene&, const Settings&
         );
 
         engine::Model::LoadArgs model;

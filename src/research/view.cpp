@@ -8,16 +8,14 @@ namespace houseofatmos::research {
         std::shared_ptr<world::World>&& world,
         std::shared_ptr<Scene>&& previous, 
         const engine::Texture& last_frame
-    ): last_frame(last_frame), toasts(Toasts(world->settings.localization())) {
+    ): last_frame(last_frame), toasts(Toasts(world->settings)) {
         this->world = std::move(world);
         this->previous = std::move(previous);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
-        this->load(engine::Localization::Loader(
-            this->world->settings.localization()
-        ));
-        this->load(engine::Shader::Loader(View::blur_shader));
+        this->load(this->world->settings.localization());
+        this->load(View::blur_shader);
     }
 
 
@@ -136,8 +134,8 @@ namespace houseofatmos::research {
     void View::init_ui() {
         Toasts::States toast_states = this->toasts.make_states();
         this->ui.root.children.clear();
-        const engine::Localization& local = this
-            ->get<engine::Localization>(this->world->settings.localization());
+        const engine::Localization& local
+            = this->get(this->world->settings.localization());
         ui::Element view = ui::Element()
             .with_pos(0.5, 0.5, ui::position::parent_offset_fract)
             .with_size(1.0, 1.0, ui::size::window_fract)
@@ -198,7 +196,7 @@ namespace houseofatmos::research {
     void View::update(engine::Window& window) {
         this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
-        this->get<engine::Soundtrack>(audio_const::soundtrack).update();
+        this->get(audio_const::soundtrack).update();
         if(this->ui.root.children.size() == 0) {
             this->init_ui();
         }
@@ -226,7 +224,7 @@ namespace houseofatmos::research {
             this->background = engine::Texture(
                 this->last_frame.width(), this->last_frame.height()
             );
-            engine::Shader& blur = this->get<engine::Shader>(View::blur_shader);
+            engine::Shader& blur = this->get(View::blur_shader);
             blur.set_uniform("u_texture_w", (i64) this->background->width());
             blur.set_uniform("u_texture_h", (i64) this->background->height());
             i64 blur_rad = (i64) ((window.width() + window.height()) / 200.0);

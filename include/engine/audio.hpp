@@ -1,11 +1,12 @@
 
 #pragma once
 
-#include "scene.hpp"
+#include "resources.hpp"
 #include "math.hpp"
 #include "rng.hpp"
 #include "util.hpp"
 #include <vector>
+#include <memory>
 
 namespace houseofatmos::engine {
 
@@ -22,7 +23,6 @@ namespace houseofatmos::engine {
             using ResourceType = Audio;
 
             std::string_view path;
-            LoadArgs(std::string_view path): path(path) {}
 
             std::string identifier() const { return std::string(path); }
             std::string pretty_identifier() const {
@@ -54,10 +54,7 @@ namespace houseofatmos::engine {
 
             std::string_view path;
             f64 pitch_var;
-            f64 base_pitch;
-            LoadArgs(
-                std::string_view path, f64 pitch_var, f64 base_pitch = 1.0
-            ): path(path), base_pitch(base_pitch), pitch_var(pitch_var) {}
+            f64 base_pitch = 1.0;
 
             std::string identifier() const { 
                 return std::string(this->path) 
@@ -105,11 +102,19 @@ namespace houseofatmos::engine {
         util::Handle<u64, &destruct_source> source;
 
         public:
-        Vec<3> position = { 0, 0, 0 };
-        Space space = Space::Listener;
-        std::shared_ptr<Volume> volume = nullptr;
-        f64 gain = 1.0;
-        f64 pitch = 1.0;
+        Space space;
+        Vec<3> position;
+        std::shared_ptr<const Volume> volume;
+        f64 gain;
+        f64 pitch;
+
+        Speaker(
+            Space space = Space::Listener, 
+            Vec<3> position = Vec<3>(0, 0, 0), 
+            std::shared_ptr<Volume> volume = nullptr,
+            f64 gain = 1.0, f64 pitch = 1.0
+        ): space(space), position(position), volume(volume), 
+            gain(gain), pitch(pitch) {}
         
         Vec<3> absolute_position() const {
             return this->space == Space::World? this->position
@@ -140,11 +145,7 @@ namespace houseofatmos::engine {
             using ResourceType = Soundtrack;
 
             std::vector<std::string_view> track_sources;
-            Repetition repetition;
-            LoadArgs(
-                std::vector<std::string_view>&& track_sources, 
-                Repetition repetition = Repetition::Forbidden
-            ): track_sources(std::move(track_sources)), repetition(repetition) {}
+            Repetition repetition = Repetition::Forbidden;
 
             std::string identifier() const {  return this->pretty_identifier(); }
             std::string pretty_identifier() const {
@@ -165,13 +166,14 @@ namespace houseofatmos::engine {
         };
 
         private:
+        u64 last_played_idx = UINT64_MAX;
+
+        public:
         Speaker speaker;
         std::vector<Audio> tracks;
         Repetition repetition;
         math::StatefulRNG rng;
-        u64 last_played_idx = UINT64_MAX;
-
-        public:
+        
         Soundtrack(
             std::vector<Audio> tracks, 
             Repetition repetition = Repetition::Forbidden,

@@ -6,7 +6,7 @@ namespace houseofatmos::world {
 
     void PersonalHorse::set_free(Vec<3> at_pos) {
         if(this->scene != nullptr && this->state != State::Called) {
-            scene->get<engine::Sound>(sound::horse).play();
+            this->speaker.play(scene->get(sound::horse));
         }
         if(this->player != nullptr) {
             this->player->is_riding = false;
@@ -18,7 +18,7 @@ namespace houseofatmos::world {
 
     void PersonalHorse::set_called() {
         if(this->scene != nullptr) {
-            scene->get<engine::Sound>(sound::horse).play();
+            this->speaker.play(scene->get(sound::horse));
         }
         this->state = State::Called;
         this->interactable = nullptr;
@@ -26,7 +26,7 @@ namespace houseofatmos::world {
 
     void PersonalHorse::set_ridden() {
         if(this->scene != nullptr) {
-            scene->get<engine::Sound>(sound::horse).play();
+            this->speaker.play(scene->get(sound::horse));
         }
         this->player->character.position = this->position();
         this->player->is_riding = true;
@@ -42,6 +42,8 @@ namespace houseofatmos::world {
         this->player = &player;
         this->scene = &scene;
         Vec<3> pos = this->position();
+        this->speaker.position = pos;
+        this->speaker.update();
         // add interactable if in idle
         if(this->interactable == nullptr && this->state == State::Idle) {
             this->interactable = interactables.create([this]() {
@@ -111,8 +113,7 @@ namespace houseofatmos::world {
         engine::Scene& scene, const engine::Window& window, 
         Renderer& renderer
     ) {
-        engine::Model& model = scene
-            .get<engine::Model>(PersonalHorse::horse_model);
+        engine::Model& model = scene.get(PersonalHorse::horse_model);
         Mat<4> transform = Mat<4>::translate(this->position())
             * Mat<4>::rotate_y(this->angle);
         const engine::Animation& animation = model.animation(
@@ -125,7 +126,7 @@ namespace houseofatmos::world {
             : (this->is_moving > 0? 3.0 : 0.5);
         f64 timestamp = fmod(window.time() * anim_speed, animation.length());
         const engine::Texture& texture = scene
-            .get<engine::Texture>(PersonalHorse::horse_texture);
+            .get(PersonalHorse::horse_texture);
         renderer.render(
             model, std::array { transform },
             &animation, timestamp, 

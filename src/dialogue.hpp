@@ -4,6 +4,7 @@
 #include <engine/audio.hpp>
 #include <engine/ui.hpp>
 #include <engine/localization.hpp>
+#include "settings.hpp"
 #include <functional>
 
 namespace houseofatmos {
@@ -24,13 +25,6 @@ namespace houseofatmos {
                     scene.load(sound);
                 }
                 scene.load(this->default_sound);
-            }
-
-            inline void set_gain(engine::Scene& scene, f64 value) const {
-                for(const auto& [c, sound]: this->sounds) {
-                    scene.get(sound).set_gain(value);
-                }
-                scene.get(this->default_sound).set_gain(value);
             }
 
             inline const engine::Sound::LoadArgs& get_sound_of(char32_t c) const {
@@ -68,6 +62,7 @@ namespace houseofatmos {
     struct DialogueManager {
 
         private:
+        engine::Speaker speaker;
         engine::Localization::LoadArgs local_ref;
         std::vector<Dialogue> queued;
         size_t current_offset = 0;
@@ -76,13 +71,14 @@ namespace houseofatmos {
         ui::Element* container = nullptr;
         ui::Element* lines = nullptr;
 
-        void stop_voice_sounds(engine::Scene& scene) const;
         void set_displayed_lines(std::string text) const;
         void advance_to_next_char(engine::Scene& scene);
 
         public:
-        DialogueManager(engine::Localization::LoadArgs local_ref):
-            local_ref(local_ref) {}
+        DialogueManager(const Settings& settings):
+                local_ref(settings.localization()) {
+            this->speaker.volume = settings.sfx_volume;
+        }
 
         bool is_empty() const { return this->queued.size() == 0; }
         void say(Dialogue&& dialogue) { this->queued.push_back(dialogue); }
@@ -90,7 +86,7 @@ namespace houseofatmos {
             if(this->queued.size() == 0) { return false; }
             return this->current_offset >= this->queued[0].text.size();
         }
-        void skip(engine::Scene& scene);
+        void skip();
 
         ui::Element create_container();
 

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <engine/audio.hpp>
+#include "settings.hpp"
 #include "renderer.hpp"
 #include <functional>
 
@@ -30,6 +31,8 @@ namespace houseofatmos {
         using TextureOverride = std::pair<std::string, engine::Texture>;
         
         struct LoadArgs {
+            using ResourceType = CharacterVariant;
+
             std::vector<TextureOverridePath> texture_overrides;
 
             std::string pretty_identifier() const {
@@ -87,6 +90,7 @@ namespace houseofatmos {
         public:
         const CharacterType* type;
         const CharacterVariant::LoadArgs* variant;
+        engine::Speaker speaker = engine::Speaker(engine::Speaker::Space::World);
         u64 default_animation_id;
         Action action;
         Vec<3> position;
@@ -98,12 +102,17 @@ namespace houseofatmos {
             const CharacterVariant::LoadArgs* variant, 
             Vec<3> position, 
             u64 default_animation_id,
+            const Settings* settings = nullptr,
             Behavior&& behavior = [](auto& c) { (void) c; }
         ): type(type), variant(variant), 
             default_animation_id(default_animation_id),
             action(Action(default_animation_id)),
             position(position), 
-            behavior(std::move(behavior)) {}
+            behavior(std::move(behavior)) {
+            if(settings != nullptr) {
+                this->speaker.volume = settings->sfx_volume;
+            }
+        }
 
         void face_in_direction(const Vec<3>& heading) {
             if(heading.len() == 0.0) { return; }
@@ -126,8 +135,10 @@ namespace houseofatmos {
         void update(
             engine::Scene& scene, const engine::Window& window,
             const Vec<3>& observer = Vec<3>(), 
-            f64 update_distance = INFINITY, f64 sound_distance = INFINITY
+            f64 update_distance = INFINITY
         ) {
+            this->speaker.position = this->position;
+            this->speaker.update();
             f64 distance = (this->position - observer).len();
             if(distance > update_distance) { return; }
             if(this->action.progress >= this->action.duration) {
@@ -149,14 +160,13 @@ namespace houseofatmos {
                 }
             }
             this->action.progress += window.delta_time();
-            if(distance > sound_distance) { return; }
             const CharacterAnimation& anim_impl = this->animation();
             if(anim_impl.sound != nullptr) {
                 f64 sound_complete_c = (window.time() + anim_impl.sound_offset)
                     / (anim_impl.sound_period / this->last_velocity);
                 f64 sound_ts = fmod(sound_complete_c, 1.0);
                 if(sound_ts < this->last_sound_ts) {
-                    scene.get(*anim_impl.sound).play();
+                    this->speaker.play(scene.get(*anim_impl.sound));
                 }
                 this->last_sound_ts = sound_ts;
             }

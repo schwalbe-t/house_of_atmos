@@ -3,6 +3,8 @@
 
 #include "nums.hpp"
 #include "logging.hpp"
+#include "audio.hpp"
+#include "resources.hpp"
 #include <unordered_map>
 #include <optional>
 #include <vector>
@@ -10,52 +12,6 @@
 #include <memory>
 
 namespace houseofatmos::engine {
-
-    struct GenericLoader {
-
-        protected:
-        bool has_value = false;
-
-
-        public:
-        GenericLoader& operator=(GenericLoader&& other) = default;
-        virtual ~GenericLoader() = default;
-
-        virtual void load() = 0;
-        bool loaded() const { return this->has_value; }
-    
-        static std::vector<char> read_bytes(std::string_view path);
-        static std::string read_string(std::string_view path);
-    };
-
-    template<typename T, typename A>
-    struct ResourceLoader: GenericLoader {
-
-        private:
-        std::optional<T> loaded_value;
-        A args;
-
-
-        public:
-        constexpr ResourceLoader(A arg) {
-            this->args = arg;
-            this->loaded_value = std::nullopt;
-        }
-        ResourceLoader(ResourceLoader&& other) {
-            this->has_value = other.has_value;
-            this->args = std::move(other.args);
-            this->loaded_value = std::move(other.loaded_value);
-        }
-        ~ResourceLoader() override = default;
-
-
-        void load() override {
-            this->has_value = true;
-            this->loaded_value = T::from_resource(this->args);
-        }
-        const A& arg() const { return this->args; }
-        T& value() { return this->loaded_value.value(); }
-    };
 
     struct Window;
 
@@ -66,6 +22,8 @@ namespace houseofatmos::engine {
 
 
         public:
+        Listener listener;
+
         Scene();
         Scene(const Scene& other) = delete;
         Scene(Scene&& other) = delete;
@@ -85,13 +43,12 @@ namespace houseofatmos::engine {
 
         template<typename A>
         void load(A arg) {
-            using T = typename A::ResourceType;
-            auto res = ResourceLoader<T, A>(std::move(arg));
-            std::string iden = res.arg().identifier();
+            using R = typename A::ResourceType;
+            std::string iden = arg.identifier();
             std::shared_ptr<GenericLoader> cached 
                 = Scene::get_cached_resource(iden);
             if(cached == nullptr) {
-                cached = std::make_shared<ResourceLoader<T, A>>(std::move(res));
+                cached = std::make_shared<ResourceLoader<R, A>>(std::move(arg));
                 Scene::put_cached_resource(iden, cached);
             }
             this->resources[iden] = std::move(cached);
@@ -99,7 +56,7 @@ namespace houseofatmos::engine {
 
         template<typename A>
         auto& get(const A& arg) {
-            using T = typename A::ResourceType;
+            using R = typename A::ResourceType;
             std::string iden = arg.identifier();
             auto res_ref = this->resources.find(iden);
             if(res_ref == this->resources.end()) {
@@ -109,7 +66,7 @@ namespace houseofatmos::engine {
                 );
             }
             GenericLoader* dr = res_ref->second.get();
-            auto res = dynamic_cast<ResourceLoader<T, A>*>(dr);
+            auto res = dynamic_cast<ResourceLoader<R, A>*>(dr);
             if(!res->loaded()) {
                 error("Resource "
                     + arg.pretty_identifier()

@@ -1,7 +1,8 @@
 
 #pragma once
 
-#include "scene.hpp"
+#include "resources.hpp"
+#include <unordered_map>
 #include <span>
 #include <initializer_list>
 
@@ -16,11 +17,7 @@ namespace houseofatmos::engine {
 
             std::string_view path;
             std::string_view locale;
-            std::string_view fallback;
-            LoadArgs(
-                std::string_view path, std::string_view locale,
-                std::string_view fallback = "en"
-            ): path(path), locale(locale), fallback(fallback) {}
+            std::string_view fallback = "en";
             
             std::string identifier() const { return pretty_identifier(); }
             std::string pretty_identifier() const {

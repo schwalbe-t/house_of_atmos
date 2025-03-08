@@ -13,9 +13,10 @@ namespace houseofatmos::engine {
         Vec<3> look_at = this->look_at.normalized();
         Vec<3> up = this->up.normalized();
         ALfloat orientation[] = {
-            look_at.x(), look_at.y(), look_at.z(),
-            up.x(), up.y(), up.z()
+            (ALfloat) look_at.x(), (ALfloat) look_at.y(), (ALfloat) look_at.z(),
+            (ALfloat) up.x(), (ALfloat) up.y(), (ALfloat) up.z()
         };
+        alListenerfv(AL_ORIENTATION, orientation);
         curr_position = this->position;
         curr_max_source_dist = this->max_speaker_distance;
     }

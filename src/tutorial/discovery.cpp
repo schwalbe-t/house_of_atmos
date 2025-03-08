@@ -27,8 +27,8 @@ namespace houseofatmos::tutorial {
         std::shared_ptr<world::Scene> after
     ) {
         // this is only legal because the previous scene already loads this :/
-        const engine::Localization* local = &scene
-            ->get<engine::Localization>(scene->world->settings.localization());
+        const engine::Localization* local 
+            = &scene->get(scene->world->settings.localization());
         auto force_player_sit = [scene, after](engine::Window& window) {
             if(window.was_pressed(engine::Key::Tab)) {
                 after->world->settings = scene->world->settings;

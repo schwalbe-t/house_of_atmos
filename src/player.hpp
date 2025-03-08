@@ -5,6 +5,7 @@
 #include <engine/math.hpp>
 #include <engine/model.hpp>
 #include <engine/audio.hpp>
+#include "settings.hpp"
 #include "collider.hpp"
 #include "renderer.hpp"
 #include "human.hpp"
@@ -23,19 +24,25 @@ namespace houseofatmos {
 
 
         public:
-        Character character = Character(
-            &human::male, &human::count,
-            { 0, 0, 0 }, (u64) human::Animation::Stand
-        );
+        Character character;
         Vec<3> next_step;
         Vec<3> confirmed_step;
         bool in_water = false;
         bool is_riding = false;
 
-        Player() {}
+        Player(const Settings& settings)
+            : character(Character(
+                &human::male, &human::count,
+                { 0, 0, 0 }, (u64) human::Animation::Stand,
+                &settings
+            )) {}
 
-        Player(const Serialized& serialized) {
-            this->character.position = serialized.position;
+        Player(const Settings& settings, const Serialized& serialized)
+            : character(Character(
+            &human::male, &human::count,
+            { 0, 0, 0 }, (u64) human::Animation::Stand,
+            &settings
+        )) {
             this->character.angle = serialized.angle;
         }
 

@@ -964,8 +964,6 @@ namespace houseofatmos::world {
         engine::Scene& scene, Renderer& renderer,
         const engine::Window& window
     ) {
-        const engine::Texture& ground_texture
-            = scene.get<engine::Texture>(Terrain::ground_texture);
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage_instances;
         std::unordered_map<Building::Type, std::vector<Mat<4>>> building_instances;
         std::unordered_map<Resource::Type, std::vector<Mat<4>>> resource_instances;
@@ -973,7 +971,7 @@ namespace houseofatmos::world {
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
             this->render_chunk_ground(
-                chunk, ground_texture, chunk_offset, renderer
+                chunk, scene.get(Terrain::ground_texture), chunk_offset, renderer
             );
             for(const auto& [foliage_type, instances]: chunk.foliage) {
                 std::vector<Mat<4>>& f_inst = foliage_instances[foliage_type];
@@ -989,7 +987,7 @@ namespace houseofatmos::world {
             }
         }
         for(const auto& [foliage_type, instances]: foliage_instances) {
-            engine::Model& model = scene.get<engine::Model>(
+            engine::Model& model = scene.get(
                 Foliage::types().at((size_t) foliage_type).model
             );
             renderer.render(model, instances);
@@ -1002,15 +1000,12 @@ namespace houseofatmos::world {
         for(const auto& [resource_type, instances]: resource_instances) {
             const Resource::TypeInfo& type_info
                 = Resource::types().at((size_t) resource_type);
-            engine::Model& model = scene.get<engine::Model>(type_info.model);
-            const engine::Texture& texture 
-                = scene.get<engine::Texture>(type_info.texture);
             renderer.render(
-                model, resource_instances[resource_type],
+                scene.get(type_info.model), resource_instances[resource_type],
                 nullptr, 0.0,
                 engine::FaceCulling::Enabled, engine::Rendering::Surfaces,
                 engine::DepthTesting::Enabled,
-                &texture
+                &scene.get(type_info.texture)
             );
         }
         this->render_bridges(scene, renderer);
@@ -1059,8 +1054,7 @@ namespace houseofatmos::world {
         for(size_t type_id = 0; type_id < instances.size(); type_id += 1) {
             if(instances[type_id].size() == 0) { continue; }
             const Bridge::TypeInfo& type = Bridge::types().at(type_id);
-            engine::Model& model = scene.get<engine::Model>(type.model);
-            renderer.render(model, instances[type_id]);
+            renderer.render(scene.get(type.model), instances[type_id]);
         }
     }
 
@@ -1072,8 +1066,8 @@ namespace houseofatmos::world {
         engine::Scene& scene, Renderer& renderer, 
         const engine::Window& window
     ) {
-        const engine::Texture& normal_map = scene.get<engine::Texture>(Terrain::water_texture);
-        engine::Shader& shader = scene.get<engine::Shader>(Terrain::water_shader);
+        const engine::Texture& normal_map = scene.get(Terrain::water_texture);
+        engine::Shader& shader = scene.get(Terrain::water_shader);
         shader.set_uniform("u_view_projection", renderer.compute_view_proj());
         shader.set_uniform("u_light_color", water_light_color);
         shader.set_uniform("u_base_color", water_base_color);

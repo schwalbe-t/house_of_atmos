@@ -47,7 +47,7 @@ namespace houseofatmos::interior {
     static const u64 maid_start_target = 2;
 
     static std::pair<Character, Interior::CharacterUpdate> create_maid(
-        Scene& scene
+        Scene& scene, const Settings& settings
     ) {
         auto rng = std::make_shared<StatefulRNG>();
         auto dialogue_origin = std::make_shared<Vec<3>>();
@@ -70,7 +70,8 @@ namespace houseofatmos::interior {
         static const u64 no_action = UINT64_MAX;
         Character character = Character(
             &human::female, &human::maid,
-            { 0, 0, 0 }, no_action
+            { 0, 0, 0 }, no_action,
+            &settings
         );
         auto current_target = std::make_shared<u64>(maid_start_target);
         return {

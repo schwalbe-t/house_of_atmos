@@ -1,6 +1,7 @@
 
 #include <engine/window.hpp>
 #include <engine/logging.hpp>
+#include <engine/audio.hpp>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <AL/alc.h>
@@ -276,6 +277,7 @@ namespace houseofatmos::engine {
             this->last_time = current_time;
             if(this->current_scene) {
                 this->current_scene->update(*this);
+                this->current_scene->listener.internal_make_current();
                 this->current_scene->render(*this);
             }
             if(this->next_scene) {

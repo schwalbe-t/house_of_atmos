@@ -46,7 +46,7 @@ namespace houseofatmos::world {
                 engine::Rendering rendering = engine::Rendering::Surfaces,
                 const engine::Texture* override_texture = nullptr
             ) const {
-                engine::Model& model = scene.get<engine::Model>(this->model);
+                engine::Model& model = scene.get(this->model);
                 if(!this->animation.has_value()) {
                     renderer.render(
                         model, instances, 
@@ -78,7 +78,7 @@ namespace houseofatmos::world {
 
         static void load_models(engine::Scene& scene) {
             for(const TypeInfo& type: Building::types()) {
-                scene.load(engine::Model::Loader(type.model));
+                scene.load(type.model);
             }
         }
 

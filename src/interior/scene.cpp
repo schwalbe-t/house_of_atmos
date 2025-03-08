@@ -13,9 +13,10 @@ namespace houseofatmos::interior {
         const Interior& interior, 
         std::shared_ptr<world::World>&& world,
         std::shared_ptr<engine::Scene>&& outside
-    ): interior(interior)
-    , toasts(Toasts(world->settings.localization()))
-    , dialogues(DialogueManager(world->settings.localization())) {
+    ): interior(interior), 
+            player(Player(world->settings)),
+            toasts(Toasts(world->settings)), 
+            dialogues(DialogueManager(world->settings)) {
         this->world = std::move(world);
         this->outside = std::move(outside);
         this->renderer.fog_color = background;
@@ -31,15 +32,13 @@ namespace houseofatmos::interior {
     }
 
     void Scene::load_resources() {
-        this->load(engine::Model::Loader(this->interior.model));
+        this->load(this->interior.model);
         Renderer::load_shaders(*this);
         human::load_resources(*this);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
-        this->load(engine::Localization::Loader(
-            this->world->settings.localization()
-        ));
+        this->load(this->world->settings.localization());
     }
 
     void Scene::add_exit_interaction(engine::Window& window) {
@@ -64,7 +63,9 @@ namespace houseofatmos::interior {
 
     void Scene::add_characters() {
         for(auto character_c: this->interior.characters) {
-            this->characters.push_back(character_c(*this));
+            this->characters.push_back(
+                character_c(*this, this->world->settings)
+            );
         }
     }
 
@@ -141,6 +142,8 @@ namespace houseofatmos::interior {
             + Vec<3>(0, 1, 0);
         this->renderer.camera.position = this->player.character.position
             + this->interior.camera_offset;
+        this->listener.position = this->renderer.camera.position;
+        this->listener.look_at = this->renderer.camera.look_at;
         for(auto& [character, char_update]: this->characters) {
             character.behavior = [
                 this, window = &window, char_update = &char_update

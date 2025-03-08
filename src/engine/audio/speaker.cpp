@@ -29,6 +29,8 @@ namespace houseofatmos::engine {
             }
         }
         if(!this->source.is_empty()) {
+            Vec<3> pos = this->absolute_position();
+            alSource3f(*this->source, AL_POSITION, pos.x(), pos.y(), pos.z());
             f64 volume_gain = this->volume == nullptr? 1.0 : this->volume->gain;
             f64 final_gain = this->gain * volume_gain;
             alSourcef(*this->source, AL_GAIN, final_gain);

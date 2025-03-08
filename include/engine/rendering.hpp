@@ -2,7 +2,7 @@
 #pragma once
 
 #include "math.hpp"
-#include "scene.hpp"
+#include "resources.hpp"
 #include "util.hpp"
 #include <vector>
 #include <span>
@@ -20,7 +20,6 @@ namespace houseofatmos::engine {
             using ResourceType = Image;
 
             std::string_view path;
-            LoadArgs(std::string_view path): path(path) {}
 
             std::string identifier() const { return std::string(path); }
             std::string pretty_identifier() const {
@@ -103,9 +102,7 @@ namespace houseofatmos::engine {
             using ResourceType = Texture;
 
             std::string_view path;
-            bool mirror_vertical;
-            LoadArgs(std::string_view path, bool mirror = false)
-                : path(path), mirror_vertical(mirror) {}
+            bool mirror_vertical = false;
 
             std::string identifier() const {
                 return std::string(this->path) 
@@ -215,9 +212,6 @@ namespace houseofatmos::engine {
 
             std::string_view vertex_path;
             std::string_view fragment_path;
-            LoadArgs(
-                std::string_view vertex_path, std::string_view fragment_path
-            ): vertex_path(vertex_path), fragment_path(fragment_path) {}
 
             std::string identifier() const {
                 return std::string(vertex_path) 

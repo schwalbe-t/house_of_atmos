@@ -1,5 +1,6 @@
 
 #include <engine/localization.hpp>
+#include <engine/logging.hpp>
 #include <nlohmann/json.hpp>
 
 namespace houseofatmos::engine {
@@ -22,7 +23,7 @@ namespace houseofatmos::engine {
                 result.values[name] = (std::string) *value;
                 continue;
             }
-            engine::warning("Localization for locale '" 
+            warning("Localization for locale '" 
                 + std::string(args.locale)
                 + "' does not include a value under the name '"
                 + name + "'!"

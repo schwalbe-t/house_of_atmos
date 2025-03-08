@@ -39,9 +39,7 @@ namespace houseofatmos::world {
         ActionManager action_mode = ActionManager([this]() {
             return (ActionContext) {
                 &this->world, &this->ui, &this->toasts,
-                &this->get<engine::Localization>(
-                    this->world->settings.localization()
-                )
+                &this->get(this->world->settings.localization())
             };
         });
         ui::Manager ui = ui::Manager(ui_const::unit_size_fract);

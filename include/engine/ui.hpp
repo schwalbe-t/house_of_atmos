@@ -280,7 +280,7 @@ namespace houseofatmos::engine::ui {
         };
 
         static void load_shaders(Scene& scene) {
-            scene.load(Shader::Loader(Manager::shader_args));
+            scene.load(Manager::shader_args);
         }
 
 
