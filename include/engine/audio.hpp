@@ -107,14 +107,16 @@ namespace houseofatmos::engine {
         std::shared_ptr<const Volume> volume;
         f64 gain;
         f64 pitch;
+        f64 range;
 
         Speaker(
             Space space = Space::Listener, 
-            Vec<3> position = Vec<3>(0, 0, 0), 
+            f64 range = 1.0,
+            Vec<3> position = Vec<3>(0, 0, 0),
             std::shared_ptr<Volume> volume = nullptr,
             f64 gain = 1.0, f64 pitch = 1.0
         ): space(space), position(position), volume(volume), 
-            gain(gain), pitch(pitch) {}
+            gain(gain), pitch(pitch), range(range) {}
         
         Vec<3> absolute_position() const {
             return this->space == Space::World? this->position

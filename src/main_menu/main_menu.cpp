@@ -9,7 +9,8 @@
 namespace houseofatmos {
 
     MainMenu::MainMenu(Settings&& settings):
-            settings(std::move(settings)), local_ref(settings.localization()) {
+            settings(std::move(settings)), 
+            local_ref(this->settings.localization()) {
         u32 background_seed = random_init();
         this->terrain.generate_elevation(background_seed);
         this->terrain.generate_foliage(background_seed);

@@ -47,7 +47,9 @@ namespace houseofatmos::world {
         Player* player = nullptr;
         engine::Scene* scene = nullptr;
         
-        engine::Speaker speaker = engine::Speaker(engine::Speaker::Space::World);
+        engine::Speaker speaker = engine::Speaker(
+            engine::Speaker::Space::World, 10.0
+        );
         std::shared_ptr<Interactable> interactable = nullptr;
         
         PersonalHorse(const Settings& settings, Vec<3> pos = Vec<3>(0, 0, 0)) {

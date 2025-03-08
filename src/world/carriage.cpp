@@ -180,6 +180,8 @@ namespace houseofatmos::world {
         ComplexBank& complexes, const Terrain& terrain,
         bool is_visible
     ) {
+        this->speaker.position = this->position;
+        this->speaker.update();
         const CarriageTypeInfo& type_info 
             = Carriage::carriage_types().at((size_t) this->type);
         this->moving = this->state == State::Travelling;
@@ -218,7 +220,9 @@ namespace houseofatmos::world {
             // play step sounds
             f64 next_sound_time 
                 = fmod(window.time() + sound_timer_offset, sound_period);
-            if(next_sound_time < this->sound_timer && is_visible) {
+            bool play_step = !this->speaker.is_playing()
+                && next_sound_time < this->sound_timer;
+            if(play_step) {
                 this->speaker.play(scene.get(sound::step));
             }
             this->sound_timer = next_sound_time;

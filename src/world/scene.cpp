@@ -6,6 +6,8 @@
 
 namespace houseofatmos::world {
 
+    static const f64 max_speaker_dist = 25.0 * World::units_per_tile;
+
     static const std::vector<
         std::pair<const ui::Background*, ActionManager::Mode>
     > action_modes = {
@@ -209,8 +211,8 @@ namespace houseofatmos::world {
     static const size_t peasant_dialogue_count = 5;
     static const f64 peasant_male_pitch = 1.9;
     static const f64 peasant_female_pitch = 2.2;
-    static const f64 peasant_male_speed = 1.6;
-    static const f64 peasant_female_speed = 1.75;
+    static const f64 peasant_male_speed = 3.0;
+    static const f64 peasant_female_speed = 3.2;
 
     static void create_peasants(
         const Settings& settings,
@@ -425,6 +427,7 @@ namespace houseofatmos::world {
         );
         this->listener.position = this->renderer.camera.position;
         this->listener.look_at = this->renderer.camera.look_at;
+        this->listener.max_speaker_distance = max_speaker_dist;
         this->interactables.observe_from(
             this->world->player.character.position, this->renderer, window
         );

@@ -20,7 +20,7 @@ namespace houseofatmos::tutorial {
 
 
     static const f64 maid_v_pitch = 2.3;
-    static const f64 maid_v_speed = 1.8;
+    static const f64 maid_v_speed = 3.3;
 
     static Cutscene create_cutscene(
         std::shared_ptr<interior::Scene> scene,

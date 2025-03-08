@@ -103,7 +103,9 @@ namespace houseofatmos::world {
 
 
         private:
-        engine::Speaker speaker = engine::Speaker(engine::Speaker::Space::World);
+        engine::Speaker speaker = engine::Speaker(
+            engine::Speaker::Space::World, 5.0
+        );
         CarriageType type;
         std::vector<HorseType> horses;
         std::unordered_map<Item::Type, u64> items;

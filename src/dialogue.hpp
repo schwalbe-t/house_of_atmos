@@ -61,8 +61,11 @@ namespace houseofatmos {
 
     struct DialogueManager {
 
+        static inline const size_t speaker_pool_size = 2;
+
         private:
-        engine::Speaker speaker;
+        std::array<engine::Speaker, speaker_pool_size> speakers;
+        size_t next_speaker = 0;
         engine::Localization::LoadArgs local_ref;
         std::vector<Dialogue> queued;
         size_t current_offset = 0;
@@ -77,7 +80,9 @@ namespace houseofatmos {
         public:
         DialogueManager(const Settings& settings):
                 local_ref(settings.localization()) {
-            this->speaker.volume = settings.sfx_volume;
+            for(engine::Speaker& speaker: this->speakers) {
+                speaker.volume = settings.sfx_volume;
+            }
         }
 
         bool is_empty() const { return this->queued.size() == 0; }

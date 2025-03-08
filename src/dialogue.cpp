@@ -65,7 +65,9 @@ namespace houseofatmos {
 
     void DialogueManager::skip() {
         if(this->is_empty()) { return; }
-        this->speaker.stop();
+        for(engine::Speaker& speaker: this->speakers) {
+            speaker.stop();
+        }
         this->queued[0].handler();
         this->queued.erase(this->queued.begin());
         this->current_offset = 0;
@@ -82,8 +84,10 @@ namespace houseofatmos {
         size_t char_size = utf8_char_size(remaining);
         std::string next_char_s = remaining.substr(0, char_size);
         char32_t next_char = utf8_char_to_char32(next_char_s);
+        engine::Speaker& speaker = this->speakers[this->next_speaker];
         speaker.pitch = dialogue.pitch;
         speaker.play(scene.get(dialogue.voice->get_sound_of(next_char)));
+        this->next_speaker = (this->next_speaker + 1) % this->speakers.size();
         this->current_offset += char_size;
         std::string displayed = dialogue.text.substr(0, this->current_offset);
         const engine::Localization local = scene.get(this->local_ref);
@@ -99,6 +103,9 @@ namespace houseofatmos {
         engine::Scene& scene, const engine::Window& window, 
         const Vec<3>& observer
     ) {
+        for(engine::Speaker& speaker: this->speakers) {
+            speaker.update();
+        }
         bool has_work = this->container != nullptr
             && this->lines != nullptr
             && this->queued.size() > 0;

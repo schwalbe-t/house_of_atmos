@@ -67,7 +67,9 @@ namespace houseofatmos::world {
 
 
         public:
-        engine::Speaker speaker;
+        engine::Speaker speaker = engine::Speaker(
+            engine::Speaker::Space::World, 20.0
+        );
         std::shared_ptr<World>& world;
         ui::Manager& ui;
         Toasts& toasts;

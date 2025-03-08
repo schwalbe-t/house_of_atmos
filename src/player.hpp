@@ -35,15 +35,18 @@ namespace houseofatmos {
                 &human::male, &human::count,
                 { 0, 0, 0 }, (u64) human::Animation::Stand,
                 &settings
-            )) {}
+            )) {
+            this->character.speaker.range = 5.0;
+        }
 
         Player(const Settings& settings, const Serialized& serialized)
             : character(Character(
             &human::male, &human::count,
-            { 0, 0, 0 }, (u64) human::Animation::Stand,
+            serialized.position, (u64) human::Animation::Stand,
             &settings
         )) {
             this->character.angle = serialized.angle;
+            this->character.speaker.range = 5.0;
         }
 
         void update(const engine::Window& window);
