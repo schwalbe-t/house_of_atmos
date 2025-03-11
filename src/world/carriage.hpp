@@ -28,12 +28,8 @@ namespace houseofatmos::world {
         CarriageNetwork(CarriageNetwork&& other) noexcept = default;
         CarriageNetwork& operator=(CarriageNetwork&& other) noexcept = default;
 
-        private:
-        std::vector<std::pair<NodeId, u64>> target_search_tiles;
-
         bool is_passable(NodeId node) const;
 
-        public:
         void collect_next_nodes(
             NodeId node, std::vector<std::pair<NodeId, u64>>& out
         ) override;

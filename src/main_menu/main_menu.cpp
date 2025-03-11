@@ -62,12 +62,23 @@ namespace houseofatmos {
         settings.save_to(Settings::default_path);
     }
 
-    static void load_game_from(
-        const std::string& path, engine::Window& window, Settings settings 
+    void MainMenu::load_game_from(
+        const std::string& path, 
+        const engine::Localization& local, engine::Window& window  
     ) {
         std::vector<char> data = engine::GenericLoader::read_bytes(path);
         auto buffer = engine::Arena(data);
-        auto world = std::make_shared<world::World>(std::move(settings), buffer);
+        u32 format_version = buffer.value_at<u32>(0);
+        u32 required_version = world::World::current_format_version;
+        if(format_version != required_version) {
+            std::string local_message = format_version < required_version
+                ? "menu_save_file_too_old" : "menu_save_file_too_new";
+            this->show_message(local_message, local, window);
+            return;
+        }
+        auto world = std::make_shared<world::World>(
+            Settings(this->settings), buffer
+        );
         world->save_path = path;
         world->settings.add_recent_game(std::string(path));
         world->settings.save_to(Settings::default_path);
@@ -129,8 +140,8 @@ namespace houseofatmos {
             buttons.children.push_back(make_button(
                 local.pattern("menu_load_previous_game", { short_name }),
                 [window = &window, local = &local, this, path = game_path]() {
-                    this->before_next_frame = [window, this, path]() {
-                        load_game_from(path, *window, this->settings);
+                    this->before_next_frame = [this, path, local, window]() {
+                        this->load_game_from(path, *local, *window);
                     };
                     this->show_loading_screen(*local);
                 }
@@ -146,9 +157,10 @@ namespace houseofatmos {
                 ).result();
                 if(chosen.empty()) { return; }
                 if(!std::filesystem::exists(chosen[0])) { return; }
-                this->before_next_frame = [window, this, path = chosen[0]]() {
-                    load_game_from(path, *window, this->settings);
-                };
+                this->before_next_frame 
+                    = [this, path = chosen[0], local, window]() {
+                        this->load_game_from(path, *local, *window);
+                    };
                 this->show_loading_screen(*local);
             }
         ));
@@ -247,6 +259,30 @@ namespace houseofatmos {
                 this->show_title_screen(*local, *window);
             }
         ));
+    }
+
+    void MainMenu::show_message(
+        std::string_view local_text, 
+        const engine::Localization& local, engine::Window& window
+    ) {
+        this->ui.root.children.clear();
+        this->ui.with_element(ui::Element()
+            .with_size(150, 50, ui::size::units)
+            .with_pos(0.5, 0.5, ui::position::window_fract)
+            .with_text(local.text(local_text), &ui_font::dark)
+            .with_child(make_button(
+                    local.text("menu_close_menu"), 
+                    [this, local = &local, window = &window]() {
+                        this->show_title_screen(*local, *window);
+                    }
+                )
+                .with_pos(0.0, 1.0, ui::position::parent_list_fract)
+                .as_movable()
+            )   
+            .with_padding(4.0)
+            .with_background(&ui_background::scroll_horizontal)
+            .as_movable()
+        );
     }
 
     static const f64 camera_rotation_period = 60.0;

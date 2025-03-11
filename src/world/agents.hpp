@@ -62,35 +62,20 @@ namespace houseofatmos::world {
             std::vector<Vec<3>> points; 
         };
 
+        Vec<3> start;
         std::vector<Section> sections;
-
-
-        private:
-        std::optional<size_t> next_section_i(size_t after = 0) const {
-            size_t sects = this->sections.size();
-            size_t sect_i = after;
-            while(sect_i < sects && this->sections[sect_i].points.size() == 0) { 
-                sect_i += 1; 
-            }
-            if(sect_i >= sects) { return std::nullopt; }
-            return sect_i;
-        }
 
         public:
         void clear() { this->sections.clear(); }
-        bool is_empty() const { return !this->next_section_i().has_value(); }
+        bool is_empty() const { return this->sections.size() == 0; }
 
         std::pair<Vec<3>, size_t> after(
             f64 distance, bool* at_end = nullptr
         ) const {
+            size_t sect_c = this->sections.size();
             f64 remaining = distance;
-            std::optional<size_t> start_sect_i = this->next_section_i();
-            if(!start_sect_i.has_value()) {
-                engine::error("Agent used an empty path!");
-            }
-            size_t sect_i = *start_sect_i;
-            Vec<3> position = this->sections[sect_i].points[0];
-            for(;;) {
+            Vec<3> position = this->start;
+            for(size_t sect_i = 0; sect_i < sect_c; sect_i += 1) {
                 const Section& section = this->sections[sect_i];
                 for(const Vec<3>& point: section.points) {
                     Vec<3> step = point - position;
@@ -103,13 +88,9 @@ namespace houseofatmos::world {
                     }
                     remaining -= step_len;
                 }
-                std::optional<size_t> n_sect_i = this->next_section_i(sect_i);
-                if(!n_sect_i.has_value()) { 
-                    if(at_end != nullptr) { *at_end = true; }
-                    return { position, sect_i }; 
-                }
-                sect_i = *n_sect_i;
             }
+            if(at_end != nullptr) { *at_end = true; }
+            return { position, sect_c - 1 }; 
         }
 
 
@@ -142,10 +123,11 @@ namespace houseofatmos::world {
 
         static AgentPath<Network> build_path(
             Network& network, const NodeSearchStates& nodes, 
-            NodeId last
+            Vec<3> start_pos, NodeId last
         ) {
             NodeId current = last;
             AgentPath<Network> path;
+            path.start = start_pos;
             for(;;) {
                 const NodeSearchState& state = nodes.at(current);
                 path.sections.push_back(AgentPath<Network>::Section(current));
@@ -186,7 +168,7 @@ namespace houseofatmos::world {
                 NodeSearchState& current_s = nodes[current];
                 current_s.explored = true;
                 if(network.node_at_target(current, target)) {
-                    return build_path(network, nodes, current);
+                    return build_path(network, nodes, start_pos, current);
                 }
                 network.collect_next_nodes(current, connected);
                 for(auto [neigh, step_dist]: connected) {

@@ -373,6 +373,7 @@ namespace houseofatmos::world {
         CarriageManager::Serialized carriages = this->carriages.serialize(buffer);
         research::Research::Serialized research = this->research.serialize(buffer);
         auto& serialized = buffer.value_at<World::Serialized>(root_offset);
+        serialized.format_version = World::current_format_version;
         serialized.save_path_len = this->save_path.size();
         serialized.save_path_offset = buffer.alloc_array<char>(
             this->save_path.data(), this->save_path.size()

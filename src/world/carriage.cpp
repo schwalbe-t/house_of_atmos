@@ -5,8 +5,10 @@ namespace houseofatmos::world {
 
     bool CarriageNetwork::is_passable(NodeId node) const {
         auto [x, z] = node;
-        return this->terrain->path_at((i64) x, (i64) z)
+        bool has_path = this->terrain->path_at((i64) x, (i64) z)
             && this->terrain->building_at((i64) x, (i64) z) == nullptr;
+        bool has_bridge = this->terrain->bridge_at((i64) x, (i64) z);
+        return has_path || has_bridge;
     }
 
     static inline const u64 cost_ortho = 10;
@@ -43,13 +45,17 @@ namespace houseofatmos::world {
             + diagonal * cost_daigo;
     }
 
+    static const std::vector<std::pair<i64, i64>> valid_target_offsets = {
+        { +1,  0 },
+        { -1,  0 },
+        {  0, +1 },
+        {  0, -1 }
+    };
+
     bool CarriageNetwork::node_at_target(NodeId node, ComplexId target) {
-        this->target_search_tiles.clear();
-        this->collect_next_nodes(node, this->target_search_tiles);
-        for(auto connected: this->target_search_tiles) {
-            auto [x, z] = connected.first;
+        for(auto [ox, oz]: valid_target_offsets) {
             const Building* building = this->terrain
-                ->building_at((i64) x, (i64) z);
+                ->building_at((i64) node.first + ox, (i64) node.second + oz);
             bool is_valid = building != nullptr
                 && building->complex.has_value()
                 && building->complex->index == target.index;
