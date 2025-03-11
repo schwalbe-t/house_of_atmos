@@ -201,6 +201,8 @@ namespace houseofatmos::world {
         );
     }
 
+    static const f64 step_sound_period = 0.5;
+
     void Carriage::update(
         CarriageNetwork& network, 
         engine::Scene& scene, const engine::Window& window
@@ -208,6 +210,22 @@ namespace houseofatmos::world {
         (void) network;
         (void) scene;
         (void) window;
+        this->speaker.position = this->position;
+        this->speaker.update();
+        bool play_state_sound = this->current_state() != this->prev_state
+            && this->schedule.size() > 0;
+        if(play_state_sound) {
+            this->prev_state = this->current_state();
+            this->speaker.play(scene.get(sound::horse));
+        }
+        f64 next_step_time = this->last_step_time + step_sound_period;
+        bool play_step_sound = this->current_state() == Travelling
+            && next_step_time <= window.time()
+            && !this->speaker.is_playing();
+        if(play_step_sound) {
+            this->speaker.play(scene.get(sound::step));
+            this->last_step_time = window.time();
+        } 
     }
 
     static const f64 alignment_points_dist = 1.5;

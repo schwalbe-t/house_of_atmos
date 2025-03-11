@@ -118,7 +118,12 @@ namespace houseofatmos::world {
         std::vector<HorseType> horses;
 
         private:
+        engine::Speaker speaker = engine::Speaker(
+            engine::Speaker::Space::World, 5.0
+        );
         f64 yaw = 0.0, pitch = 0.0;
+        State prev_state = Travelling;
+        f64 last_step_time = 0.0;
 
         public:
         Carriage(CarriageType type, Vec<3> position, StatefulRNG& rng);
