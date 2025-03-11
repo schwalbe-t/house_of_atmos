@@ -23,7 +23,7 @@ namespace houseofatmos::world {
         StatefulRNG rng;
 
         CarriageNetwork(const Terrain* terrain, ComplexBank* complexes): 
-            AgentNetwork(complexes), terrain(terrain) {}
+            AgentNetwork(complexes, "toast_carriage_lost"), terrain(terrain) {}
 
         CarriageNetwork(CarriageNetwork&& other) noexcept = default;
         CarriageNetwork& operator=(CarriageNetwork&& other) noexcept = default;
@@ -117,7 +117,11 @@ namespace houseofatmos::world {
         CarriageType type;
         std::vector<HorseType> horses;
 
-        Carriage(CarriageType type, Vec<3> position);
+        private:
+        f64 yaw = 0.0, pitch = 0.0;
+
+        public:
+        Carriage(CarriageType type, Vec<3> position, StatefulRNG& rng);
         Carriage(const Serialized& serialized, const engine::Arena& buffer);
 
         Carriage(Carriage&& other) noexcept = default;
@@ -138,21 +142,26 @@ namespace houseofatmos::world {
         void update(
             CarriageNetwork& network, 
             engine::Scene& scene, const engine::Window& window
-        ) override {
-            (void) network;
-            (void) scene;
-            (void) window;
-        }
+        ) override;
 
+        Vec<3> find_heading() const;
+
+        private:
+        void render_horses(
+            Renderer& renderer, engine::Scene& scene, 
+            const engine::Window& window
+        ) const;
+        void render_drivers(
+            Renderer& renderer, engine::Scene& scene, 
+            const engine::Window& window
+        ) const;
+        void render_carriage(Renderer& renderer, engine::Scene& scene) const;
+
+        public:
         void render(
             Renderer& renderer, CarriageNetwork& network,
             engine::Scene& scene, const engine::Window& window
-        ) override {
-            (void) renderer;
-            (void) network;
-            (void) scene;
-            (void) window;
-        }
+        ) override;
 
     };
 

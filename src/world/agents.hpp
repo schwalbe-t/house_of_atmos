@@ -17,8 +17,11 @@ namespace houseofatmos::world {
 
 
         ComplexBank* complexes;
+        std::string local_lost_msg;
 
-        AgentNetwork(ComplexBank* complexes): complexes(complexes) {}
+        AgentNetwork(
+            ComplexBank* complexes, std::string local_lost_msg
+        ): complexes(complexes), local_lost_msg(std::move(local_lost_msg)) {}
 
         AgentNetwork(AgentNetwork&& other) noexcept = default;
         AgentNetwork& operator=(AgentNetwork&& other) noexcept = default;
@@ -175,16 +178,17 @@ namespace houseofatmos::world {
                     u64 new_start_dist = current_s.start_dist + step_dist;
                     if(!nodes.contains(neigh)) {
                         nodes[neigh] = NodeSearchState(
-                            new_start_dist, 
+                            new_start_dist,
                             network.node_target_dist(current, target),
                             current
                         );
                     }
                     NodeSearchState& neigh_s = nodes[neigh];
                     bool new_path_shorter = new_start_dist < neigh_s.start_dist;
-                    if(neigh_s.explored || !new_path_shorter) { continue; }
-                    neigh_s.start_dist = new_start_dist;
-                    neigh_s.parent = current;
+                    if(new_path_shorter && !neigh_s.explored) {
+                        neigh_s.start_dist = new_start_dist;
+                        neigh_s.parent = current;
+                    }
                 }
                 connected.clear();
             }
@@ -271,8 +275,12 @@ namespace houseofatmos::world {
         }
 
         State current_state() const { return this->state; }
-
-        void reset_path() { this->path.clear(); }
+        const AgentPath<Network>& current_path() const { return this->path; }
+        f64 current_path_dist() const { return this->distance; }
+        void reset_path() {
+            this->path.clear(); 
+            this->distance = 0.0;
+        }
 
         static inline const f64 load_time = 5.0;
 
@@ -353,6 +361,24 @@ namespace houseofatmos::world {
         }
 
         virtual ~Agent() = default;
+
+
+        static std::pair<f64, f64> compute_heading_angles(
+            const Vec<3>& heading, const Vec<3>& model_heading
+        ) {
+            Vec<3> vert_heading = Vec<3>(
+                model_heading.x(),
+                heading.y(),
+                model_heading.z()
+            );
+            f64 pitch_cross = model_heading.y() * vert_heading.z()
+                - model_heading.z() * vert_heading.y();
+            f64 pitch = atan2(pitch_cross, model_heading.dot(vert_heading));
+            f64 yaw_cross = model_heading.x() * heading.z()
+                - model_heading.z() * heading.x();
+            f64 yaw = atan2(yaw_cross, model_heading.dot(heading));
+            return { pitch, yaw };
+        }
         
     };
 
@@ -394,9 +420,16 @@ namespace houseofatmos::world {
             return Serialized(agents.size(), buffer.alloc_array(agents));
         }
 
-        void find_paths() {
+        void find_paths(Toasts* toasts) {
+            bool any_became_lost = false;
             for(Agent& agent: this->agents) {
+                bool was_lost = agent.current_state() == Agent::Lost;
                 agent.find_path(this->network);
+                bool is_lost = agent.current_state() == Agent::Lost;
+                any_became_lost |= (!was_lost && is_lost);
+            }
+            if(any_became_lost && toasts != nullptr) {
+                toasts->add_error(this->network.local_lost_msg, {});
             }
         }
 

@@ -70,6 +70,7 @@ namespace houseofatmos::world {
         engine::Speaker speaker = engine::Speaker(
             engine::Speaker::Space::World, 20.0
         );
+        StatefulRNG rng;
         std::shared_ptr<World>& world;
         ui::Manager& ui;
         Toasts& toasts;

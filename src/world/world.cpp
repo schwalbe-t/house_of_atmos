@@ -356,7 +356,7 @@ namespace houseofatmos::world {
             this->settings, serialized.personal_horse
         );
         this->research = research::Research(serialized.research, buffer);
-        this->carriages.find_paths();
+        this->carriages.find_paths(nullptr);
     }
 
     engine::Arena World::serialize() const {
