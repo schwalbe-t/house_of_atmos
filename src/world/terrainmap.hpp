@@ -108,7 +108,7 @@ namespace houseofatmos::world {
             const engine::Localization& local
         );
 
-        ui::Element display_carriage_target(Carriage* carriage, size_t target_i);
+        ui::Element display_carriage_stop(Carriage* carriage, size_t stop_i);
 
         ui::Element display_carriage_info(Carriage& carriage);
 

@@ -47,8 +47,8 @@ namespace houseofatmos::world {
             return;
         }
         if(!world.balance.pay_coins(carriage_buy_cost, toasts)) { return; }
-        world.carriages.carriages.push_back(
-            Carriage(world.settings, Carriage::Round, pos)
+        world.carriages.agents.push_back(
+            Carriage(Carriage::Round, pos)
         );
         speaker.position = pos;
         speaker.play(scene.get(sound::horse));
@@ -1021,9 +1021,7 @@ namespace houseofatmos::world {
                     tile_x, tile_z, this->world->terrain, this->world->complexes,
                     *this->selected_type, type_info, *this->selected_variant
                 );
-                this->world->carriages.refind_all_paths(
-                    this->world->complexes, this->world->terrain, this->toasts
-                );
+                this->world->carriages.find_paths();
                 this->speaker.position = tile_bounded_position(
                     tile_x, tile_z, 
                     tile_x + type_info.width, tile_z + type_info.height,
@@ -1291,9 +1289,7 @@ namespace houseofatmos::world {
                 && this->world->balance.pay_coins(cost, this->toasts);
             if(doing_placement) {
                 this->world->terrain.bridges.push_back(this->planned);
-                this->world->carriages.refind_all_paths(
-                    this->world->complexes, this->world->terrain, this->toasts
-                );
+                this->world->carriages.find_paths();
                 this->speaker.position = tile_bounded_position(
                     this->planned.start_x, this->planned.start_z, 
                     this->planned.end_x, this->planned.end_z,
@@ -1393,9 +1389,7 @@ namespace houseofatmos::world {
                             .reload_chunk_at((u64) ch_x, (u64) ch_z);
                     }
                 }
-                this->world->carriages.refind_all_paths(
-                    this->world->complexes, this->world->terrain, this->toasts
-                );
+                this->world->carriages.find_paths();
                 this->selection.type = Selection::None;
                 this->speaker.play(scene.get(sound::demolish));
                 return;
@@ -1416,9 +1410,7 @@ namespace houseofatmos::world {
                     this->world->terrain.bridges.begin() + bridge_idx
                 );
                 this->world->balance.add_coins(refunded, this->toasts);
-                this->world->carriages.refind_all_paths(
-                    this->world->complexes, this->world->terrain, this->toasts
-                );
+                this->world->carriages.find_paths();
                 this->selection.type = Selection::None;
                 this->speaker.play(scene.get(sound::demolish));
                 return;
@@ -1593,9 +1585,7 @@ namespace houseofatmos::world {
             chunk.set_path_at(rel_x, rel_z, true);
             this->world->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
             this->world->terrain.reload_chunk_at(chunk_x, chunk_z);
-            this->world->carriages.refind_all_paths(
-                this->world->complexes, this->world->terrain, this->toasts
-            );
+            this->world->carriages.find_paths();
             this->speaker.position = Vec<3>(tile_x, 0, tile_z)
                 * this->world->terrain.units_per_tile()
                 + Vec<3>(0, this->world->terrain.elevation_at(tile_x, tile_z), 0);
@@ -1603,9 +1593,7 @@ namespace houseofatmos::world {
         } else if(has_path && window.is_down(engine::Button::Right)) {
             chunk.set_path_at(rel_x, rel_z, false);
             this->world->terrain.reload_chunk_at(chunk_x, chunk_z);
-            this->world->carriages.refind_all_paths(
-                this->world->complexes, this->world->terrain, this->toasts
-            );
+            this->world->carriages.find_paths();
             this->world->balance.add_coins(path_removal_refund, this->toasts);
             this->speaker.position = Vec<3>(tile_x, 0, tile_z)
                 * this->world->terrain.units_per_tile()

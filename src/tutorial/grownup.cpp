@@ -437,7 +437,7 @@ namespace houseofatmos::tutorial {
                 scene, update_scene,
                 [scene](auto& w) {
                     (void) w;
-                    return scene->world->carriages.carriages.size() > 0;
+                    return scene->world->carriages.agents.size() > 0;
                 }
             ),
             say_dialogue(

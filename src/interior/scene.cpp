@@ -126,11 +126,7 @@ namespace houseofatmos::interior {
             this->player.character.position, this->renderer, window
         );
         this->cutscene.update(window);
-        this->world->carriages.update_all(
-            Vec<3>(0.0, 0.0, 0.0), 0.0,
-            *this, window, 
-            this->world->complexes, this->world->terrain, this->toasts
-        );
+        this->world->carriages.update(*this, window);
         this->world->complexes.update(
             window, this->world->balance, this->world->research
         );

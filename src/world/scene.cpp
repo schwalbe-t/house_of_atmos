@@ -403,11 +403,7 @@ namespace houseofatmos::world {
         }
         implement_mode_keybinds(*this, window);
         update_ui_visibiliy(*this, window);
-        this->world->carriages.update_all(
-            this->world->player.character.position, this->draw_distance_units(),
-            *this, window, 
-            this->world->complexes, this->world->terrain, this->toasts
-        );
+        this->world->carriages.update(*this, window);
         this->world->complexes.update(
             window, this->world->balance, this->world->research
         );
@@ -455,7 +451,7 @@ namespace houseofatmos::world {
     void Scene::render_geometry(const engine::Window& window) {
         this->world->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->world->player.render(*this, window, this->renderer);
-        this->world->carriages.render_all_around(
+        this->world->carriages.render(
             this->world->player.character.position, this->draw_distance_units(),
             this->renderer, *this, window
         );
