@@ -16,9 +16,15 @@ namespace houseofatmos::world {
         using NodeIdHash = NetworkNode::NodeIdHash;
 
 
-        const ComplexBank& complexes;
+        ComplexBank* complexes;
+        std::string local_lost_msg;
 
-        AgentNetwork(const ComplexBank& complexes): complexes(complexes) {}
+        AgentNetwork(
+            ComplexBank* complexes, std::string local_lost_msg
+        ): complexes(complexes), local_lost_msg(std::move(local_lost_msg)) {}
+
+        AgentNetwork(AgentNetwork&& other) noexcept = default;
+        AgentNetwork& operator=(AgentNetwork&& other) noexcept = default;
 
 
         virtual void collect_next_nodes(
@@ -36,7 +42,9 @@ namespace houseofatmos::world {
 
         virtual NodeId closest_node_to(const Vec<3>& position) = 0;
 
-        virtual void update(engine::Scene& scene, engine::Window& window) {
+        virtual void update(
+            engine::Scene& scene, const engine::Window& window
+        ) {
             (void) scene;
             (void) window;
         }
@@ -57,30 +65,20 @@ namespace houseofatmos::world {
             std::vector<Vec<3>> points; 
         };
 
+        Vec<3> start;
         std::vector<Section> sections;
 
-
-        private:
-        std::optional<size_t> next_section_i(size_t after = 0) const {
-            size_t sects = this->sections.size();
-            size_t sect_i = after;
-            while(sect_i < sects && this->sections[sect_i].points.size() == 0) { 
-                sect_i += 1; 
-            }
-            if(sect_i >= sects) { return std::nullopt; }
-            return sect_i;
-        }
-
         public:
-        bool is_empty() const { return !this->next_section_i().has_value(); }
+        void clear() { this->sections.clear(); }
+        bool is_empty() const { return this->sections.size() == 0; }
 
         std::pair<Vec<3>, size_t> after(
             f64 distance, bool* at_end = nullptr
         ) const {
+            size_t sect_c = this->sections.size();
             f64 remaining = distance;
-            size_t sect_i = *this->next_section_i();
-            Vec<3> position = this->sections[sect_i].points[0];
-            for(;;) {
+            Vec<3> position = this->start;
+            for(size_t sect_i = 0; sect_i < sect_c; sect_i += 1) {
                 const Section& section = this->sections[sect_i];
                 for(const Vec<3>& point: section.points) {
                     Vec<3> step = point - position;
@@ -93,13 +91,9 @@ namespace houseofatmos::world {
                     }
                     remaining -= step_len;
                 }
-                std::optional<size_t> n_sect_i = this->next_section_i(sect_i);
-                if(!n_sect_i.has_value()) { 
-                    if(at_end != nullptr) { *at_end = true; }
-                    return { position, sect_i }; 
-                }
-                sect_i = *n_sect_i;
             }
+            if(at_end != nullptr) { *at_end = true; }
+            return { position, sect_c - 1 }; 
         }
 
 
@@ -131,13 +125,14 @@ namespace houseofatmos::world {
         }
 
         static AgentPath<Network> build_path(
-            const Network& network, const NodeSearchStates& nodes, 
-            NodeId last
+            Network& network, const NodeSearchStates& nodes, 
+            Vec<3> start_pos, NodeId last
         ) {
             NodeId current = last;
             AgentPath<Network> path;
+            path.start = start_pos;
             for(;;) {
-                NodeSearchState state = nodes[current];
+                const NodeSearchState& state = nodes.at(current);
                 path.sections.push_back(AgentPath<Network>::Section(current));
                 if(!state.parent.has_value()) { break; }
                 current = *state.parent;
@@ -146,10 +141,12 @@ namespace houseofatmos::world {
             for(size_t sect_i = 0; sect_i < path.sections.size(); sect_i += 1) {
                 AgentPath<Network>::Section& section = path.sections[sect_i];
                 std::optional<NodeId> prev = sect_i > 0
-                    ? path.sections[sect_i - 1].node : std::nullopt;
+                    ? std::optional<NodeId>(path.sections[sect_i - 1].node) 
+                    : std::nullopt;
                 bool is_last_section = sect_i + 1 >= path.sections.size();
                 std::optional<NodeId> next = is_last_section
-                    ? path.sections[sect_i + 1].node : std::nullopt;
+                    ? std::optional<NodeId>(path.sections[sect_i + 1].node) 
+                    : std::nullopt;
                 network.collect_node_points(
                     prev, section.node, next, section.points
                 );
@@ -159,7 +156,7 @@ namespace houseofatmos::world {
 
         public:
         static std::optional<AgentPath<Network>> find(
-            const Network& network, Vec<3> start_pos, ComplexId target
+            Network& network, Vec<3> start_pos, ComplexId target
         ) {
             NodeId start = network.closest_node_to(start_pos);
             NodeSearchStates nodes;
@@ -174,23 +171,24 @@ namespace houseofatmos::world {
                 NodeSearchState& current_s = nodes[current];
                 current_s.explored = true;
                 if(network.node_at_target(current, target)) {
-                    return build_path(network, nodes, current);
+                    return build_path(network, nodes, start_pos, current);
                 }
                 network.collect_next_nodes(current, connected);
                 for(auto [neigh, step_dist]: connected) {
                     u64 new_start_dist = current_s.start_dist + step_dist;
-                    if(!nodes.contains(next)) {
+                    if(!nodes.contains(neigh)) {
                         nodes[neigh] = NodeSearchState(
-                            new_start_dist, 
+                            new_start_dist,
                             network.node_target_dist(current, target),
                             current
                         );
                     }
                     NodeSearchState& neigh_s = nodes[neigh];
                     bool new_path_shorter = new_start_dist < neigh_s.start_dist;
-                    if(neigh_s.explored || !new_path_shorter) { continue; }
-                    neigh_s.start_dist = new_start_dist;
-                    neigh_s.parent = current;
+                    if(new_path_shorter && !neigh_s.explored) {
+                        neigh_s.start_dist = new_start_dist;
+                        neigh_s.parent = current;
+                    }
                 }
                 connected.clear();
             }
@@ -219,18 +217,18 @@ namespace houseofatmos::world {
         };
 
         std::vector<Stop> schedule;
-        u64 stop_i;
+        u64 stop_i = 0;
         Vec<3> position;
         std::unordered_map<Item::Type, u64> items;
         
         private:
-        State state;
+        State state = Travelling;
         AgentPath<Network> path;
         f64 distance = 0.0;
         f64 load_start_time = 0.0;
 
         void do_stop_transfer(Network& network, const Stop& stop) {
-            Complex& complex = network.complexes.get(stop.target);
+            Complex& complex = network.complexes->get(stop.target);
             u64 s_num;
             switch(stop.unit) {
                 case Stop::Fixed: s_num = (u64) stop.amount.fixed; break;
@@ -260,6 +258,10 @@ namespace houseofatmos::world {
         }
 
         public:
+        Agent() {}
+        Agent(Agent&& other) noexcept = default;
+        Agent& operator=(Agent&& other) noexcept = default;
+
         virtual f64 current_speed(Network& network) = 0;
 
         virtual u64 item_storage_capacity() = 0;
@@ -272,28 +274,41 @@ namespace houseofatmos::world {
             return total;
         }
 
-        public:
+        State current_state() const { return this->state; }
+        const AgentPath<Network>& current_path() const { return this->path; }
+        f64 current_path_dist() const { return this->distance; }
+        void reset_path() {
+            this->path.clear(); 
+            this->distance = 0.0;
+        }
+
         static inline const f64 load_time = 5.0;
 
-        void update(Network& network, const engine::Window& window) {
+        void update_state(Network& network, const engine::Window& window) {
             if(this->schedule.size() == 0) { this->state = State::Idle; }
             if(this->schedule.size() >= 1) {
                 this->stop_i = this->stop_i % this->schedule.size();
             }
             switch(this->state) {
                 case Idle: {
-                    if(this->schedule.size() > 0) { this->find_path(network); }
+                    if(this->schedule.size() > 0) { 
+                        this->path.clear();
+                        this->state = Travelling;
+                    }
                     break;
                 }
                 case Travelling: {
+                    if(this->path.is_empty()) { 
+                        if(!this->find_path(network)) { break; } 
+                    }
                     this->distance += window.delta_time() 
                         * this->current_speed(network);
                     bool is_at_end;
                     this->position = this->path
                         .after(this->distance, &is_at_end).first;
                     if(is_at_end) { 
-                        this->state = Loading; 
                         this->load_start_time = window.time();
+                        this->state = Loading; 
                     }
                     break;
                 }
@@ -303,7 +318,8 @@ namespace houseofatmos::world {
                         const Stop& stop = this->schedule[this->stop_i];
                         this->do_stop_transfer(network, stop);
                         this->stop_i += 1;
-                        this->find_path(network);
+                        this->path.clear();
+                        this->state = Travelling;
                     }
                     break;
                 }
@@ -311,30 +327,58 @@ namespace houseofatmos::world {
             }
         }
 
-        void find_path(Network& network) {
-            if(this->state == Idle) { return; }
+        bool find_path(Network& network) {
+            if(this->state == Idle || this->state == Loading) { return false; }
             ComplexId target = this->schedule[this->stop_i].target;
             std::optional<AgentPath<Network>> found 
                 = AgentPath<Network>::find(network, this->position, target);
             if(!found.has_value()) {
                 this->state = Lost;
-                return;
+                return false;
             }
             this->state = Travelling;
             this->path = *found;
             this->distance = 0.0;
+            return true;
+        }
+
+        virtual void update(
+            Network& network, engine::Scene& scene, const engine::Window& window
+        ) {
+            (void) network;
+            (void) scene;
+            (void) window;
         }
 
         virtual void render(
-            Renderer& renderer, engine::Scene& scene, 
-            const engine::Window& window
+            Renderer& renderer, Network& network,
+            engine::Scene& scene, const engine::Window& window
         ) {
             (void) renderer;
+            (void) network;
             (void) scene;
             (void) window;
         }
 
         virtual ~Agent() = default;
+
+
+        static std::pair<f64, f64> compute_heading_angles(
+            const Vec<3>& heading, const Vec<3>& model_heading
+        ) {
+            Vec<3> vert_heading = Vec<3>(
+                model_heading.x(),
+                heading.y(),
+                model_heading.z()
+            );
+            f64 pitch_cross = model_heading.y() * vert_heading.z()
+                - model_heading.z() * vert_heading.y();
+            f64 pitch = atan2(pitch_cross, model_heading.dot(vert_heading));
+            f64 yaw_cross = model_heading.x() * heading.z()
+                - model_heading.z() * heading.x();
+            f64 yaw = atan2(yaw_cross, model_heading.dot(heading));
+            return { pitch, yaw };
+        }
         
     };
 
@@ -342,31 +386,71 @@ namespace houseofatmos::world {
 
     template<typename Agent, typename Network>
     struct AgentManager {
-        
+        using SerializedAgent = Agent::Serialized;
+
+        struct Serialized {
+            u64 agent_count, agent_offset;
+        };
+
         std::vector<Agent> agents;
         Network network;
 
         AgentManager(Network&& network): network(std::move(network)) {}
+        AgentManager(
+            Network&& network, 
+            const Serialized& serialized, const engine::Arena& buffer
+        ): network(std::move(network)) {
+            std::vector<SerializedAgent> agents;
+            buffer.copy_array_at_into(
+                serialized.agent_offset, serialized.agent_count, agents
+            );
+            this->agents.reserve(agents.size());
+            for(const SerializedAgent& agent: agents) {
+                this->agents.push_back(Agent(agent, buffer));
+            }
+        }
 
-        void find_paths() {
+
+        Serialized serialize(engine::Arena& buffer) const {
+            std::vector<SerializedAgent> agents;
+            agents.reserve(this->agents.size());
+            for(const Agent& agent: this->agents) {
+                agents.push_back(agent.serialize(buffer));
+            }
+            return Serialized(agents.size(), buffer.alloc_array(agents));
+        }
+
+        void find_paths(Toasts* toasts) {
+            bool any_became_lost = false;
             for(Agent& agent: this->agents) {
+                bool was_lost = agent.current_state() == Agent::Lost;
                 agent.find_path(this->network);
+                bool is_lost = agent.current_state() == Agent::Lost;
+                any_became_lost |= (!was_lost && is_lost);
+            }
+            if(any_became_lost && toasts != nullptr) {
+                toasts->add_error(this->network.local_lost_msg, {});
             }
         }
 
         void update(engine::Scene& scene, const engine::Window& window) {
             this->network.update(scene, window);
             for(Agent& agent: this->agents) {
-                agent.update(this->network, window);
+                agent.update_state(this->network, window);
+                agent.update(this->network, scene, window);
             }
         }
 
         void render(
+            const Vec<3>& observer, f64 draw_distance,
             Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window
         ) {
             for(Agent& agent: this->agents) {
-                agent.render(renderer, scene, window);
+                f64 distance = (agent.position - observer).len();
+                bool is_visible = distance <= draw_distance;
+                if(!is_visible) { continue; }
+                agent.render(renderer, this->network, scene, window);
             }
         }
 

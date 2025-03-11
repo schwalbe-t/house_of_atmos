@@ -1,29 +1,60 @@
 
 #pragma once
 
-#include <engine/arena.hpp>
-#include <engine/math.hpp>
-#include <engine/model.hpp>
-#include <engine/rng.hpp>
-#include "../renderer.hpp"
-#include "../toasts.hpp"
-#include "../settings.hpp"
-#include "complex.hpp"
+#include "agents.hpp"
 #include "terrain.hpp"
 
 namespace houseofatmos::world {
 
-    using namespace houseofatmos;
-    using namespace houseofatmos::engine::math;
+    struct CarriageNetworkNode {
+        using NodeId = std::pair<u64, u64>;
+        struct NodeIdHash {
+            std::size_t operator()(const NodeId& p) const {
+                auto xh = std::hash<u64>{}(p.first);
+                auto zh = std::hash<u64>{}(p.second);
+                return xh ^ (zh + 0x9e3779b9 + (xh << 6) + (xh >> 2));
+            }
+        };
+    };
+
+    struct CarriageNetwork: AgentNetwork<CarriageNetworkNode> {
+
+        const Terrain* terrain;
+        StatefulRNG rng;
+
+        CarriageNetwork(const Terrain* terrain, ComplexBank* complexes): 
+            AgentNetwork(complexes, "toast_carriage_lost"), terrain(terrain) {}
+
+        CarriageNetwork(CarriageNetwork&& other) noexcept = default;
+        CarriageNetwork& operator=(CarriageNetwork&& other) noexcept = default;
+
+        bool is_passable(NodeId node) const;
+
+        void collect_next_nodes(
+            NodeId node, std::vector<std::pair<NodeId, u64>>& out
+        ) override;
+
+        u64 node_target_dist(NodeId node, ComplexId target) override;
+
+        bool node_at_target(NodeId node, ComplexId target) override;
+
+        void collect_node_points(
+            std::optional<NodeId> prev, NodeId node, std::optional<NodeId> next,
+            std::vector<Vec<3>>& out
+        ) override;
+
+        NodeId closest_node_to(const Vec<3>& position) override;
+
+    };
 
 
-    struct Carriage {
 
+    struct Carriage: Agent<CarriageNetwork> {
+        
         static const inline engine::Model::LoadArgs horse_model = {
             "res/entities/horse.glb", Renderer::model_attribs,
             engine::FaceCulling::Disabled
         };
-
 
         struct HorseTypeInfo {
             engine::Texture::LoadArgs texture;
@@ -32,11 +63,11 @@ namespace houseofatmos::world {
         static const std::vector<HorseTypeInfo>& horse_types();
 
         enum struct HorseType {
-            White = 0,
-            WhiteSpotted = 1,
-            Brown = 2,
-            BrownSpotted = 3,
-            BlackSpotted = 4
+            White,
+            WhiteSpotted,
+            Brown,
+            BrownSpotted,
+            BlackSpotted
         };
 
 
@@ -52,12 +83,13 @@ namespace houseofatmos::world {
             std::vector<Driver> drivers;
             f64 wheel_radius;
             u64 capacity;
+            f64 speed;
         };
 
         static const std::vector<CarriageTypeInfo>& carriage_types();
 
         enum CarriageType {
-            Round = 0
+            Round
         };
 
 
@@ -72,194 +104,74 @@ namespace houseofatmos::world {
         }
 
 
-        enum struct State {
-            Travelling, Loading, Lost
-        };
-
         struct Serialized {
             CarriageType type;
             u64 horses_count, horses_offset;
-            u64 targets_count, targets_offset;
-            u64 items_count, items_offset;
-            u64 curr_target_i;
-            State state;
+
+            u64 stop_count, stop_offset;
+            u64 stop_i;
             Vec<3> position;
+            u64 items_count, items_offset;
         };
 
-        enum TargetAction {
-            LoadFixed, LoadPercentage,
-            PutFixed, PutPercentage
-        };
-
-        struct Target {
-            ComplexId complex;
-            TargetAction action;
-            union {
-                u32 fixed;
-                f32 percentage;
-            } amount;
-            Item::Type item;
-        };
-
+        CarriageType type;
+        std::vector<HorseType> horses;
 
         private:
         engine::Speaker speaker = engine::Speaker(
             engine::Speaker::Space::World, 5.0
         );
-        CarriageType type;
-        std::vector<HorseType> horses;
-        std::unordered_map<Item::Type, u64> items;
-        u64 curr_target_i;
-        State state;
-
-        f64 yaw, pitch;
-        std::vector<Vec<3>> curr_path;
-        f64 travelled_dist;
-        f64 load_timer;
-        f64 sound_timer;
-        bool moving;
-
+        f64 yaw = 0.0, pitch = 0.0;
+        State prev_state = Travelling;
+        f64 last_step_time = 0.0;
 
         public:
-        std::vector<Target> targets;
-        Vec<3> position;
+        Carriage(CarriageType type, Vec<3> position, StatefulRNG& rng);
+        Carriage(const Serialized& serialized, const engine::Arena& buffer);
 
-        Carriage(
-            const Settings& settings,
-            CarriageType type, Vec<3> position,
-            StatefulRNG rng = StatefulRNG()
-        );
-        Carriage(
-            const Settings& settings, 
-            const Serialized& serialized, const engine::Arena& buffer
-        );
+        Carriage(Carriage&& other) noexcept = default;
+        Carriage& operator=(Carriage&& other) noexcept = default;
 
-        void clear_path() { this->curr_path.clear(); }
-        bool has_path() const { return this->curr_path.size() > 0; }
-        void set_path(std::vector<Vec<3>>& path) {
-            this->curr_path.assign(path.begin(), path.end());
-            this->travelled_dist = 0.0;
-            if(this->state == State::Lost) {
-                this->state = State::Travelling;
-            }
+        Serialized serialize(engine::Arena& buffer) const;
+
+
+        f64 current_speed(CarriageNetwork& network) override { 
+            (void) network;
+            return Carriage::carriage_types().at((size_t) this->type).speed;
         }
 
-        bool is_lost() const {
-            return this->state == State::Lost
-                && this->target() != nullptr; 
-        }
-        void make_lost() { this->state = State::Lost; }
-        void try_find_path() {
-            this->state = State::Travelling;
-            this->clear_path();
-        }
-        State current_state() const { return this->state; }
-
-        u64 stored_count(Item::Type item) const {
-            auto count = this->items.find(item);
-            if(count == this->items.end()) { return 0; }
-            return count->second;
-        }
-        u64 total_stored_count() const {
-            u64 count = 0;
-            for(const auto& stored: this->items) {
-                count += stored.second;
-            }
-            return count;
-        }
-        void add_stored(Item::Type item, u64 amount) { this->items[item] += amount; }
-        void remove_stored(Item::Type item, u64 amount) { this->items[item] -= amount; }
-        void set_stored(Item::Type item, u64 amount) { this->items[item] = amount; }
-        const std::unordered_map<Item::Type, u64>& stored_items() const {
-            return this->items;
-        }
-
-        const Target* target() const {
-            if(this->targets.size() == 0) { return nullptr; }
-            return &this->targets[this->curr_target_i]; 
-        }
-        std::optional<u64> target_i() const {
-            if(this->targets.size() == 0) { return std::nullopt; }
-            return this->curr_target_i; 
-        }
-        void wrap_around_target_i() {
-            if(this->targets.size() == 0) { return; }
-            this->curr_target_i %= this->targets.size();
+        u64 item_storage_capacity() override {
+            return Carriage::carriage_types().at((size_t) this->type).capacity;
         }
 
         void update(
-            engine::Scene& scene, const engine::Window& window,
-            ComplexBank& complexes, const Terrain& terrain,
-            bool is_visible
-        );
+            CarriageNetwork& network, 
+            engine::Scene& scene, const engine::Window& window
+        ) override;
 
-        void render(
-            Renderer& renderer, engine::Scene& scene, 
-            const engine::Window& window,
-            engine::Rendering rendering = engine::Rendering::Surfaces,
-            const engine::Texture* override_texture = nullptr
-        );
-
-        Serialized serialize(engine::Arena& buffer) const;
-
-    };
-
-
-    struct CarriageManager {
-
-        struct Serialized {
-            u64 carriage_count, carriage_offset;
-        };
-
+        Vec<3> find_heading() const;
 
         private:
-        std::vector<u8> obstacle_tiles;
-
-        void fill_obstacle_data(const Terrain& terrain);
-
-
-        public:
-        std::vector<Carriage> carriages;
-
-        CarriageManager() {}
-        CarriageManager(const Terrain& terrain);
-        CarriageManager(
-            const Settings& settings,
-            const Serialized& serialized, const engine::Arena& buffer,
-            const Terrain& terrain
-        );
-
-        std::optional<std::vector<Vec<3>>> find_path_to(
-            const Vec<3>& start,
-            const Complex& target, const Terrain& terrain
-        );
-
-        void find_carriage_path(
-            Carriage& carriage, 
-            const ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
-        );
-        void refind_all_paths(
-            const ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
-        );
-        
-        void update_all(
-            const Vec<3>& observer, f64 draw_distance,
-            engine::Scene& scene, const engine::Window& window, 
-            ComplexBank& complexes, const Terrain& terrain, Toasts& toasts
-        );
-
-        void render_all_around(
-            const Vec<3>& observer, f64 draw_distance,
+        void render_horses(
             Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window
-        );
-
-        std::optional<size_t> find_selected_carriage(
-            Vec<2> cursor_pos_ndc, const Renderer& renderer
         ) const;
+        void render_drivers(
+            Renderer& renderer, engine::Scene& scene, 
+            const engine::Window& window
+        ) const;
+        void render_carriage(Renderer& renderer, engine::Scene& scene) const;
 
-        Serialized serialize(engine::Arena& buffer) const;
+        public:
+        void render(
+            Renderer& renderer, CarriageNetwork& network,
+            engine::Scene& scene, const engine::Window& window
+        ) override;
 
     };
+
+
+
+    using CarriageManager = AgentManager<Carriage, CarriageNetwork>;
 
 }

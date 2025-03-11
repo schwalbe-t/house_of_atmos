@@ -79,6 +79,18 @@
         "en": "Exit game",
         "bg": "Затвори играта"
     },
+    "menu_save_file_too_old": {
+        "_context": "Shown when a save file from an older version of the game is attempted to be loaded",
+        "de": "Die geladene Spieldatei kann nur mit einer älteren Version des Spiels geladen werden. :(",
+        "en": "The selected save file can only be loaded with an older version of the game. :(",
+        "bg": "Избраната записана игра може да бъде заредена само с по-стара версия на играта. :("
+    },
+    "menu_save_file_too_new": {
+        "_context": "Shown when the player attempts to load a save file from a newer version of the game",
+        "de": "Diese Version des Spiels ist zu alt. Verwenden sie eine neuere Version, um die gewählte Spieldatei zu laden.",
+        "en": "This version of the game is outdated. Use a newer version of the game to load the selected file.",
+        "bg": "Тази версия на играта е остаряла. Използвайте по-нова версия, за да заредите избрания файл."
+    },
     "menu_loading": {
         "_context": "Shown when the game is loading for a longer amount of time",
         "de": "Lädt...",

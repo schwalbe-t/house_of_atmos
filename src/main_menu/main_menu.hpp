@@ -44,6 +44,11 @@ namespace houseofatmos {
 
         MainMenu(Settings&& settings);
         void load_resources();
+        
+        void load_game_from(
+            const std::string& path, 
+            const engine::Localization& local, engine::Window& window 
+        );
 
         void show_title_screen(
             const engine::Localization& local, engine::Window& window
@@ -51,6 +56,10 @@ namespace houseofatmos {
         void show_loading_screen(const engine::Localization& local);
         void show_language_selection(engine::Window& window);
         void show_settings(
+            const engine::Localization& local, engine::Window& window
+        );
+        void show_message(
+            std::string_view local_text, 
             const engine::Localization& local, engine::Window& window
         );
 
