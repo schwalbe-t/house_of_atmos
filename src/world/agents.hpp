@@ -198,50 +198,102 @@ namespace houseofatmos::world {
 
 
 
+    struct AgentStop {
+        enum Action { Load, Unload };
+        enum Unit { Fixed, Fraction };
+        
+        ComplexId target;
+        Action action;
+        union { u32 fixed; f32 fract; } amount;
+        Unit unit;
+        Item::Type item;
+    };
+
+    enum struct AgentState {
+        Idle, Travelling, Loading, Lost
+    };
+
+    struct AbstractAgent {
+        struct Impl {
+            const AgentState& (*state)(void*);
+            void (*reset_path)(void*);
+            std::vector<AgentStop>& (*schedule)(void*);
+            size_t& (*stop_i)(void*);
+            Vec<3>& (*position)(void*);
+            std::unordered_map<Item::Type, u64>& (*items)(void*);
+        };
+
+        void* data;
+        const Impl* impl;
+
+        const AgentState& state() const { 
+            return this->impl->state(this->data); 
+        };
+        void reset_path() const {
+            this->impl->reset_path(this->data);
+        } 
+        std::vector<AgentStop>& schedule() const { 
+            return this->impl->schedule(this->data); 
+        };
+        size_t& stop_i() const {
+            return this->impl->stop_i(this->data);
+        };
+        Vec<3>& position() const {
+            return this->impl->position(this->data);
+        }
+        std::unordered_map<Item::Type, u64>& items() const {
+            return this->impl->items(this->data);
+        }
+    };
+
     template<typename Network>
     struct Agent {
 
-        struct Stop {
-            enum Action { Load, Unload };
-            enum Unit { Fixed, Fraction };
-            
-            ComplexId target;
-            Action action;
-            union { u32 fixed; f32 fract; } amount;
-            Unit unit;
-            Item::Type item;
-        };
-
-        enum State {
-            Idle, Travelling, Loading, Lost
-        };
-
-        std::vector<Stop> schedule;
+        std::vector<AgentStop> schedule;
         u64 stop_i = 0;
         Vec<3> position;
         std::unordered_map<Item::Type, u64> items;
         
         private:
-        State state = Travelling;
+        AgentState state = AgentState::Travelling;
         AgentPath<Network> path;
         f64 distance = 0.0;
         f64 load_start_time = 0.0;
 
-        void do_stop_transfer(Network& network, const Stop& stop) {
+        static inline const AbstractAgent::Impl abstract_impl = {
+            +[](void* d) -> const AgentState& { 
+                return ((Agent<Network>*) d)->state; 
+            },
+            +[](void* d) { ((Agent<Network>*) d)->reset_path(); },
+            +[](void* d) -> std::vector<AgentStop>& { 
+                return ((Agent<Network>*) d)->schedule; 
+            },
+            +[](void* d) -> size_t& { return ((Agent<Network>*) d)->stop_i; },
+            +[](void* d) -> Vec<3>& { return ((Agent<Network>*) d)->position; },
+            +[](void* d) -> std::unordered_map<Item::Type, u64>& { 
+                return ((Agent<Network>*) d)->items; 
+            }
+        };
+
+        void do_stop_transfer(Network& network, const AgentStop& stop) {
             Complex& complex = network.complexes->get(stop.target);
             u64 s_num;
             switch(stop.unit) {
-                case Stop::Fixed: s_num = (u64) stop.amount.fixed; break;
-                case Stop::Fraction: s_num = (u64) stop.amount.fract; break;
+                case AgentStop::Fixed: 
+                    s_num = (u64) stop.amount.fixed; break;
+                case AgentStop::Fraction: 
+                    s_num = (u64) stop.amount.fract; break;
             }
             u64 p_num;
             switch(stop.action) {
-                case Stop::Load: p_num = complex.stored_count(stop.item); break;
-                case Stop::Unload: p_num = this->items[stop.item]; break;
+                case AgentStop::Load: 
+                    p_num = complex.stored_count(stop.item); break;
+                case AgentStop::Unload: 
+                    p_num = this->items[stop.item]; break;
             }
             u64 planned = std::min(s_num, p_num);
             switch(stop.action) {
-                case Stop::Load: {
+                case AgentStop::Load: {
                     u64 remaining_space = this->item_storage_capacity()
                         - this->stored_item_count();
                     u64 transferred = std::min(planned, remaining_space);
@@ -249,7 +301,7 @@ namespace houseofatmos::world {
                     this->items[stop.item] += transferred;
                     break;
                 }
-                case Stop::Unload: {
+                case AgentStop::Unload: {
                     u64 transferred = planned;
                     this->items[stop.item] -= transferred;
                     complex.add_stored(stop.item, transferred);
@@ -274,7 +326,7 @@ namespace houseofatmos::world {
             return total;
         }
 
-        State current_state() const { return this->state; }
+        AgentState current_state() const { return this->state; }
         const AgentPath<Network>& current_path() const { return this->path; }
         f64 current_path_dist() const { return this->distance; }
         void reset_path() {
@@ -282,22 +334,26 @@ namespace houseofatmos::world {
             this->distance = 0.0;
         }
 
+        AbstractAgent as_abstract() {
+            return AbstractAgent((void*) this, &Agent<Network>::abstract_impl);
+        }
+
         static inline const f64 load_time = 5.0;
 
         void update_state(Network& network, const engine::Window& window) {
-            if(this->schedule.size() == 0) { this->state = State::Idle; }
+            if(this->schedule.size() == 0) { this->state = AgentState::Idle; }
             if(this->schedule.size() >= 1) {
                 this->stop_i = this->stop_i % this->schedule.size();
             }
             switch(this->state) {
-                case Idle: {
+                case AgentState::Idle: {
                     if(this->schedule.size() > 0) { 
                         this->path.clear();
-                        this->state = Travelling;
+                        this->state = AgentState::Travelling;
                     }
                     break;
                 }
-                case Travelling: {
+                case AgentState::Travelling: {
                     if(this->path.is_empty()) { 
                         if(!this->find_path(network)) { break; } 
                     }
@@ -308,35 +364,37 @@ namespace houseofatmos::world {
                         .after(this->distance, &is_at_end).first;
                     if(is_at_end) { 
                         this->load_start_time = window.time();
-                        this->state = Loading; 
+                        this->state = AgentState::Loading; 
                     }
                     break;
                 }
-                case Loading: {
+                case AgentState::Loading: {
                     f64 load_done_time = this->load_start_time + load_time;
                     if(window.time() >= load_done_time) {
-                        const Stop& stop = this->schedule[this->stop_i];
+                        const AgentStop& stop = this->schedule[this->stop_i];
                         this->do_stop_transfer(network, stop);
                         this->stop_i += 1;
                         this->path.clear();
-                        this->state = Travelling;
+                        this->state = AgentState::Travelling;
                     }
                     break;
                 }
-                case Lost: break;
+                case AgentState::Lost: break;
             }
         }
 
         bool find_path(Network& network) {
-            if(this->state == Idle || this->state == Loading) { return false; }
+            bool requires_path = this->state == AgentState::Travelling 
+                || this->state == AgentState::Lost;
+            if(!requires_path) { return false; }
             ComplexId target = this->schedule[this->stop_i].target;
             std::optional<AgentPath<Network>> found 
                 = AgentPath<Network>::find(network, this->position, target);
             if(!found.has_value()) {
-                this->state = Lost;
+                this->state = AgentState::Lost;
                 return false;
             }
-            this->state = Travelling;
+            this->state = AgentState::Travelling;
             this->path = *found;
             this->distance = 0.0;
             return true;
@@ -423,9 +481,9 @@ namespace houseofatmos::world {
         void find_paths(Toasts* toasts) {
             bool any_became_lost = false;
             for(Agent& agent: this->agents) {
-                bool was_lost = agent.current_state() == Agent::Lost;
+                bool was_lost = agent.current_state() == AgentState::Lost;
                 agent.find_path(this->network);
-                bool is_lost = agent.current_state() == Agent::Lost;
+                bool is_lost = agent.current_state() == AgentState::Lost;
                 any_became_lost |= (!was_lost && is_lost);
             }
             if(any_became_lost && toasts != nullptr) {

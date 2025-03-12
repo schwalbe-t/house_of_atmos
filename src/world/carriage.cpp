@@ -219,7 +219,7 @@ namespace houseofatmos::world {
             this->speaker.play(scene.get(sound::horse));
         }
         f64 next_step_time = this->last_step_time + step_sound_period;
-        bool play_step_sound = this->current_state() == Travelling
+        bool play_step_sound = this->current_state() == AgentState::Travelling
             && next_step_time <= window.time()
             && !this->speaker.is_playing();
         if(play_step_sound) {
@@ -244,7 +244,7 @@ namespace houseofatmos::world {
         engine::Model& horse_model = scene.get(Carriage::horse_model);
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
             .at((size_t) this->type);
-        bool is_moving = this->current_state() == Travelling;
+        bool is_moving = this->current_state() == AgentState::Travelling;
         for(size_t horse_i = 0; horse_i < this->horses.size(); horse_i += 1) {
             HorseType horse_type = this->horses.at(horse_i);
             HorseTypeInfo horse_info = Carriage::horse_types()
@@ -328,7 +328,7 @@ namespace houseofatmos::world {
         engine::Scene& scene, const engine::Window& window
     ) {
         (void) network;
-        if(this->current_state() == Travelling) {
+        if(this->current_state() == AgentState::Travelling) {
             Vec<3> heading = this->find_heading();
             auto [n_pitch, n_yaw] = Agent<CarriageNetwork>
                 ::compute_heading_angles(heading, model_heading);

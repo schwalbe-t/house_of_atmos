@@ -13,6 +13,30 @@ namespace houseofatmos::world {
 
     struct TerrainMap {
 
+        enum struct SelectionType {
+            None, Complex, Agent
+        };
+
+        struct AgentDisplay {
+            const ui::Background* marker;
+            std::string_view local_title;
+            std::string_view local_remove;
+            void (*remove_impl)(AbstractAgent agent, World& world);
+        };
+
+        static inline AgentDisplay carriage_display = {
+            &ui_icon::map_marker_carriage,
+            "ui_carriage", "ui_remove_carriage",
+            [](AbstractAgent agent, World& world) {
+                for(size_t c = 0; c < world.carriages.agents.size(); c += 1) {
+                    Carriage& carriage = world.carriages.agents[c];
+                    if(carriage.as_abstract().data != agent.data) { continue; }
+                    auto removed = world.carriages.agents.begin() + c;
+                    world.carriages.agents.erase(removed);
+                }
+            }
+        };
+
         private:
         u64 t_width, t_height;
         const engine::Localization::LoadArgs local_ref;
@@ -31,8 +55,14 @@ namespace houseofatmos::world {
         ui::Element* selected_info_right = nullptr;
         ui::Element* selected_info_bottom = nullptr;
 
-        std::optional<ComplexId> selected_complex = std::nullopt;
-        std::optional<u64> selected_carriage = std::nullopt;
+        SelectionType selected_type = SelectionType::None;
+        union {
+            ComplexId complex;
+            struct {
+                AbstractAgent a;
+                const AgentDisplay* d;
+            } agent;
+        } selected;
         bool adding_stop = false;
 
         void update_view(const engine::Window& window);
@@ -44,6 +74,10 @@ namespace houseofatmos::world {
         void add_icon_marker(
             Vec<2> pos, const ui::Background* icon, 
             std::function<void ()>&& handler, bool is_phantom = false
+        );
+        void add_agent_stop_marker(AbstractAgent agent, size_t stop_i);
+        void add_agent_markers(
+            AbstractAgent agent, const AgentDisplay& agent_display
         );
         void create_markers();
 
@@ -108,9 +142,11 @@ namespace houseofatmos::world {
             const engine::Localization& local
         );
 
-        ui::Element display_carriage_stop(Carriage* carriage, size_t stop_i);
+        ui::Element display_agent_stop(AbstractAgent agent, size_t stop_i);
 
-        ui::Element display_carriage_info(Carriage& carriage);
+        ui::Element display_agent_info(
+            AbstractAgent agent, const AgentDisplay& agent_display
+        );
 
     };
 

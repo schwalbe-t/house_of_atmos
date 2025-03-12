@@ -122,7 +122,7 @@ namespace houseofatmos::world {
             engine::Speaker::Space::World, 5.0
         );
         f64 yaw = 0.0, pitch = 0.0;
-        State prev_state = Travelling;
+        AgentState prev_state = AgentState::Travelling;
         f64 last_step_time = 0.0;
 
         public:
