@@ -243,6 +243,56 @@ namespace houseofatmos::world {
     };
 
 
+    struct PathingMode: ActionMode {
+
+        u64 selected_tile_x, selected_tile_z;
+        std::optional<engine::Mesh> overlay;
+
+        PathingMode(ActionContext ctx): ActionMode(ctx) {
+            this->selected_tile_x = 0;
+            this->selected_tile_z = 0;
+            this->overlay = std::nullopt;
+        }
+
+        void update_overlay();
+
+        void update(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override;
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            Renderer& renderer
+        ) override;
+
+    };
+
+
+    struct TrackingMode: ActionMode {
+
+        u64 preview_ch_x, preview_ch_z;
+        TrackPiece preview_piece;
+        bool placement_valid;
+
+        TrackingMode(ActionContext ctx): ActionMode(ctx) {
+            this->preview_ch_x = 0;
+            this->preview_ch_z = 0;
+            this->preview_piece = TrackPiece(0, 0, TrackPiece::Straight, 0, 0);
+            this->placement_valid = true;
+        }
+
+        void update(
+            const engine::Window& window, engine::Scene& scene, 
+            const Renderer& renderer
+        ) override;
+        void render(
+            const engine::Window& window, engine::Scene& scene, 
+            Renderer& renderer
+        ) override;
+
+    };
+
+
     struct DemolitionMode: ActionMode {
 
         struct Selection {
@@ -280,36 +330,12 @@ namespace houseofatmos::world {
     };
 
 
-    struct PathingMode: ActionMode {
-
-        u64 selected_tile_x, selected_tile_z;
-        std::optional<engine::Mesh> overlay;
-
-        PathingMode(ActionContext ctx): ActionMode(ctx) {
-            this->selected_tile_x = 0;
-            this->selected_tile_z = 0;
-            this->overlay = std::nullopt;
-        }
-
-        void update_overlay();
-
-        void update(
-            const engine::Window& window, engine::Scene& scene, 
-            const Renderer& renderer
-        ) override;
-        void render(
-            const engine::Window& window, engine::Scene& scene, 
-            Renderer& renderer
-        ) override;
-
-    };
-
-
 
     struct ActionManager {
 
         enum struct Mode {
-            Default, Terraform, Construction, Bridging, Demolition, Pathing
+            Default, 
+            Terraform, Construction, Bridging, Pathing, Tracking, Demolition
         };
 
         private:
@@ -360,11 +386,14 @@ namespace houseofatmos::world {
                 case Mode::Bridging:
                     this->mode = std::make_unique<BridgingMode>(ctx);
                     break;
-                case Mode::Demolition:
-                    this->mode = std::make_unique<DemolitionMode>(ctx);
-                    break;
                 case Mode::Pathing:
                     this->mode = std::make_unique<PathingMode>(ctx);
+                    break;
+                case Mode::Tracking:
+                    this->mode = std::make_unique<TrackingMode>(ctx);
+                    break;
+                case Mode::Demolition:
+                    this->mode = std::make_unique<DemolitionMode>(ctx);
                     break;
             }
             this->was_changed = true;

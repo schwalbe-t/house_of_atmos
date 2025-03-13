@@ -33,9 +33,9 @@ namespace houseofatmos::world {
             ),
             Mat<4>::scale(Vec<3>(-1.0, 1.0, 1.0)), // flip along X axis
             {
-                Vec<3>(0.0, 0.0, -2.5),
-                Vec<3>(0.5, 0.0,  0.0),
-                Vec<3>(2.5, 0.0,  2.5)
+                Vec<3>( 0.0, 0.0, -2.5),
+                Vec<3>(-0.5, 0.0,  0.0),
+                Vec<3>(-2.5, 0.0,  2.5)
             }
         },
         /* CurveRight */ {

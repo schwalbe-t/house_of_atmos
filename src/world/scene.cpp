@@ -14,8 +14,9 @@ namespace houseofatmos::world {
         { &ui_icon::terraforming, ActionManager::Mode::Terraform },
         { &ui_icon::construction, ActionManager::Mode::Construction },
         { &ui_icon::bridging, ActionManager::Mode::Bridging},
-        { &ui_icon::demolition, ActionManager::Mode::Demolition},
-        { &ui_icon::pathing, ActionManager::Mode::Pathing }
+        { &ui_icon::pathing, ActionManager::Mode::Pathing },
+        { &ui_icon::tracking, ActionManager::Mode::Tracking },
+        { &ui_icon::demolition, ActionManager::Mode::Demolition}
     };
 
     static ui::Element create_mode_selector(Scene* scene) {
@@ -280,7 +281,7 @@ namespace houseofatmos::world {
     ) {
         if(!scene.action_mode.has_mode()) { return; }
         std::optional<ActionManager::Mode> selected = std::nullopt;
-        if(window.was_pressed(engine::Key::T)) {
+        if(window.was_pressed(engine::Key::G)) {
             selected = ActionManager::Mode::Terraform;
         }
         if(window.was_pressed(engine::Key::C)) {
@@ -289,11 +290,14 @@ namespace houseofatmos::world {
         if(window.was_pressed(engine::Key::B)) {
             selected = ActionManager::Mode::Bridging;
         }
-        if(window.was_pressed(engine::Key::R)) {
-            selected = ActionManager::Mode::Demolition;
-        }
         if(window.was_pressed(engine::Key::V)) {
             selected = ActionManager::Mode::Pathing;
+        }
+        if(window.was_pressed(engine::Key::T)) {
+            selected = ActionManager::Mode::Tracking;
+        }
+        if(window.was_pressed(engine::Key::R)) {
+            selected = ActionManager::Mode::Demolition;
         }
         if(!selected.has_value()) { return; }
         scene.action_mode.set_mode(

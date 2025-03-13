@@ -144,6 +144,8 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON(Vec<2>(64, 64), Vec<2>(16, 16));
     static inline const ui::Background bridging 
         = MAKE_HOA_UI_ICON(Vec<2>(80, 64), Vec<2>(16, 16));
+    static inline const ui::Background tracking 
+        = MAKE_HOA_UI_ICON(Vec<2>(96, 64), Vec<2>(16, 16));
 
     static inline const ui::Background terrain_flatten 
         = MAKE_HOA_UI_ICON(Vec<2>(128, 64), Vec<2>(16, 16));

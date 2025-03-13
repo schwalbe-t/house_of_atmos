@@ -418,19 +418,10 @@ namespace houseofatmos::world {
     Terrain::collect_track_piece_transforms(u64 chunk_x, u64 chunk_z) const {
     std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>> instances;
     const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
-    u64 chunk_t_x = chunk_x * this->tiles_per_chunk();
-    u64 chunk_t_z = chunk_z * this->tiles_per_chunk();
     for(const TrackPiece& track_piece: chunk_data.track_pieces) {
-        const TrackPiece::TypeInfo& piece_info = TrackPiece::types()
-            .at((size_t) track_piece.type);
-        f64 tile_x = (f64) chunk_t_x + (f64) track_piece.x + 0.5;
-        f64 tile_z = (f64) chunk_t_z + (f64) track_piece.z + 0.5;
-        Vec<3> pos = Vec<3>(tile_x, 0, tile_z) * this->tile_size
-            + Vec<3>(0, track_piece.elevation, 0);
-        Mat<4> inst = Mat<4>::translate(pos)
-            * Mat<4>::rotate_y(track_piece.rotation_quarters * pi / 2.0)
-            * piece_info.base_transform;
-        instances[track_piece.type].push_back(inst);
+        instances[track_piece.type].push_back(track_piece.build_transform(
+            chunk_x, chunk_z, this->tiles_per_chunk(), this->units_per_tile()
+        ));
     }
     return instances;
 }
