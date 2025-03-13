@@ -9,6 +9,7 @@
 #include "foliage.hpp"
 #include "bridge.hpp"
 #include "resource.hpp"
+#include "train_tracks.hpp"
 
 namespace houseofatmos::world {
 
@@ -54,6 +55,7 @@ namespace houseofatmos::world {
             std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage;
             std::unordered_map<Building::Type, std::vector<Mat<4>>> buildings;
             std::unordered_map<Resource::Type, std::vector<Mat<4>>> resources;
+            std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>> track_pieces;
             std::vector<std::shared_ptr<Interactable>> interactables;
         };
 
@@ -63,6 +65,7 @@ namespace houseofatmos::world {
                 u64 building_count, building_offset;
                 u64 paths_count, paths_offset;
                 u64 resources_count, resources_offset;
+                u64 track_pieces_count, track_pieces_offset;
             };
 
             ChunkData(u64 size_tiles) {
@@ -76,8 +79,9 @@ namespace houseofatmos::world {
 
             std::vector<Foliage> foliage;
             std::vector<Building> buildings;
-            std::vector<u8> paths;
             std::vector<Resource> resources;
+            std::vector<TrackPiece> track_pieces;
+            std::vector<u8> paths;
             u64 size_tiles;
 
             void set_path_at(u64 rel_x, u64 rel_z, bool is_present) {
@@ -111,6 +115,8 @@ namespace houseofatmos::world {
             collect_building_transforms(u64 chunk_x, u64 chunk_z) const;
         std::unordered_map<Resource::Type, std::vector<Mat<4>>>
             collect_resource_transforms(u64 chunk_x, u64 chunk_z) const;
+        std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>>
+            collect_track_piece_transforms(u64 chunk_x, u64 chunk_z) const;
         std::vector<std::shared_ptr<Interactable>> create_chunk_interactables(
             u64 chunk_x, u64 chunk_z, 
             Interactables* interactables, engine::Window& window, 
@@ -230,6 +236,10 @@ namespace houseofatmos::world {
             i64 tile_x, i64 tile_z, f64 closest_to_height = 0.0
         ) const;
         const Resource* resource_at(i64 tile_x, i64 tile_z) const;
+        u64 track_pieces_at(
+            i64 tile_x, i64 tile_z, 
+            std::vector<TrackPiece>* collected_out = nullptr
+        ) const;
         bool valid_player_position(
             const AbsCollider& player_collider, bool water_is_obstacle
         ) const;

@@ -91,6 +91,7 @@ namespace houseofatmos::world {
         Foliage::load_models(*this);
         Bridge::load_models(*this);
         Resource::load_resources(*this);
+        TrackPiece::load_models(*this);
         human::load_resources(*this);
         ActionMode::load_resources(*this);
         Carriage::load_resources(*this);

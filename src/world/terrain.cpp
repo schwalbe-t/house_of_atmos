@@ -414,6 +414,27 @@ namespace houseofatmos::world {
         return instances;
     }
 
+    std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>>
+    Terrain::collect_track_piece_transforms(u64 chunk_x, u64 chunk_z) const {
+    std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>> instances;
+    const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
+    u64 chunk_t_x = chunk_x * this->tiles_per_chunk();
+    u64 chunk_t_z = chunk_z * this->tiles_per_chunk();
+    for(const TrackPiece& track_piece: chunk_data.track_pieces) {
+        const TrackPiece::TypeInfo& piece_info = TrackPiece::types()
+            .at((size_t) track_piece.type);
+        f64 tile_x = (f64) chunk_t_x + (f64) track_piece.x + 0.5;
+        f64 tile_z = (f64) chunk_t_z + (f64) track_piece.z + 0.5;
+        Vec<3> pos = Vec<3>(tile_x, 0, tile_z) * this->tile_size
+            + Vec<3>(0, track_piece.elevation, 0);
+        Mat<4> inst = Mat<4>::translate(pos)
+            * Mat<4>::rotate_y(track_piece.rotation_quarters * pi / 2.0)
+            * piece_info.base_transform;
+        instances[track_piece.type].push_back(inst);
+    }
+    return instances;
+}
+
     std::vector<std::shared_ptr<Interactable>> Terrain::create_chunk_interactables(
         u64 chunk_x, u64 chunk_z, 
         Interactables* interactables, engine::Window& window, 
@@ -464,6 +485,7 @@ namespace houseofatmos::world {
                 std::unordered_map<Foliage::Type, std::vector<Mat<4>>>(),
                 std::unordered_map<Building::Type, std::vector<Mat<4>>>(),
                 std::unordered_map<Resource::Type, std::vector<Mat<4>>>(),
+                std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>>(),
                 std::vector<std::shared_ptr<Interactable>>()
             };
         }
@@ -474,6 +496,7 @@ namespace houseofatmos::world {
             this->collect_foliage_transforms((u64) chunk_x, (u64) chunk_z),
             this->collect_building_transforms((u64) chunk_x, (u64) chunk_z),
             this->collect_resource_transforms((u64) chunk_x, (u64) chunk_z),
+            this->collect_track_piece_transforms((u64) chunk_x, (u64) chunk_z),
             this->create_chunk_interactables(
                 (u64) chunk_x, (u64) chunk_z, interactables, window, world
             )
@@ -609,6 +632,7 @@ namespace houseofatmos::world {
         if(tile_x_s < 0 || tile_z_s < 0) { return nullptr; }
         u64 tile_x = (u64) tile_x_s;
         u64 tile_z = (u64) tile_z_s;
+        if(tile_x >= this->width || tile_z >= this->height) { return nullptr; }
         u64 chunk_x = tile_x / this->tiles_per_chunk();
         u64 chunk_z = tile_z / this->tiles_per_chunk();
         u64 rel_x = tile_x % this->tiles_per_chunk();
@@ -619,6 +643,28 @@ namespace houseofatmos::world {
             return &resource;
         }
         return nullptr;
+    }
+
+    u64 Terrain::track_pieces_at(
+        i64 tile_x_s, i64 tile_z_s, std::vector<TrackPiece>* collected_out
+    ) const {
+        if(tile_x_s < 0 || tile_z_s < 0) { return 0; }
+        u64 tile_x = (u64) tile_x_s;
+        u64 tile_z = (u64) tile_z_s;
+        if(tile_x >= this->width || tile_z >= this->height) { return 0; }
+        u64 chunk_x = tile_x / this->tiles_per_chunk();
+        u64 chunk_z = tile_z / this->tiles_per_chunk();
+        u64 rel_x = tile_x % this->tiles_per_chunk();
+        u64 rel_z = tile_z % this->tiles_per_chunk();
+        const ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+        u64 collected_count = 0;
+        for(const TrackPiece& track_piece: chunk.track_pieces) {
+            if(track_piece.x != rel_x || track_piece.z != rel_z) { continue; }
+            collected_count += 1;
+            if(collected_out == nullptr) { continue; }
+            collected_out->push_back(track_piece);
+        }
+        return collected_count;
     }
 
     static const i64 collision_test_dist = 1;
@@ -967,6 +1013,7 @@ namespace houseofatmos::world {
         std::unordered_map<Foliage::Type, std::vector<Mat<4>>> foliage_instances;
         std::unordered_map<Building::Type, std::vector<Mat<4>>> building_instances;
         std::unordered_map<Resource::Type, std::vector<Mat<4>>> resource_instances;
+        std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>> track_piece_instances;
         for(LoadedChunk& chunk: this->loaded_chunks) {
             Vec<3> chunk_offset = Vec<3>(chunk.x, 0, chunk.z)
                 * this->chunk_tiles * this->tile_size;
@@ -985,6 +1032,10 @@ namespace houseofatmos::world {
                 std::vector<Mat<4>>& r_inst = resource_instances[resource_type];
                 r_inst.insert(r_inst.end(), instances.begin(), instances.end());
             }
+            for(const auto& [track_piece_type, instances]: chunk.track_pieces) {
+                std::vector<Mat<4>>& p_inst = track_piece_instances[track_piece_type];
+                p_inst.insert(p_inst.end(), instances.begin(), instances.end());
+            }
         }
         for(const auto& [foliage_type, instances]: foliage_instances) {
             engine::Model& model = scene.get(
@@ -1001,11 +1052,17 @@ namespace houseofatmos::world {
             const Resource::TypeInfo& type_info
                 = Resource::types().at((size_t) resource_type);
             renderer.render(
-                scene.get(type_info.model), resource_instances[resource_type],
-                nullptr, 0.0,
+                scene.get(type_info.model), instances, nullptr, 0.0,
                 engine::FaceCulling::Enabled, engine::Rendering::Surfaces,
                 engine::DepthTesting::Enabled,
                 &scene.get(type_info.texture)
+            );
+        }
+        for(const auto& [track_piece_type, instances]: track_piece_instances) {
+            const TrackPiece::TypeInfo& piece_type_info = TrackPiece::types()
+                .at((size_t) track_piece_type);
+            renderer.render(
+                scene.get(piece_type_info.model), instances, nullptr, 0.0
             );
         }
         this->render_bridges(scene, renderer);
@@ -1141,6 +1198,10 @@ namespace houseofatmos::world {
             serialized.resources_offset, serialized.resources_count,
             this->resources
         );
+        buffer.copy_array_at_into(
+            serialized.track_pieces_offset, serialized.track_pieces_count,
+            this->track_pieces
+        );
     }
 
     Terrain::ChunkData::Serialized Terrain::ChunkData::serialize(
@@ -1150,7 +1211,8 @@ namespace houseofatmos::world {
             this->foliage.size(), buffer.alloc_array(this->foliage),
             this->buildings.size(), buffer.alloc_array(this->buildings),
             this->paths.size(), buffer.alloc_array(this->paths),
-            this->resources.size(), buffer.alloc_array(this->resources)
+            this->resources.size(), buffer.alloc_array(this->resources),
+            this->track_pieces.size(), buffer.alloc_array(this->track_pieces)
         };
     }
 
