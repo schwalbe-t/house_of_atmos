@@ -28,7 +28,7 @@ namespace houseofatmos::world {
         // to save memory, this variable represents the rotation of the piece
         // as the full number of quarter rotations, NOT radians or degrees
         // => multiply by (pi/2) to get the angle in radians
-        i8 rotation_quarters;
+        i8 angle_q;
         i16 elevation;
 
 
@@ -42,7 +42,7 @@ namespace houseofatmos::world {
             Vec<3> pos = Vec<3>(t_x, 0, t_z) * units_per_tile
                 + Vec<3>(0, this->elevation, 0);
             return Mat<4>::translate(pos)
-                * Mat<4>::rotate_y((f64) this->rotation_quarters * pi / 2.0)
+                * Mat<4>::rotate_y((f64) this->angle_q * pi / 2.0)
                 * piece_info.base_transform;
         }
 

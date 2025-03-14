@@ -270,9 +270,13 @@ namespace houseofatmos::world {
 
     struct TrackingMode: ActionMode {
 
+        std::optional<Vec<3>> drag_origin;
+
         u64 preview_ch_x, preview_ch_z;
         TrackPiece preview_piece;
         bool placement_valid;
+
+        ui::Element* track_markers = nullptr;
 
         TrackingMode(ActionContext ctx): ActionMode(ctx) {
             this->preview_ch_x = 0;
@@ -280,6 +284,28 @@ namespace houseofatmos::world {
             this->preview_piece = TrackPiece(0, 0, TrackPiece::Straight, 0, 0);
             this->placement_valid = true;
         }
+
+        void init_ui() override;
+
+        void update_track_markers(
+            const engine::Window& window, const Renderer& renderer, 
+            u64 tile_x, u64 tile_z, std::optional<Vec<3>>& closest_marker
+        );
+        void attempt_piece_connection(
+            const engine::Window& window, const Renderer& renderer,
+            u64 tx, u64 tz, u64 ch_x, u64 ch_z, i16 elev_d,
+            size_t pt_i, u8 angle_q,
+            f64& closest_cursor_dist
+        );
+        void select_piece_connected(
+            const engine::Window& window, const Renderer& renderer,
+            Vec<3> closest_marker
+        );
+        void select_piece_disconnected(
+            const engine::Window& window, const Renderer& renderer,
+            u64 tile_x, u64 tile_z
+        );
+        void determine_piece_valid(u64 tile_x, u64 tile_z);
 
         void update(
             const engine::Window& window, engine::Scene& scene, 
