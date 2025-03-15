@@ -294,7 +294,7 @@ namespace houseofatmos::world {
         void attempt_piece_connection(
             const engine::Window& window, const Renderer& renderer,
             u64 tx, u64 tz, u64 ch_x, u64 ch_z, i16 elev_d,
-            size_t pt_i, u8 angle_q,
+            size_t pt_i, i8 angle_q,
             f64& closest_cursor_dist
         );
         void select_piece_connected(
@@ -322,16 +322,22 @@ namespace houseofatmos::world {
     struct DemolitionMode: ActionMode {
 
         struct Selection {
-            enum Type { None, Building, Bridge };
+            enum Type { None, Building, Bridge, TrackPiece };
             Type type;
             struct BuildingSelection {
                 u64 tile_x, tile_z;
                 u64 chunk_x, chunk_z;
                 const world::Building* selected;
             };
+            struct TrackPieceSelection {
+                u64 tile_x, tile_z;
+                u64 chunk_x, chunk_z;
+                size_t piece_i;
+            };
             union {
                 BuildingSelection building;
                 const world::Bridge* bridge; 
+                TrackPieceSelection track_piece;
             } value;
         };
 

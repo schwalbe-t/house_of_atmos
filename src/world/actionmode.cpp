@@ -1469,7 +1469,7 @@ namespace houseofatmos::world {
     }
 
     static const i64 track_marker_ch_rad = 1;
-    static const f64 max_display_tile_dist = 2;
+    static const f64 max_display_tile_dist = 3;
 
     void TrackingMode::update_track_markers(
         const engine::Window& window, const Renderer& renderer, 
@@ -1492,7 +1492,7 @@ namespace houseofatmos::world {
                     .chunk_at(ch_x, ch_z);
                 for(const TrackPiece& track_piece: chunk.track_pieces) {
                     Mat<4> t = track_piece.build_transform(
-                        ch_x, ch_z, 
+                        ch_x, ch_z,
                         this->world->terrain.tiles_per_chunk(), 
                         this->world->terrain.units_per_tile()
                     );
@@ -1579,7 +1579,7 @@ namespace houseofatmos::world {
 
     void TrackingMode::attempt_piece_connection(
         const engine::Window& window, const Renderer& renderer,
-        u64 tx, u64 tz, u64 ch_x, u64 ch_z, i16 elev_d, size_t pt_i, u8 angle_q,
+        u64 tx, u64 tz, u64 ch_x, u64 ch_z, i16 elev_d, size_t pt_i, i8 angle_q,
         f64& closest_cursor_dist
     ) {
         const auto& p_info = TrackPiece::types().at(pt_i);
@@ -1640,7 +1640,7 @@ namespace houseofatmos::world {
                 i16 max_ed = +max_piece_elev_d;
                 for(i16 elev_d = min_ed; elev_d <= max_ed; elev_d += 1) {
                     for(size_t pt_i = 0; pt_i < piece_type_c; pt_i += 1) {
-                        for(u8 angle_q = 0; angle_q < 4; angle_q += 1) {
+                        for(i8 angle_q = 0; angle_q < 4; angle_q += 1) {
                             this->attempt_piece_connection(
                                 window, renderer, tx, tz, ch_x, ch_z, elev_d, 
                                 pt_i, angle_q, closest_cursor_dist
@@ -1676,6 +1676,7 @@ namespace houseofatmos::world {
                 .swizzle<3>("xyz");
             f64 elevation = this->world->terrain.elevation_at(point);
             this->placement_valid &= point.y() >= elevation;
+            this->placement_valid &= point.y() - elevation <= 1;
         }
     }
 
@@ -1836,6 +1837,28 @@ namespace houseofatmos::world {
                 this->speaker.play(scene.get(sound::demolish));
                 return;
             }
+            case Selection::TrackPiece: {
+                const Selection::TrackPieceSelection& tp_s
+                    = this->selection.value.track_piece;
+                Terrain::ChunkData& chunk = this->world->terrain
+                    .chunk_at(tp_s.chunk_x, tp_s.chunk_z);
+                const TrackPiece& removed_piece 
+                    = chunk.track_pieces[tp_s.piece_i];
+                this->speaker.position 
+                    = Vec<3>(tp_s.tile_x + 0.5, 0.0, tp_s.tile_z + 0.5)
+                    * this->world->terrain.units_per_tile()
+                    + Vec<3>(0, removed_piece.elevation, 0);
+                chunk.track_pieces.erase(
+                    chunk.track_pieces.begin() + tp_s.piece_i
+                );
+                this->world->balance
+                    .add_coins(track_removal_refund, this->toasts);
+                this->world->terrain
+                    .reload_chunk_at(tp_s.chunk_x, tp_s.chunk_z);
+                this->selection.type = Selection::None;
+                this->speaker.play(scene.get(sound::demolish));
+                return;
+            }
         }
     }
 
@@ -1849,6 +1872,43 @@ namespace houseofatmos::world {
         auto [tile_x, tile_z] = this->world->terrain.find_selected_terrain_tile(
             window.cursor_pos_ndc(), renderer, Vec<3>(0.5, 0, 0.5)
         );
+        u64 chunk_x = tile_x / this->world->terrain.tiles_per_chunk();
+        u64 chunk_z = tile_z / this->world->terrain.tiles_per_chunk();
+        Terrain::ChunkData& hover_chunk 
+            = this->world->terrain.chunk_at(chunk_x, chunk_z);
+        // check for selected brige
+        const Bridge* hover_bridge = this->world->terrain
+            .bridge_at((i64) tile_x, (i64) tile_z);
+        if(hover_bridge != nullptr) {
+            this->selection.type = Selection::Bridge;
+            this->selection.value.bridge = hover_bridge;
+        }
+        // check for track pieces
+        u64 rel_ch_x = tile_x % this->world->terrain.tiles_per_chunk();
+        u64 rel_ch_z = tile_z % this->world->terrain.tiles_per_chunk();
+        f64 closest_track_point_dist = INFINITY;
+        for(size_t tp_i = 0; tp_i < hover_chunk.track_pieces.size(); tp_i += 1) {
+            const TrackPiece& piece = hover_chunk.track_pieces[tp_i];
+            if(piece.x != rel_ch_x || piece.z != rel_ch_z) { continue; }
+            const TrackPiece::TypeInfo& piece_info = TrackPiece::types()
+                .at((size_t) piece.type);
+            Mat<4> t = piece.build_transform(
+                chunk_x, chunk_z, 
+                this->world->terrain.tiles_per_chunk(), 
+                this->world->terrain.units_per_tile()
+            );
+            for(const Vec<3>& point_model: piece_info.points) {
+                Vec<3> point_world = (t * point_model.with(1.0)).swizzle<3>("xyz");
+                Vec<2> point_ndc = renderer.world_to_ndc(point_world);
+                f64 dist = (window.cursor_pos_ndc() - point_ndc).len();
+                if(dist > closest_track_point_dist) { continue; }
+                closest_track_point_dist = dist;
+                this->selection.type = Selection::TrackPiece;
+                this->selection.value.track_piece = { 
+                    tile_x, tile_z, chunk_x, chunk_z, tp_i 
+                };
+            }
+        }
         // check for selected building
         u64 hover_building_ch_x, hover_building_ch_z;
         const Building* hover_building = this->world->terrain.building_at(
@@ -1862,13 +1922,6 @@ namespace houseofatmos::world {
                 hover_building_ch_x, hover_building_ch_z,
                 hover_building
             };
-        }
-        // check for selected brige
-        const Bridge* hover_bridge = this->world->terrain
-            .bridge_at((i64) tile_x, (i64) tile_z);
-        if(hover_bridge != nullptr) {
-            this->selection.type = Selection::Bridge;
-            this->selection.value.bridge = hover_bridge;
         }
         // do demolition
         bool attempted = this->selection.type != Selection::None
@@ -1910,8 +1963,29 @@ namespace houseofatmos::world {
                     scene.get(b_type.model), 
                     bridge->get_instances(this->world->terrain.units_per_tile()),
                     nullptr, 0.0,
-                    engine::FaceCulling::Enabled,
-                    engine::Rendering::Wireframe,
+                    engine::FaceCulling::Enabled, engine::Rendering::Wireframe,
+                    engine::DepthTesting::Enabled, 
+                    &wireframe_texture
+                );
+                return;
+            }
+            case Selection::TrackPiece: {
+                const Selection::TrackPieceSelection& track_piece_s
+                    = this->selection.value.track_piece;
+                const Terrain::ChunkData& chunk = this->world->terrain
+                    .chunk_at(track_piece_s.chunk_x, track_piece_s.chunk_z);
+                const TrackPiece& track_piece 
+                    = chunk.track_pieces[track_piece_s.piece_i];
+                const engine::Model::LoadArgs& model = TrackPiece::types()
+                    .at((size_t) track_piece.type).model;
+                Mat<4> instance = track_piece.build_transform(
+                    track_piece_s.chunk_x, track_piece_s.chunk_z,
+                    this->world->terrain.tiles_per_chunk(),
+                    this->world->terrain.units_per_tile()
+                );
+                renderer.render(
+                    scene.get(model), std::array { instance }, nullptr, 0.0,
+                    engine::FaceCulling::Enabled, engine::Rendering::Wireframe,
                     engine::DepthTesting::Enabled, 
                     &wireframe_texture
                 );
