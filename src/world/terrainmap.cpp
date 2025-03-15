@@ -15,6 +15,7 @@ namespace houseofatmos::world {
     static const Color low_water_color = Color(44, 101, 118); 
     static const Color resource_color = Color(88, 69, 99);
     static const Color path_color = Color(154, 99, 72);
+    static const Color train_track_color = Color(140, 143, 174);
     static const Color building_color = Color(157, 48, 59);
     static const Color background_color = Color(84, 142, 148);
     static const Color selected_complex_color = Color(239, 239, 230);
@@ -90,6 +91,10 @@ namespace houseofatmos::world {
                 bool is_path = this->world->terrain.path_at((i64) x, (i64) z)
                     || this->world->terrain.bridge_at((i64) x, (i64) z) != nullptr;
                 if(is_path) { color = path_color; }
+                // if is track
+                bool is_track = this->world->terrain
+                    .track_pieces_at((i64) x, (i64) z) > 0;
+                if(is_track) { color = train_track_color; }
                 // if is building
                 const Building* building = this->world->terrain.building_at(x, z);
                 if(building != nullptr) { color = building_color; }

@@ -915,6 +915,7 @@ namespace houseofatmos::world {
                 if(x == player_tile_x && z == player_tile_z) { return false; }
                 if(terrain.building_at(x, z) != nullptr) { return false; }
                 if(terrain.bridge_at(x, z) != nullptr) { return false; }
+                if(terrain.track_pieces_at(x, z) > 0) { return false; }
             }
         }
         return true;
@@ -1660,7 +1661,8 @@ namespace houseofatmos::world {
             this->world->terrain.tiles_per_chunk(), 
             this->world->terrain.units_per_tile()
         );
-        this->placement_valid = true;
+        this->placement_valid = this->world->terrain
+            .building_at((i64) tile_x, (i64) tile_z) == nullptr;
         std::vector<TrackPiece> existing_pieces;
         this->world->terrain
             .track_pieces_at((i64) tile_x, (i64) tile_z, &existing_pieces);
@@ -1825,6 +1827,35 @@ namespace houseofatmos::world {
                     this->world->player.character.position,
                     this->world->terrain
                 );
+                u64 tiles_per_chunk = this->world->terrain.tiles_per_chunk();
+                u64 min_ch_x = bridge->start_x / tiles_per_chunk;
+                u64 min_ch_z = bridge->start_z / tiles_per_chunk;
+                u64 max_ch_x = bridge->end_x / tiles_per_chunk;
+                u64 max_ch_z = bridge->end_z / tiles_per_chunk;
+                for(u64 ch_x = min_ch_x; ch_x <= max_ch_x; ch_x += 1) {
+                    for(u64 ch_z = min_ch_z; ch_z <= max_ch_z; ch_z += 1) {
+                        Terrain::ChunkData& chunk = this->world->terrain
+                            .chunk_at(ch_x, ch_z);
+                        for(size_t tp_i = 0; tp_i < chunk.track_pieces.size();) {
+                            const TrackPiece& tp = chunk.track_pieces[tp_i];
+                            u64 tp_x = ch_x * tiles_per_chunk + tp.x;
+                            u64 tp_z = ch_z * tiles_per_chunk + tp.z;
+                            bool is_affected = tp_x >= bridge->start_x 
+                                && tp_x <= bridge->end_x
+                                && tp_z >= bridge->start_z 
+                                && tp_z <= bridge->end_z
+                                && tp.elevation - bridge->floor_y <= 1;
+                            if(!is_affected) { 
+                                tp_i += 1;
+                                continue; 
+                            }
+                            chunk.track_pieces.erase(
+                                chunk.track_pieces.begin() + tp_i
+                            );
+                            this->world->terrain.reload_chunk_at(ch_x, ch_z);
+                        }
+                    }
+                }
                 u64 build_cost = bridge->length() * b_type.cost_per_tile;
                 u64 refunded = (u64) ((f64) build_cost * demolition_refund_factor);
                 size_t bridge_idx = bridge - this->world->terrain.bridges.data();

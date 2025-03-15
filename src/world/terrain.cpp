@@ -813,8 +813,8 @@ namespace houseofatmos::world {
         u64 min_x, u64 min_z, u64 max_x, u64 max_z,
         std::function<bool (i16)> modified 
     ) const {
-        // ensure that the ground beneath all buildings in a 1 chunk radius 
-        // don't get modified 
+        // ensure that the ground beneath all buildings and train tracks
+        // in a 1 chunk radius don't get modified 
         // (works as long as no building is larger than a chunk) 
         u64 start_ch_x = min_x / this->tiles_per_chunk();
         if(start_ch_x >= 1) { start_ch_x -= 1; }
@@ -842,6 +842,30 @@ namespace houseofatmos::world {
                     u64 i_start_z = std::max(min_z, b_start_z);
                     u64 i_end_x = std::min(max_x, b_end_x);
                     u64 i_end_z = std::min(max_z, b_end_z);
+                    // ensure that each point in the intersection does not get
+                    // modified
+                    bool any_modified = false;
+                    for(u64 i_x = i_start_x; i_x <= i_end_x; i_x += 1) {
+                        for(u64 i_z = i_start_z; i_z <= i_end_z; i_z += 1) {
+                            i16 elev = this->elevation_at(i_x, i_z);
+                            any_modified |= modified(elev);
+                            if(any_modified) { break; }
+                        }
+                        if(any_modified) { break; }
+                    }
+                    if(any_modified) { return false; }
+                }
+                for(const TrackPiece& tp: chunk.track_pieces) {
+                    u64 tp_x = ch_x * this->tiles_per_chunk() + tp.x;
+                    u64 tp_z = ch_z * this->tiles_per_chunk() + tp.z;
+                    // determine the intersection
+                    bool has_zero_overlap = max_x < tp_x || max_z < tp_z
+                        || min_x > (tp_x + 1) || min_z > (tp_z + 1);
+                    if(has_zero_overlap) { continue; }
+                    u64 i_start_x = std::max(min_x, tp_x);
+                    u64 i_start_z = std::max(min_z, tp_z);
+                    u64 i_end_x = std::min(max_x, tp_x + 1);
+                    u64 i_end_z = std::min(max_z, tp_z + 1);
                     // ensure that each point in the intersection does not get
                     // modified
                     bool any_modified = false;

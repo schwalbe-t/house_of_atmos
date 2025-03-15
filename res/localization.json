@@ -337,10 +337,10 @@
         "bg": "Тази сграда не може да бъде унищожена."
     },
     "toast_terrain_occupied": {
-        "_context": "Pop-up that notifies the user when they try to modify terrain under a building or bridge (note: localized text should be why they can't do it, not what they did)",
-        "de": "Gelände unter Gebäuden und Brücken kann nicht bearbeitet werden!",
-        "en": "Terrain occupied by buildings or bridges may not be modified!",
-        "bg": "Земя, заета от сгради или мостове, не може да се променя."
+        "_context": "Pop-up that notifies the user when they try to modify terrain under a building, bridge or train tracks (note: localized text should be why they can't do it, not what they did)",
+        "de": "Gelände unter Strukturen kann nicht bearbeitet werden!",
+        "en": "Terrain occupied by structures may not be modified!",
+        "bg": "Земя, заета от структури, не може да се променя."
     },
     "toast_invalid_building_placement": {
         "_context": "Pop-up that notifies the user when they try to place a building on uneven terrain (note: localized text should be why they can't do it, not what they did)",
