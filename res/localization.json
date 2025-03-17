@@ -726,6 +726,12 @@
         "de": "Baumfarm",
         "bg": "Горска ферма"
     },
+    "building_name_train_depot": {
+        "_context": "Name of a large building used to store and maintain trains",
+        "en": "Depot",
+        "de": "Depot",
+        "bg": "Депо"
+    },
 
 
 

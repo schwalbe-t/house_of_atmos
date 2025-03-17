@@ -651,7 +651,6 @@ namespace houseofatmos::world {
                 ) }
             }
         }),
-        BuildingGroup(Building::Stable, {}),
         BuildingGroup(Building::Pasture, {
             { 
                 { Conversion( 
@@ -676,7 +675,9 @@ namespace houseofatmos::world {
                     8.0 
                 ) }
             }
-        })
+        }),
+        BuildingGroup(Building::Stable, {}),
+        BuildingGroup(Building::TrainDepot, {})
     };
 
     static ui::Element create_building_selector(

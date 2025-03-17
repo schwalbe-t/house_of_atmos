@@ -255,6 +255,8 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON(Vec<2>(144, 128), Vec<2>(16, 16));
     static inline const ui::Background tree_farm
         = MAKE_HOA_UI_ICON(Vec<2>(160, 128), Vec<2>(16, 16));
+    static inline const ui::Background depot
+        = MAKE_HOA_UI_ICON(Vec<2>(176, 128), Vec<2>(16, 16));
 
     static inline const ui::Background wooden_bridge
         = MAKE_HOA_UI_ICON(Vec<2>(16, 144), Vec<2>(16, 16));

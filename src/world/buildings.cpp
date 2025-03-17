@@ -225,7 +225,27 @@ namespace houseofatmos::world {
             Building::TypeInfo::allow_destruction,
             5, // workers
             0 // residents
-        }
+        },
+        /* Type::TrainDepot */ {
+            "building_name_train_depot",
+            &ui_icon::depot,
+            Building::TypeInfo::keep_terrain,
+            { 
+                "res/buildings/depot.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            std::nullopt, 0.0,
+            { 
+                RelCollider({ -7.5, -0.5, -7.0 }, {  5.0, 1, 10.0 }),
+                RelCollider({ -2.5, -0.5, -7.5 }, { 10.0, 1, 15.0 })
+            },
+            3, 3, // size
+            std::nullopt, // no interior
+            5000, // building cost
+            Building::TypeInfo::allow_destruction,
+            20, // workers
+            0 // residents
+        },
     };
 
     const std::vector<Building::TypeInfo>& Building::types() {
