@@ -1683,7 +1683,9 @@ namespace houseofatmos::world {
                 if(preview_piece_info.ballastless.has_value()) {
                     this->preview_piece.type = *preview_piece_info.ballastless;
                 }
-                this->placement_valid &= !preview_piece_info.has_ballast;
+                bool has_ballast = TrackPiece::types()
+                    .at((size_t) this->preview_piece.type).has_ballast;
+                this->placement_valid &= !has_ballast;
             }
             f64 elevation = this->world->terrain.elevation_at(point);
             this->placement_valid &= point.y() >= elevation;
