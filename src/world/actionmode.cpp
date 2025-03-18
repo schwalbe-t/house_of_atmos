@@ -1677,6 +1677,14 @@ namespace houseofatmos::world {
         for(const Vec<3>& model_point: preview_piece_info.points) {
             Vec<3> point = (piece_instance * model_point.with(1.0))
                 .swizzle<3>("xyz");
+            const Bridge* on_bridge = this->world->terrain
+                .bridge_at((i64) tile_x, (i64) tile_z, point.y());
+            if(on_bridge != nullptr) {
+                if(preview_piece_info.ballastless.has_value()) {
+                    this->preview_piece.type = *preview_piece_info.ballastless;
+                }
+                this->placement_valid &= !preview_piece_info.has_ballast;
+            }
             f64 elevation = this->world->terrain.elevation_at(point);
             this->placement_valid &= point.y() >= elevation;
             this->placement_valid &= point.y() - elevation <= 1;

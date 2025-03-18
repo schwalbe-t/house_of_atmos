@@ -7,6 +7,12 @@ namespace houseofatmos::world {
 
     struct TrackPiece {
 
+        enum Type: u8 {
+            Straight, Diagonal, CurveLeft, CurveRight, 
+            Incline, CurveUp, CurveDown,
+            StraightBallastless
+        };
+
         struct TypeInfo {
             engine::Model::LoadArgs model;
             // must be applied to the model before rotation
@@ -14,14 +20,11 @@ namespace houseofatmos::world {
             // with 'base_transform' and rotation
             // (simply apply the built transform to get in world space)
             std::vector<Vec<3>> points;
+            bool has_ballast;
+            std::optional<Type> ballastless;
         };
 
         static const std::vector<TypeInfo>& types();
-
-        enum Type: u8 {
-            Straight, Diagonal, CurveLeft, CurveRight, 
-            Incline, CurveUp, CurveDown
-        };
 
         u8 x, z;
         Type type;
