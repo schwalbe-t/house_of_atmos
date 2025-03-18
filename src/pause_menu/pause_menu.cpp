@@ -145,7 +145,6 @@ namespace houseofatmos {
     }
 
     void PauseMenu::update(engine::Window& window) {
-        this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
         this->get(audio_const::soundtrack).update();
         if(this->ui.root.children.size() == 0) {

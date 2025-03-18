@@ -637,7 +637,8 @@ namespace houseofatmos::world {
     }
 
     u64 Terrain::track_pieces_at(
-        i64 tile_x_s, i64 tile_z_s, std::vector<TrackPiece>* collected_out
+        i64 tile_x_s, i64 tile_z_s, 
+        std::vector<const TrackPiece*>* collected_out
     ) const {
         if(tile_x_s < 0 || tile_z_s < 0) { return 0; }
         u64 tile_x = (u64) tile_x_s;
@@ -653,7 +654,7 @@ namespace houseofatmos::world {
             if(track_piece.x != rel_x || track_piece.z != rel_z) { continue; }
             collected_count += 1;
             if(collected_out == nullptr) { continue; }
-            collected_out->push_back(track_piece);
+            collected_out->push_back(&track_piece);
         }
         return collected_count;
     }

@@ -323,7 +323,13 @@ namespace houseofatmos::world {
         carriages(CarriageManager(
             CarriageNetwork(&this->terrain, &this->complexes)
         )), 
-        personal_horse(PersonalHorse(this->settings)) {}
+        trains(TrainManager(
+            TrackNetwork(&this->terrain, &this->complexes)
+        )),
+        personal_horse(PersonalHorse(this->settings)) {
+        this->carriages.find_paths(nullptr);
+        this->trains.find_paths(nullptr);        
+    }
 
 
     World::World(Settings&& settings, const engine::Arena& buffer): 
@@ -333,6 +339,9 @@ namespace houseofatmos::world {
             carriages(CarriageManager(
                 CarriageNetwork(&this->terrain, &this->complexes)
             )), 
+            trains(TrainManager(
+                TrackNetwork(&this->terrain, &this->complexes)
+            )),
             personal_horse(PersonalHorse(this->settings)) {
         const auto& serialized = buffer.value_at<World::Serialized>(0);
         this->save_path = std::string(std::string_view(
@@ -352,11 +361,16 @@ namespace houseofatmos::world {
             CarriageNetwork(&this->terrain, &this->complexes),
             serialized.carriages, buffer
         );
+        this->trains = TrainManager(
+            TrackNetwork(&this->terrain, &this->complexes),
+            serialized.trains, buffer
+        );
         this->personal_horse = PersonalHorse(
             this->settings, serialized.personal_horse
         );
         this->research = research::Research(serialized.research, buffer);
         this->carriages.find_paths(nullptr);
+        this->trains.find_paths(nullptr);
     }
 
     engine::Arena World::serialize() const {
@@ -365,12 +379,13 @@ namespace houseofatmos::world {
         size_t root_offset = buffer.alloc_array<World::Serialized>(nullptr, 1);
         assert(root_offset == 0);
         // we do not write to the allocated struct directly yet
-        // because these serialization calls may reallocate the buffer,
+        // because these serialization calls may grow and reallocate the buffer,
         // making the reference invalid
         Terrain::Serialized terrain = this->terrain.serialize(buffer);
         ComplexBank::Serialized complexes = this->complexes.serialize(buffer);
         Player::Serialized player = this->player.serialize();
         CarriageManager::Serialized carriages = this->carriages.serialize(buffer);
+        TrainManager::Serialized trains = this->trains.serialize(buffer);
         research::Research::Serialized research = this->research.serialize(buffer);
         auto& serialized = buffer.value_at<World::Serialized>(root_offset);
         serialized.format_version = World::current_format_version;
@@ -383,6 +398,7 @@ namespace houseofatmos::world {
         serialized.player = player;
         serialized.balance = this->balance;
         serialized.carriages = carriages;
+        serialized.trains = trains;
         serialized.personal_horse = this->personal_horse.serialize();
         serialized.research = research;
         return buffer;
@@ -405,19 +421,29 @@ namespace houseofatmos::world {
     }
 
     void World::trigger_autosave(
-        const engine::Window& window, Toasts* toasts
+        const engine::Window& window, Toasts& toasts
     ) {
         if(!this->saving_allowed) { return; }
         if(window.time() < this->last_autosave_time + World::autosave_period) {
             return;
         }
         bool saved = this->write_to_file();
-        if(saved && toasts != nullptr) {
-            toasts->add_toast("toast_auto_saved_game", {});
-        } else if(toasts != nullptr) {
-            toasts->add_error("toast_failed_to_auto_save_game", {});
+        if(saved) {
+            toasts.add_toast("toast_auto_saved_game", {});
+        } else {
+            toasts.add_error("toast_failed_to_auto_save_game", {});
         }
         this->last_autosave_time = window.time();
+    }
+
+    void World::update(
+        engine::Scene& scene, const engine::Window& window, Toasts& toasts
+    ) {
+        this->trigger_autosave(window, toasts);
+        this->carriages.update(scene, window);
+        this->trains.update(scene, window);
+        this->complexes.update(window, this->balance, this->research);
+        this->research.check_completion(toasts);
     }
 
 }

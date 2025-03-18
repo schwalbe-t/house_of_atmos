@@ -108,7 +108,12 @@ namespace houseofatmos::world {
 
     struct DefaultMode: ActionMode {
 
-        ui::Element* button = nullptr;
+        struct Selector {
+            u64 origin_x, origin_z;
+            ui::Element* element;
+        };
+
+        Selector selector;
 
         DefaultMode(ActionContext ctx): ActionMode(ctx) {}
 
@@ -116,7 +121,9 @@ namespace houseofatmos::world {
             this->ui.root.children.push_back(
                 ui::Element().as_phantom().as_movable()
             );
-            this->button = &this->ui.root.children.back();
+            this->selector.origin_x = 0;
+            this->selector.origin_z = 0;
+            this->selector.element = &this->ui.root.children.back();
         }
 
         void update(

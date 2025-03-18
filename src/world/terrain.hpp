@@ -238,7 +238,7 @@ namespace houseofatmos::world {
         const Resource* resource_at(i64 tile_x, i64 tile_z) const;
         u64 track_pieces_at(
             i64 tile_x, i64 tile_z, 
-            std::vector<TrackPiece>* collected_out = nullptr
+            std::vector<const TrackPiece*>* collected_out = nullptr
         ) const;
         bool valid_player_position(
             const AbsCollider& player_collider, bool water_is_obstacle

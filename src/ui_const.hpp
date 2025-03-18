@@ -265,6 +265,12 @@ namespace houseofatmos::ui_icon {
     static inline const ui::Background metal_bridge
         = MAKE_HOA_UI_ICON(Vec<2>(48, 144), Vec<2>(16, 16));
 
+    static inline const ui::Background round_carriage
+        = MAKE_HOA_UI_ICON(Vec<2>(112, 144), Vec<2>(16, 16));
+
+    static inline const ui::Background basic_locomotive
+        = MAKE_HOA_UI_ICON(Vec<2>(208, 144), Vec<2>(16, 16));
+
     static inline const ui::Background map_marker_player
         = MAKE_HOA_UI_ICON(Vec<2>(16, 168), Vec<2>(5, 6));
     static inline const ui::Background map_marker_selected

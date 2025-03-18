@@ -320,6 +320,10 @@ namespace houseofatmos::world {
                 &ui_icon::map_marker_carriage, 
                 this->local->text("ui_carriage")
             ))
+            .with_child(create_single_marker_info(
+                &ui_icon::map_marker_train, 
+                this->local->text("ui_train")
+            ))
             .as_movable()
         );
     }
@@ -417,6 +421,11 @@ namespace houseofatmos::world {
         for(Carriage& carriage: this->world->carriages.agents) {
             this->add_agent_markers(
                 carriage.as_abstract(), TerrainMap::carriage_display
+            );
+        }
+        for(Train& train: this->world->trains.agents) {
+            this->add_agent_markers(
+                train.as_abstract(), TerrainMap::train_display
             );
         }
         this->add_icon_marker(

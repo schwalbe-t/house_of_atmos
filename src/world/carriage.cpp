@@ -52,15 +52,7 @@ namespace houseofatmos::world {
     };
 
     bool CarriageNetwork::node_at_target(NodeId node, ComplexId target) {
-        for(auto [ox, oz]: valid_target_offsets) {
-            const Building* building = this->terrain
-                ->building_at((i64) node.first + ox, (i64) node.second + oz);
-            bool is_valid = building != nullptr
-                && building->complex.has_value()
-                && building->complex->index == target.index;
-            if(is_valid) { return true; }
-        }
-        return false;
+        return this->node_target_dist(node, target) <= 1;
     }
 
     static inline const f64 max_path_pos_var = 0.05;
@@ -135,6 +127,8 @@ namespace houseofatmos::world {
 
     static std::vector<Carriage::CarriageTypeInfo> carriage_infos = {
         /* Round */ {
+            "carriage_name_round",
+            &ui_icon::round_carriage,
             engine::Model::LoadArgs(
                 "res/entities/round_carriage.glb", Renderer::model_attribs,
                 engine::FaceCulling::Disabled
@@ -151,7 +145,8 @@ namespace houseofatmos::world {
             },
             0.5, // wheel radius
             100, // capacity
-            4.0  // speed
+            4.0, // speed
+            1000 // cost
         }
     };
 
@@ -175,29 +170,18 @@ namespace houseofatmos::world {
 
     Carriage::Carriage(
         const Serialized& serialized, const engine::Arena& buffer
-    ) {
+    ): Agent<CarriageNetwork>(serialized.agent, buffer) {
         this->type = serialized.type;
         buffer.copy_array_at_into(
             serialized.horses_offset, serialized.horses_count, this->horses
-        );
-        buffer.copy_array_at_into(
-            serialized.stop_offset, serialized.stop_count, this->schedule
-        );
-        this->stop_i = serialized.stop_i;
-        this->position = serialized.position;
-        buffer.copy_map_at_into(
-            serialized.items_offset, serialized.items_count, this->items
         );
     }
 
     Carriage::Serialized Carriage::serialize(engine::Arena& buffer) const {
         return Serialized(
+            Agent<CarriageNetwork>::serialize(buffer), // this is a non-static
             this->type,
-            this->horses.size(), buffer.alloc_array(this->horses),
-            this->schedule.size(), buffer.alloc_array(this->schedule),
-            this->stop_i,
-            this->position,
-            this->items.size(), buffer.alloc_map(this->items)
+            this->horses.size(), buffer.alloc_array(this->horses)
         );
     }
 

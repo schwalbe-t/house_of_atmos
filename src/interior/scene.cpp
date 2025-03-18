@@ -97,7 +97,6 @@ namespace houseofatmos::interior {
     }
 
     void Scene::update(engine::Window& window) {
-        this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
         this->get(audio_const::soundtrack).update();
         if(window.was_pressed(engine::Key::Escape)) {
@@ -126,11 +125,7 @@ namespace houseofatmos::interior {
             this->player.character.position, this->renderer, window
         );
         this->cutscene.update(window);
-        this->world->carriages.update(*this, window);
-        this->world->complexes.update(
-            window, this->world->balance, this->world->research
-        );
-        this->world->research.check_completion(this->toasts);
+        this->world->update(*this, window, this->toasts);
         this->world->balance.update_counter(*this->coin_counter);
         this->toasts.update(*this);
         this->ui.update(window);

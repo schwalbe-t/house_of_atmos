@@ -37,6 +37,19 @@ namespace houseofatmos::world {
             }
         };
 
+        static inline AgentDisplay train_display = {
+            &ui_icon::map_marker_train,
+            "ui_train", "ui_remove_train",
+            [](AbstractAgent agent, World& world) {
+                for(size_t t = 0; t < world.trains.agents.size(); t += 1) {
+                    Train& train = world.trains.agents[t];
+                    if(train.as_abstract().data != agent.data) { continue; }
+                    auto removed = world.trains.agents.begin() + t;
+                    world.trains.agents.erase(removed);
+                }
+            }
+        };
+
         private:
         u64 t_width, t_height;
         const engine::Localization::LoadArgs local_ref;

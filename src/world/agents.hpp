@@ -42,6 +42,8 @@ namespace houseofatmos::world {
 
         virtual NodeId closest_node_to(const Vec<3>& position) = 0;
 
+        virtual void reload() {}
+
         virtual void update(
             engine::Scene& scene, const engine::Window& window
         ) {
@@ -140,13 +142,14 @@ namespace houseofatmos::world {
             std::reverse(path.sections.begin(), path.sections.end());
             for(size_t sect_i = 0; sect_i < path.sections.size(); sect_i += 1) {
                 AgentPath<Network>::Section& section = path.sections[sect_i];
-                std::optional<NodeId> prev = sect_i > 0
-                    ? std::optional<NodeId>(path.sections[sect_i - 1].node) 
-                    : std::nullopt;
-                bool is_last_section = sect_i + 1 >= path.sections.size();
-                std::optional<NodeId> next = is_last_section
-                    ? std::optional<NodeId>(path.sections[sect_i + 1].node) 
-                    : std::nullopt;
+                std::optional<NodeId> prev = std::nullopt;
+                if(sect_i >= 1) { 
+                    prev = path.sections[sect_i - 1].node; 
+                }
+                std::optional<NodeId> next = std::nullopt;
+                if(sect_i + 1 < path.sections.size()) {
+                    next = path.sections[sect_i + 1].node;
+                }
                 network.collect_node_points(
                     prev, section.node, next, section.points
                 );
@@ -246,6 +249,13 @@ namespace houseofatmos::world {
         }
     };
 
+    struct SerializedAgent {
+        u64 stop_count, stop_offset;
+        u64 stop_i;
+        Vec<3> position;
+        u64 items_count, items_offset;
+    };
+
     template<typename Network>
     struct Agent {
 
@@ -311,8 +321,27 @@ namespace houseofatmos::world {
 
         public:
         Agent() {}
+        Agent(const SerializedAgent& serialized, const engine::Arena& buffer) {
+            buffer.copy_array_at_into(
+                serialized.stop_offset, serialized.stop_count, this->schedule
+            );
+            this->stop_i = serialized.stop_i;
+            this->position = serialized.position;
+            buffer.copy_map_at_into(
+                serialized.items_offset, serialized.items_count, this->items
+            );
+        }
         Agent(Agent&& other) noexcept = default;
         Agent& operator=(Agent&& other) noexcept = default;
+        
+        SerializedAgent serialize(engine::Arena& buffer) const {
+            return SerializedAgent(
+                this->schedule.size(), buffer.alloc_array(this->schedule),
+                this->stop_i,
+                this->position,
+                this->items.size(), buffer.alloc_map(this->items)
+            );
+        }
 
         virtual f64 current_speed(Network& network) = 0;
 
@@ -384,6 +413,7 @@ namespace houseofatmos::world {
         }
 
         bool find_path(Network& network) {
+            if(this->schedule.size() == 0) { this->state = AgentState::Idle; }
             bool requires_path = this->state == AgentState::Travelling 
                 || this->state == AgentState::Lost;
             if(!requires_path) { return false; }
@@ -479,6 +509,7 @@ namespace houseofatmos::world {
         }
 
         void find_paths(Toasts* toasts) {
+            this->network.reload();
             bool any_became_lost = false;
             for(Agent& agent: this->agents) {
                 bool was_lost = agent.current_state() == AgentState::Lost;

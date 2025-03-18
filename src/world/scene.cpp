@@ -384,7 +384,6 @@ namespace houseofatmos::world {
     }
 
     void Scene::update(engine::Window& window) {
-        this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
         this->get(audio_const::soundtrack).update();
         bool paused_game = window.was_pressed(engine::Key::Escape)
@@ -408,11 +407,7 @@ namespace houseofatmos::world {
         }
         implement_mode_keybinds(*this, window);
         update_ui_visibiliy(*this, window);
-        this->world->carriages.update(*this, window);
-        this->world->complexes.update(
-            window, this->world->balance, this->world->research
-        );
-        this->world->research.check_completion(this->toasts);
+        this->world->update(*this, window, this->toasts);
         this->world->balance.update_counter(*this->coin_counter);
         this->dialogues.update(
             *this, window, this->world->player.character.position

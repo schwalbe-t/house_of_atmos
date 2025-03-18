@@ -228,6 +228,12 @@
         "en": "Carriage",
         "bg": "Каруца"
     },
+    "ui_train": {
+        "_context": "Used as the title of the train info UI and the current position of a train in the map legend for the train markers",
+        "de": "Zug",
+        "en": "Train",
+        "bg": "Влак"
+    },
     "ui_status_no_instructions": {
         "_context": "Displayed as the status of a carriage (or other agent like a train) when its schedule (list of places to go to) is empty",
         "de": "Ohne Anweisungen",
@@ -259,6 +265,12 @@
         "de": "Kutsche entfernen",
         "en": "Remove carriage",
         "bg": "Премахвай каруца"
+    },
+    "ui_remove_train": {
+        "_context": "Text of the button used to remove / scrap (no refund) the train",
+        "de": "Zug entfernen",
+        "en": "Remove train",
+        "bg": "Премахвай влак"
     },
     "ui_schedule": {
         "_context": "The schedule (list of stops the carriage is scheduled to go to, and what to do once there) of a carriage (or other agent like a train)",
@@ -389,11 +401,23 @@
         "en": "There is no valid location for a carriage nearby!",
         "bg": "Няма валидна локация за каруци на около!"
     },
+    "toast_no_valid_train_location": {
+        "_context": "Pop-up that informs the user when they try to create a train at a depot, but the depot does not have any tracks in front of it",
+        "de": "Kein gültiger Ort für einen Zug in der Nähe!",
+        "en": "There is no valid location for a train nearby!",
+        "bg": "Няма валидна локация за влакове на около!"
+    },
     "toast_carriage_lost": {
         "_context": "Pop-up that informs that a carriage has now become lost (meaning the carriage can't find a path to its next scheduled stop, related to 'ui_status_lost')",
-        "de": "Eine Kutsche ist verloren!",
-        "en": "A carriage is lost!",
-        "bg": "Каруца е изгубена!"
+        "de": "Eine Kutsche hat sich verirrt!",
+        "en": "A carriage got lost!",
+        "bg": "Каруца се изгуби!"
+    },
+    "toast_train_lost": {
+        "_context": "Pop-up that informs that a train has now become lost (meaning the train can't find a path to its next scheduled stop, related to 'ui_status_lost')",
+        "de": "Ein Zug hat sich verirrt!",
+        "en": "A train got lost!",
+        "bg": "Влак се изгуби!"
     },
     "toast_personal_horse_travelling": {
         "_context": "Shown when the personal horse is instructed to come to the player usign the [H] button.",
@@ -752,6 +776,24 @@
         "de": "Stahlbrücke",
         "en": "Steel Bridge",
         "bg": "Железен мост"
+    },
+
+
+
+    "carriage_name_round": {
+        "_context": "Name of the carriage type that is used to transport goods",
+        "de": "Güterwagen",
+        "en": "Goods wagon",
+        "bg": "Стоков вагон"
+    },
+
+
+
+    "locomotive_name_basic": {
+        "_context": "Name of the most basic type of locomotive, inspired by the 'Planet' locomotive built by Robert Stephenson.",
+        "de": "\"Mond\"",
+        "en": "\"Moon\"",
+        "bg": "\"Луна\""
     },
 
 

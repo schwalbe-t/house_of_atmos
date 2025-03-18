@@ -77,6 +77,8 @@ namespace houseofatmos::world {
                 f64 angle;
             };
             
+            std::string_view local_name;
+            const ui::Background* icon;
             engine::Model::LoadArgs model;
             Vec<3> carriage_offset;
             std::vector<Vec<3>> horse_offsets;
@@ -84,6 +86,7 @@ namespace houseofatmos::world {
             f64 wheel_radius;
             u64 capacity;
             f64 speed;
+            u64 cost;
         };
 
         static const std::vector<CarriageTypeInfo>& carriage_types();
@@ -105,13 +108,9 @@ namespace houseofatmos::world {
 
 
         struct Serialized {
+            SerializedAgent agent;
             CarriageType type;
             u64 horses_count, horses_offset;
-
-            u64 stop_count, stop_offset;
-            u64 stop_i;
-            Vec<3> position;
-            u64 items_count, items_offset;
         };
 
         CarriageType type;

@@ -6,6 +6,7 @@
 #include "complex.hpp"
 #include "../player.hpp"
 #include "carriage.hpp"
+#include "train.hpp"
 #include "personal_horse.hpp"
 
 namespace houseofatmos::world {
@@ -26,6 +27,7 @@ namespace houseofatmos::world {
             Player::Serialized player;
             Balance balance;
             CarriageManager::Serialized carriages;
+            TrainManager::Serialized trains;
             PersonalHorse::Serialized personal_horse;
             research::Research::Serialized research;
         };
@@ -43,6 +45,7 @@ namespace houseofatmos::world {
         Player player;
         Balance balance;
         CarriageManager carriages;
+        TrainManager trains;
         PersonalHorse personal_horse;
         research::Research research;
 
@@ -59,6 +62,8 @@ namespace houseofatmos::world {
         );
         std::pair<u64, u64> generate_mansion();
 
+        void trigger_autosave(const engine::Window& window, Toasts& toasts);
+
         public:
         World(
             Settings&& settings, 
@@ -71,8 +76,8 @@ namespace houseofatmos::world {
         engine::Arena serialize() const;
         bool write_to_file(bool force_creation = false);
 
-        void trigger_autosave(
-            const engine::Window& window, Toasts* toasts = nullptr
+        void update(
+            engine::Scene& scene, const engine::Window& window, Toasts& toasts
         );
 
     };

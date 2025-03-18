@@ -194,7 +194,6 @@ namespace houseofatmos::research {
 
 
     void View::update(engine::Window& window) {
-        this->world->trigger_autosave(window, &this->toasts);
         this->world->settings.apply(*this, window);
         this->get(audio_const::soundtrack).update();
         if(this->ui.root.children.size() == 0) {
@@ -205,11 +204,7 @@ namespace houseofatmos::research {
         if(was_closed) {
             window.set_scene(std::shared_ptr<engine::Scene>(this->previous));
         }
-        this->world->carriages.update(*this, window);
-        this->world->complexes.update(
-            window, this->world->balance, this->world->research
-        );
-        this->world->research.check_completion(this->toasts);
+        this->world->update(*this, window, this->toasts);
         this->update_view(window);
         this->toasts.update(*this);
         this->ui.update(window);
