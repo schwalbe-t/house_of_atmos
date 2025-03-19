@@ -59,11 +59,58 @@ namespace houseofatmos::world {
 
     struct Train: Agent<TrackNetwork> {
 
+        struct Car {
+            engine::Model::LoadArgs model;
+            Vec<3> model_heading;
+            f64 length;
+            f64 front_axle, back_axle;
+            f64 wheel_radius;
+        };
+
+        static inline const u64 train_car_cost = 250;
+
+        struct LocomotiveTypeInfo {
+            std::string_view local_name;
+            const ui::Background* icon;
+            std::vector<Car> loco_cars;
+            const Car& car_type;
+            u64 max_car_count;
+            f64 speed;
+            u64 cost;
+        };
+
+        static const std::vector<LocomotiveTypeInfo>& locomotive_types();
+
+        enum LocomotiveType {
+            Basic
+        };
+
+
+        static void load_resources(engine::Scene& scene) {
+            for(const auto& loco_type: Train::locomotive_types()) {
+                for(const auto& car: loco_type.loco_cars) {
+                    scene.load(car.model);
+                }
+                scene.load(loco_type.car_type.model);
+            }
+        }
+
+
         struct Serialized {
             SerializedAgent agent;
+            LocomotiveType locomotive;
+            u64 car_count;
         };
+
+        struct CarState {
+            f64 yaw = 0.0, pitch = 0.0;
+        };
+
+        LocomotiveType loco_type;
+        u64 car_count;
+        std::vector<CarState> cars;
         
-        Train(Vec<3> position);
+        Train(LocomotiveType loco_type, Vec<3> position);
         Train(const Serialized& serialized, const engine::Arena& buffer);
 
         Train(Train&& other) noexcept = default;
@@ -72,13 +119,35 @@ namespace houseofatmos::world {
         Serialized serialize(engine::Arena& buffer) const;
 
 
-        f64 current_speed(TrackNetwork& network) override {
-            (void) network;
-            return 7.5;
+        static inline const f64 car_padding = 0.75;
+
+        f64 length() const { 
+            const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
+                .at((size_t) this->loco_type);
+            u64 car_count = loco_info.loco_cars.size() + this->car_count;
+            return this->offset_of_car(car_count); 
         }
 
+        const Car& car_at(size_t car_idx) const {
+            const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
+                .at((size_t) this->loco_type);
+            bool is_loco = car_idx < loco_info.loco_cars.size();
+            if(is_loco) { return loco_info.loco_cars[car_idx]; }
+            return loco_info.car_type;
+        }
+
+        f64 offset_of_car(size_t car_idx) const;
+
+
+        f64 current_speed(TrackNetwork& network) override {
+            (void) network;
+            return Train::locomotive_types().at((size_t) this->loco_type).speed;
+        }
+
+        static inline const u64 item_capacity_per_car = 200;
+
         u64 item_storage_capacity() override {
-            return 500;
+            return this->car_count * Train::item_capacity_per_car;
         }
 
         void update(
@@ -86,7 +155,7 @@ namespace houseofatmos::world {
             engine::Scene& scene, const engine::Window& window
         ) override;
 
-        Vec<3> find_heading() const;
+        Vec<3> find_heading(size_t car_idx) const;
 
         void render(
             Renderer& renderer, TrackNetwork& network,

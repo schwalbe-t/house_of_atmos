@@ -20,10 +20,12 @@ namespace houseofatmos::world {
         bool found_pos = false;
         const Building::TypeInfo& stable
             = Building::types().at((size_t) Building::Stable);
-        i64 start_x = stable_cx - stable.width / 2 - carr_spawn_d;
-        i64 start_z = stable_cz - stable.height / 2 - carr_spawn_d;
-        i64 end_x = stable_cx + stable.width / 2 + carr_spawn_d;
-        i64 end_z = stable_cz + stable.height / 2 + carr_spawn_d;
+        u64 stable_x = stable_cx - (stable.width / 2);
+        u64 stable_z = stable_cz - (stable.height / 2);
+        i64 start_x = stable_x - carr_spawn_d;
+        i64 start_z = stable_z - carr_spawn_d;
+        i64 end_x = stable_x + stable.width + carr_spawn_d;
+        i64 end_z = stable_z + stable.height + carr_spawn_d;
         for(i64 x = start_x; x < end_x; x += 1) {
             for(i64 z = start_z; z < end_z; z += 1) {
                 if(x < 0 || (u64) x >= world.terrain.width_in_tiles()) { continue; }
@@ -56,10 +58,9 @@ namespace houseofatmos::world {
         speaker.play(scene.get(sound::horse));
     }
 
-    static const u64 locomotive_cost = 5000;
-
     static void summon_locomotive(
-        World& world, u64 depot_cx, u64 depot_cz, Toasts& toasts
+        World& world, u64 depot_cx, u64 depot_cz, Toasts& toasts,
+        Train::LocomotiveType loco_type
     ) {
         Vec<3> pos;
         bool found_pos = false;
@@ -82,8 +83,9 @@ namespace houseofatmos::world {
             toasts.add_error("toast_no_valid_train_location", {});
             return;
         }
-        if(!world.balance.pay_coins(locomotive_cost, toasts)) { return; }
-        world.trains.agents.push_back(Train(pos));
+        u64 cost = Train::locomotive_types().at((size_t) loco_type).cost;
+        if(!world.balance.pay_coins(cost, toasts)) { return; }
+        world.trains.agents.push_back(Train(loco_type, pos));
     }
 
     template<typename C>
@@ -165,21 +167,16 @@ namespace houseofatmos::world {
                 case Building::TrainDepot: {
                     this->selector.origin_x = asx;
                     this->selector.origin_z = asz;
-                    u8 dummy = 0;
-                    *this->selector.element
-                        = create_agent_selector<u8>(
-                        this->local, "ui_train", { &dummy, 1 },
-                        [](auto ct) -> std::string_view { 
-                            (void) ct; return "locomotive_name_basic";
-                        },
-                        [](auto ct) { 
-                            (void) ct; return &ui_icon::basic_locomotive; 
-                        },
+                    *this->selector.element 
+                        = create_agent_selector<Train::LocomotiveTypeInfo>(
+                        this->local, "ui_train", Train::locomotive_types(),
+                        [](auto ct) { return ct.local_name; },
+                        [](auto ct) { return ct.icon; },
                         [this, asx, asz](auto ct, auto ti) {
                             (void) ct;
-                            (void) ti;
                             summon_locomotive(
-                                *this->world, asx, asz, this->toasts
+                                *this->world, asx, asz, this->toasts,
+                                (Train::LocomotiveType) ti
                             );
                         }
                     );

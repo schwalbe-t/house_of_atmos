@@ -74,7 +74,7 @@ namespace houseofatmos::world {
     Scene::Scene(std::shared_ptr<World> world)
     : terrain_map(TerrainMap(
         world->settings.localization(), 
-        world, this->ui
+        world, this->ui, this->toasts
     ))
     , toasts(Toasts(world->settings))
     , dialogues(DialogueManager(world->settings)) {
@@ -96,6 +96,7 @@ namespace houseofatmos::world {
         human::load_resources(*this);
         ActionMode::load_resources(*this);
         Carriage::load_resources(*this);
+        Train::load_resources(*this);
         PersonalHorse::load_resources(*this);
         ui::Manager::load_shaders(*this);
         ui_background::load_textures(*this);
@@ -452,6 +453,10 @@ namespace houseofatmos::world {
         this->world->terrain.render_loaded_chunks(*this, this->renderer, window);
         this->world->player.render(*this, window, this->renderer);
         this->world->carriages.render(
+            this->world->player.character.position, this->draw_distance_units(),
+            this->renderer, *this, window
+        );
+        this->world->trains.render(
             this->world->player.character.position, this->draw_distance_units(),
             this->renderer, *this, window
         );

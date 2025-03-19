@@ -174,12 +174,6 @@
         "en": "Bridge Selection",
         "bg": "Избиране на мост"
     },
-    "ui_create_carriage": {
-        "_context": "Text of the button used to create/buy a carriage",
-        "de": "Kutsche erstellen",
-        "en": "Create carriage",
-        "bg": "Създай каруца"
-    },
     "ui_building_complex": {
         "_context": "Title of the building complex (a collection of buildings) information UI",
         "de": "Gebäudekomplex",
@@ -271,6 +265,18 @@
         "de": "Zug entfernen",
         "en": "Remove train",
         "bg": "Премахвай влак"
+    },
+    "ui_train_add_car": {
+        "_context": "Text of the button used to append a car to a train",
+        "de": "Wagen hinzufügen",
+        "en": "Append car",
+        "bg": "Добавяне на вагон"
+    },
+    "ui_train_remove_car": {
+        "_context": "Text of the button used to remove a car from a train",
+        "de": "Wagen entfernen",
+        "en": "Remove car",
+        "bg": "Премахване на вагон"
     },
     "ui_schedule": {
         "_context": "The schedule (list of stops the carriage is scheduled to go to, and what to do once there) of a carriage (or other agent like a train)",

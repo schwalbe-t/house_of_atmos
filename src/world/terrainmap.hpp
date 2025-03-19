@@ -18,10 +18,16 @@ namespace houseofatmos::world {
         };
 
         struct AgentDisplay {
+            struct Button {
+                std::string_view local_text;
+                void (*handler)(AbstractAgent, World&, Toasts&);
+            };
+
             const ui::Background* marker;
             std::string_view local_title;
             std::string_view local_remove;
-            void (*remove_impl)(AbstractAgent agent, World& world);
+            void (*remove_impl)(AbstractAgent, World&);
+            std::vector<Button> buttons;
         };
 
         static inline AgentDisplay carriage_display = {
@@ -34,7 +40,8 @@ namespace houseofatmos::world {
                     auto removed = world.carriages.agents.begin() + c;
                     world.carriages.agents.erase(removed);
                 }
-            }
+            },
+            {}
         };
 
         static inline AgentDisplay train_display = {
@@ -47,6 +54,30 @@ namespace houseofatmos::world {
                     auto removed = world.trains.agents.begin() + t;
                     world.trains.agents.erase(removed);
                 }
+            },
+            {
+                AgentDisplay::Button(
+                    "ui_train_add_car", 
+                    [](AbstractAgent agent, World& w, Toasts& t) {
+                        auto t_agent = (Agent<TrackNetwork>*) agent.data;
+                        auto train = dynamic_cast<Train*>(t_agent);
+                        const auto& loco_info = Train::locomotive_types()
+                            .at((size_t) train->loco_type);
+                        bool append = train->car_count < loco_info.max_car_count
+                            && w.balance.pay_coins(Train::train_car_cost, t);
+                        if(append) { train->car_count += 1; }
+                    }
+                ),
+                AgentDisplay::Button(
+                    "ui_train_remove_car", 
+                    [](AbstractAgent agent, World& world, Toasts& toasts) {
+                        (void) world;
+                        (void) toasts;
+                        auto t_agent = (Agent<TrackNetwork>*) agent.data;
+                        auto train = dynamic_cast<Train*>(t_agent);
+                        if(train->car_count > 0) { train->car_count -= 1; }
+                    }
+                )
             }
         };
 
@@ -56,6 +87,7 @@ namespace houseofatmos::world {
         const engine::Localization* local = nullptr;
         std::shared_ptr<World> world;
         ui::Manager& ui;
+        Toasts& toasts;
         engine::Image rendered_img = engine::Image(0, 0);
         engine::Texture rendered_tex = engine::Texture(1, 1);
         engine::Texture output_tex = engine::Texture(1, 1);
@@ -100,8 +132,9 @@ namespace houseofatmos::world {
 
         TerrainMap(
             engine::Localization::LoadArgs local_ref,
-            std::shared_ptr<World> world, ui::Manager& ui
-        ): local_ref(std::move(local_ref)), world(std::move(world)), ui(ui) {
+            std::shared_ptr<World> world, ui::Manager& ui, Toasts& toasts
+        ): local_ref(std::move(local_ref)), world(std::move(world)), 
+                ui(ui), toasts(toasts) {
             this->t_width = this->world->terrain.width_in_tiles();
             this->t_height = this->world->terrain.height_in_tiles();
             this->rendered_img = engine::Image(this->t_width, this->t_height);

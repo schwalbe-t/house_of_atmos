@@ -1046,48 +1046,64 @@ namespace houseofatmos::world {
             .with_size(0, 0, ui::size::units_with_children)
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Vertical)
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(
-                    this->local->text(agent_display.local_title), &ui_font::dark
-                )
-                .with_padding(1)
-                .as_movable()
-            )
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(status_text, &ui_font::dark)
-                .with_padding(3)
-                .as_movable()
-            )
-            .with_child(
-                make_ui_button(this->local->text(agent_display.local_remove))
-                    .with_click_handler([this, agent, ag_d = &agent_display]() {
-                        ag_d->remove_impl(agent, *this->world);
-                        this->selected_info_right->hidden = true;
-                        this->selected_info_bottom->hidden = true;
-                        this->selected_type = SelectionType::None;
-                        this->adding_stop = false;
-                    })
-                    .with_padding(4)
-                    .as_movable()
-            )
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_schedule"), &ui_font::dark)
-                .with_padding(1)
-                .as_movable()
-            )
-            .with_child(schedule_info.with_padding(3.0).as_movable())
-            .with_child(std::move(add_stop))
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_on_board"), &ui_font::dark)
-                .with_padding(1)
-                .as_movable()
-            )
-            .with_child(storage.with_padding(3.0).as_movable())
             .as_movable();
+        info.children.push_back(ui::Element()
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(
+                this->local->text(agent_display.local_title), &ui_font::dark
+            )
+            .with_padding(1)
+            .as_movable()
+        );
+        info.children.push_back(ui::Element()
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(status_text, &ui_font::dark)
+            .with_padding(3)
+            .as_movable()
+        );
+        ui::Element buttons = ui::Element()
+            .as_phantom()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+            buttons.children.push_back(
+            make_ui_button(this->local->text(agent_display.local_remove))
+                .with_click_handler([this, agent, ag_d = &agent_display]() {
+                    ag_d->remove_impl(agent, *this->world);
+                    this->selected_info_right->hidden = true;
+                    this->selected_info_bottom->hidden = true;
+                    this->selected_type = SelectionType::None;
+                    this->adding_stop = false;
+                })
+                .with_padding(2)
+                .as_movable()
+        );
+        for(const auto& button: agent_display.buttons) {
+            ui::Element button_elem 
+                = make_ui_button(this->local->text(button.local_text))
+                .with_click_handler([h = button.handler, agent, this]() {
+                    h(agent, *this->world, this->toasts);
+                })
+                .with_padding(2)
+                .as_movable();
+            buttons.children.push_back(std::move(button_elem));
+        }
+        info.children.push_back(buttons.with_padding(2).as_movable());
+        info.children.push_back(ui::Element()
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(this->local->text("ui_schedule"), &ui_font::dark)
+            .with_padding(1)
+            .as_movable()
+        );
+        info.children.push_back(schedule_info.with_padding(3.0).as_movable());
+        info.children.push_back(std::move(add_stop));
+        info.children.push_back(ui::Element()
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(this->local->text("ui_on_board"), &ui_font::dark)
+            .with_padding(1)
+            .as_movable()
+        );
+        info.children.push_back(storage.with_padding(3.0).as_movable());
         return info;
     }
 

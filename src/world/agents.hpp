@@ -287,19 +287,19 @@ namespace houseofatmos::world {
 
         void do_stop_transfer(Network& network, const AgentStop& stop) {
             Complex& complex = network.complexes->get(stop.target);
-            u64 s_num;
-            switch(stop.unit) {
-                case AgentStop::Fixed: 
-                    s_num = (u64) stop.amount.fixed; break;
-                case AgentStop::Fraction: 
-                    s_num = (u64) stop.amount.fract; break;
-            }
             u64 p_num;
             switch(stop.action) {
                 case AgentStop::Load: 
                     p_num = complex.stored_count(stop.item); break;
                 case AgentStop::Unload: 
                     p_num = this->items[stop.item]; break;
+            }
+            u64 s_num;
+            switch(stop.unit) {
+                case AgentStop::Fixed: 
+                    s_num = (u64) stop.amount.fixed; break;
+                case AgentStop::Fraction: 
+                    s_num = (u64) ((f64) p_num * stop.amount.fract); break;
             }
             u64 planned = std::min(s_num, p_num);
             switch(stop.action) {

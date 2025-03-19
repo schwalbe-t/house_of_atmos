@@ -52,7 +52,7 @@ namespace houseofatmos::world {
     };
 
     bool CarriageNetwork::node_at_target(NodeId node, ComplexId target) {
-        return this->node_target_dist(node, target) <= 1;
+        return this->node_target_dist(node, target) <= 2;
     }
 
     static inline const f64 max_path_pos_var = 0.05;
