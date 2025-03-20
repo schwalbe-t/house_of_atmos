@@ -37,9 +37,11 @@ namespace houseofatmos::world {
             ),
             Mat<4>::scale(Vec<3>(-1.0, 1.0, 1.0)), // flip along X axis
             {
-                Vec<3>(2.5, 0.0, -2.5),
-                Vec<3>(0.5, 0.0,  0.0),
-                Vec<3>(0.0, 0.0,  2.5)
+                Vec<3>(2.50, 0.0, -2.50),
+                Vec<3>(1.25, 0.0, -1.25),
+                Vec<3>(0.50, 0.0,  0.00),
+                Vec<3>(0.25, 0.0,  1.25),
+                Vec<3>(0.00, 0.0,  2.50)
             },
             true, // has ballast
             std::nullopt
