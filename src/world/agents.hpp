@@ -65,6 +65,8 @@ namespace houseofatmos::world {
         struct Section {
             NodeId node;
             std::vector<Vec<3>> points; 
+
+            Section(NodeId node): node(node) {}
         };
 
         Vec<3> start;
@@ -130,9 +132,9 @@ namespace houseofatmos::world {
             Network& network, const NodeSearchStates& nodes, 
             Vec<3> start_pos, NodeId last
         ) {
-            NodeId current = last;
-            AgentPath<Network> path;
+            auto path = AgentPath<Network>();
             path.start = start_pos;
+            NodeId current = last;
             for(;;) {
                 const NodeSearchState& state = nodes.at(current);
                 path.sections.push_back(AgentPath<Network>::Section(current));
@@ -142,14 +144,12 @@ namespace houseofatmos::world {
             std::reverse(path.sections.begin(), path.sections.end());
             for(size_t sect_i = 0; sect_i < path.sections.size(); sect_i += 1) {
                 AgentPath<Network>::Section& section = path.sections[sect_i];
-                std::optional<NodeId> prev = std::nullopt;
-                if(sect_i >= 1) { 
-                    prev = path.sections[sect_i - 1].node; 
-                }
-                std::optional<NodeId> next = std::nullopt;
-                if(sect_i + 1 < path.sections.size()) {
-                    next = path.sections[sect_i + 1].node;
-                }
+                std::optional<NodeId> prev = sect_i >= 1
+                    ? std::optional<NodeId>(path.sections[sect_i - 1].node)
+                    : std::nullopt;
+                std::optional<NodeId> next = sect_i + 1 < path.sections.size()
+                    ? std::optional<NodeId>(path.sections[sect_i + 1].node)
+                    : std::nullopt;
                 network.collect_node_points(
                     prev, section.node, next, section.points
                 );

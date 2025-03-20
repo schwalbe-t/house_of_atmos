@@ -116,7 +116,7 @@ namespace houseofatmos::world {
         );
         std::vector<Vec<3>> points = TrackPiece::types()
             .at((size_t) node->type).points;
-        if(prev.has_value()) {
+        if(prev.has_value() && *prev != nullptr) {
             NodeId prev_id = *next;
             Node prev_data = this->graph[prev_id];
             std::vector<Vec<3>> prev_pts = TrackPiece::types()
@@ -130,7 +130,7 @@ namespace houseofatmos::world {
             );
             if(!connected) { std::reverse(points.begin(), points.end()); }
         }
-        if(next.has_value()) {
+        if(next.has_value() && *next != nullptr) {
             NodeId next_id = *next;
             Node next_data = this->graph[next_id];
             std::vector<Vec<3>> next_pts = TrackPiece::types()
@@ -152,10 +152,22 @@ namespace houseofatmos::world {
 
     TrackNetwork::NodeId TrackNetwork::closest_node_to(const Vec<3>& position) {
         Vec<3> tile = position / this->terrain->units_per_tile();
+        i64 cx = (i64) tile.x();
+        i64 cz = (i64) tile.z();
         std::vector<const TrackPiece*> pieces;
-        this->terrain->track_pieces_at((i64) tile.x(), (i64) tile.z(), &pieces);
-        if(pieces.size() == 0) { return nullptr; }
-        return pieces[0];
+        for(i64 cd = 0; cd < 5; cd += 1) {
+            for(i64 ox = -cd; ox <= cd; ox += 1) {
+                for(i64 oz = -cd; oz <= cd; oz += 1) {
+                    bool is_inside = std::abs(ox) != cd && std::abs(oz) != cd;
+                    if(is_inside) { continue; }
+                    pieces.clear();
+                    this->terrain->track_pieces_at(cx + ox, cz + oz, &pieces);
+                    if(pieces.size() == 0) { continue; }
+                    return pieces[0];
+                }
+            }
+        }
+        return nullptr;
     }
 
 
