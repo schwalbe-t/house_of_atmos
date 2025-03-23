@@ -92,7 +92,7 @@ namespace houseofatmos::world {
         static const std::vector<CarriageTypeInfo>& carriage_types();
 
         enum CarriageType {
-            Round
+            Round, Passenger
         };
 
 

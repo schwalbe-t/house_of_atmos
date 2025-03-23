@@ -147,6 +147,28 @@ namespace houseofatmos::world {
             100, // capacity
             4.0, // speed
             1000 // cost
+        },
+        /* Passenger */ {
+            "carriage_name_passenger",
+            &ui_icon::passenger_carriage,
+            engine::Model::LoadArgs(
+                "res/entities/passenger_carriage.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            ),
+            Vec<3>(0.0, 0.0, -1.5),
+            { // horses
+                Vec<3>(0.0, 0.0, 4.5)
+            },
+            {
+                (Carriage::CarriageTypeInfo::Driver) {
+                    Vec<3>(0.0, 1.2, 2.35),
+                    pi / 2.0 // 90 degrees
+                }
+            },
+            0.5, // wheel radius
+            0, // capacity
+            5.0, // speed
+            1500 // cost
         }
     };
 

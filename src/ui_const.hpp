@@ -267,6 +267,8 @@ namespace houseofatmos::ui_icon {
 
     static inline const ui::Background round_carriage
         = MAKE_HOA_UI_ICON(Vec<2>(112, 144), Vec<2>(16, 16));
+    static inline const ui::Background passenger_carriage
+        = MAKE_HOA_UI_ICON(Vec<2>(128, 144), Vec<2>(16, 16));
 
     static inline const ui::Background basic_locomotive
         = MAKE_HOA_UI_ICON(Vec<2>(208, 144), Vec<2>(16, 16));

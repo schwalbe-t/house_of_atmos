@@ -788,9 +788,15 @@
 
     "carriage_name_round": {
         "_context": "Name of the carriage type that is used to transport goods",
-        "de": "Güterwagen",
-        "en": "Goods wagon",
-        "bg": "Стоков вагон"
+        "de": "Güterkutsche",
+        "en": "Goods carriage",
+        "bg": "Товарна каруца"
+    },
+    "carriage_name_passenger": {
+        "_context": "Name of the carriage type that is used to transport passengers",
+        "de": "Personenkutsche",
+        "en": "Passenger carriage",
+        "bg": "Пътническа каруца"
     },
 
 
