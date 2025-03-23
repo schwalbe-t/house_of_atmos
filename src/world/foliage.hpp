@@ -26,8 +26,7 @@ namespace houseofatmos::world {
         
 
         enum Type {
-            Grass = 0,
-            Tree = 1
+            Grass, Birch, Rock, BirchSapling, Pine, PineSapling
         };
 
         Type type;
