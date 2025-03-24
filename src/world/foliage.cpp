@@ -121,7 +121,20 @@ namespace houseofatmos::world {
                      : nmap < 0.6? 0.15  // for 20% of area => 15% chance
                      :             0.05; // for 40% of area =>  5% chance
             }
-        }
+        },
+        /* Mushroom */ {
+            {
+                "res/foliage/mushroom.glb", Renderer::model_attribs,
+                engine::FaceCulling::Enabled
+            },
+            RelCollider::none(),
+            1,
+            [](f64 nmap) {
+                return nmap < 0.4? 0     // for 40% of area => 0.0% chance
+                     : nmap < 0.6? 0.025 // for 20% of area => 2.5% chance
+                     :             0.05; // for 40% of area => 5.0% chance
+            }
+        },
     };
 
     const std::vector<Foliage::TypeInfo>& Foliage::types() {

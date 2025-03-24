@@ -100,7 +100,7 @@ namespace houseofatmos {
     }
 
     void DialogueManager::update(
-        engine::Scene& scene, const engine::Window& window, 
+        engine::Scene& scene, engine::Window& window, 
         const Vec<3>& observer
     ) {
         for(engine::Speaker& speaker: this->speakers) {
@@ -123,9 +123,10 @@ namespace houseofatmos {
         }
         f64 distance = (observer - dialogue.origin).len();
         bool requested_skip = window.was_pressed(engine::Button::Left)
-            || window.was_pressed(engine::Key::Enter)
-            || window.was_pressed(engine::Key::Space)
             || window.was_pressed(engine::Key::E);
+        if(window.was_pressed(engine::Key::E)) {
+            window.cancel(engine::Key::E);
+        }
         bool skipped = (this->waiting() && requested_skip)
             || distance > dialogue.max_distance;
         if(skipped) {

@@ -96,7 +96,7 @@ namespace houseofatmos {
         ui::Element create_container();
 
         void update(
-            engine::Scene& scene, const engine::Window& window,
+            engine::Scene& scene, engine::Window& window,
             const Vec<3>& observer
         );
 

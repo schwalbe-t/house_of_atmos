@@ -27,7 +27,7 @@ namespace houseofatmos::world {
 
         enum Type {
             Grass, Birch, Rock, BirchSapling, Pine, PineSapling, Fern,
-            BlueFlowers, RedFlowers, YellowFlowers
+            BlueFlowers, RedFlowers, YellowFlowers, Mushroom
         };
 
         Type type;
