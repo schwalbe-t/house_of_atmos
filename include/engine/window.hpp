@@ -80,6 +80,10 @@ namespace houseofatmos::engine {
             return !this->keys_down_curr[(size_t) key]
                 && this->keys_down_last[(size_t) key];
         }
+        void cancel(Key key) {
+            this->keys_down_curr[(size_t) key] = false;
+            this->keys_down_last[(size_t) key] = false;
+        }
         
         const Vec<2>& cursor_pos_px() const { return this->mouse_pos; }
         const Vec<2> cursor_pos_ndc() const {
@@ -100,6 +104,10 @@ namespace houseofatmos::engine {
         bool was_released(Button button) const {
             return !this->buttons_down_curr[(size_t) button]
                 && this->buttons_down_last[(size_t) button];
+        }
+        void cancel(Button button) {
+            this->buttons_down_curr[(size_t) button] = false;
+            this->buttons_down_curr[(size_t) button] = false;
         }
         const Vec<2>& scrolled() const { return this->scroll_dist; }
 

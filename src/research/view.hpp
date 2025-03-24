@@ -35,7 +35,7 @@ namespace houseofatmos::research {
 
         engine::Texture black_backdrop = engine::Texture(16, 16);
         std::optional<engine::Texture> background = std::nullopt;
-        ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
+        ui::Manager ui = ui::Manager(0.0);
         ui::Element* view_root = nullptr;
         f64 view_update_timer = 0.0;
         Toasts toasts;

@@ -38,7 +38,7 @@ namespace houseofatmos {
         world::Terrain terrain = world::Terrain(
             32, 32, MainMenu::units_per_tile, MainMenu::tiles_per_chunk
         );
-        ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
+        ui::Manager ui = ui::Manager(0.0);
 
         std::function<void ()> before_next_frame = []() {};
 

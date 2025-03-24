@@ -23,6 +23,7 @@ namespace houseofatmos {
         std::shared_ptr<engine::Volume> sfx_volume
             = std::make_shared<engine::Volume>(engine::Volume(1.0));
         u64 view_distance = 2;
+        f64 ui_size_divisor = 300.0;
         std::vector<std::string> last_games;
 
         Settings() {}
@@ -37,13 +38,17 @@ namespace houseofatmos {
             );
         }
 
+        f64 ui_size_fract() const {
+            return 1.0 / this->ui_size_divisor;
+        }
+
         static ui::Element create_slider(
             f64 length_units, f64 height_units, f64 value_width_units, 
             f64 min, f64 max, f64 step, f64 value,
             std::string suffix, std::function<void (f64)>&& handler
         );
         ui::Element create_menu(
-            const engine::Localization& local,
+            const engine::Localization& local, engine::Window& window,
             std::function<void ()>&& close_handler
         );
 

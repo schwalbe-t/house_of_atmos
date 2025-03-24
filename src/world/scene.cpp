@@ -386,6 +386,7 @@ namespace houseofatmos::world {
 
     void Scene::update(engine::Window& window) {
         this->world->settings.apply(*this, window);
+        this->ui.unit_fract_size = this->world->settings.ui_size_fract();
         this->get(audio_const::soundtrack).update();
         bool paused_game = window.was_pressed(engine::Key::Escape)
             && this->terrain_map.element()->hidden;

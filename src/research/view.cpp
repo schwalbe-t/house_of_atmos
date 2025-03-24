@@ -195,6 +195,7 @@ namespace houseofatmos::research {
 
     void View::update(engine::Window& window) {
         this->world->settings.apply(*this, window);
+        this->ui.unit_fract_size = this->world->settings.ui_size_fract();
         this->get(audio_const::soundtrack).update();
         if(this->ui.root.children.size() == 0) {
             this->init_ui();

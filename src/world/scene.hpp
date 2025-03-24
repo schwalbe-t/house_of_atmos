@@ -42,7 +42,7 @@ namespace houseofatmos::world {
                 &this->get(this->world->settings.localization())
             };
         });
-        ui::Manager ui = ui::Manager(ui_const::unit_size_fract);
+        ui::Manager ui = ui::Manager(0.0);
         ui::Element* coin_counter = nullptr;
         TerrainMap terrain_map;
         Toasts toasts;

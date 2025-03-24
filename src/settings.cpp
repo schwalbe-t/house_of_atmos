@@ -14,17 +14,28 @@ namespace houseofatmos {
     Settings Settings::read_from_path(std::string_view path) {
         if(!std::filesystem::exists(path)) { return Settings(); }
         std::string text = engine::GenericLoader::read_string(path);
-        json json = json::parse(text);
-        Settings settings;
-        settings.locale = json.at("locale");
-        settings.fullscreen = json.at("fullscreen");
-        settings.ost_volume->gain = json.at("music_volume");
-        settings.sfx_volume->gain = json.at("sound_volume");
-        settings.view_distance = json.at("view_distance");
-        for(const auto& path: json.at("last_games")) {
-            settings.last_games.push_back(path);
+        json j = json::parse(text);
+        auto s = Settings();
+        if(j.contains("locale")) { s.locale = j.at("locale"); }
+        if(j.contains("fullscreen")) { s.fullscreen = j.at("fullscreen"); }
+        if(j.contains("music_volume")) { 
+            s.ost_volume->gain = j.at("music_volume"); 
         }
-        return settings;
+        if(j.contains("sound_volume")) { 
+            s.sfx_volume->gain = j.at("sound_volume"); 
+        }
+        if(j.contains("view_distance")) { 
+            s.view_distance = j.at("view_distance"); 
+        }
+        if(j.contains("ui_size_divisor")) {
+            s.ui_size_divisor = j.at("ui_size_divisor");
+        }
+        if(j.contains("last_games")) {
+            for(const auto& path: j.at("last_games")) {
+                s.last_games.push_back(path);
+            }
+        }
+        return s;
     }
 
     void Settings::save_to(std::string_view path) const {
@@ -34,6 +45,7 @@ namespace houseofatmos {
         serialized["music_volume"] = this->ost_volume->gain;
         serialized["sound_volume"] = this->sfx_volume->gain;
         serialized["view_distance"] = this->view_distance;
+        serialized["ui_size_divisor"] = this->ui_size_divisor;
         json last_games = json::array();
         for(const std::string& game: this->last_games) {
             last_games.push_back(game);
@@ -144,7 +156,7 @@ namespace houseofatmos {
     }
 
     ui::Element Settings::create_menu(
-        const engine::Localization& local, 
+        const engine::Localization& local, engine::Window& window,
         std::function<void ()>&& close_handler
     ) {
         ui::Element menu = ui::Element()
@@ -172,7 +184,7 @@ namespace houseofatmos {
         );        
         menu.children.push_back(create_text(local.text("menu_music_volume")));
         ui::Element ost_volume = Settings::create_slider(
-            64.0, 8.0, 24.0,
+            96.0, 8.0, 24.0,
             0, 100, 5, this->ost_volume->gain * 100.0, 
             "%", [this](f64 percentage) {
                 this->ost_volume->gain = percentage / 100.0; 
@@ -181,7 +193,7 @@ namespace houseofatmos {
         menu.children.push_back(ost_volume.with_padding(4.0).as_movable());
         menu.children.push_back(create_text(local.text("menu_sound_volume")));
         ui::Element sfx_volume = Settings::create_slider(
-            64.0, 8.0, 24.0,
+            96.0, 8.0, 24.0,
             0, 100, 5, this->sfx_volume->gain * 100.0, 
             "%", [this](f64 percentage) { 
                 this->sfx_volume->gain = percentage / 100.0; 
@@ -190,13 +202,26 @@ namespace houseofatmos {
         menu.children.push_back(sfx_volume.with_padding(4.0).as_movable());
         menu.children.push_back(create_text(local.text("menu_view_distance")));
         ui::Element view_distance = Settings::create_slider(
-            64.0, 8.0, 24.0,
+            96.0, 8.0, 24.0,
             1, 5, 1, this->view_distance, 
             "", [this](f64 value) { 
                 this->view_distance = (u64) value;
             }
         );
         menu.children.push_back(view_distance.with_padding(4.0).as_movable());
+        menu.children.push_back(create_text(local.text("menu_ui_size")));
+        // 1 => 550, 2 => 500, 3 => 450, 4 => 400, 
+        // 5 => 350, 6 => 300, 7 => 250, 8 => 200
+        ui::Element ui_size = Settings::create_slider(
+            96.0, 8.0, 24.0,
+            1, 8, 1, 
+            (600.0 - this->ui_size_divisor) / 50.0, 
+            "", [this, window = &window](f64 value) { 
+                this->ui_size_divisor = 600.0 - (value * 50.0);
+                window->cancel(engine::Button::Left);
+            }
+        );
+        menu.children.push_back(ui_size.with_padding(4.0).as_movable());
         menu.children.push_back(create_button(
                 local.text("menu_close_menu"),
                 [h = std::move(close_handler)](ui::Element& e, Vec<2> c) {
@@ -220,6 +245,7 @@ namespace houseofatmos {
         scene.get(audio_const::soundtrack).speaker.volume = this->ost_volume;
         // other speakers contain references to their respective controlling volumes
         // view distance needs to be respected by the specific scene
+        // ui size needs to be respected by the specific scene
     }
 
 }

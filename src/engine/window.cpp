@@ -69,6 +69,7 @@ namespace houseofatmos::engine {
     ) {
         (void) scancode;
         (void) mods;
+        if((size_t) key >= Window::key_array_length) { return; }
         GLFWwindow* glfw_window = (GLFWwindow*) glfw_window_raw;
         if(!existing_windows.contains(glfw_window)) { return; }
         Window* window = existing_windows[glfw_window];
@@ -93,6 +94,7 @@ namespace houseofatmos::engine {
         void* glfw_window_raw, int button, int action, int mods
     ) {
         (void) mods;
+        if((size_t) button >= Window::button_array_length) { return; }
         GLFWwindow* glfw_window = (GLFWwindow*) glfw_window_raw;
         if(!existing_windows.contains(glfw_window)) { return; }
         Window* window = existing_windows[glfw_window];

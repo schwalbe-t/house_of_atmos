@@ -133,6 +133,12 @@
         "de": "Sichtweite",
         "bg": "Дистанция на видимостта"
     },
+    "menu_ui_size": {
+        "_context": "Displayed over the slider that controls the size of the user interface",
+        "en": "User interface size",
+        "de": "Größe des User-Interface",
+        "bg": "Размер на потр. интерфейс"
+    },
     "menu_close_menu": {
         "_context": "Confirms and closes the current menu (e.g. credits, settings)",
         "en": "Done",

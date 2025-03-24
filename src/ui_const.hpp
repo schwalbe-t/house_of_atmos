@@ -302,8 +302,6 @@ namespace houseofatmos::ui_icon {
 
 
 namespace houseofatmos::ui_const {
-    
-    static inline const f64 unit_size_fract = 1 / 350.0;
 
     inline void load_all(engine::Scene& scene) {
         ui_font::load_textures(scene);

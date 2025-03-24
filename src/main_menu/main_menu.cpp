@@ -253,7 +253,7 @@ namespace houseofatmos {
     ) {
         this->ui.root.children.clear();
         this->ui.with_element(this->settings.create_menu(
-            local,
+            local, window,
             [this, local = &local, window = &window]() {
                 this->settings.save_to(Settings::default_path);
                 this->show_title_screen(*local, *window);
@@ -291,6 +291,7 @@ namespace houseofatmos {
 
     void MainMenu::update(engine::Window& window) {
         this->settings.apply(*this, window);
+        this->ui.unit_fract_size = this->settings.ui_size_fract();
         this->get(audio_const::soundtrack).update();
         this->before_next_frame();
         this->before_next_frame = []() {};
