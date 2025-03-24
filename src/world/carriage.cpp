@@ -37,19 +37,25 @@ namespace houseofatmos::world {
 
     u64 CarriageNetwork::node_target_dist(NodeId node, ComplexId target) {
         auto [nx, nz] = node;
+        // find target building start coords
         const Complex& complex = this->complexes->get(target);
-        auto [cx, cz] = complex.closest_member_to(nx, nz);
-        u64 dx = (u64) std::abs((i64) nx - (i64) cx);
-        u64 dz = (u64) std::abs((i64) nz - (i64) cz);
-        return dx + dz;
+        auto [bsx, bsz] = complex.closest_member_to(nx, nz);
+        // find target building end coordinates
+        const Building* building = this->terrain
+            ->building_at((i64) bsx, (i64) bsz);
+        const Building::TypeInfo& building_type = Building::types()
+            .at((size_t) building->type);
+        u64 bex = bsx + building_type.width;
+        u64 bez = bsz + building_type.height;
+        // distance on each individual axis
+        u64 dx = nx < bsx? bsx - nx // left of building
+            : nx >= bex? nx - bex   // right of building
+            : 0;                    // on X axis inside building
+        u64 dz = nz < bsz? bsz - nz // top of building
+            : nz >= bez? nz - bez   // below building
+            : 0;                    // on Z axis inside building
+        return dx + dz; // manhattan distance
     }
-
-    static const std::vector<std::pair<i64, i64>> valid_target_offsets = {
-        { +1,  0 },
-        { -1,  0 },
-        {  0, +1 },
-        {  0, -1 }
-    };
 
     bool CarriageNetwork::node_at_target(NodeId node, ComplexId target) {
         return this->node_target_dist(node, target) <= 2;
