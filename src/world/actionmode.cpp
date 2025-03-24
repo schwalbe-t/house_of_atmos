@@ -67,14 +67,14 @@ namespace houseofatmos::world {
         const Building::TypeInfo& stable
             = Building::types().at((size_t) Building::Stable);
         i64 start_x = depot_cx - stable.width / 2;
-        i64 end_x = depot_cx + stable.width / 2;
-        i64 z = depot_cz + stable.height / 2 + 1;
+        i64 end_x = start_x + stable.width;
+        i64 z = (depot_cz - stable.width / 2) + stable.height;
         for(i64 x = start_x; x < end_x; x += 1) {
             if(x < 0 || (u64) x >= world.terrain.width_in_tiles()) { continue; }
             if(z < 0 || (u64) z >= world.terrain.height_in_tiles()) { continue; }
             bool has_track = world.terrain.track_pieces_at(x, z) > 0;
             if(!has_track) { continue; }
-            pos = Vec<3>(x + 0.5, 0, z + 0.5) * world.terrain.units_per_tile();
+            pos = Vec<3>(x + 0.5, 0, z - 0.5) * world.terrain.units_per_tile();
             pos.y() = world.terrain.elevation_at(pos);
             found_pos = true;
             break;

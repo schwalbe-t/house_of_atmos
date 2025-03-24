@@ -140,7 +140,7 @@ namespace houseofatmos::world {
                 );
                 if(elev_min < 0) { continue; }
                 f64 height_diff = elev_max - elev_min;
-                f64 slope_factor = 1 - (height_diff / stone_min_height_diff);
+                f64 slope_factor = height_diff < stone_min_height_diff? 1 : 0;
                 ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
                 f64 noise_val = perlin_noise(
                     seed, Vec<2>(tile_x / 25.0, tile_z / 25.0)

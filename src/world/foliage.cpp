@@ -10,7 +10,7 @@ namespace houseofatmos::world {
                 engine::FaceCulling::Disabled
             },
             RelCollider::none(),
-            10,
+            7,
             [](f64 nmap) { (void) nmap; return 1.0; } // chance is always 100%
         },
         /* Birch */ {
@@ -22,8 +22,8 @@ namespace houseofatmos::world {
             1,
             [](f64 nmap) {
                 return nmap < 0.4? 0.05  // for 40% of area =>  5% chance
-                     : nmap < 0.6? 0.50  // for 20% of area => 50% chance
-                     :             0.80; // for 40% of area => 80% chance
+                     : nmap < 0.6? 0.25  // for 20% of area => 25% chance
+                     :             0.40; // for 40% of area => 40% chance
             }
         },
         /* Rock */ {
@@ -43,9 +43,9 @@ namespace houseofatmos::world {
             RelCollider({ -1/16, -0.5, -1/16 }, { 2/16, 1, 2/16 }),
             1,
             [](f64 nmap) {
-                return nmap < 0.4? 0.01  // for 40% of area =>  1% chance
-                     : nmap < 0.6? 0.10  // for 20% of area => 10% chance
-                     :             0.25; // for 40% of area => 25% chance
+                return nmap < 0.4? 0.005  // for 40% of area =>  0.5% chance
+                     : nmap < 0.6? 0.250  // for 20% of area => 25.0% chance
+                     :             0.005; // for 40% of area =>  0.5% chance
             }
         },
         /* Pine */ {
@@ -57,8 +57,8 @@ namespace houseofatmos::world {
             1,
             [](f64 nmap) {
                 return nmap < 0.4? 0.025  // for 40% of area =>  2.5% chance
-                     : nmap < 0.6? 0.250  // for 20% of area => 25.0% chance
-                     :             0.400; // for 40% of area => 40.0% chance
+                     : nmap < 0.6? 0.125  // for 20% of area => 12.5% chance
+                     :             0.200; // for 40% of area => 20.0% chance
             }
         },
         /* PineSapling */ {
@@ -70,10 +70,58 @@ namespace houseofatmos::world {
             1,
             [](f64 nmap) {
                 return nmap < 0.4? 0.005  // for 40% of area =>  0.5% chance
-                     : nmap < 0.6? 0.050  // for 20% of area =>  5.0% chance
-                     :             0.125; // for 40% of area => 12.5% chance
+                     : nmap < 0.6? 0.250  // for 20% of area => 25.0% chance
+                     :             0.005; // for 40% of area =>  0.5% chance
             }
         },
+        /* Fern */ {
+            {
+                "res/foliage/fern.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            RelCollider::none(),
+            1,
+            [](f64 nmap) { (void) nmap; return 0.25; } // chance is always 25%
+        },
+        /* BlueFlowers */ {
+            {
+                "res/foliage/flowers_blue.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            RelCollider::none(),
+            1,
+            [](f64 nmap) {
+                return nmap < 0.4? 0.50  // for 40% of area => 50% chance
+                     : nmap < 0.6? 0.15  // for 20% of area => 15% chance
+                     :             0.05; // for 40% of area =>  5% chance
+            }
+        },
+        /* RedFlowers */ {
+            {
+                "res/foliage/flowers_red.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            RelCollider::none(),
+            1,
+            [](f64 nmap) {
+                return nmap < 0.4? 0.50  // for 40% of area => 50% chance
+                     : nmap < 0.6? 0.15  // for 20% of area => 15% chance
+                     :             0.05; // for 40% of area =>  5% chance
+            }
+        },
+        /* YellowFlowers */ {
+            {
+                "res/foliage/flowers_yellow.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            RelCollider::none(),
+            1,
+            [](f64 nmap) {
+                return nmap < 0.4? 0.50  // for 40% of area => 50% chance
+                     : nmap < 0.6? 0.15  // for 20% of area => 15% chance
+                     :             0.05; // for 40% of area =>  5% chance
+            }
+        }
     };
 
     const std::vector<Foliage::TypeInfo>& Foliage::types() {

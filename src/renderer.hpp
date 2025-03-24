@@ -60,7 +60,7 @@ namespace houseofatmos {
         public:
         Camera camera;
         std::vector<DirectionalLight> lights;
-        u64 resolution = 360;
+        u64 resolution = 480;
         u64 shadow_map_resolution = 1024;
         f64 fog_start_dist = INFINITY;
         f64 fog_gradiant_range = 0.0;

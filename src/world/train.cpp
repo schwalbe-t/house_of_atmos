@@ -97,24 +97,25 @@ namespace houseofatmos::world {
         const Complex& complex = this->complexes->get(target);
         auto [bsx, bsz] = complex.closest_member_to(nx, nz);
         // find target building end coordinates
+        // (end in this case meaning the last tile still inside the building)
         const Building* building = this->terrain
             ->building_at((i64) bsx, (i64) bsz);
         const Building::TypeInfo& building_type = Building::types()
             .at((size_t) building->type);
-        u64 bex = bsx + building_type.width;
-        u64 bez = bsz + building_type.height;
+        u64 bex = bsx + building_type.width - 1;
+        u64 bez = bsz + building_type.height - 1;
         // distance on each individual axis
         u64 dx = nx < bsx? bsx - nx // left of building
-            : nx >= bex? nx - bex   // right of building
+            : nx > bex? nx - bex    // right of building
             : 0;                    // on X axis inside building
         u64 dz = nz < bsz? bsz - nz // top of building
-            : nz >= bez? nz - bez   // below building
+            : nz > bez? nz - bez    // below building
             : 0;                    // on Z axis inside building
         return dx + dz; // manhattan distance
     }
 
     bool TrackNetwork::node_at_target(NodeId node, ComplexId target) {
-        return this->node_target_dist(node, target) <= 3;
+        return this->node_target_dist(node, target) <= 2;
     }
 
     void TrackNetwork::collect_node_points(
