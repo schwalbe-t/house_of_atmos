@@ -74,10 +74,6 @@ namespace houseofatmos::world {
         Vec<3> start;
         std::vector<Section> sections;
 
-        public:
-        void clear() { this->sections.clear(); }
-        bool is_empty() const { return this->sections.size() == 0; }
-
         std::pair<Vec<3>, size_t> after(
             f64 distance, bool* at_end = nullptr
         ) const {
@@ -270,6 +266,7 @@ namespace houseofatmos::world {
         private:
         AgentState state = AgentState::Travelling;
         AgentPath<Network> path;
+        bool has_path = false;
         f64 distance = 0.0;
         f64 load_start_time = 0.0;
 
@@ -361,10 +358,7 @@ namespace houseofatmos::world {
         AgentState current_state() const { return this->state; }
         const AgentPath<Network>& current_path() const { return this->path; }
         f64 current_path_dist() const { return this->distance; }
-        void reset_path() {
-            this->path.clear(); 
-            this->distance = 0.0;
-        }
+        void reset_path() { this->has_path = false; }
 
         AbstractAgent as_abstract() {
             return AbstractAgent((void*) this, &Agent<Network>::abstract_impl);
@@ -380,13 +374,13 @@ namespace houseofatmos::world {
             switch(this->state) {
                 case AgentState::Idle: {
                     if(this->schedule.size() > 0) { 
-                        this->path.clear();
+                        this->reset_path();
                         this->state = AgentState::Travelling;
                     }
                     break;
                 }
                 case AgentState::Travelling: {
-                    if(this->path.is_empty()) { 
+                    if(!this->has_path) { 
                         if(!this->find_path(network)) { break; } 
                     }
                     this->distance += window.delta_time() 
@@ -406,7 +400,7 @@ namespace houseofatmos::world {
                         const AgentStop& stop = this->schedule[this->stop_i];
                         this->do_stop_transfer(network, stop);
                         this->stop_i += 1;
-                        this->path.clear();
+                        this->reset_path();
                         this->state = AgentState::Travelling;
                     }
                     break;
@@ -430,6 +424,7 @@ namespace houseofatmos::world {
             this->state = AgentState::Travelling;
             this->path = *found;
             this->distance = 0.0;
+            this->has_path = true;
             return true;
         }
 
