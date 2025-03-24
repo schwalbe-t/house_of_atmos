@@ -256,7 +256,7 @@ namespace houseofatmos::world {
 
     static const f64 terrain_falloff_distance = 40.0;
     static const f64 terrain_falloff_height = -15.0;
-    static const f64 max_settlements_per_sq_tile = 30.0 / (256.0 * 256.0);
+    static const f64 max_settlements_per_sq_tile = 15.0 / (256.0 * 256.0);
     static const u64 max_settlement_attempts = 2000;
 
     void World::generate_map(u32 seed) {

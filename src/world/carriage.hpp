@@ -43,7 +43,7 @@ namespace houseofatmos::world {
             std::vector<Vec<3>>& out
         ) override;
 
-        NodeId closest_node_to(const Vec<3>& position) override;
+        std::optional<NodeId> closest_node_to(const Vec<3>& position) override;
 
     };
 

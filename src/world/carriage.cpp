@@ -79,7 +79,7 @@ namespace houseofatmos::world {
         out.push_back(point);
     }
 
-    CarriageNetwork::NodeId CarriageNetwork::closest_node_to(
+    std::optional<CarriageNetwork::NodeId> CarriageNetwork::closest_node_to(
         const Vec<3>& position
     ) {
         Vec<3> tile = position / this->terrain->units_per_tile();
@@ -87,7 +87,7 @@ namespace houseofatmos::world {
         x = std::min(x, this->terrain->width_in_tiles());
         u64 z = (u64) std::max(tile.z(), 0.0);
         z = std::min(z, this->terrain->height_in_tiles());
-        return { x, z };
+        return CarriageNetwork::NodeId(x, z);
     }
 
 

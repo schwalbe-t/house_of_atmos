@@ -80,7 +80,6 @@ namespace houseofatmos::world {
     void TrackNetwork::collect_next_nodes(
         NodeId node, std::vector<std::pair<NodeId, u64>>& out
     ) {
-        if(node == nullptr) { return; }
         Node node_data = this->graph[node];
         for(NodeId connected: node_data.connect_to) {
             out.push_back({ connected, 1 });
@@ -89,7 +88,6 @@ namespace houseofatmos::world {
 
     u64 TrackNetwork::node_target_dist(NodeId node, ComplexId target) {
         // find node position
-        if(node == nullptr) { return UINT64_MAX; }
         Node node_data = this->graph[node];
         u64 nx = node_data.chunk_x * this->terrain->tiles_per_chunk() + node->x;
         u64 nz = node_data.chunk_z * this->terrain->tiles_per_chunk() + node->z;
@@ -122,7 +120,6 @@ namespace houseofatmos::world {
         std::optional<NodeId> prev, NodeId node, std::optional<NodeId> next,
         std::vector<Vec<3>>& out
     ) {
-        if(node == nullptr) { return; }
         u64 t_p_ch = this->terrain->tiles_per_chunk();
         u64 u_p_t = this->terrain->units_per_tile();
         Node node_data = this->graph[node];
@@ -131,8 +128,8 @@ namespace houseofatmos::world {
         );
         std::vector<Vec<3>> points = TrackPiece::types()
             .at((size_t) node->type).points;
-        if(prev.has_value() && *prev != nullptr) {
-            NodeId prev_id = *next;
+        if(prev.has_value()) {
+            NodeId prev_id = *prev;
             Node prev_data = this->graph[prev_id];
             std::vector<Vec<3>> prev_pts = TrackPiece::types()
                 .at((size_t) prev_id->type).points;
@@ -145,7 +142,7 @@ namespace houseofatmos::world {
             );
             if(!connected) { std::reverse(points.begin(), points.end()); }
         }
-        if(next.has_value() && *next != nullptr) {
+        if(next.has_value()) {
             NodeId next_id = *next;
             Node next_data = this->graph[next_id];
             std::vector<Vec<3>> next_pts = TrackPiece::types()
@@ -165,7 +162,9 @@ namespace houseofatmos::world {
         }
     }
 
-    TrackNetwork::NodeId TrackNetwork::closest_node_to(const Vec<3>& position) {
+    std::optional<TrackNetwork::NodeId> TrackNetwork::closest_node_to(
+        const Vec<3>& position
+    ) {
         Vec<3> tile = position / this->terrain->units_per_tile();
         i64 cx = (i64) tile.x();
         i64 cz = (i64) tile.z();
@@ -182,7 +181,7 @@ namespace houseofatmos::world {
                 }
             }
         }
-        return nullptr;
+        return std::nullopt;
     }
 
 
@@ -277,7 +276,7 @@ namespace houseofatmos::world {
     Vec<3> Train::find_heading(size_t car_idx) const {
         const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
             .at((size_t) this->loco_type);
-        f64 train_front = std::max(this->current_path_dist(), this->length());
+        f64 train_front = this->front_path_dist();
         f64 car_start = train_front - this->offset_of_car(car_idx);
         Vec<3> front = this->current_path()
             .after(car_start - loco_info.car_type.front_axle).first;
@@ -295,7 +294,7 @@ namespace houseofatmos::world {
         const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
             .at((size_t) this->loco_type);
         this->cars.resize(loco_info.loco_cars.size() + this->car_count);
-        f64 train_front = std::max(this->current_path_dist(), this->length());
+        f64 train_front = this->front_path_dist();
         for(size_t car_idx = 0; car_idx < this->cars.size(); car_idx += 1) {
             const Train::Car& car_info = this->car_at(car_idx);
             f64 car_center = train_front

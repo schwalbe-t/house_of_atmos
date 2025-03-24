@@ -40,7 +40,9 @@ namespace houseofatmos::world {
             std::vector<Vec<3>>& out
         ) = 0;
 
-        virtual NodeId closest_node_to(const Vec<3>& position) = 0;
+        virtual std::optional<NodeId> closest_node_to(
+            const Vec<3>& position
+        ) = 0;
 
         virtual void reload() {}
 
@@ -137,8 +139,8 @@ namespace houseofatmos::world {
             NodeId current = last;
             for(;;) {
                 const NodeSearchState& state = nodes.at(current);
-                path.sections.push_back(AgentPath<Network>::Section(current));
                 if(!state.parent.has_value()) { break; }
+                path.sections.push_back(AgentPath<Network>::Section(current));
                 current = *state.parent;
             }
             std::reverse(path.sections.begin(), path.sections.end());
@@ -161,10 +163,11 @@ namespace houseofatmos::world {
         static std::optional<AgentPath<Network>> find(
             Network& network, Vec<3> start_pos, ComplexId target
         ) {
-            NodeId start = network.closest_node_to(start_pos);
+            std::optional<NodeId> start = network.closest_node_to(start_pos);
+            if(!start.has_value()) { return std::nullopt; }
             NodeSearchStates nodes;
-            nodes[start] = NodeSearchState(
-                0, network.node_target_dist(start, target), std::nullopt
+            nodes[*start] = NodeSearchState(
+                0, network.node_target_dist(*start, target), std::nullopt
             );
             std::vector<std::pair<NodeId, u64>> connected;
             for(;;) {

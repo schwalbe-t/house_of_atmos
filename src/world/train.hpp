@@ -51,7 +51,7 @@ namespace houseofatmos::world {
             std::vector<Vec<3>>& out
         ) override;
 
-        NodeId closest_node_to(const Vec<3>& position) override;
+        std::optional<NodeId> closest_node_to(const Vec<3>& position) override;
 
     };
 
@@ -126,6 +126,10 @@ namespace houseofatmos::world {
                 .at((size_t) this->loco_type);
             u64 car_count = loco_info.loco_cars.size() + this->car_count;
             return this->offset_of_car(car_count); 
+        }
+
+        f64 front_path_dist() const {
+            return std::max(this->current_path_dist(), this->length());
         }
 
         const Car& car_at(size_t car_idx) const {

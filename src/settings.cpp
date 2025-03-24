@@ -159,6 +159,7 @@ namespace houseofatmos {
         const engine::Localization& local, engine::Window& window,
         std::function<void ()>&& close_handler
     ) {
+        window.cancel(engine::Button::Left);
         ui::Element menu = ui::Element()
             .with_size(0, 0, ui::size::units_with_children)
             .with_pos(0.5, 0.5, ui::position::window_fract)
