@@ -75,8 +75,15 @@ namespace houseofatmos {
             engine::warning("Scene has more lights than currently supported!");
         }
         shader.set_uniform("u_light_count", (i64) this->lights.size());
-        shader.set_uniform("u_light_view_proj", this->collect_light_view_proj());
+        shader.set_uniform(
+            "u_light_view_proj", this->collect_light_view_proj()
+        );
         shader.set_uniform("u_shadow_maps", this->shadow_maps);
+        shader.set_uniform("u_depth_bias", this->shadow_depth_bias);
+        shader.set_uniform("u_normal_offset", this->shadow_normal_offset);
+        shader.set_uniform(
+            "u_out_of_bounds_lit", (i64) this->shadow_out_of_bounds_lit
+        );
     }
 
     Vec<2> Renderer::world_to_ndc(const Vec<3>& pos) const {
@@ -144,9 +151,6 @@ namespace houseofatmos {
         shader.set_uniform("u_local_transf", local_transform);
         shader.set_uniform("u_joint_transfs", joint_transforms);
         shader.set_uniform("u_texture", texture);
-        if(!light_i.has_value()) {
-            shader.set_uniform("u_shadow_bias", this->shadow_bias);
-        }
         engine::RenderTarget dest = light_i.has_value()
             ? this->shadow_maps.as_target(*light_i) : this->target.as_target();
         for(size_t completed = 0; completed < model_transforms.size();) {
@@ -198,9 +202,6 @@ namespace houseofatmos {
         );
         if(override_texture != nullptr) {
             shader.set_uniform("u_texture", *override_texture);
-        }
-        if(!light_i.has_value()) {
-            shader.set_uniform("u_shadow_bias", this->shadow_bias);
         }
         engine::RenderTarget dest = light_i.has_value()
             ? this->shadow_maps.as_target(*light_i) : this->target.as_target();

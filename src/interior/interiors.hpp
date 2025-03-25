@@ -45,7 +45,9 @@ namespace houseofatmos::interior {
         Vec<3> player_start_pos;
         Vec<3> exit_interactable;
         std::vector<DirectionalLight> lights;
-        f64 shadow_bias;
+        f64 shadow_depth_bias;
+        f64 shadow_normal_offset;
+        bool shadow_out_of_bounds_lit;
         Vec<3> camera_offset;
         Mat<3> player_velocity_matrix;
         std::vector<Interaction> interactions;

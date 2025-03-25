@@ -67,7 +67,9 @@ namespace houseofatmos {
         Vec<3> fog_origin = Vec<3>(0.0, 0.0, 0.0);
         Vec<3> fog_dist_scale = Vec<3>(1.0, 1.0, 1.0);
         Vec<4> fog_color = Vec<4>(1.0, 1.0, 1.0, 1.0);
-        f64 shadow_bias = 0.0;
+        f64 shadow_depth_bias = 0.0;
+        f64 shadow_normal_offset = 0.0;
+        bool shadow_out_of_bounds_lit = false;
         engine::Shader* shadow_shader = nullptr;
         engine::Shader* geometry_shader = nullptr;
 

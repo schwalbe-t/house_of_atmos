@@ -24,7 +24,10 @@ namespace houseofatmos::interior {
             this->renderer.lights.end(),
             this->interior.lights.begin(), this->interior.lights.end()
         );
-        this->renderer.shadow_bias = interior.shadow_bias;
+        this->renderer.shadow_depth_bias = interior.shadow_depth_bias;
+        this->renderer.shadow_normal_offset = interior.shadow_normal_offset;
+        this->renderer.shadow_out_of_bounds_lit 
+            = interior.shadow_out_of_bounds_lit;
         this->renderer.shadow_map_resolution = 512;
         this->player.character.position = interior.player_start_pos;
         this->load_resources();

@@ -216,7 +216,9 @@ namespace houseofatmos::interior {
             // hallway windows
             DirectionalLight::in_direction_to({ 0, -1, 1 }, { 0, 0, 0 }, 3.0, 10.0)
         },
-        0.001,
+        0.001, // shadow depth bias
+        0.0, //0.025, // shadow normal offset
+        false, // pixels not in the frame of any camera are not lit
         Vec<3>(-1, 1, 1).normalized() * 15.0,
         Mat<3>::rotate_y(pi / 4),
         {
