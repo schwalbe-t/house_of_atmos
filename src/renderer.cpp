@@ -51,6 +51,12 @@ namespace houseofatmos {
         this->shadow_shader = &scene.get(Renderer::shadow_shader_args);
         this->geometry_shader = &scene.get(Renderer::geometry_shader_args);
         this->set_fog_uniforms(*this->geometry_shader);
+        this->set_diffuse_uniforms(*this->geometry_shader);
+        Vec<2> target_size 
+            = Vec<2>((f64) this->target.width(), (f64) this->target.height());
+        this->geometry_shader->set_uniform("u_target_pixel_size", target_size);
+        const engine::Texture& dither_pat = scene.get(Renderer::dither_pattern);
+        this->geometry_shader->set_uniform("u_dither_pattern", dither_pat);
     }
 
     std::vector<Mat<4>> Renderer::collect_light_view_proj() const {
@@ -84,6 +90,12 @@ namespace houseofatmos {
         shader.set_uniform(
             "u_out_of_bounds_lit", (i64) this->shadow_out_of_bounds_lit
         );
+    }
+
+    void Renderer::set_diffuse_uniforms(engine::Shader& shader) const {
+        shader.set_uniform("u_sun_direction", this->sun_direction.normalized());
+        shader.set_uniform("u_diffuse_min", this->diffuse_min);
+        shader.set_uniform("u_diffuse_max", this->diffuse_max);
     }
 
     Vec<2> Renderer::world_to_ndc(const Vec<3>& pos) const {

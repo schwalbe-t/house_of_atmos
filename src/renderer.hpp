@@ -48,6 +48,10 @@ namespace houseofatmos {
             "res/shaders/geometry_vert.glsl", "res/shaders/geometry_frag.glsl"
         };
 
+        static const inline engine::Texture::LoadArgs dither_pattern = {
+            "res/dither_pattern.png"
+        };
+
         static const inline size_t max_inst_c = 128;
         static const inline size_t max_light_c = 16;
 
@@ -70,12 +74,16 @@ namespace houseofatmos {
         f64 shadow_depth_bias = 0.0;
         f64 shadow_normal_offset = 0.0;
         bool shadow_out_of_bounds_lit = false;
+        Vec<3> sun_direction = Vec<3>(0.0, 0.0, 0.0);
+        f64 diffuse_min = 1.0;
+        f64 diffuse_max = 1.0;
         engine::Shader* shadow_shader = nullptr;
         engine::Shader* geometry_shader = nullptr;
 
         static void load_shaders(engine::Scene& scene) {
             scene.load(Renderer::shadow_shader_args);
             scene.load(Renderer::geometry_shader_args);
+            scene.load(Renderer::dither_pattern);
         }
 
         Mat<4> compute_view_matrix() const;
@@ -86,6 +94,7 @@ namespace houseofatmos {
         std::vector<Mat<4>> collect_light_view_proj() const;
         void set_fog_uniforms(engine::Shader& shader) const;
         void set_shadow_uniforms(engine::Shader& shader) const;
+        void set_diffuse_uniforms(engine::Shader& shader) const;
 
         Vec<2> world_to_ndc(const Vec<3>& pos) const;
 

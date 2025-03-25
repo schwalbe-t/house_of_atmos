@@ -105,9 +105,11 @@ namespace houseofatmos::world {
         this->load(this->world->settings.localization());
     }
 
+    static const Vec<3> sun_direction = Vec<3>(1, -1.3, 1.2);
+
     DirectionalLight Scene::create_sun(const Vec<3>& focus_point) {
         return DirectionalLight::in_direction_to(
-            Vec<3>(1, -1.3, 1.2), // direction
+            sun_direction,
             focus_point, 
             80.0, // radius
             200.0 // distance
@@ -125,6 +127,9 @@ namespace houseofatmos::world {
         renderer.shadow_normal_offset = 0.055;
         renderer.shadow_out_of_bounds_lit = true;
         renderer.shadow_map_resolution = 4096;
+        renderer.sun_direction = sun_direction;
+        renderer.diffuse_min = 0.4;
+        renderer.diffuse_max = 1.0;
     }
 
 
