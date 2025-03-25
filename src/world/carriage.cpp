@@ -16,8 +16,10 @@ namespace houseofatmos::world {
     static inline const u64 cost_daigo = 14;
 
     void CarriageNetwork::collect_next_nodes(
-        NodeId node, std::vector<std::pair<NodeId, u64>>& out
+        std::optional<NodeId> prev, NodeId node, 
+        std::vector<std::pair<NodeId, u64>>& out
     ) {
+        (void) prev;
         auto [x, z] = node;
         u64 left = x > 0? x - 1 : 0;
         u64 right = std::min(x + 1, this->terrain->width_in_tiles() - 1);
