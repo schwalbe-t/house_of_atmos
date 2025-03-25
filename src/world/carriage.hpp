@@ -31,7 +31,8 @@ namespace houseofatmos::world {
         bool is_passable(NodeId node) const;
 
         void collect_next_nodes(
-            NodeId node, std::vector<std::pair<NodeId, u64>>& out
+            std::optional<NodeId> prev, NodeId node, 
+            std::vector<std::pair<NodeId, u64>>& out
         ) override;
 
         u64 node_target_dist(NodeId node, ComplexId target) override;

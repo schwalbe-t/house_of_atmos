@@ -19,7 +19,8 @@ namespace houseofatmos::world {
         
         struct Node {
             u64 chunk_x, chunk_z;
-            std::vector<NodeId> connect_to;
+            std::vector<NodeId> connected_low;
+            std::vector<NodeId> connected_high;
         };
         
         const Terrain* terrain;
@@ -39,7 +40,8 @@ namespace houseofatmos::world {
 
 
         void collect_next_nodes(
-            NodeId node, std::vector<std::pair<NodeId, u64>>& out
+            std::optional<NodeId> prev, NodeId node, 
+            std::vector<std::pair<NodeId, u64>>& out
         ) override;
 
         u64 node_target_dist(NodeId node, ComplexId target) override;

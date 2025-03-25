@@ -6,18 +6,15 @@ namespace houseofatmos::world {
 
     static const f64 max_piece_point_dist = 0.001;
 
-    static bool track_pieces_connected(
-        std::span<const Vec<3>> points_a, const Mat<4>& inst_a,
-        std::span<const Vec<3>> points_b, const Mat<4>& inst_b 
+    static bool track_piece_connected_to(
+        std::span<const Vec<3>> pc_pts, const Mat<4>& pc_inst,
+        const Vec<3>& to_pt, const Mat<4>& to_inst 
     ) {
-        Vec<3> a_end_f = (inst_a * points_a[0].with(1.0)).swizzle<3>("xyz");
-        Vec<3> a_end_b = (inst_a * points_a.back().with(1.0)).swizzle<3>("xyz");
-        Vec<3> b_end_f = (inst_b * points_b[0].with(1.0)).swizzle<3>("xyz");
-        Vec<3> b_end_b = (inst_b * points_b.back().with(1.0)).swizzle<3>("xyz");
-        return (a_end_f - b_end_f).len() <= max_piece_point_dist
-            || (a_end_f - b_end_b).len() <= max_piece_point_dist
-            || (a_end_b - b_end_f).len() <= max_piece_point_dist
-            || (a_end_b - b_end_b).len() <= max_piece_point_dist;
+        Vec<3> pc_low = (pc_inst * pc_pts[0].with(1)).swizzle<3>("xyz");
+        Vec<3> pc_high = (pc_inst * pc_pts.back().with(1)).swizzle<3>("xyz");
+        Vec<3> to = (to_inst * to_pt.with(1.0)).swizzle<3>("xyz");
+        return (pc_low  - to).len() <= max_piece_point_dist
+            || (pc_high - to).len() <= max_piece_point_dist;
     }
 
     void TrackNetwork::find_connections(NodeId node, Node& node_data) {
@@ -41,18 +38,29 @@ namespace houseofatmos::world {
                 const Terrain::ChunkData& conn_chunk = this->terrain
                     ->chunk_at(conn_chx, conn_chz);
                 for(const TrackPiece& conn_piece: conn_chunk.track_pieces) {
-                    if(&conn_piece == node) { continue; }
+                    bool same_chunk = conn_chx == node_data.chunk_x
+                        && conn_chz == node_data.chunk_z;
+                    bool same_tile = conn_piece.x == node->x
+                        && conn_piece.z == node->z;
+                    if(same_chunk && same_tile) { continue; }
                     const std::vector<Vec<3>>& conn_pts = TrackPiece::types()
                         .at((size_t) conn_piece.type).points;
                     Mat<4> conn_inst = conn_piece.build_transform(
                         conn_chx, conn_chz, tiles_per_chunk, 
                         this->terrain->units_per_tile()
                     );
-                    bool is_connected = track_pieces_connected(
-                        node_pts, node_inst, conn_pts, conn_inst
+                    bool connected_low = track_piece_connected_to(
+                        conn_pts, conn_inst, node_pts[0], node_inst
                     );
-                    if(!is_connected) { continue; }
-                    node_data.connect_to.push_back(&conn_piece);
+                    if(connected_low) { 
+                        node_data.connected_low.push_back(&conn_piece); 
+                    }
+                    bool connected_high = track_piece_connected_to(
+                        conn_pts, conn_inst, node_pts.back(), node_inst
+                    );
+                    if(connected_high) {
+                        node_data.connected_high.push_back(&conn_piece);
+                    }
                 }
             }
         }
@@ -68,7 +76,7 @@ namespace houseofatmos::world {
                     ->chunk_at(chunk_x, chunk_z);
                 for(const TrackPiece& track_piece: chunk.track_pieces) {
                     NodeId node_id = &track_piece;
-                    auto node = Node(chunk_x, chunk_z, {});
+                    auto node = Node(chunk_x, chunk_z, {}, {});
                     this->find_connections(node_id, node);
                     this->graph[node_id] = node;
                 }
@@ -78,11 +86,25 @@ namespace houseofatmos::world {
 
 
     void TrackNetwork::collect_next_nodes(
-        NodeId node, std::vector<std::pair<NodeId, u64>>& out
+        std::optional<NodeId> prev, NodeId node, 
+        std::vector<std::pair<NodeId, u64>>& out
     ) {
-        Node node_data = this->graph[node];
-        for(NodeId connected: node_data.connect_to) {
-            out.push_back({ connected, 1 });
+        Node node_d = this->graph[node];
+        const std::vector<NodeId>& low = node_d.connected_low;
+        const std::vector<NodeId>& high = node_d.connected_high;
+        // previous piece is connected at LOW end of this piece?
+        // -> connects to all pieces at HIGH end
+        bool prev_at_low = !prev.has_value()
+            || std::find(low.begin(), low.end(), *prev) != low.end();
+        if(prev_at_low) {
+            for(NodeId c: high) { out.push_back({ c, 1 }); }
+        }
+        // previous piece is connected at HIGH end of this piece?
+        // -> connects to all pieces at LOW end
+        bool prev_at_high = !prev.has_value()
+            || std::find(high.begin(), high.end(), *prev) != high.end();
+        if(prev_at_high) {
+            for(NodeId c: low) { out.push_back({ c, 1 }); }
         }
     }
 
@@ -136,9 +158,8 @@ namespace houseofatmos::world {
             Mat<4> prev_inst = prev_id->build_transform(
                 prev_data.chunk_x, prev_data.chunk_z, t_p_ch, u_p_t
             );
-            const Vec<3>* first_node_pt = &points[0];
-            bool connected = track_pieces_connected(
-                prev_pts, prev_inst, { first_node_pt, 1 }, node_inst
+            bool connected = track_piece_connected_to(
+                prev_pts, prev_inst, points[0], node_inst
             );
             if(!connected) { std::reverse(points.begin(), points.end()); }
         }
@@ -150,9 +171,8 @@ namespace houseofatmos::world {
             Mat<4> next_inst = next_id->build_transform(
                 next_data.chunk_x, next_data.chunk_z, t_p_ch, u_p_t
             );
-            const Vec<3>* last_node_pt = &points.back();
-            bool connected = track_pieces_connected(
-                next_pts, next_inst, { last_node_pt, 1 }, node_inst
+            bool connected = track_piece_connected_to(
+                next_pts, next_inst, points.back(), node_inst
             );
             if(!connected) { std::reverse(points.begin(), points.end()); }
         }

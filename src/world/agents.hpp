@@ -28,7 +28,8 @@ namespace houseofatmos::world {
 
 
         virtual void collect_next_nodes(
-            NodeId node, std::vector<std::pair<NodeId, u64>>& out
+            std::optional<NodeId> prev, NodeId node, 
+            std::vector<std::pair<NodeId, u64>>& out
         ) = 0;
 
         virtual u64 node_target_dist(NodeId node, ComplexId target) = 0;
@@ -175,7 +176,9 @@ namespace houseofatmos::world {
                 if(network.node_at_target(current, target)) {
                     return build_path(network, nodes, start_pos, current);
                 }
-                network.collect_next_nodes(current, connected);
+                network.collect_next_nodes(
+                    current_s.parent, current, connected
+                );
                 for(auto [neigh, step_dist]: connected) {
                     u64 new_start_dist = current_s.start_dist + step_dist;
                     if(!nodes.contains(neigh)) {
