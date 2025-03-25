@@ -1,10 +1,21 @@
 
 #include "common.hpp"
+#include <algorithm>
 
 namespace houseofatmos::world {
 
     namespace ui = houseofatmos::engine::ui;
 
+
+    template<typename M>
+    static void remove_agent_stops(M& manager, ComplexId c) {
+        for(auto& agent: manager.agents) {
+            std::remove_if(
+                agent.schedule.begin(), agent.schedule.end(),
+                [c](const auto& stop) { return stop.target == c; }
+            );
+        }
+    }
 
     static const f64 demolition_refund_factor = 0.25;
 
@@ -47,6 +58,8 @@ namespace houseofatmos::world {
                     Complex& complex = this->world->complexes.get(complex_id);
                     complex.remove_member(actual_x, actual_z);
                     if(complex.member_count() == 0) {
+                        remove_agent_stops(this->world->carriages, complex_id);
+                        remove_agent_stops(this->world->trains, complex_id);
                         this->world->complexes.delete_complex(complex_id);
                     }
                 }
