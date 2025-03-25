@@ -206,6 +206,17 @@ namespace houseofatmos::world {
 
 
 
+    static Train::Car train_car_old = Train::Car(
+        engine::Model::LoadArgs(
+            "res/trains/train_car_old.glb", Renderer::model_attribs,
+            engine::FaceCulling::Enabled
+        ),
+        Vec<3>(0, 0, 1), // model heading
+        3.6, // length
+        0.8, 2.8, // offsets of the front and back axles
+        0.5 // wheel radius
+    );
+
     static Train::Car train_car_modern = Train::Car(
         engine::Model::LoadArgs(
             "res/trains/train_car_modern.glb", Renderer::model_attribs,
@@ -234,7 +245,7 @@ namespace houseofatmos::world {
                     0.9 // wheel radius (of big wheel)
                 )
             },
-            train_car_modern,
+            train_car_old,
             3, // max car count
             5.0, // speed
             5000 // cost
