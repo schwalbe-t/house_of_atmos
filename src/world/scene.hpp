@@ -13,7 +13,7 @@
 #include "../renderer.hpp"
 #include "../dialogue.hpp"
 #include "../cutscene.hpp"
-#include "actionmode.hpp"
+#include "actions/actionmode.hpp"
 #include "terrainmap.hpp"
 
 namespace houseofatmos::world {
