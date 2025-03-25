@@ -10,14 +10,16 @@ namespace houseofatmos::world {
     template<typename M>
     static void remove_agent_stops(M& manager, ComplexId c) {
         for(auto& agent: manager.agents) {
-            std::remove_if(
+            auto new_end = std::remove_if(
                 agent.schedule.begin(), agent.schedule.end(),
-                [c](const auto& stop) { return stop.target == c; }
+                [c](const auto& stop) { return stop.target.index == c.index; }
             );
+            agent.schedule.erase(new_end, agent.schedule.end());
         }
     }
 
     static const f64 demolition_refund_factor = 0.25;
+    static const u64 track_removal_refund = 50;
 
     void DemolitionMode::attempt_demolition(engine::Scene& scene) {
         switch(this->selection.type) {

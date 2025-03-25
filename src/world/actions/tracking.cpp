@@ -243,7 +243,6 @@ namespace houseofatmos::world {
     }
 
     static const u64 track_placement_cost = 100;
-    static const u64 track_removal_refund = 50;
 
     void TrackingMode::update(
         const engine::Window& window, engine::Scene& scene, 

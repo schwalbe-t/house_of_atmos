@@ -3,11 +3,7 @@
 
 #include <engine/window.hpp>
 #include <engine/ui.hpp>
-#include "../renderer.hpp"
-#include "../toasts.hpp"
-#include "../ui_const.hpp"
-#include "../audio_const.hpp"
-#include "world.hpp"
+#include "../world.hpp"
 
 namespace houseofatmos::world {
 

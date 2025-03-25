@@ -2,7 +2,7 @@
 #pragma once
 
 #include "actionmode.hpp"
-#include "terrainmap.hpp"
+#include "../terrainmap.hpp"
 
 namespace houseofatmos::world {
 

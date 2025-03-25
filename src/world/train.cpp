@@ -12,7 +12,7 @@ namespace houseofatmos::world {
     ) {
         Vec<3> pc_low = (pc_inst * pc_pts[0].with(1)).swizzle<3>("xyz");
         Vec<3> pc_high = (pc_inst * pc_pts.back().with(1)).swizzle<3>("xyz");
-        Vec<3> to = (to_inst * to_pt.back().with(1.0)).swizzle<3>("xyz");
+        Vec<3> to = (to_inst * to_pt.with(1.0)).swizzle<3>("xyz");
         return (pc_low  - to).len() <= max_piece_point_dist
             || (pc_high - to).len() <= max_piece_point_dist;
     }
@@ -38,7 +38,11 @@ namespace houseofatmos::world {
                 const Terrain::ChunkData& conn_chunk = this->terrain
                     ->chunk_at(conn_chx, conn_chz);
                 for(const TrackPiece& conn_piece: conn_chunk.track_pieces) {
-                    if(&conn_piece == node) { continue; }
+                    bool same_chunk = conn_chx == node_data.chunk_x
+                        && conn_chz == node_data.chunk_z;
+                    bool same_tile = conn_piece.x == node->x
+                        && conn_piece.z == node->z;
+                    if(same_chunk && same_tile) { continue; }
                     const std::vector<Vec<3>>& conn_pts = TrackPiece::types()
                         .at((size_t) conn_piece.type).points;
                     Mat<4> conn_inst = conn_piece.build_transform(
@@ -86,19 +90,21 @@ namespace houseofatmos::world {
         std::vector<std::pair<NodeId, u64>>& out
     ) {
         Node node_d = this->graph[node];
+        const std::vector<NodeId>& low = node_d.connected_low;
+        const std::vector<NodeId>& high = node_d.connected_high;
         // previous piece is connected at LOW end of this piece?
         // -> connects to all pieces at HIGH end
         bool prev_at_low = !prev.has_value()
-            || node_d.connected_low.contains(*prev);
+            || std::find(low.begin(), low.end(), *prev) != low.end();
         if(prev_at_low) {
-            for(NodeId c: node_d.connected_high) { out.push_back({ c, 1 }); }
+            for(NodeId c: high) { out.push_back({ c, 1 }); }
         }
         // previous piece is connected at HIGH end of this piece?
         // -> connects to all pieces at LOW end
         bool prev_at_high = !prev.has_value()
-            || node_d.connected_high.contains(*prev);
+            || std::find(high.begin(), high.end(), *prev) != high.end();
         if(prev_at_high) {
-            for(NodeId c: node_d.connected_low) { out.push_back({ c, 1 }); }
+            for(NodeId c: low) { out.push_back({ c, 1 }); }
         }
     }
 
