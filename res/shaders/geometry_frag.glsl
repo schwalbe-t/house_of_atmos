@@ -16,7 +16,7 @@ uniform vec2 u_target_pixel_size;
 
 out vec4 o_color;
 
-const float DITHER_PATTERNS = 16;
+const float DITHER_PATTERNS = 7;
 const float DITHER_PAT_SIZE = 1.0 / DITHER_PATTERNS;
 const float DITHER_PAT_PX = 16;
 

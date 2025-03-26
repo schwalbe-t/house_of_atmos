@@ -128,7 +128,7 @@ namespace houseofatmos::world {
         renderer.shadow_out_of_bounds_lit = true;
         renderer.shadow_map_resolution = 4096;
         renderer.sun_direction = sun_direction;
-        renderer.diffuse_min = 0.4;
+        renderer.diffuse_min = 0.0;
         renderer.diffuse_max = 1.0;
     }
 
