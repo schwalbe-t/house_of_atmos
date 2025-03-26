@@ -812,6 +812,7 @@ namespace houseofatmos::world {
         switch(stop->action) {
             case AgentStop::Load: local_action = "ui_pick_up"; break;
             case AgentStop::Unload: local_action = "ui_drop_off"; break;
+            case AgentStop::Maintain: local_action = "ui_maintain"; break;
         }
         std::string amount = "";
         std::string unit = "";
@@ -881,11 +882,11 @@ namespace houseofatmos::world {
                 .with_click_handler([stop]() {
                     switch(stop->action) {
                         case AgentStop::Load:
-                            stop->action = AgentStop::Unload; 
-                            break;
+                            stop->action = AgentStop::Unload; break;
                         case AgentStop::Unload:
-                            stop->action = AgentStop::Load; 
-                            break;
+                            stop->action = AgentStop::Maintain; break;
+                        case AgentStop::Maintain:
+                            stop->action = AgentStop::Load; break;
                     }
                 })
                 .with_padding(2)

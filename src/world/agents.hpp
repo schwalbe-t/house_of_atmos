@@ -204,7 +204,7 @@ namespace houseofatmos::world {
 
 
     struct AgentStop {
-        enum Action { Load, Unload };
+        enum Action { Load, Unload, Maintain };
         enum Unit { Fixed, Fraction };
         
         ComplexId target;
@@ -290,22 +290,46 @@ namespace houseofatmos::world {
 
         void do_stop_transfer(Network& network, const AgentStop& stop) {
             Complex& complex = network.complexes->get(stop.target);
-            u64 p_num;
+            u64 complex_has = complex.stored_count(stop.item);
+            u64 agent_has = this->items[stop.item];
+            u64 fract_rel_to;
             switch(stop.action) {
                 case AgentStop::Load: 
-                    p_num = complex.stored_count(stop.item); break;
+                    fract_rel_to = complex_has; break;
                 case AgentStop::Unload: 
-                    p_num = this->items[stop.item]; break;
+                    fract_rel_to = agent_has; break;
+                case AgentStop::Maintain:
+                    fract_rel_to = this->item_storage_capacity(); break;
             }
-            u64 s_num;
+            u64 expected;
             switch(stop.unit) {
                 case AgentStop::Fixed: 
-                    s_num = (u64) stop.amount.fixed; break;
+                    expected = (u64) stop.amount.fixed; 
+                    break;
                 case AgentStop::Fraction: 
-                    s_num = (u64) ((f64) p_num * stop.amount.fract); break;
+                    expected = (u64) ((f64) fract_rel_to * stop.amount.fract); 
+                    break;
             }
-            u64 planned = std::min(s_num, p_num);
+            AgentStop::Action action = stop.action;
+            u64 planned = 0;
             switch(stop.action) {
+                case AgentStop::Load:
+                    planned = std::min(expected, complex_has);
+                    break;
+                case AgentStop::Unload:
+                    planned = std::min(expected, agent_has);
+                    break;
+                case AgentStop::Maintain:
+                    if(agent_has < expected) {
+                        action = AgentStop::Load;
+                        planned = std::min(expected - agent_has, complex_has);
+                    } else if(agent_has > expected) {
+                        action = AgentStop::Unload;
+                        planned = agent_has - expected;
+                    }
+                    break;
+            }
+            switch(action) {
                 case AgentStop::Load: {
                     u64 remaining_space = this->item_storage_capacity()
                         - this->stored_item_count();
@@ -318,7 +342,9 @@ namespace houseofatmos::world {
                     u64 transferred = planned;
                     this->items[stop.item] -= transferred;
                     complex.add_stored(stop.item, transferred);
+                    break;
                 }
+                case AgentStop::Maintain: break;
             }
         }
 
