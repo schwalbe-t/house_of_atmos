@@ -310,9 +310,7 @@ namespace houseofatmos {
     }
 
     void MainMenu::render_background(engine::Window& window) {
-        world::Scene::configure_renderer(
-            this->renderer, this->settings.view_distance
-        );
+        world::Scene::configure_renderer(this->renderer, this->settings);
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(
             this->renderer.camera.look_at, 

@@ -24,6 +24,8 @@ namespace houseofatmos {
             = std::make_shared<engine::Volume>(engine::Volume(1.0));
         u64 view_distance = 2;
         f64 ui_size_divisor = 300.0;
+        bool do_dithering = true;
+        bool do_pixelation = true;
         std::vector<std::string> last_games;
 
         Settings() {}
@@ -40,6 +42,10 @@ namespace houseofatmos {
 
         f64 ui_size_fract() const {
             return 1.0 / this->ui_size_divisor;
+        }
+
+        u64 resolution() const {
+            return this->do_pixelation? 480 : UINT64_MAX;
         }
 
         static ui::Element create_slider(

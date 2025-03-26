@@ -30,6 +30,12 @@ namespace houseofatmos {
         if(j.contains("ui_size_divisor")) {
             s.ui_size_divisor = j.at("ui_size_divisor");
         }
+        if(j.contains("do_dithering")) {
+            s.do_dithering = j.at("do_dithering");
+        }
+        if(j.contains("do_pixelation")) {
+            s.do_pixelation = j.at("do_pixelation");
+        }
         if(j.contains("last_games")) {
             for(const auto& path: j.at("last_games")) {
                 s.last_games.push_back(path);
@@ -46,6 +52,8 @@ namespace houseofatmos {
         serialized["sound_volume"] = this->sfx_volume->gain;
         serialized["view_distance"] = this->view_distance;
         serialized["ui_size_divisor"] = this->ui_size_divisor;
+        serialized["do_dithering"] = this->do_dithering;
+        serialized["do_pixelation"] = this->do_pixelation;
         json last_games = json::array();
         for(const std::string& game: this->last_games) {
             last_games.push_back(game);
@@ -155,6 +163,20 @@ namespace houseofatmos {
         return button;
     }
 
+    static ui::Element create_toggle(
+        bool* property, const engine::Localization* local
+    ) {
+        return create_button(
+            *property? local->text("menu_yes") : local->text("menu_no"),
+            [property, local](ui::Element& e, auto cursor) {
+                (void) cursor; 
+                *property = !*property;
+                e.child_at<0>().text = *property
+                    ? local->text("menu_yes") : local->text("menu_no");
+            }
+        );
+    }
+
     ui::Element Settings::create_menu(
         const engine::Localization& local, engine::Window& window,
         std::function<void ()>&& close_handler
@@ -165,24 +187,7 @@ namespace houseofatmos {
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .with_background(&ui_background::scroll_vertical)
             .with_list_dir(ui::Direction::Vertical)
-            .as_movable();
-        ui::Element change_window_mode = create_button(
-            this->fullscreen
-                ? local.text("menu_windowed")
-                : local.text("menu_fullscreen"),
-            [this, local = &local](
-                ui::Element& element, Vec<2> cursor
-            ) {
-                (void) cursor;
-                this->fullscreen = !this->fullscreen;
-                element.child_at<0>().text = this->fullscreen
-                    ? local->text("menu_windowed")
-                    : local->text("menu_fullscreen");
-            }
-        );
-        menu.children.push_back(
-            change_window_mode.with_padding(2.0).as_movable()
-        );        
+            .as_movable();   
         menu.children.push_back(create_text(local.text("menu_music_volume")));
         ui::Element ost_volume = Settings::create_slider(
             96.0, 8.0, 24.0,
@@ -210,29 +215,90 @@ namespace houseofatmos {
             }
         );
         menu.children.push_back(view_distance.with_padding(4.0).as_movable());
-        menu.children.push_back(create_text(local.text("menu_ui_size")));
-        // 1 => 550, 2 => 500, 3 => 450, 4 => 400, 
-        // 5 => 350, 6 => 300, 7 => 250, 8 => 200
-        ui::Element ui_size = Settings::create_slider(
-            96.0, 8.0, 24.0,
-            1, 8, 1, 
-            (600.0 - this->ui_size_divisor) / 50.0, 
-            "", [this, window = &window](f64 value) { 
-                this->ui_size_divisor = 600.0 - (value * 50.0);
-                window->cancel(engine::Button::Left);
+        /*
+        ui::Element change_window_mode = create_button(
+            this->fullscreen
+                ? local.text("menu_windowed")
+                : local.text("menu_fullscreen"),
+            [this, local = &local](
+                ui::Element& element, Vec<2> cursor
+            ) {
+                (void) cursor;
+                this->fullscreen = !this->fullscreen;
+                element.child_at<0>().text = this->fullscreen
+                    ? local->text("menu_windowed")
+                    : local->text("menu_fullscreen");
             }
         );
-        menu.children.push_back(ui_size.with_padding(4.0).as_movable());
-        menu.children.push_back(create_button(
-                local.text("menu_close_menu"),
-                [h = std::move(close_handler)](ui::Element& e, Vec<2> c) {
+        menu.children.push_back(
+            change_window_mode.with_padding(2.0).as_movable()
+        );     
+        */
+        ui::Element toggle_buttons = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        ui::Element toggle_labels = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        toggle_buttons.children
+            .push_back(create_toggle(&this->fullscreen, &local));
+        toggle_labels.children.push_back(
+            create_text(local.text("menu_fullscreen"))
+                .with_padding(2.0).as_movable()
+        );
+        toggle_buttons.children
+            .push_back(create_toggle(&this->do_dithering, &local));
+        toggle_labels.children.push_back(
+            create_text(local.text("menu_dithering"))
+                .with_padding(2.0).as_movable()
+        );
+        toggle_buttons.children
+            .push_back(create_toggle(&this->do_pixelation, &local));
+        toggle_labels.children.push_back(
+            create_text(local.text("menu_pixelation"))
+                .with_padding(2.0).as_movable()
+        );
+        // // 1 => 550, 2 => 500, 3 => 450, 4 => 400, 
+        // // 5 => 350, 6 => 300, 7 => 250, 8 => 200
+        toggle_buttons.children.push_back(ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .with_child(create_button(
+                "+", [this](auto& e, auto c) {
                     (void) e; (void) c;
-                    h();
+                    f64& div = this->ui_size_divisor;
+                    div = std::max(div - 50.0, 200.0);
                 }
-            )
-            .with_padding(2.0)
+            ))
+            .with_child(create_button(
+                "-", [this](auto& e, auto c) {
+                    (void) e; (void) c;
+                    f64& div = this->ui_size_divisor;
+                    div = std::min(div + 50.0, 550.0);
+                }
+            ))
             .as_movable()
         );
+        toggle_labels.children.push_back(
+            create_text(local.text("menu_ui_size"))
+                .with_padding(2.0).as_movable()
+        );
+        menu.children.push_back(ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .with_child(std::move(toggle_buttons))
+            .with_child(std::move(toggle_labels))
+            .as_movable()
+        );
+        menu.children.push_back(create_button(
+            local.text("menu_close_menu"),
+            [h = std::move(close_handler)](ui::Element& e, Vec<2> c) {
+                (void) e; (void) c;
+                h();
+            }
+        ));
         return menu;
     }
 

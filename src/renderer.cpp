@@ -9,12 +9,13 @@ namespace houseofatmos {
         u64 resolution
     ) {
         if(window.width() == 0 || window.height() == 0) { return; }
-        if(window.height() < resolution) {
+        u64 height = resolution == UINT64_MAX? window.height() : resolution;
+        if(window.height() < height) {
             output.resize_fast(window.width(), window.height());
         } else {
-           f64 ratio = (f64) resolution / window.height();
-           i64 width = ceil(window.width() * ratio);
-           output.resize_fast(width, resolution);
+           f64 ratio = (f64) height / window.height();
+           u64 width = (u64) ceil(window.width() * ratio);
+           output.resize_fast(width, height);
         }
     }
 
@@ -52,9 +53,6 @@ namespace houseofatmos {
         this->geometry_shader = &scene.get(Renderer::geometry_shader_args);
         this->set_fog_uniforms(*this->geometry_shader);
         this->set_diffuse_uniforms(*this->geometry_shader);
-        Vec<2> target_size 
-            = Vec<2>((f64) this->target.width(), (f64) this->target.height());
-        this->geometry_shader->set_uniform("u_target_pixel_size", target_size);
         const engine::Texture& dither_pat = scene.get(Renderer::dither_pattern);
         this->geometry_shader->set_uniform("u_dither_pattern", dither_pat);
     }

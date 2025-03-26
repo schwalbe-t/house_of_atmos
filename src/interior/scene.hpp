@@ -50,6 +50,10 @@ namespace houseofatmos::interior {
         void add_exit_interaction(engine::Window& window);
         void add_interactions(engine::Window& window);
         void add_characters();
+        static void configure_renderer(
+            Renderer& renderer, 
+            const Interior& interior, const Settings& settings
+        );
 
         void init_ui(engine::Window& window);
 

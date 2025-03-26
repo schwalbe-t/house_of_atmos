@@ -116,9 +116,12 @@ namespace houseofatmos::world {
         );
     }
 
-    void Scene::configure_renderer(Renderer& renderer, u64 view_distance) {
+    void Scene::configure_renderer(
+        Renderer& renderer, const Settings& settings
+    ) {
+        renderer.resolution = settings.resolution();
         renderer.fog_gradiant_range = 10.0;
-        renderer.fog_start_dist = view_distance
+        renderer.fog_start_dist = settings.view_distance
             * World::tiles_per_chunk * World::units_per_tile
             - renderer.fog_gradiant_range;
         renderer.fog_dist_scale = Vec<3>(1.0, 0.0, 1.0); // only take Y axis into account
@@ -128,7 +131,7 @@ namespace houseofatmos::world {
         renderer.shadow_out_of_bounds_lit = true;
         renderer.shadow_map_resolution = 4096;
         renderer.sun_direction = sun_direction;
-        renderer.diffuse_min = 0.0;
+        renderer.diffuse_min = settings.do_dithering? 0.0 : 1.0;
         renderer.diffuse_max = 1.0;
     }
 
@@ -478,9 +481,7 @@ namespace houseofatmos::world {
     }
 
     void Scene::render(engine::Window& window) {
-        Scene::configure_renderer(
-            this->renderer, this->world->settings.view_distance
-        );
+        Scene::configure_renderer(this->renderer, this->world->settings);
         *this->sun = Scene::create_sun(this->world->player.character.position);
         this->renderer.fog_origin = this->world->player.character.position;
         this->renderer.configure(window, *this);

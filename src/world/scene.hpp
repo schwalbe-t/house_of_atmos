@@ -51,7 +51,9 @@ namespace houseofatmos::world {
         Scene(std::shared_ptr<World> world);
         void load_resources();
         static DirectionalLight create_sun(const Vec<3>& focus_point);
-        static void configure_renderer(Renderer& renderer, u64 view_distance);
+        static void configure_renderer(
+            Renderer& renderer, const Settings& settings
+        );
         void update_ui();
 
         f64 draw_distance_units() const {

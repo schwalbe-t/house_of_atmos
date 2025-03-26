@@ -103,18 +103,6 @@
         "en": "(C) schwalbe_t 2024 - Licensed under GPLv3",
         "bg": "(C) schwalbe_t 2024 - Лицензирано под GPLv3"
     },
-    "menu_windowed": {
-        "_context": "Text of the button that makes the game run in windowed mode",
-        "en": "Windowed",
-        "de": "Fenstermodus",
-        "bg": "Прозоречен режим"
-    },
-    "menu_fullscreen": {
-        "_context": "Text of the button that makes the game run in fullscreen mode",
-        "en": "Fullscreen",
-        "de": "Vollbildmodus",
-        "bg": "Цял екран"
-    },
     "menu_music_volume": {
         "_context": "Displayed over the slider that controls the music volume",
         "en": "Music Volume",
@@ -132,6 +120,36 @@
         "en": "View distance",
         "de": "Sichtweite",
         "bg": "Дистанция на видимостта"
+    },
+    "menu_yes": {
+        "_context": "Text of a button that shows that a setting is enabled",
+        "en": "Yes",
+        "de": "Ja",
+        "bg": "Да"
+    },
+    "menu_no": {
+        "_context": "Text of a button that shows that a setting is disabled",
+        "en": "No",
+        "de": "Nein",
+        "bg": "Не"
+    },
+    "menu_fullscreen": {
+        "_context": "Setting for making the game run in fullscreen mode",
+        "en": "Fullscreen",
+        "de": "Vollbildmodus",
+        "bg": "Цял екран"
+    },
+    "menu_dithering": {
+        "_context": "Setting for toggling dithering in shaders, using small repeating patterns to simulate intermediate colors in a limited palette.",
+        "en": "Patterned Shading",
+        "de": "Gemusterte Schattierung",
+        "bg": "Шарено засенчване"
+    },
+    "menu_pixelation": {
+        "_context": "Setting for toggling pixelated rendering. When enabled, the game renders at a fixed lower resolution, maintaining a retro look. When disabled, it renders at the full window resolution.",
+        "en": "Pixelated Rendering",
+        "de": "Pixeliertes Rendering",
+        "bg": "Пикселизирано изобразяване"
     },
     "menu_ui_size": {
         "_context": "Displayed over the slider that controls the size of the user interface",

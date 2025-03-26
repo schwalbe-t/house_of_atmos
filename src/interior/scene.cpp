@@ -19,16 +19,10 @@ namespace houseofatmos::interior {
             dialogues(DialogueManager(world->settings)) {
         this->world = std::move(world);
         this->outside = std::move(outside);
-        this->renderer.fog_color = background;
         this->renderer.lights.insert(
             this->renderer.lights.end(),
             this->interior.lights.begin(), this->interior.lights.end()
         );
-        this->renderer.shadow_depth_bias = interior.shadow_depth_bias;
-        this->renderer.shadow_normal_offset = interior.shadow_normal_offset;
-        this->renderer.shadow_out_of_bounds_lit 
-            = interior.shadow_out_of_bounds_lit;
-        this->renderer.shadow_map_resolution = 512;
         this->player.character.position = interior.player_start_pos;
         this->load_resources();
         this->add_characters();
@@ -70,6 +64,18 @@ namespace houseofatmos::interior {
                 character_c(*this, this->world->settings)
             );
         }
+    }
+
+    void Scene::configure_renderer(
+        Renderer& renderer, const Interior& interior, const Settings& settings
+    ) {
+        renderer.resolution = settings.resolution();
+        renderer.fog_color = background;
+        renderer.shadow_depth_bias = interior.shadow_depth_bias;
+        renderer.shadow_normal_offset = interior.shadow_normal_offset;
+        renderer.shadow_out_of_bounds_lit 
+            = interior.shadow_out_of_bounds_lit;
+        renderer.shadow_map_resolution = 512;
     }
 
 
@@ -172,6 +178,9 @@ namespace houseofatmos::interior {
     }
 
     void Scene::render(engine::Window& window) {
+        Scene::configure_renderer(
+            this->renderer, this->interior, this->world->settings
+        );
         this->renderer.configure(window, *this);
         this->renderer.render_to_shadow_maps();
         this->render_geometry(window, true /* render all rooms anyway */);
