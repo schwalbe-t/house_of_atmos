@@ -359,11 +359,11 @@ namespace houseofatmos::world {
         this->balance = serialized.balance;
         this->carriages = CarriageManager(
             CarriageNetwork(&this->terrain, &this->complexes),
-            serialized.carriages, buffer
+            serialized.carriages, buffer, this->settings
         );
         this->trains = TrainManager(
             TrackNetwork(&this->terrain, &this->complexes),
-            serialized.trains, buffer
+            serialized.trains, buffer, this->settings
         );
         this->personal_horse = PersonalHorse(
             this->settings, serialized.personal_horse

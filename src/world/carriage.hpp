@@ -126,8 +126,14 @@ namespace houseofatmos::world {
         f64 last_step_time = 0.0;
 
         public:
-        Carriage(CarriageType type, Vec<3> position, StatefulRNG& rng);
-        Carriage(const Serialized& serialized, const engine::Arena& buffer);
+        Carriage(
+            CarriageType type, Vec<3> position, StatefulRNG& rng,
+            const Settings& settings
+        );
+        Carriage(
+            const Serialized& serialized, const engine::Arena& buffer, 
+            const Settings& settings
+        );
 
         Carriage(Carriage&& other) noexcept = default;
         Carriage& operator=(Carriage&& other) noexcept = default;

@@ -513,7 +513,8 @@ namespace houseofatmos::world {
         AgentManager(Network&& network): network(std::move(network)) {}
         AgentManager(
             Network&& network, 
-            const Serialized& serialized, const engine::Arena& buffer
+            const Serialized& serialized, const engine::Arena& buffer,
+            const Settings& settings
         ): network(std::move(network)) {
             std::vector<SerializedAgent> agents;
             buffer.copy_array_at_into(
@@ -521,7 +522,7 @@ namespace houseofatmos::world {
             );
             this->agents.reserve(agents.size());
             for(const SerializedAgent& agent: agents) {
-                this->agents.push_back(Agent(agent, buffer));
+                this->agents.push_back(Agent(agent, buffer, settings));
             }
         }
 

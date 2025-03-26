@@ -257,19 +257,26 @@ namespace houseofatmos::world {
     }
 
 
-    Train::Train(LocomotiveType loco_type, Vec<3> position) {
+    Train::Train(
+        LocomotiveType loco_type, Vec<3> position, const Settings& settings
+    ) {
         this->position = position;
         this->loco_type = loco_type;
         this->car_count = 0;
+        this->speaker.volume = settings.sfx_volume;
     }
 
-    Train::Train(const Serialized& serialized, const engine::Arena& buffer): 
+    Train::Train(
+        const Serialized& serialized, const engine::Arena& buffer,
+        const Settings& settings
+    ): 
         Agent<TrackNetwork>(serialized.agent, buffer) {
         this->loco_type = serialized.locomotive;
         this->car_count = serialized.car_count;
         const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
             .at((size_t) this->loco_type);
         this->cars.resize(loco_info.loco_cars.size() + this->car_count);
+        this->speaker.volume = settings.sfx_volume;
     }
 
     Train::Serialized Train::serialize(engine::Arena& buffer) const {
@@ -295,6 +302,9 @@ namespace houseofatmos::world {
         return length_sum + padding;
     }
 
+    static const f64 base_chugga_period = 0.5;
+    static const f64 chugga_speed_factor = 1.0 / 5.0;
+
     void Train::update(
         TrackNetwork& network, 
         engine::Scene& scene, const engine::Window& window
@@ -302,6 +312,18 @@ namespace houseofatmos::world {
         (void) network;
         (void) scene;
         (void) window;
+        this->speaker.position = this->position;
+        this->speaker.update();
+        f64 chugga_speed = this->current_speed(network) * chugga_speed_factor;
+        f64 next_chugga_time = this->last_chugga_time 
+            + base_chugga_period / chugga_speed;
+        bool play_chugga = this->current_state() == AgentState::Travelling
+            && next_chugga_time <= window.time();
+        if(play_chugga) {
+            this->speaker.pitch = chugga_speed;
+            this->speaker.play(scene.get(sound::chugga));
+            this->last_chugga_time = window.time();
+        }
     }
 
     Vec<3> Train::find_heading(size_t car_idx) const {

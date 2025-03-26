@@ -110,10 +110,23 @@ namespace houseofatmos::world {
 
         LocomotiveType loco_type;
         u64 car_count;
+
+        private:
+        engine::Speaker speaker = engine::Speaker(
+            engine::Speaker::Space::World, 5.0
+        );
         std::vector<CarState> cars;
-        
-        Train(LocomotiveType loco_type, Vec<3> position);
-        Train(const Serialized& serialized, const engine::Arena& buffer);
+        f64 last_chugga_time = 0.0;
+
+        public:
+        Train(
+            LocomotiveType loco_type, Vec<3> position, 
+            const Settings& settings
+        );
+        Train(
+            const Serialized& serialized, const engine::Arena& buffer,
+            const Settings& settings
+        );
 
         Train(Train&& other) noexcept = default;
         Train& operator=(Train&& other) noexcept = default;

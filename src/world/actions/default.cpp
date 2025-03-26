@@ -49,7 +49,7 @@ namespace houseofatmos::world {
         u64 cost = Carriage::carriage_types().at((size_t) carriage_type).cost;
         if(!world.balance.pay_coins(cost, toasts)) { return; }
         world.carriages.agents.push_back(
-            Carriage(carriage_type, pos, rng)
+            Carriage(carriage_type, pos, rng, world.settings)
         );
         speaker.position = pos;
         speaker.play(scene.get(sound::horse));
@@ -82,7 +82,7 @@ namespace houseofatmos::world {
         }
         u64 cost = Train::locomotive_types().at((size_t) loco_type).cost;
         if(!world.balance.pay_coins(cost, toasts)) { return; }
-        world.trains.agents.push_back(Train(loco_type, pos));
+        world.trains.agents.push_back(Train(loco_type, pos, world.settings));
     }
 
     template<typename C>

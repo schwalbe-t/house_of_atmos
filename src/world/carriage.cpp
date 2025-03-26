@@ -186,7 +186,10 @@ namespace houseofatmos::world {
     }
 
 
-    Carriage::Carriage(CarriageType type, Vec<3> position, StatefulRNG& rng) {
+    Carriage::Carriage(
+        CarriageType type, Vec<3> position, StatefulRNG& rng, 
+        const Settings& settings
+    ) {
         this->type = type;
         this->position = position;
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
@@ -197,15 +200,18 @@ namespace houseofatmos::world {
             u64 h_type = rng.next_u64() % Carriage::horse_types().size();
             this->horses.at(horse_i) = (HorseType) h_type;
         }
+        this->speaker.volume = settings.sfx_volume;
     }
 
     Carriage::Carriage(
-        const Serialized& serialized, const engine::Arena& buffer
+        const Serialized& serialized, const engine::Arena& buffer,
+        const Settings& settings
     ): Agent<CarriageNetwork>(serialized.agent, buffer) {
         this->type = serialized.type;
         buffer.copy_array_at_into(
             serialized.horses_offset, serialized.horses_count, this->horses
         );
+        this->speaker.volume = settings.sfx_volume;
     }
 
     Carriage::Serialized Carriage::serialize(engine::Arena& buffer) const {
