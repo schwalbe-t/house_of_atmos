@@ -249,6 +249,27 @@ namespace houseofatmos::world {
             3, // max car count
             5.0, // speed
             5000 // cost
+        },
+        /* Small */ {
+            "locomotive_name_small",
+            &ui_icon::small_locomotive,
+            {
+                Train::Car(
+                    engine::Model::LoadArgs(
+                        "res/trains/small_locomotive.glb", 
+                        Renderer::model_attribs,
+                        engine::FaceCulling::Disabled
+                    ),
+                    Vec<3>(0, 0, 1), // model heading
+                    6.5, // length
+                    1.76, 4.15, // offsets of the front and back axles
+                    0.9 // wheel radius (of big wheel)
+                )
+            },
+            train_car_old,
+            4, // max car count
+            7.5, // speed
+            7500 // cost
         }
     };
 

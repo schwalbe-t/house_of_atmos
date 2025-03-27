@@ -837,6 +837,12 @@
         "en": "\"Moon\"",
         "bg": "\"Луна\""
     },
+    "locomotive_name_small": {
+        "_context": "Name of the small type of locomotive, inspired by the LSWR 0298 Class ('Beattie Well Tank') locomotive No. 44 designed by Joseph Beattie.",
+        "de": "\"Käfer\"",
+        "en": "\"Beetle\"",
+        "bg": "\"Бръмбар\""
+    },
 
 
 

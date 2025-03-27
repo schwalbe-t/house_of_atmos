@@ -84,7 +84,7 @@ namespace houseofatmos::world {
         static const std::vector<LocomotiveTypeInfo>& locomotive_types();
 
         enum LocomotiveType {
-            Basic
+            Basic, Small
         };
 
 
