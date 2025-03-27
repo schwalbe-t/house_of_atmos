@@ -119,7 +119,6 @@ namespace houseofatmos::world {
         std::vector<CarState> cars;
         AgentState prev_state = AgentState::Idle;
         f64 last_chugga_time = 0.0;
-        f64 last_whistle_time = 0.0;
 
         public:
         Train(

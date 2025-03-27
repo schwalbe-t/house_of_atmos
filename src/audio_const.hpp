@@ -36,7 +36,7 @@ namespace houseofatmos::sound {
         = Sound::LoadArgs("res/sounds/chugga.ogg", 0.025);
 
     static inline const Sound::LoadArgs train_whistle 
-        = Sound::LoadArgs("res/sounds/train_whistle.ogg", 0.025);
+        = Sound::LoadArgs("res/sounds/train_whistle.ogg", 0.0);
 
 
     inline void load_sounds(engine::Scene& scene) {
