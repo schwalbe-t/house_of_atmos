@@ -222,7 +222,7 @@ namespace houseofatmos::world {
         );
     }
 
-    static const f64 step_sound_period = 0.5;
+    static const f64 step_sound_period = 0.5 / 5.0;
 
     void Carriage::update(
         CarriageNetwork& network, 
@@ -239,7 +239,8 @@ namespace houseofatmos::world {
             this->prev_state = this->current_state();
             this->speaker.play(scene.get(sound::horse));
         }
-        f64 next_step_time = this->last_step_time + step_sound_period;
+        f64 next_step_time = this->last_step_time 
+            + step_sound_period * this->current_speed(network);
         bool play_step_sound = this->current_state() == AgentState::Travelling
             && next_step_time <= window.time()
             && !this->speaker.is_playing();

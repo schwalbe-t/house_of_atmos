@@ -76,6 +76,7 @@ namespace houseofatmos::world {
             const ui::Background* icon;
             std::vector<Car> loco_cars;
             const Car& car_type;
+            f64 whistle_pitch;
             u64 max_car_count;
             f64 speed;
             u64 cost;
@@ -116,7 +117,9 @@ namespace houseofatmos::world {
             engine::Speaker::Space::World, 5.0
         );
         std::vector<CarState> cars;
+        AgentState prev_state = AgentState::Idle;
         f64 last_chugga_time = 0.0;
+        f64 last_whistle_time = 0.0;
 
         public:
         Train(

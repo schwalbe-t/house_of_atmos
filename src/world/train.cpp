@@ -246,6 +246,7 @@ namespace houseofatmos::world {
                 )
             },
             train_car_old,
+            0.7, // whistle pitch
             3, // max car count
             5.0, // speed
             5000 // cost
@@ -262,11 +263,12 @@ namespace houseofatmos::world {
                     ),
                     Vec<3>(0, 0, 1), // model heading
                     6.5, // length
-                    1.76, 4.15, // offsets of the front and back axles
+                    2.35, 4.15, // offsets of the front and back axles
                     0.9 // wheel radius (of big wheel)
                 )
             },
             train_car_old,
+            0.6, // whistle pitch
             4, // max car count
             7.5, // speed
             7500 // cost
@@ -325,6 +327,7 @@ namespace houseofatmos::world {
 
     static const f64 base_chugga_period = 0.5;
     static const f64 chugga_speed_factor = 1.0 / 5.0;
+    static const f64 whistle_cooldown = 3.0;
 
     void Train::update(
         TrackNetwork& network, 
@@ -335,11 +338,21 @@ namespace houseofatmos::world {
         (void) window;
         this->speaker.position = this->position;
         this->speaker.update();
+        bool play_whistle = this->current_state() != this->prev_state
+            && this->schedule.size() > 0;
+        if(play_whistle) {
+            this->prev_state = this->current_state();
+            this->speaker.pitch = Train::locomotive_types()
+                .at((size_t) this->loco_type).whistle_pitch;
+            this->speaker.play(scene.get(sound::train_whistle));
+            this->last_whistle_time = window.time();
+        }
         f64 chugga_speed = this->current_speed(network) * chugga_speed_factor;
         f64 next_chugga_time = this->last_chugga_time 
             + base_chugga_period / chugga_speed;
         bool play_chugga = this->current_state() == AgentState::Travelling
-            && next_chugga_time <= window.time();
+            && next_chugga_time <= window.time()
+            && window.time() - this->last_whistle_time > whistle_cooldown;
         if(play_chugga) {
             this->speaker.pitch = chugga_speed;
             this->speaker.play(scene.get(sound::chugga));

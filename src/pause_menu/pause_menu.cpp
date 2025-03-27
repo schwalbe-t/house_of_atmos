@@ -152,6 +152,7 @@ namespace houseofatmos {
             this->show_root_menu(window);
         }
         if(window.was_pressed(engine::Key::Escape)) {
+            this->world->settings.save_to(Settings::default_path);
             window.set_scene(std::shared_ptr<engine::Scene>(this->previous));
         }
         this->toasts.update(*this);
