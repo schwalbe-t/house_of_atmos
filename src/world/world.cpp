@@ -437,11 +437,12 @@ namespace houseofatmos::world {
     }
 
     void World::update(
-        engine::Scene& scene, const engine::Window& window, Toasts& toasts
+        engine::Scene& scene, const engine::Window& window, Toasts& toasts,
+        ParticleManager* particles
     ) {
         this->trigger_autosave(window, toasts);
-        this->carriages.update(scene, window);
-        this->trains.update(scene, window);
+        this->carriages.update(scene, window, particles);
+        this->trains.update(scene, window, particles);
         this->complexes.update(window, this->balance, this->research);
         this->research.check_completion(toasts);
     }

@@ -225,12 +225,10 @@ namespace houseofatmos::world {
     static const f64 step_sound_period = 0.5 / 5.0;
 
     void Carriage::update(
-        CarriageNetwork& network, 
-        engine::Scene& scene, const engine::Window& window
+        CarriageNetwork& network, engine::Scene& scene, 
+        const engine::Window& window, ParticleManager* particles
     ) {
-        (void) network;
-        (void) scene;
-        (void) window;
+        (void) particles;
         this->speaker.position = this->position;
         this->speaker.update();
         bool play_state_sound = this->current_state() != this->prev_state

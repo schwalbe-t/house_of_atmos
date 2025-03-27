@@ -8,9 +8,8 @@
 #include <engine/ui.hpp>
 #include "world.hpp"
 #include "../interactable.hpp"
-#include "../ui_const.hpp"
-#include "../audio_const.hpp"
 #include "../renderer.hpp"
+#include "../particles.hpp"
 #include "../dialogue.hpp"
 #include "../cutscene.hpp"
 #include "actions/actionmode.hpp"
@@ -31,6 +30,7 @@ namespace houseofatmos::world {
         Cutscene cutscene;
 
         Renderer renderer;
+        ParticleManager particles;
         DirectionalLight* sun;
         Interactables interactables;
         std::vector<Character> characters;

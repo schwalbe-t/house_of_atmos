@@ -1,5 +1,8 @@
 
 #include "scene.hpp"
+#include "../ui_const.hpp"
+#include "../audio_const.hpp"
+#include "../particle_const.hpp"
 #include "../pause_menu/pause_menu.hpp"
 
 #include "terrainmap.hpp"
@@ -87,6 +90,7 @@ namespace houseofatmos::world {
 
     void Scene::load_resources() {
         Renderer::load_shaders(*this);
+        ParticleManager::load_shaders(*this);
         Terrain::load_resources(*this);
         Building::load_models(*this);
         Foliage::load_models(*this);
@@ -102,6 +106,7 @@ namespace houseofatmos::world {
         ui_background::load_textures(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
+        particle::load_textures(*this);
         this->load(this->world->settings.localization());
     }
 
@@ -419,7 +424,7 @@ namespace houseofatmos::world {
         }
         implement_mode_keybinds(*this, window);
         update_ui_visibiliy(*this, window);
-        this->world->update(*this, window, this->toasts);
+        this->world->update(*this, window, this->toasts, &this->particles);
         this->world->balance.update_counter(*this->coin_counter);
         this->dialogues.update(
             *this, window, this->world->player.character.position
@@ -495,6 +500,7 @@ namespace houseofatmos::world {
         this->renderer.render_to_output();
         this->render_geometry(window);
         this->world->terrain.render_water(*this, this->renderer, window);
+        this->particles.render(this->renderer, *this, window);
         this->action_mode.render(window, *this, this->renderer);
         window.show_texture(this->renderer.output());
         this->terrain_map.render();

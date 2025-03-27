@@ -21,7 +21,7 @@ const float DITHER_PAT_PX = 16;
 
 void main() {
     o_color = texture(u_texture, f_uv);
-    if(o_color.w == 0) { discard; } // don't render the pixel if alpha = 0
+    if(o_color.a == 0) { discard; } // don't render the pixel if alpha = 0
     bool use_shadow_color = is_in_shadow(f_w_pos, f_norm);
     if(!use_shadow_color) {
         float diffuse_light = diffuse_intensity(f_norm);

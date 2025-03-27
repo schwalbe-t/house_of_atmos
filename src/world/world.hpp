@@ -77,7 +77,8 @@ namespace houseofatmos::world {
         bool write_to_file(bool force_creation = false);
 
         void update(
-            engine::Scene& scene, const engine::Window& window, Toasts& toasts
+            engine::Scene& scene, const engine::Window& window, Toasts& toasts,
+            ParticleManager* particles = nullptr
         );
 
     };

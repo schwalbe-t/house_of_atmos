@@ -1,5 +1,6 @@
 
 #include "train.hpp"
+#include "../particle_const.hpp"
 #include <algorithm>
 
 namespace houseofatmos::world {
@@ -246,6 +247,7 @@ namespace houseofatmos::world {
                 )
             },
             train_car_old,
+            Vec<3>(0.0, 3.0, 1.22), // relative smoke origin
             1.4, // whistle pitch
             3, // max car count
             5.0, // speed
@@ -268,6 +270,7 @@ namespace houseofatmos::world {
                 )
             },
             train_car_old,
+            Vec<3>(0.0, 2.6, 2.0), // relative smoke origin
             1.3, // whistle pitch
             4, // max car count
             7.5, // speed
@@ -329,12 +332,9 @@ namespace houseofatmos::world {
     static const f64 chugga_speed_factor = 1.0 / 5.0;
 
     void Train::update(
-        TrackNetwork& network, 
-        engine::Scene& scene, const engine::Window& window
+        TrackNetwork& network, engine::Scene& scene, 
+        const engine::Window& window, ParticleManager* particles
     ) {
-        (void) network;
-        (void) scene;
-        (void) window;
         this->speaker.position = this->position;
         this->speaker.update();
         bool play_whistle = this->current_state() != this->prev_state
@@ -356,6 +356,28 @@ namespace houseofatmos::world {
             this->speaker.pitch = chugga_speed;
             this->speaker.play(scene.get(sound::chugga));
             this->last_chugga_time = window.time();
+        }
+        bool emit_smoke = play_chugga && this->cars.size() > 0
+            && particles != nullptr;
+        if(emit_smoke) {
+            const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
+                .at((size_t) this->loco_type);
+            const Train::Car& car_info = this->car_at(0);
+            f64 car_center = this->front_path_dist()
+                - this->offset_of_car(0) 
+                - (car_info.length / 2.0);
+            Vec<3> position = this->current_path().after(car_center).first;
+            Mat<4> transform
+                = Mat<4>::translate(position)
+                * Mat<4>::rotate_y(this->cars[0].yaw) 
+                * Mat<4>::rotate_x(this->cars[0].pitch);
+            Vec<4> smoke_pos = transform * loco_info.smoke_origin.with(1.0);
+            u64 smoke_size = (u64) (network.rng.next_f64() * 3.0);
+            const Particle::Type* smoke_type 
+                = smoke_size == 0? &particle::smoke_small
+                : smoke_size == 1? &particle::smoke_medium
+                : &particle::smoke_large;
+            particles->add(smoke_type->at(smoke_pos.swizzle<3>("xyz")));
         }
     }
 

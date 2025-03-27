@@ -24,6 +24,7 @@ namespace houseofatmos::world {
         };
         
         const Terrain* terrain;
+        StatefulRNG rng;
         std::unordered_map<NodeId, Node, NodeIdHash> graph;
 
         TrackNetwork(const Terrain* terrain, ComplexBank* complexes):
@@ -76,6 +77,7 @@ namespace houseofatmos::world {
             const ui::Background* icon;
             std::vector<Car> loco_cars;
             const Car& car_type;
+            Vec<3> smoke_origin;
             f64 whistle_pitch;
             u64 max_car_count;
             f64 speed;
@@ -172,8 +174,8 @@ namespace houseofatmos::world {
         }
 
         void update(
-            TrackNetwork& network, 
-            engine::Scene& scene, const engine::Window& window
+            TrackNetwork& network, engine::Scene& scene, 
+            const engine::Window& window, ParticleManager* particles
         ) override;
 
         Vec<3> find_heading(size_t car_idx) const;
