@@ -116,6 +116,9 @@ namespace houseofatmos {
             Vec<3> cam_true_up = cam_forward.cross(cam_right).normalized();
             shader.set_uniform("u_camera_right", cam_right);
             shader.set_uniform("u_camera_up", cam_true_up);
+            shader.set_uniform("u_camera_forward", renderer.camera.look_at);
+            renderer.set_fog_uniforms(shader);
+            renderer.set_shadow_uniforms(shader);
             for(auto& [type, instances]: this->particles) {
                 ParticleManager::update_particles(instances, window);
                 this->positions.clear();
@@ -146,6 +149,45 @@ namespace houseofatmos {
                     o += c;
                 }
             }
+        }
+
+    };
+
+
+    struct ParticleSpawner {
+
+        struct Type {
+            f64 attempt_period;
+            f64 spawn_chance;
+            void (*handler)(
+                ParticleSpawner& spawner, ParticleManager& particles
+            );
+
+            ParticleSpawner at(Vec<3> position, StatefulRNG& rng) const {
+                return ParticleSpawner(this, position, rng);
+            }
+        };
+
+        const Type* type;
+        Vec<3> position;
+        StatefulRNG rng;
+        f64 timer = 0.0;
+
+        ParticleSpawner(const Type* type, Vec<3> position, StatefulRNG& rng) {
+            this->type = type;
+            this->position = position;
+            this->rng = rng;
+            this->timer = rng.next_f64() * this->type->attempt_period;
+        }
+
+        void spawn(const engine::Window& window, ParticleManager& particles) {
+            if(this->timer >= this->type->attempt_period) {
+                if(this->rng.next_f64() < this->type->spawn_chance) {
+                    this->type->handler(*this, particles);
+                }
+                this->timer = fmod(this->timer, this->type->attempt_period);
+            }
+            this->timer += window.delta_time();
         }
 
     };

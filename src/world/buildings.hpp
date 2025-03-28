@@ -5,6 +5,7 @@
 #include "../renderer.hpp"
 #include "../collider.hpp"
 #include "../ui_const.hpp"
+#include "../particles.hpp"
 #include "complex.hpp"
 
 namespace houseofatmos::world {
@@ -38,6 +39,9 @@ namespace houseofatmos::world {
             bool destructible;
             u64 workers;
             u64 residents;
+
+            std::optional<std::function<ParticleSpawner (Vec<3>, StatefulRNG&)>> 
+                particle_spawner;
 
             void render_buildings(
                 const engine::Window& window, engine::Scene& scene,

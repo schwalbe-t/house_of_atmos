@@ -6,7 +6,7 @@
 
 namespace houseofatmos::world {
 
-    static Vec<3> tile_bounded_position(
+    static inline Vec<3> tile_bounded_position(
         u64 min_x, u64 min_z, u64 max_x, u64 max_z,
         const Vec<3>& pos, const Terrain& terrain
     ) {

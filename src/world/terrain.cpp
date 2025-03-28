@@ -416,15 +416,15 @@ namespace houseofatmos::world {
 
     std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>>
     Terrain::collect_track_piece_transforms(u64 chunk_x, u64 chunk_z) const {
-    std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>> instances;
-    const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
-    for(const TrackPiece& track_piece: chunk_data.track_pieces) {
-        instances[track_piece.type].push_back(track_piece.build_transform(
-            chunk_x, chunk_z, this->tiles_per_chunk(), this->units_per_tile()
-        ));
+        std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>> instances;
+        const ChunkData& chunk_data = this->chunk_at(chunk_x, chunk_z);
+        for(const TrackPiece& track_piece: chunk_data.track_pieces) {
+            instances[track_piece.type].push_back(track_piece.build_transform(
+                chunk_x, chunk_z, this->tiles_per_chunk(), this->units_per_tile()
+            ));
+        }
+        return instances;
     }
-    return instances;
-}
 
     std::vector<std::shared_ptr<Interactable>> Terrain::create_chunk_interactables(
         u64 chunk_x, u64 chunk_z, 
@@ -462,12 +462,42 @@ namespace houseofatmos::world {
         return created;
     }
 
+    std::vector<ParticleSpawner> Terrain::create_chunk_particle_spawners(
+        u64 chunk_x, u64 chunk_z
+    ) {
+        std::vector<ParticleSpawner> spawners;
+        const ChunkData& chunk = this->chunk_at(chunk_x, chunk_z);
+        for(const Building& building: chunk.buildings) {
+            const Building::TypeInfo& b_info = Building::types()
+                .at((size_t) building.type);
+            if(!b_info.particle_spawner.has_value()) { continue; }
+            u64 tile_x = chunk_x * this->chunk_tiles + building.x;
+            u64 tile_z = chunk_z * this->chunk_tiles + building.z;
+            Vec<3> tile_pos = Vec<3>(tile_x, 0, tile_z)
+                + Vec<3>(b_info.width, 0, b_info.height) * 0.5;
+            Vec<3> position = tile_pos * this->tile_size;
+            position.y() = this->elevation_at(tile_x, tile_z);
+            spawners.push_back((*b_info.particle_spawner)(position, this->rng));
+        }
+        for(const Foliage& foliage: chunk.foliage) {
+            const Foliage::TypeInfo& f_info = Foliage::types()
+                .at((size_t) foliage.type);
+            if(!f_info.particle_spawner.has_value()) { continue; }
+            u64 ch_pos_x = chunk_x * this->chunk_tiles * this->tile_size;
+            u64 ch_pos_z = chunk_z * this->chunk_tiles * this->tile_size;
+            Vec<3> position = Vec<3>(ch_pos_x, 0, ch_pos_z)
+                + Vec<3>(foliage.x, foliage.y, foliage.z);
+            spawners.push_back((*f_info.particle_spawner)(position, this->rng));
+        }
+        return spawners;
+    }
+
     Terrain::LoadedChunk Terrain::load_chunk(
         i64 chunk_x, i64 chunk_z, 
         Interactables* interactables, engine::Window& window,
         const std::shared_ptr<World>& world,
         bool in_bounds
-    ) const {
+    ) {
         if(!in_bounds) {
             return {
                 chunk_x, chunk_z, false,
@@ -477,7 +507,8 @@ namespace houseofatmos::world {
                 std::unordered_map<Building::Type, std::vector<Mat<4>>>(),
                 std::unordered_map<Resource::Type, std::vector<Mat<4>>>(),
                 std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>>(),
-                std::vector<std::shared_ptr<Interactable>>()
+                std::vector<std::shared_ptr<Interactable>>(),
+                std::vector<ParticleSpawner>()
             };
         }
         return {
@@ -490,7 +521,8 @@ namespace houseofatmos::world {
             this->collect_track_piece_transforms((u64) chunk_x, (u64) chunk_z),
             this->create_chunk_interactables(
                 (u64) chunk_x, (u64) chunk_z, interactables, window, world
-            )
+            ),
+            this->create_chunk_particle_spawners((u64) chunk_x, (u64) chunk_z)
         };
     }
 
@@ -499,7 +531,7 @@ namespace houseofatmos::world {
     ) const {
         i64 diff_x = (i64) chunk_x - this->view_chunk_x;
         i64 diff_z = (i64) chunk_z - this->view_chunk_z;
-        i64 mh_dist = llabs(diff_x) + llabs(diff_z);
+        i64 mh_dist = std::max(llabs(diff_x), llabs(diff_z));
         return mh_dist <= (i64) draw_distance;
     }
 
@@ -1019,6 +1051,17 @@ namespace houseofatmos::world {
             }
         }
         return unemployment;
+    }
+
+
+    void Terrain::spawn_particles(
+        const engine::Window& window, ParticleManager& particles
+    ) {
+        for(LoadedChunk& chunk: this->loaded_chunks) {
+            for(ParticleSpawner& spawner: chunk.particle_spawners) {
+                spawner.spawn(window, particles);
+            }
+        }
     }
 
 

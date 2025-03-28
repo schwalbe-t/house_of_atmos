@@ -372,12 +372,9 @@ namespace houseofatmos::world {
                 * Mat<4>::rotate_y(this->cars[0].yaw) 
                 * Mat<4>::rotate_x(this->cars[0].pitch);
             Vec<4> smoke_pos = transform * loco_info.smoke_origin.with(1.0);
-            u64 smoke_size = (u64) (network.rng.next_f64() * 3.0);
-            const Particle::Type* smoke_type 
-                = smoke_size == 0? &particle::smoke_small
-                : smoke_size == 1? &particle::smoke_medium
-                : &particle::smoke_large;
-            particles->add(smoke_type->at(smoke_pos.swizzle<3>("xyz")));
+            particles->add(particle::random_smoke(network.rng)
+                ->at(smoke_pos.swizzle<3>("xyz"))
+            );
         }
     }
 

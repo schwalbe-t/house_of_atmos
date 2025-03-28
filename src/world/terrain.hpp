@@ -57,6 +57,7 @@ namespace houseofatmos::world {
             std::unordered_map<Resource::Type, std::vector<Mat<4>>> resources;
             std::unordered_map<TrackPiece::Type, std::vector<Mat<4>>> track_pieces;
             std::vector<std::shared_ptr<Interactable>> interactables;
+            std::vector<ParticleSpawner> particle_spawners;
         };
 
         struct ChunkData {
@@ -96,6 +97,7 @@ namespace houseofatmos::world {
         };
 
         private:
+        StatefulRNG rng;
         u64 width, height;
         u64 tile_size;
         u64 chunk_tiles;
@@ -122,12 +124,15 @@ namespace houseofatmos::world {
             Interactables* interactables, engine::Window& window, 
             const std::shared_ptr<World>& world
         ) const;
+        std::vector<ParticleSpawner> create_chunk_particle_spawners(
+            u64 chunk_x, u64 chunk_z
+        );
         Terrain::LoadedChunk load_chunk(
             i64 chunk_x, i64 chunk_z, 
             Interactables* interactables, engine::Window& window, 
             const std::shared_ptr<World>& world,
             bool in_bounds = true
-        ) const;
+        );
 
 
         public:
@@ -284,6 +289,10 @@ namespace houseofatmos::world {
             const Vec<3>& position, u64 draw_distance,
             Interactables* interactables, engine::Window& window, 
             const std::shared_ptr<World>& world
+        );
+
+        void spawn_particles(
+            const engine::Window& window, ParticleManager& particles
         );
 
         engine::Mesh build_chunk_terrain_geometry(u64 chunk_x, u64 chunk_z) const;

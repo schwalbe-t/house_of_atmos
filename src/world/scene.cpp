@@ -495,6 +495,7 @@ namespace houseofatmos::world {
             this->world->settings.view_distance,
             &this->interactables, window, this->world
         );
+        this->world->terrain.spawn_particles(window, this->particles);
         this->renderer.render_to_shadow_maps();
         this->render_geometry(window);
         this->renderer.render_to_output();

@@ -1,7 +1,33 @@
 
 #include "buildings.hpp"
+#include "../particle_const.hpp"
 
 namespace houseofatmos::world {
+
+    static const ParticleSpawner::Type factory_smoke = {
+        3.0, // attempt period in seconds
+        1.0, // spawn chance on every attempt
+        // spawn function
+        [](ParticleSpawner& spawner, ParticleManager& particles) { 
+            particles.add(particle::random_smoke(spawner.rng)
+                ->at(spawner.position + Vec<3>(-3.000, 10.500, -1.312))
+            );
+            particles.add(particle::random_smoke(spawner.rng)
+                ->at(spawner.position + Vec<3>(-1.000, 10.500, -1.312))
+            );
+        }
+    };
+
+    static const ParticleSpawner::Type house_smoke = {
+        7.5, // attempt period in seconds
+        1.0, // spawn chance on every attempt
+        // spawn function
+        [](ParticleSpawner& spawner, ParticleManager& particles) { 
+            particles.add(particle::random_smoke(spawner.rng)
+                ->at(spawner.position + Vec<3>(-1.742, 3.769, -0.433))
+            );
+        }
+    };
 
     static std::vector<Building::TypeInfo> type_infos = {
         /* Type::Farmland */ {
@@ -25,7 +51,8 @@ namespace houseofatmos::world {
             500, // building cost
             Building::TypeInfo::allow_destruction,
             5, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
         /* Type::Mineshaft */ {
             "building_name_mineshaft",
@@ -45,7 +72,8 @@ namespace houseofatmos::world {
             1000, // building cost
             Building::TypeInfo::allow_destruction,
             15, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
         /* Type::Windmill */ {
             "building_name_windmill",
@@ -62,7 +90,8 @@ namespace houseofatmos::world {
             1000, // building cost
             Building::TypeInfo::allow_destruction,
             5, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
         /* Type::Factory */ {
             "building_name_factory",
@@ -79,7 +108,8 @@ namespace houseofatmos::world {
             1000, // building cost
             Building::TypeInfo::allow_destruction,
             25, // workers
-            0 // residents
+            0, // residents
+            [](Vec<3> p, StatefulRNG& r) { return factory_smoke.at(p, r); }
         },
         /* Type::House */ {
             "building_name_house",
@@ -96,7 +126,8 @@ namespace houseofatmos::world {
             500, // building cost
             Building::TypeInfo::allow_destruction,
             0, // workers
-            5 // residents
+            5, // residents
+            [](Vec<3> p, StatefulRNG& r) { return house_smoke.at(p, r); }
         },
         /* Type::Stable */ {
             "building_name_stable",
@@ -123,7 +154,8 @@ namespace houseofatmos::world {
             2000, // building cost
             Building::TypeInfo::allow_destruction,
             20, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
         /* Type::Plaza */ {
             "building_name_plaza",
@@ -157,7 +189,8 @@ namespace houseofatmos::world {
             0, // building cost (can't be built nor destroyed)
             Building::TypeInfo::indestructible,
             0, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
         /* Type::Mansion */ {
             "building_name_mansion",
@@ -178,7 +211,8 @@ namespace houseofatmos::world {
             0, // building cost (can't be built nor destroyed)
             Building::TypeInfo::indestructible,
             0, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
         /* Type::Pasture */ {
             "building_name_pasture",
@@ -201,7 +235,8 @@ namespace houseofatmos::world {
             500, // building cost
             Building::TypeInfo::allow_destruction,
             5, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
         /* Type::TreeFarm */ {
             "building_name_tree_farm",
@@ -224,7 +259,8 @@ namespace houseofatmos::world {
             500, // building cost
             Building::TypeInfo::allow_destruction,
             5, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
         /* Type::TrainDepot */ {
             "building_name_train_depot",
@@ -244,7 +280,8 @@ namespace houseofatmos::world {
             5000, // building cost
             Building::TypeInfo::allow_destruction,
             20, // workers
-            0 // residents
+            0, // residents
+            std::nullopt // no particles
         },
     };
 

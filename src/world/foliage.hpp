@@ -3,6 +3,8 @@
 
 #include "../renderer.hpp"
 #include "../collider.hpp"
+#include "../particles.hpp"
+#include <functional>
 
 namespace houseofatmos::world {
 
@@ -20,6 +22,9 @@ namespace houseofatmos::world {
             // spawn chance (0-1) with 0 height difference on the tile
             // decreases to 0 on stone with higher slopes, is 0 on sand
             ProbabilityFunc spawn_chance;
+
+            std::optional<std::function<ParticleSpawner (Vec<3>, StatefulRNG&)>> 
+                particle_spawner;
         };
         
         static const std::vector<TypeInfo>& types();
