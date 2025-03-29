@@ -290,13 +290,16 @@ namespace houseofatmos::world {
         /* Type::ShipYard */ {
             "building_name_ship_yard",
             &ui_icon::ship_yard,
-            Building::TypeInfo::keep_terrain,
+            Building::TypeInfo::remove_terrain,
             { 
-                "res/buildings/house.glb", Renderer::model_attribs,
+                "res/buildings/ship_yard.glb", Renderer::model_attribs,
                 engine::FaceCulling::Disabled    
             },
-            "door", 0.0,
-            {},
+            std::nullopt, 0.0,
+            {
+                RelCollider({ -7.5, -0.5, -7.5 }, { 10.0, 1, 15.0 }),
+                RelCollider({  2.5, -0.5, -7.5 }, {  5.0, 1, 10.0 })
+            },
             3, 3, // size
             std::nullopt, // no interior
             5000, // building cost
