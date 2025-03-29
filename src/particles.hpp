@@ -16,8 +16,12 @@ namespace houseofatmos {
             Vec<2> offset_tex;
             Vec<2> size_tex;
             f64 duration;
-            Vec<3> (*position_of)(const Particle& particle);
-            Vec<2> (*size_of)(const Particle& particle);
+            Vec<3> (*position_of)(
+                const Particle& particle, const engine::Window& window
+            );
+            Vec<2> (*size_of)(
+                const Particle& particle, const engine::Window& window
+            );
 
             Particle at(Vec<3> position) const {
                 return Particle(this, position, 0.0);
@@ -93,11 +97,14 @@ namespace houseofatmos {
 
         static void collect_values(
             const std::vector<Particle>& particles, 
+            const engine::Window& window,
             std::vector<Vec<3>>& positions, std::vector<Vec<2>>& sizes
         ) {
             for(const Particle& particle: particles) {
-                positions.push_back(particle.type->position_of(particle));
-                sizes.push_back(particle.type->size_of(particle));
+                Vec<3> position = particle.type->position_of(particle, window);
+                positions.push_back(position);
+                Vec<2> size = particle.type->size_of(particle, window);
+                sizes.push_back(size);
             }
         } 
 
@@ -124,7 +131,7 @@ namespace houseofatmos {
                 this->positions.clear();
                 this->sizes.clear();
                 ParticleManager::collect_values(
-                    instances, this->positions, this->sizes
+                    instances, window, this->positions, this->sizes
                 );
                 engine::Texture& tex = scene.get(type->texture);
                 Vec<2> tex_size = Vec<2>(tex.width(), tex.height());

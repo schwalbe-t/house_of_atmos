@@ -127,7 +127,11 @@ namespace houseofatmos::world {
             Building::TypeInfo::allow_destruction,
             0, // workers
             5, // residents
-            [](Vec<3> p, StatefulRNG& r) { return house_smoke.at(p, r); }
+            [](Vec<3> p, StatefulRNG& r) {
+                bool emits_smoke = r.next_f64() < 0.10;
+                Vec<3> position = emits_smoke? p : Vec<3>(1.0, 1.0, 1.0) / 0.0;
+                return house_smoke.at(position, r);
+            }
         },
         /* Type::Stable */ {
             "building_name_stable",

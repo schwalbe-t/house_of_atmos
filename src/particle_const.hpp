@@ -5,15 +5,25 @@
 
 namespace houseofatmos::particle {
 
-    static inline const Vec<3> wind = Vec<3>(1.0, 0.0, 0.3).normalized();
-
-    static inline Vec<3> smoke_position(const Particle& particle) {
-        return particle.start_pos 
-            + Vec<3>(0, 1, 0) * particle.age
-            + wind * particle.age;
+    static inline Vec<3> wind_direction(const engine::Window& window) {
+        f64 angle = sin(window.time() / 100) * sin(window.time() / 230) * pi;
+        f64 speed = 1.0 + sin(window.time() / 60) * 0.5;
+        return Vec<3>(cos(angle), 0, sin(angle)) * speed;
     }
 
-    static inline Vec<2> smoke_size(const Particle& particle) {
+
+    static inline Vec<3> smoke_position(
+        const Particle& particle, const engine::Window& window
+    ) {
+        return particle.start_pos 
+            + Vec<3>(0, 1, 0) * particle.age
+            + wind_direction(window) * particle.age;
+    }
+
+    static inline Vec<2> smoke_size(
+        const Particle& particle, const engine::Window& window
+    ) {
+        (void) window;
         return Vec<2>(1, 1) + Vec<2>(4.0/10.0, 4.0/10.0) * particle.age;
     }
 
@@ -52,15 +62,20 @@ namespace houseofatmos::particle {
     }
 
 
-    static inline Vec<3> tree_shedding_position(const Particle& particle) {
+    static inline Vec<3> tree_shedding_position(
+        const Particle& particle, const engine::Window& window
+    ) {
         return particle.start_pos 
             + Vec<3>(0, -1, 0) * particle.age
             + Vec<3>(0.25, 0, 0) * sin(particle.age / 2.5 * 2*pi)
-            + wind * particle.age;
+            + wind_direction(window) * particle.age;
     }
 
-    static inline Vec<2> tree_shedding_size(const Particle& particle) {
+    static inline Vec<2> tree_shedding_size(
+        const Particle& particle, const engine::Window& window
+    ) {
         (void) particle;
+        (void) window;
         return Vec<2>(0.5, 0.5);
     }
 
