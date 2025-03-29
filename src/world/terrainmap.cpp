@@ -324,6 +324,10 @@ namespace houseofatmos::world {
                 &ui_icon::map_marker_train, 
                 this->local->text("ui_train")
             ))
+            .with_child(create_single_marker_info(
+                &ui_icon::map_marker_boat, 
+                this->local->text("ui_boat")
+            ))
             .as_movable()
         );
     }
@@ -426,6 +430,11 @@ namespace houseofatmos::world {
         for(Train& train: this->world->trains.agents) {
             this->add_agent_markers(
                 train.as_abstract(), TerrainMap::train_display
+            );
+        }
+        for(Boat& boat: this->world->boats.agents) {
+            this->add_agent_markers(
+                boat.as_abstract(), TerrainMap::boat_display
             );
         }
         this->add_icon_marker(

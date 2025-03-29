@@ -62,6 +62,7 @@ namespace houseofatmos::world {
                     if(complex.member_count() == 0) {
                         remove_agent_stops(this->world->carriages, complex_id);
                         remove_agent_stops(this->world->trains, complex_id);
+                        remove_agent_stops(this->world->boats, complex_id);
                         this->world->complexes.delete_complex(complex_id);
                     }
                 }
@@ -132,6 +133,7 @@ namespace houseofatmos::world {
                 );
                 this->world->balance.add_coins(refunded, this->toasts);
                 this->world->carriages.find_paths(&this->toasts);
+                this->world->boats.find_paths(&this->toasts);
                 this->selection.type = Selection::None;
                 this->speaker.play(scene.get(sound::demolish));
                 return;

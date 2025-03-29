@@ -1,5 +1,5 @@
 
-#include "buildings.hpp"
+#include "building.hpp"
 #include "../particle_const.hpp"
 
 namespace houseofatmos::world {
@@ -287,6 +287,24 @@ namespace houseofatmos::world {
             0, // residents
             std::nullopt // no particles
         },
+        /* Type::ShipYard */ {
+            "building_name_ship_yard",
+            &ui_icon::ship_yard,
+            Building::TypeInfo::keep_terrain,
+            { 
+                "res/buildings/house.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled    
+            },
+            "door", 0.0,
+            {},
+            3, 3, // size
+            std::nullopt, // no interior
+            5000, // building cost
+            Building::TypeInfo::allow_destruction,
+            30, // workers
+            0, // residents
+            std::nullopt // no particles
+        }
     };
 
     const std::vector<Building::TypeInfo>& Building::types() {

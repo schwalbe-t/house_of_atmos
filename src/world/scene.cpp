@@ -101,6 +101,7 @@ namespace houseofatmos::world {
         ActionMode::load_resources(*this);
         Carriage::load_resources(*this);
         Train::load_resources(*this);
+        Boat::load_resources(*this);
         PersonalHorse::load_resources(*this);
         ui::Manager::load_shaders(*this);
         ui_background::load_textures(*this);
@@ -473,6 +474,11 @@ namespace houseofatmos::world {
             this->renderer, *this, window
         );
         this->world->trains.render(
+            this->world->player.character.position, 
+            2.0 * this->draw_distance_units(),
+            this->renderer, *this, window
+        );
+        this->world->boats.render(
             this->world->player.character.position, this->draw_distance_units(),
             this->renderer, *this, window
         );

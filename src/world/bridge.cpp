@@ -33,6 +33,7 @@ namespace houseofatmos::world {
             },
             // min and max height (distance of terrain / water to bridge floor)
             3, 12, 
+            false, // does not allow boats to pass under
             1000 // cost of bridge per tile
         },
         /* Type::Stone */ {
@@ -59,7 +60,8 @@ namespace houseofatmos::world {
                 RelCollider({ -2.5, -18,  2.0 }, { 5.0, 17, 0.5 })
             },
             // min and max height (distance of terrain / water to bridge floor)
-            2, 18,
+            2, 18, 
+            false, // does not allow boats to pass under
             2000 // cost of bridge per tile
         },
         /* Type::Metal */ {
@@ -80,7 +82,8 @@ namespace houseofatmos::world {
                 RelCollider({  2.5 - 0.25, 0, -2.5 - 0.25 }, { 0.5, 1, 5.0 + 0.5 }),
             },
             // min and max height (distance of terrain / water to bridge floor)
-            1, 1024,
+            1, 1024, 
+            true, // allows boats to pass under
             3000 // cost of bridge per tile
         }
     };

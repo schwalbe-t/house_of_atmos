@@ -25,17 +25,11 @@ namespace houseofatmos::world {
         i64 end_z = stable_z + stable.height + carr_spawn_d;
         for(i64 x = start_x; x < end_x; x += 1) {
             for(i64 z = start_z; z < end_z; z += 1) {
-                if(x < 0 || (u64) x >= world.terrain.width_in_tiles()) { continue; }
-                if(z < 0 || (u64) z >= world.terrain.height_in_tiles()) { continue; }
-                u64 chunk_x = (u64) x / world.terrain.tiles_per_chunk();
-                u64 chunk_z = (u64) z / world.terrain.tiles_per_chunk();
-                const Terrain::ChunkData& chunk = world.terrain
-                    .chunk_at(chunk_x, chunk_z);
-                u64 rel_x = (u64) x % world.terrain.tiles_per_chunk();
-                u64 rel_z = (u64) z % world.terrain.tiles_per_chunk();
-                bool is_obstacle = !chunk.path_at(rel_x, rel_z)
-                    || world.terrain.building_at(x, z) != nullptr;
-                if(is_obstacle) { continue; }
+                bool is_valid = x >= 0 && z >= 0
+                    && (u64) x < world.terrain.width_in_tiles()
+                    && (u64) z < world.terrain.height_in_tiles()
+                    && world.carriages.network.is_passable({ (u64) x, (u64) z });
+                if(!is_valid) { continue; }
                 pos = Vec<3>(x + 0.5, 0, z + 0.5) * world.terrain.units_per_tile();
                 pos.y() = world.terrain.elevation_at(pos);
                 found_pos = true;
@@ -56,7 +50,8 @@ namespace houseofatmos::world {
     }
 
     static void summon_locomotive(
-        World& world, u64 depot_cx, u64 depot_cz, Toasts& toasts,
+        engine::Scene& scene, World& world, engine::Speaker& speaker, 
+        u64 depot_cx, u64 depot_cz, Toasts& toasts,
         Train::LocomotiveType loco_type
     ) {
         Vec<3> pos;
@@ -83,6 +78,42 @@ namespace houseofatmos::world {
         u64 cost = Train::locomotive_types().at((size_t) loco_type).cost;
         if(!world.balance.pay_coins(cost, toasts)) { return; }
         world.trains.agents.push_back(Train(loco_type, pos, world.settings));
+        speaker.position = pos;
+        speaker.play(scene.get(sound::train_whistle));
+    }
+
+    static const i64 boat_spawn_d = 5;
+
+    static void summon_boat(
+        World& world, u64 yard_cx, u64 yard_cz, Toasts& toasts,
+        Boat::Type boat_type
+    ) {
+        Vec<3> pos;
+        bool found_pos = false;
+        i64 start_x = yard_cx - boat_spawn_d;
+        i64 start_z = yard_cz - boat_spawn_d;
+        i64 end_x = yard_cx + boat_spawn_d;
+        i64 end_z = yard_cz + boat_spawn_d;
+        for(i64 x = start_x; x <= end_x; x += 1) {
+            for(i64 z = start_z; z <= end_z; z += 1) {
+                bool is_valid = x >= 1 && z >= 1
+                    && (u64) x < world.terrain.width_in_tiles()
+                    && (u64) z < world.terrain.height_in_tiles()
+                    && world.boats.network.is_passable({ (u64) x, (u64) z });
+                if(!is_valid) { continue; }
+                pos = Vec<3>(x, 0, z) * world.terrain.units_per_tile();
+                pos.y() = world.terrain.elevation_at(pos);
+                found_pos = true;
+                break;
+            }
+        }
+        if(!found_pos) {
+            toasts.add_error("toast_no_valid_boat_location", {});
+            return;
+        }
+        u64 cost = Boat::types().at((size_t) boat_type).cost;
+        if(!world.balance.pay_coins(cost, toasts)) { return; }
+        world.boats.agents.push_back(Boat(boat_type, pos));
     }
 
     template<typename C>
@@ -169,11 +200,30 @@ namespace houseofatmos::world {
                         this->local, "ui_train", Train::locomotive_types(),
                         [](auto ct) { return ct.local_name; },
                         [](auto ct) { return ct.icon; },
-                        [this, asx, asz](auto ct, auto ti) {
+                        [scene = &scene, this, asx, asz](auto ct, auto ti) {
                             (void) ct;
                             summon_locomotive(
-                                *this->world, asx, asz, this->toasts,
+                                *scene, *this->world, this->speaker,
+                                asx, asz, this->toasts,
                                 (Train::LocomotiveType) ti
+                            );
+                        }
+                    );
+                    break;
+                }
+                case Building::ShipYard: {
+                    this->selector.origin_x = asx;
+                    this->selector.origin_z = asz;
+                    *this->selector.element 
+                        = create_agent_selector<Boat::TypeInfo>(
+                        this->local, "ui_boat", Boat::types(),
+                        [](auto ct) { return ct.local_name; },
+                        [](auto ct) { return ct.icon; },
+                        [this, asx, asz](auto ct, auto ti) {
+                            (void) ct;
+                            summon_boat(
+                                *this->world, asx, asz, this->toasts,
+                                (Boat::Type) ti
                             );
                         }
                     );

@@ -81,6 +81,20 @@ namespace houseofatmos::world {
             }
         };
 
+        static inline AgentDisplay boat_display = {
+            &ui_icon::map_marker_boat,
+            "ui_boat", "ui_remove_boat",
+            [](AbstractAgent agent, World& world) {
+                for(size_t c = 0; c < world.boats.agents.size(); c += 1) {
+                    Boat& boat = world.boats.agents[c];
+                    if(boat.as_abstract().data != agent.data) { continue; }
+                    auto removed = world.boats.agents.begin() + c;
+                    world.boats.agents.erase(removed);
+                }
+            },
+            {}
+        };
+
         private:
         u64 t_width, t_height;
         const engine::Localization::LoadArgs local_ref;

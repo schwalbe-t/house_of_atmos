@@ -326,9 +326,13 @@ namespace houseofatmos::world {
         trains(TrainManager(
             TrackNetwork(&this->terrain, &this->complexes)
         )),
+        boats(BoatManager(
+            BoatNetwork(&this->terrain, &this->complexes)
+        )),
         personal_horse(PersonalHorse(this->settings)) {
         this->carriages.find_paths(nullptr);
-        this->trains.find_paths(nullptr);        
+        this->trains.find_paths(nullptr);
+        this->boats.find_paths(nullptr);
     }
 
 
@@ -341,6 +345,9 @@ namespace houseofatmos::world {
             )), 
             trains(TrainManager(
                 TrackNetwork(&this->terrain, &this->complexes)
+            )),
+            boats(BoatManager(
+                BoatNetwork(&this->terrain, &this->complexes)
             )),
             personal_horse(PersonalHorse(this->settings)) {
         const auto& serialized = buffer.value_at<World::Serialized>(0);
@@ -365,12 +372,17 @@ namespace houseofatmos::world {
             TrackNetwork(&this->terrain, &this->complexes),
             serialized.trains, buffer, this->settings
         );
+        this->boats = BoatManager(
+            BoatNetwork(&this->terrain, &this->complexes),
+            serialized.boats, buffer, this->settings
+        );
         this->personal_horse = PersonalHorse(
             this->settings, serialized.personal_horse
         );
         this->research = research::Research(serialized.research, buffer);
         this->carriages.find_paths(nullptr);
         this->trains.find_paths(nullptr);
+        this->boats.find_paths(nullptr);
     }
 
     engine::Arena World::serialize() const {
@@ -386,6 +398,7 @@ namespace houseofatmos::world {
         Player::Serialized player = this->player.serialize();
         CarriageManager::Serialized carriages = this->carriages.serialize(buffer);
         TrainManager::Serialized trains = this->trains.serialize(buffer);
+        BoatManager::Serialized boats = this->boats.serialize(buffer);
         research::Research::Serialized research = this->research.serialize(buffer);
         auto& serialized = buffer.value_at<World::Serialized>(root_offset);
         serialized.format_version = World::current_format_version;
@@ -399,6 +412,7 @@ namespace houseofatmos::world {
         serialized.balance = this->balance;
         serialized.carriages = carriages;
         serialized.trains = trains;
+        serialized.boats = boats;
         serialized.personal_horse = this->personal_horse.serialize();
         serialized.research = research;
         return buffer;
@@ -443,6 +457,7 @@ namespace houseofatmos::world {
         this->trigger_autosave(window, toasts);
         this->carriages.update(scene, window, particles);
         this->trains.update(scene, window, particles);
+        this->boats.update(scene, window, particles);
         this->complexes.update(window, this->balance, this->research);
         this->research.check_completion(toasts);
     }

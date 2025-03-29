@@ -257,6 +257,8 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON(Vec<2>(160, 128), Vec<2>(16, 16));
     static inline const ui::Background depot
         = MAKE_HOA_UI_ICON(Vec<2>(176, 128), Vec<2>(16, 16));
+    static inline const ui::Background ship_yard
+        = MAKE_HOA_UI_ICON(Vec<2>(192, 128), Vec<2>(16, 16));
 
     static inline const ui::Background wooden_bridge
         = MAKE_HOA_UI_ICON(Vec<2>(16, 144), Vec<2>(16, 16));
@@ -274,6 +276,9 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON(Vec<2>(208, 144), Vec<2>(16, 16));
     static inline const ui::Background small_locomotive
         = MAKE_HOA_UI_ICON(Vec<2>(224, 144), Vec<2>(16, 16));
+
+    static inline const ui::Background sail_boat
+        = MAKE_HOA_UI_ICON(Vec<2>(304, 144), Vec<2>(16, 16));
 
     static inline const ui::Background map_marker_player
         = MAKE_HOA_UI_ICON(Vec<2>(16, 168), Vec<2>(5, 6));

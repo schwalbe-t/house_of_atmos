@@ -189,6 +189,7 @@ namespace houseofatmos::world {
                 this->world->terrain.adjust_area_foliage(
                     min_x - 1, min_z - 1, max_x + 1, max_z + 1
                 );
+                this->world->boats.find_paths(&this->toasts);
                 this->speaker.position = tile_bounded_position(
                     min_x, min_z, max_x, max_z,
                     this->world->player.character.position,

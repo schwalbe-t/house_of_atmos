@@ -98,7 +98,8 @@ namespace houseofatmos::world {
             Mansion,
             Pasture,
             TreeFarm,
-            TrainDepot
+            TrainDepot,
+            ShipYard
         };
 
         Type type;

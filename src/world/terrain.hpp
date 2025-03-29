@@ -5,11 +5,11 @@
 #include <engine/rng.hpp>
 #include "../interactable.hpp"
 #include "complex.hpp"
-#include "buildings.hpp"
+#include "building.hpp"
 #include "foliage.hpp"
 #include "bridge.hpp"
 #include "resource.hpp"
-#include "train_tracks.hpp"
+#include "train_track.hpp"
 
 namespace houseofatmos::world {
 

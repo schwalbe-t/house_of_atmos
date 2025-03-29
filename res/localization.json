@@ -252,6 +252,12 @@
         "en": "Train",
         "bg": "Влак"
     },
+    "ui_boat": {
+        "_context": "Used as the title of the boat info UI and the current position of a boat in the map legend for the boat markers",
+        "de": "Boot",
+        "en": "Boat",
+        "bg": "Лодка"
+    },
     "ui_status_no_instructions": {
         "_context": "Displayed as the status of a carriage (or other agent like a train) when its schedule (list of places to go to) is empty",
         "de": "Ohne Anweisungen",
@@ -279,16 +285,22 @@
         "bg": "Изгуби се (няма път до спирка ${})"
     },
     "ui_remove_carriage": {
-        "_context": "Text of the button used to remove / scrap (no refund) the carriage",
+        "_context": "Text of the button used to remove / scrap (no refund) a carriage",
         "de": "Kutsche entfernen",
         "en": "Remove carriage",
         "bg": "Премахвай каруца"
     },
     "ui_remove_train": {
-        "_context": "Text of the button used to remove / scrap (no refund) the train",
+        "_context": "Text of the button used to remove / scrap (no refund) a train",
         "de": "Zug entfernen",
         "en": "Remove train",
         "bg": "Премахвай влак"
+    },
+    "ui_remove_boat": {
+        "_context": "Text of the button used to remove / scrap (no refund) a boat",
+        "de": "Boot entfernen",
+        "en": "Remove boat",
+        "bg": "Премахвай лодка"
     },
     "ui_train_add_car": {
         "_context": "Text of the button used to append a car to a train",
@@ -443,6 +455,12 @@
         "en": "There is no valid location for a train nearby!",
         "bg": "Няма валидна локация за влакове на около!"
     },
+    "toast_no_valid_boat_location": {
+        "_context": "Pop-up that informs the user when they try to create a boat at a yard, but the yard does not have any water nearby",
+        "de": "Kein gültiger Ort für ein Boot in der Nähe!",
+        "en": "There is no valid location for a boat nearby!",
+        "bg": "Няма валидна локация за лодки на около!"
+    },
     "toast_carriage_lost": {
         "_context": "Pop-up that informs that a carriage has now become lost (meaning the carriage can't find a path to its next scheduled stop, related to 'ui_status_lost')",
         "de": "Eine Kutsche hat sich verirrt!",
@@ -454,6 +472,12 @@
         "de": "Ein Zug hat sich verirrt!",
         "en": "A train got lost!",
         "bg": "Влак се изгуби!"
+    },
+    "toast_boat_lost": {
+        "_context": "Pop-up that informs that a boat has now become lost (meaning the boat can't find a path to its next scheduled stop, related to 'ui_status_lost')",
+        "de": "Ein Boot hat sich verirrt!",
+        "en": "A boat got lost!",
+        "bg": "Лодка се изгуби!"
     },
     "toast_personal_horse_travelling": {
         "_context": "Shown when the personal horse is instructed to come to the player usign the [H] button.",
@@ -792,6 +816,12 @@
         "de": "Depot",
         "bg": "Депо"
     },
+    "building_name_ship_yard": {
+        "_context": "Name of a building and the land around it used to construct and maintain ships",
+        "en": "Ship Yard",
+        "de": "Werft",
+        "bg": "Корабна работ."
+    },
 
 
 
@@ -842,6 +872,15 @@
         "de": "\"Käfer\"",
         "en": "\"Beetle\"",
         "bg": "\"Бръмбар\""
+    },
+
+
+
+    "boat_name_sail": {
+        "_context": "Name of a boat that uses sails for propulsion, used for transport of goods",
+        "de": "Segelboot",
+        "en": "Sail boat",
+        "bg": "Ветроходна лодка"
     },
 
 

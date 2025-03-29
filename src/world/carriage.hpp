@@ -1,50 +1,27 @@
 
 #pragma once
 
-#include "agents.hpp"
-#include "terrain.hpp"
+#include "agent.hpp"
+#include "tile_network.hpp"
 
 namespace houseofatmos::world {
 
-    struct CarriageNetworkNode {
-        using NodeId = std::pair<u64, u64>;
-        struct NodeIdHash {
-            std::size_t operator()(const NodeId& p) const {
-                auto xh = std::hash<u64>{}(p.first);
-                auto zh = std::hash<u64>{}(p.second);
-                return xh ^ (zh + 0x9e3779b9 + (xh << 6) + (xh >> 2));
-            }
-        };
-    };
+    struct CarriageNetwork: TileNetwork {
 
-    struct CarriageNetwork: AgentNetwork<CarriageNetworkNode> {
-
-        const Terrain* terrain;
         StatefulRNG rng;
 
         CarriageNetwork(const Terrain* terrain, ComplexBank* complexes): 
-            AgentNetwork(complexes, "toast_carriage_lost"), terrain(terrain) {}
+            TileNetwork(terrain, complexes, "toast_carriage_lost", 1) {}
 
         CarriageNetwork(CarriageNetwork&& other) noexcept = default;
         CarriageNetwork& operator=(CarriageNetwork&& other) noexcept = default;
 
-        bool is_passable(NodeId node) const;
-
-        void collect_next_nodes(
-            std::optional<NodeId> prev, NodeId node, 
-            std::vector<std::pair<NodeId, u64>>& out
-        ) override;
-
-        u64 node_target_dist(NodeId node, ComplexId target) override;
-
-        bool node_at_target(NodeId node, ComplexId target) override;
+        bool is_passable(NodeId node) override;
 
         void collect_node_points(
             std::optional<NodeId> prev, NodeId node, std::optional<NodeId> next,
             std::vector<Vec<3>>& out
         ) override;
-
-        std::optional<NodeId> closest_node_to(const Vec<3>& position) override;
 
     };
 

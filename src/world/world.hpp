@@ -7,6 +7,7 @@
 #include "../player.hpp"
 #include "carriage.hpp"
 #include "train.hpp"
+#include "boat.hpp"
 #include "personal_horse.hpp"
 
 namespace houseofatmos::world {
@@ -16,7 +17,7 @@ namespace houseofatmos::world {
         // For any breaking change to the serialized structure of the world,
         // increment this number by 1
         // (any time an update makes it so old files can't be loaded anymore)
-        static inline u32 current_format_version = 0;
+        static inline u32 current_format_version = 1;
 
         struct Serialized {
             u32 format_version;
@@ -28,6 +29,7 @@ namespace houseofatmos::world {
             Balance balance;
             CarriageManager::Serialized carriages;
             TrainManager::Serialized trains;
+            BoatManager::Serialized boats;
             PersonalHorse::Serialized personal_horse;
             research::Research::Serialized research;
         };
@@ -46,6 +48,7 @@ namespace houseofatmos::world {
         Balance balance;
         CarriageManager carriages;
         TrainManager trains;
+        BoatManager boats;
         PersonalHorse personal_horse;
         research::Research research;
 

@@ -22,6 +22,7 @@ namespace houseofatmos::world {
             std::vector<RelCollider> vertical_colliders;
             i64 min_height;
             i64 max_height;
+            bool allows_boat_passage;
             u64 cost_per_tile;
         };
 

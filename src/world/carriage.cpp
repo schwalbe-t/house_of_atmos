@@ -1,67 +1,16 @@
 
 #include "carriage.hpp"
 #include "../human.hpp"
+#include "../ui_const.hpp"
 
 namespace houseofatmos::world {
 
-    bool CarriageNetwork::is_passable(NodeId node) const {
+    bool CarriageNetwork::is_passable(NodeId node) {
         auto [x, z] = node;
         bool has_path = this->terrain->path_at((i64) x, (i64) z)
             && this->terrain->building_at((i64) x, (i64) z) == nullptr;
         bool has_bridge = this->terrain->bridge_at((i64) x, (i64) z);
         return has_path || has_bridge;
-    }
-
-    static inline const u64 cost_ortho = 10;
-    static inline const u64 cost_daigo = 14;
-
-    void CarriageNetwork::collect_next_nodes(
-        std::optional<NodeId> prev, NodeId node, 
-        std::vector<std::pair<NodeId, u64>>& out
-    ) {
-        (void) prev;
-        auto [x, z] = node;
-        u64 left = x > 0? x - 1 : 0;
-        u64 right = std::min(x + 1, this->terrain->width_in_tiles() - 1);
-        u64 top = z > 0? z - 1 : 0;
-        u64 bottom = std::min(z + 1, this->terrain->height_in_tiles() - 1);
-        for(u64 nx = left; nx <= right; nx += 1) {
-            for(u64 nz = top; nz <= bottom; nz += 1) {
-                NodeId neighbor = { nx, nz };
-                if(nx == x && nz == z) { continue; }
-                if(!this->is_passable(neighbor)) { continue; }
-                bool is_diagonal = nx != x && nz != z;
-                u64 cost = is_diagonal? cost_daigo : cost_ortho;
-                out.push_back({ neighbor, cost });
-            }
-        }
-    }
-
-    u64 CarriageNetwork::node_target_dist(NodeId node, ComplexId target) {
-        auto [nx, nz] = node;
-        // find target building start coords
-        const Complex& complex = this->complexes->get(target);
-        auto [bsx, bsz] = complex.closest_member_to(nx, nz);
-        // find target building end coordinates
-        // (end in this case meaning the last tile still inside the building)
-        const Building* building = this->terrain
-            ->building_at((i64) bsx, (i64) bsz);
-        const Building::TypeInfo& building_type = Building::types()
-            .at((size_t) building->type);
-        u64 bex = bsx + building_type.width - 1;
-        u64 bez = bsz + building_type.height - 1;
-        // distance on each individual axis
-        u64 dx = nx < bsx? bsx - nx // left of building
-            : nx > bex? nx - bex    // right of building
-            : 0;                    // on X axis inside building
-        u64 dz = nz < bsz? bsz - nz // top of building
-            : nz > bez? nz - bez    // below building
-            : 0;                    // on Z axis inside building
-        return dx + dz; // manhattan distance
-    }
-
-    bool CarriageNetwork::node_at_target(NodeId node, ComplexId target) {
-        return this->node_target_dist(node, target) <= 1;
     }
 
     static inline const f64 max_path_pos_var = 0.05;
@@ -79,17 +28,6 @@ namespace houseofatmos::world {
             + (o + Vec<3>(0.5, 0, 0.5)) * this->terrain->units_per_tile();
         point.y() = this->terrain->elevation_at(point);
         out.push_back(point);
-    }
-
-    std::optional<CarriageNetwork::NodeId> CarriageNetwork::closest_node_to(
-        const Vec<3>& position
-    ) {
-        Vec<3> tile = position / this->terrain->units_per_tile();
-        u64 x = (u64) std::max(tile.x(), 0.0);
-        x = std::min(x, this->terrain->width_in_tiles());
-        u64 z = (u64) std::max(tile.z(), 0.0);
-        z = std::min(z, this->terrain->height_in_tiles());
-        return CarriageNetwork::NodeId(x, z);
     }
 
 

@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "agents.hpp"
+#include "agent.hpp"
 #include "terrain.hpp"
 
 namespace houseofatmos::world {
