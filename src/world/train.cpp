@@ -215,7 +215,8 @@ namespace houseofatmos::world {
         Vec<3>(0, 0, 1), // model heading
         3.6, // length
         0.8, 2.8, // offsets of the front and back axles
-        0.5 // wheel radius
+        0.5, // wheel radius
+        150 // item capacity
     );
 
     static Train::Car train_car_modern = Train::Car(
@@ -226,7 +227,21 @@ namespace houseofatmos::world {
         Vec<3>(0, 0, 1), // model heading
         4.0, // length
         0.85, 3.25, // offsets of the front and back axles
-        0.5 // wheel radius
+        0.5, // wheel radius
+        250 // item capacity
+    );
+
+    static Train::Car train_car_tram = Train::Car(
+        engine::Model::LoadArgs(
+            "res/trains/tram.glb", 
+            Renderer::model_attribs,
+            engine::FaceCulling::Disabled
+        ),
+        Vec<3>(0, 0, 1), // model heading
+        5.0, // length
+        1.1, 3.9, // offsets of the front and back axles
+        0.5, // wheel radius
+        0 // item capacity
     );
 
     static std::vector<Train::LocomotiveTypeInfo> locomotive_infos = {
@@ -241,9 +256,10 @@ namespace houseofatmos::world {
                         engine::FaceCulling::Disabled
                     ),
                     Vec<3>(0, 0, 1), // model heading
-                    5.0, // length
-                    1.85, 3.05, // offsets of the front and back axles
-                    0.9 // wheel radius (of big wheel)
+                    3.62, // length
+                    0.96, 2.17, // offsets of the front and back axles
+                    0.9, // wheel radius (of big wheel)
+                    50 // item capacity
                 )
             },
             train_car_old,
@@ -264,9 +280,10 @@ namespace houseofatmos::world {
                         engine::FaceCulling::Disabled
                     ),
                     Vec<3>(0, 0, 1), // model heading
-                    6.5, // length
-                    2.35, 4.15, // offsets of the front and back axles
-                    0.9 // wheel radius (of big wheel)
+                    5.0, // length
+                    1.0, 3.4, // offsets of the front and back axles
+                    0.9, // wheel radius (of big wheels)
+                    50 // item capacity
                 )
             },
             train_car_old,
@@ -275,6 +292,17 @@ namespace houseofatmos::world {
             4, // max car count
             7.5, // speed
             7500 // cost
+        },
+        /* Tram */ {
+            "locomotive_name_tram",
+            &ui_icon::tram,
+            { train_car_tram },
+            train_car_tram,
+            Vec<3>(-0.395, 3.087, 1.702), // relative smoke origin
+            1.35, // whistle pitch
+            2, // max car count
+            7.0, // speed
+            6500 // cost
         }
     };
 
@@ -324,7 +352,7 @@ namespace houseofatmos::world {
             remaining_cars -= 1;
         }
         length_sum += remaining_cars * loco_info.car_type.length;
-        f64 padding = (std::max(car_idx, (u64) 1) - 1) * car_padding;
+        f64 padding = car_idx * car_padding;
         return length_sum + padding;
     }
 

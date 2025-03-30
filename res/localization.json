@@ -873,6 +873,12 @@
         "en": "\"Beetle\"",
         "bg": "\"Бръмбар\""
     },
+    "locomotive_name_tram": {
+        "_context": "Name of a small self-propelled type of carriage used to transport passengers, usually along streets urban areas.",
+        "de": "Tram",
+        "en": "Tram",
+        "bg": "Трамвай"
+    },
 
 
 

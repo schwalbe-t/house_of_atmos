@@ -68,6 +68,7 @@ namespace houseofatmos::world {
             f64 length;
             f64 front_axle, back_axle;
             f64 wheel_radius;
+            u64 capacity;
         };
 
         static inline const u64 train_car_cost = 250;
@@ -87,7 +88,7 @@ namespace houseofatmos::world {
         static const std::vector<LocomotiveTypeInfo>& locomotive_types();
 
         enum LocomotiveType {
-            Basic, Small
+            Basic, Small, Tram
         };
 
 
@@ -138,7 +139,7 @@ namespace houseofatmos::world {
         Serialized serialize(engine::Arena& buffer) const;
 
 
-        static inline const f64 car_padding = 0.75;
+        static inline const f64 car_padding = 0.5;
 
         f64 length() const { 
             const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
@@ -167,10 +168,15 @@ namespace houseofatmos::world {
             return Train::locomotive_types().at((size_t) this->loco_type).speed;
         }
 
-        static inline const u64 item_capacity_per_car = 200;
-
         u64 item_storage_capacity() override {
-            return this->car_count * Train::item_capacity_per_car;
+            const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
+                .at((size_t) this->loco_type);
+            u64 total = 0;
+            for(const Car& car: loco_info.loco_cars) {
+                total += car.capacity;
+            }
+            total += this->car_count * loco_info.car_type.capacity;
+            return total;
         }
 
         void update(

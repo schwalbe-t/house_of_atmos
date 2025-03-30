@@ -1,6 +1,8 @@
 # House of Atmos
 A strategy game about turning a small county into an economical powerhouse.
 
+For questions or development updates, feel free to join my Discord server: https://discord.gg/DYRDg7fq82
+
 ## Building
 To build this project for the computer you are using, run: 
 ```

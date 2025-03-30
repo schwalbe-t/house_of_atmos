@@ -276,6 +276,8 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON(Vec<2>(208, 144), Vec<2>(16, 16));
     static inline const ui::Background small_locomotive
         = MAKE_HOA_UI_ICON(Vec<2>(224, 144), Vec<2>(16, 16));
+    static inline const ui::Background tram
+        = MAKE_HOA_UI_ICON(Vec<2>(240, 144), Vec<2>(16, 16));
 
     static inline const ui::Background sail_boat
         = MAKE_HOA_UI_ICON(Vec<2>(304, 144), Vec<2>(16, 16));
