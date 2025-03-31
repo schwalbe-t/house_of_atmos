@@ -9,12 +9,20 @@ namespace houseofatmos::world {
 
     bool BoatNetwork::is_passable(NodeId node) {
         auto [x, z] = node;
-        bool has_water = x == 0 || z == 0 || (
-            this->terrain->elevation_at(x - 1, z - 1) < 0 &&
-            this->terrain->elevation_at(x - 1, z    ) < 0 &&
-            this->terrain->elevation_at(x,     z - 1) < 0 &&
-            this->terrain->elevation_at(x,     z    ) < 0
-        );
+        bool xl = x == 0;
+        bool zl = z == 0;
+        bool xh = x + 1 >= this->terrain->width_in_tiles();
+        bool zh = z + 1 >= this->terrain->height_in_tiles();
+        bool has_water
+            =  (xl || zl || this->terrain->elevation_at(x - 1, z - 1) < 0)
+            && (      zl || this->terrain->elevation_at(x,     z - 1) < 0)
+            && (xh || zl || this->terrain->elevation_at(x + 1, z - 1) < 0)
+            && (xl ||       this->terrain->elevation_at(x - 1, z    ) < 0)
+            && (            this->terrain->elevation_at(x,     z    ) < 0)
+            && (xh ||       this->terrain->elevation_at(x + 1, z    ) < 0)
+            && (xl || zh || this->terrain->elevation_at(x - 1, z + 1) < 0)
+            && (      zh || this->terrain->elevation_at(x,     z + 1) < 0)
+            && (xh || zh || this->terrain->elevation_at(x + 1, z + 1) < 0);
         if(!has_water) { return false; }
         const Bridge* bridge = this->terrain->bridge_at(x, z);
         if(bridge != nullptr) {

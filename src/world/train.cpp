@@ -298,7 +298,7 @@ namespace houseofatmos::world {
             &ui_icon::tram,
             { train_car_tram },
             train_car_tram,
-            Vec<3>(-0.395, 3.087, 1.702), // relative smoke origin
+            Vec<3>(0.395, 3.087, -1.702), // relative smoke origin
             1.35, // whistle pitch
             2, // max car count
             7.0, // speed
