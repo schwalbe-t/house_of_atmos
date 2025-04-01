@@ -18,6 +18,31 @@ namespace houseofatmos::world {
             || (pc_high - to).len() <= max_piece_point_dist;
     }
 
+    static const f64 max_piece_dir_diff = 0.001;
+
+    static bool track_piece_connections_align(
+        const Terrain& terrain,
+        u64 pc_tx, u64 pc_tz, i16 pc_elev,
+        std::span<const Vec<3>> pc_pts, const Mat<4>& pc_inst,
+        u64 to_tx, u64 to_tz, i16 to_elev,
+        const Vec<3>& to_pt, const Mat<4>& to_inst
+    ) {
+        Vec<3> pc_center = Vec<3>(pc_tx + 0.5, 0, pc_tz + 0.5)
+            * terrain.units_per_tile()
+            + Vec<3>(0, pc_elev, 0);
+        Vec<3> pc_low = (pc_inst * pc_pts[0].with(1)).swizzle<3>("xyz");
+        Vec<3> pc_high = (pc_inst * pc_pts.back().with(1)).swizzle<3>("xyz");
+        Vec<3> to_center = Vec<3>(to_tx + 0.5, 0, to_tz + 0.5)
+            * terrain.units_per_tile()
+            + Vec<3>(0, to_elev, 0);
+        Vec<3> to = (to_inst * to_pt.with(1.0)).swizzle<3>("xyz");
+        Vec<3> pc_to_low = pc_low - pc_center;
+        Vec<3> pc_to_high = pc_high - pc_center;
+        Vec<3> c_to_center = to - to_center;
+        return (pc_to_low + c_to_center).len() <= max_piece_dir_diff
+            || (pc_to_high + c_to_center).len() <= max_piece_dir_diff;
+    }
+
     void TrackNetwork::find_connections(NodeId node, Node& node_data) {
         u64 tiles_per_chunk = this->terrain->tiles_per_chunk();
         u64 world_wch = this->terrain->width_in_chunks();
@@ -39,11 +64,9 @@ namespace houseofatmos::world {
                 const Terrain::ChunkData& conn_chunk = this->terrain
                     ->chunk_at(conn_chx, conn_chz);
                 for(const TrackPiece& conn_piece: conn_chunk.track_pieces) {
-                    bool same_chunk = conn_chx == node_data.chunk_x
-                        && conn_chz == node_data.chunk_z;
-                    bool same_tile = conn_piece.x == node->x
-                        && conn_piece.z == node->z;
-                    if(same_chunk && same_tile) { continue; }
+                    u64 pc_tx = conn_chx * tiles_per_chunk + conn_piece.x;
+                    u64 pc_tz = conn_chz * tiles_per_chunk + conn_piece.z;
+                    if(node_tx == pc_tx && node_tz == pc_tz) { continue; }
                     const std::vector<Vec<3>>& conn_pts = TrackPiece::types()
                         .at((size_t) conn_piece.type).points;
                     Mat<4> conn_inst = conn_piece.build_transform(
@@ -52,12 +75,24 @@ namespace houseofatmos::world {
                     );
                     bool connected_low = track_piece_connected_to(
                         conn_pts, conn_inst, node_pts[0], node_inst
+                    ) && track_piece_connections_align(
+                        *this->terrain, 
+                        pc_tx, pc_tz, conn_piece.elevation, 
+                        conn_pts, conn_inst,
+                        node_tx, node_tz, node->elevation, 
+                        node_pts[0], node_inst
                     );
                     if(connected_low) { 
                         node_data.connected_low.push_back(&conn_piece); 
                     }
                     bool connected_high = track_piece_connected_to(
                         conn_pts, conn_inst, node_pts.back(), node_inst
+                    ) && track_piece_connections_align(
+                        *this->terrain, 
+                        pc_tx, pc_tz, conn_piece.elevation, 
+                        conn_pts, conn_inst,
+                        node_tx, node_tz, node->elevation, 
+                        node_pts.back(), node_inst
                     );
                     if(connected_high) {
                         node_data.connected_high.push_back(&conn_piece);

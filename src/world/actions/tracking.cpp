@@ -169,23 +169,21 @@ namespace houseofatmos::world {
                         piece.direction = TrackPiece::Any;
                         continue;
                     }
-                    Vec<3> world = Vec<3>(t_x + 0.5, 0, t_z + 0.5)
-                        * this->world->terrain.units_per_tile();
-                    world.y() = this->world->terrain.elevation_at(t_x, t_z);
+                    const TrackPiece::TypeInfo& info 
+                        = TrackPiece::types().at((size_t) piece.type);
+                    Mat<4> inst = piece.build_transform(
+                        ch_x, ch_z, this->world->terrain.tiles_per_chunk(), 
+                        this->world->terrain.units_per_tile()
+                    );
+                    Vec<3> low_w = (inst * info.points[0].with(1.0))
+                        .swizzle<3>("xyz");
+                    Vec<3> high_w = (inst * info.points.back().with(1.0))
+                        .swizzle<3>("xyz");
+                    Vec<3> world = (high_w - low_w) / 2 + low_w;
                     Vec<2> ndc = renderer.world_to_ndc(world);
                     const ui::Background* icon = &ui_icon::track_any_icon;
                     if(piece.direction != TrackPiece::Any) {
-                        const TrackPiece::TypeInfo& info 
-                            = TrackPiece::types().at((size_t) piece.type);
-                        Mat<4> inst = piece.build_transform(
-                            ch_x, ch_z, this->world->terrain.tiles_per_chunk(), 
-                            this->world->terrain.units_per_tile()
-                        );
-                        Vec<3> low_w = (inst * info.points[0].with(1.0))
-                            .swizzle<3>("xyz");
                         Vec<2> low = renderer.world_to_ndc(low_w);
-                        Vec<3> high_w = (inst * info.points.back().with(1.0))
-                            .swizzle<3>("xyz");;
                         Vec<2> high = renderer.world_to_ndc(high_w);
                         Vec<2> dir = piece.direction == TrackPiece::Ascending
                             ? high - low : low - high;
