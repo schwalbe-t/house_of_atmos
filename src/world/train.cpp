@@ -97,14 +97,18 @@ namespace houseofatmos::world {
         // -> connects to all pieces at HIGH end
         bool prev_at_low = !prev.has_value()
             || std::find(low.begin(), low.end(), *prev) != low.end();
-        if(prev_at_low) {
+        bool is_ascending = node->direction == TrackPiece::Ascending
+            || node->direction == TrackPiece::Any;
+        if(prev_at_low && is_ascending) {
             for(NodeId c: high) { out.push_back({ c, 1 }); }
         }
         // previous piece is connected at HIGH end of this piece?
         // -> connects to all pieces at LOW end
         bool prev_at_high = !prev.has_value()
             || std::find(high.begin(), high.end(), *prev) != high.end();
-        if(prev_at_high) {
+        bool is_descending = node->direction == TrackPiece::Descending
+            || node->direction == TrackPiece::Any;
+        if(prev_at_high && is_descending) {
             for(NodeId c: low) { out.push_back({ c, 1 }); }
         }
     }
@@ -189,7 +193,7 @@ namespace houseofatmos::world {
         Vec<3> tile = position / this->terrain->units_per_tile();
         i64 cx = (i64) tile.x();
         i64 cz = (i64) tile.z();
-        std::vector<const TrackPiece*> pieces;
+        std::vector<TrackPiece*> pieces;
         for(i64 cd = 0; cd < 5; cd += 1) {
             for(i64 ox = -cd; ox <= cd; ox += 1) {
                 for(i64 oz = -cd; oz <= cd; oz += 1) {

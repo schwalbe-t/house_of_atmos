@@ -1,5 +1,6 @@
 
 #include "common.hpp"
+#include <algorithm>
 
 namespace houseofatmos::world {
 
@@ -14,6 +15,80 @@ namespace houseofatmos::world {
             .as_movable()
         );
         this->track_markers = &this->ui.root.children.back();
+    }
+
+    // If 'value' is 'Ascending', it means that the direction must point
+    // TOWARDS 'previous'.
+    // If 'value' is 'Descending', it means that the direction must point
+    // AWAY FROM 'previous'.
+    // If 'previous' has no value, or 'value' is 'Any', 
+    // directly assign 'value' as the direction value.
+    static void fill_track_directions(
+        Terrain& terrain, const TrackNetwork& network,
+        std::vector<TrackNetwork::NodeId>& encountered,
+        TrackNetwork::NodeId current, 
+        TrackPiece::Direction value, 
+        std::optional<TrackNetwork::NodeId> previous = std::nullopt
+    ) {
+        bool skip = std::find(encountered.begin(), encountered.end(), current)
+            != encountered.end();
+        if(skip) { return; }
+        encountered.push_back(current);
+        const TrackNetwork::Node& n = network.graph.at(current);
+        u64 t_x = n.chunk_x * terrain.tiles_per_chunk() + current->x;
+        u64 t_z = n.chunk_z * terrain.tiles_per_chunk() + current->z;
+        std::vector<TrackPiece*> pieces;
+        terrain.track_pieces_at((i64) t_x, (i64) t_z, &pieces);
+        if(pieces.size() != 1) { return; }
+        TrackPiece* piece = pieces[0];
+        if(!previous.has_value()) {
+            piece->direction = value;
+            if(n.connected_low.size() == 1) {
+                fill_track_directions(
+                    terrain, network, encountered, 
+                    n.connected_low[0], value, current
+                );
+            }
+            if(n.connected_high.size() == 1) {
+                TrackPiece::Direction inv_val
+                    = value == TrackPiece::Ascending? TrackPiece::Descending
+                    : value == TrackPiece::Descending? TrackPiece::Ascending
+                    : TrackPiece::Any;
+                fill_track_directions(
+                    terrain, network, encountered, 
+                    n.connected_high[0], inv_val, current
+                );
+            }
+            return;
+        }
+        bool prev_in_low = std::find(
+            n.connected_low.begin(), n.connected_low.end(), *previous
+        ) != n.connected_low.end();
+        switch(value) {
+            case TrackPiece::Any: piece->direction = value; break;
+            case TrackPiece::Ascending:
+                // make direction point towards previous
+                piece->direction = prev_in_low? TrackPiece::Descending 
+                    : TrackPiece::Ascending;
+                break;
+            case TrackPiece::Descending: 
+                // make direction point away from previous
+                piece->direction = prev_in_low? TrackPiece::Ascending
+                    : TrackPiece::Descending;
+                break;
+        }
+        for(TrackNetwork::NodeId connected: n.connected_low) {
+            fill_track_directions(
+                terrain, network, encountered, 
+                connected, value, current
+            );
+        }
+        for(TrackNetwork::NodeId connected: n.connected_high) {
+            fill_track_directions(
+                terrain, network, encountered, 
+                connected, value, current
+            );
+        }
     }
 
     static const i64 track_marker_ch_rad = 1;
@@ -79,6 +154,84 @@ namespace houseofatmos::world {
                 closest_marker = world;
             }
         }
+        for(u64 ch_x = (u64) s_ch_x; ch_x <= e_ch_x; ch_x += 1) {
+            for(u64 ch_z = (u64) s_ch_z; ch_z <= e_ch_z; ch_z += 1) {
+                Terrain::ChunkData& chunk = this->world->terrain
+                    .chunk_at(ch_x, ch_z);
+                for(TrackPiece& piece: chunk.track_pieces) {
+                    u64 t_x = ch_x * this->world->terrain.tiles_per_chunk()
+                        + piece.x;
+                    u64 t_z = ch_z * this->world->terrain.tiles_per_chunk()
+                        + piece.z;
+                    bool is_conflict = this->world->terrain
+                        .track_pieces_at((i64) t_x, (i64) t_z) > 1;
+                    if(is_conflict) {
+                        piece.direction = TrackPiece::Any;
+                        continue;
+                    }
+                    Vec<3> world = Vec<3>(t_x + 0.5, 0, t_z + 0.5)
+                        * this->world->terrain.units_per_tile();
+                    world.y() = this->world->terrain.elevation_at(t_x, t_z);
+                    Vec<2> ndc = renderer.world_to_ndc(world);
+                    const ui::Background* icon = &ui_icon::track_any_icon;
+                    if(piece.direction != TrackPiece::Any) {
+                        const TrackPiece::TypeInfo& info 
+                            = TrackPiece::types().at((size_t) piece.type);
+                        Mat<4> inst = piece.build_transform(
+                            ch_x, ch_z, this->world->terrain.tiles_per_chunk(), 
+                            this->world->terrain.units_per_tile()
+                        );
+                        Vec<3> low_w = (inst * info.points[0].with(1.0))
+                            .swizzle<3>("xyz");
+                        Vec<2> low = renderer.world_to_ndc(low_w);
+                        Vec<3> high_w = (inst * info.points.back().with(1.0))
+                            .swizzle<3>("xyz");;
+                        Vec<2> high = renderer.world_to_ndc(high_w);
+                        Vec<2> dir = piece.direction == TrackPiece::Ascending
+                            ? high - low : low - high;
+                        f64 angle_cross 
+                            = ui_icon::track_dir_icon_first.x() * dir.y()
+                            - ui_icon::track_dir_icon_first.y() * dir.x();
+                        f64 angle = atan2(
+                            angle_cross, ui_icon::track_dir_icon_first.dot(dir)
+                        );
+                        if(angle < 0) { angle += 2 * pi; }
+                        u64 icon_i = (u64) round(angle / (pi / 4.0));
+                        icon_i %= ui_icon::track_dir_icons.size();
+                        icon = &ui_icon::track_dir_icons[icon_i];
+                    }
+                    this->track_markers->children.push_back(ui::Element()
+                        .as_phantom()
+                        .with_pos(ndc.x(), ndc.y(), ui::position::window_ndc)
+                        .with_child(ui::Element()
+                            .with_pos(-4, -4, ui::position::parent_offset_units)
+                            .with_size(8, 8, ui::size::units)
+                            .with_background(icon)
+                            .with_click_handler([this, piece = &piece]() {
+                                TrackPiece::Direction d = piece->direction;
+                                switch(piece->direction) {
+                                    case TrackPiece::Any: 
+                                        d = TrackPiece::Descending; break;
+                                    case TrackPiece::Descending:
+                                        d = TrackPiece::Ascending; break;
+                                    case TrackPiece::Ascending:
+                                        d = TrackPiece::Any; break;
+                                }
+                                std::vector<TrackNetwork::NodeId> modified;
+                                fill_track_directions(
+                                    this->world->terrain, 
+                                    this->world->trains.network, 
+                                    modified, piece, d
+                                );
+                                this->world->trains.find_paths(&this->toasts);
+                            })
+                            .as_movable()
+                        )
+                        .as_movable()
+                    );
+                }
+            }
+        }
     }
 
     static const Vec<2> track_base_dir_ndc = Vec<2>(0, 1); // NDC; up the screen
@@ -135,7 +288,7 @@ namespace houseofatmos::world {
             tx % this->world->terrain.tiles_per_chunk(), 
             tz % this->world->terrain.tiles_per_chunk(),
             (TrackPiece::Type) pt_i,
-            angle_q, (i16) this->drag_origin->y() + elev_d
+            angle_q, TrackPiece::Any, (i16) this->drag_origin->y() + elev_d
         );
         Mat<4> t = piece.build_transform(
             ch_x, ch_z, 
@@ -165,7 +318,8 @@ namespace houseofatmos::world {
         Vec<3> closest_marker
     ) {
         bool started_dragging = !this->drag_origin.has_value()
-            && window.is_down(engine::Button::Left);
+            && window.is_down(engine::Button::Left)
+            && !this->ui.is_hovered_over();
         if(started_dragging) { this->drag_origin = closest_marker; }
         bool stopped_dragging = this->drag_origin.has_value()
             && !window.is_down(engine::Button::Left);
@@ -213,7 +367,7 @@ namespace houseofatmos::world {
         );
         this->placement_valid = this->world->terrain
             .building_at((i64) tile_x, (i64) tile_z) == nullptr;
-        std::vector<const TrackPiece*> existing_pieces;
+        std::vector<TrackPiece*> existing_pieces;
         this->world->terrain
             .track_pieces_at((i64) tile_x, (i64) tile_z, &existing_pieces);
         for(const TrackPiece* existing_piece: existing_pieces) {

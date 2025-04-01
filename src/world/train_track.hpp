@@ -13,6 +13,10 @@ namespace houseofatmos::world {
             StraightBallastless
         };
 
+        enum Direction: u8 {
+            Any, Ascending, Descending
+        };
+
         struct TypeInfo {
             engine::Model::LoadArgs model;
             // must be applied to the model before rotation
@@ -31,7 +35,8 @@ namespace houseofatmos::world {
         // to save memory, this variable represents the rotation of the piece
         // as the full number of quarter rotations, NOT radians or degrees
         // => multiply by (pi/2) to get the angle in radians
-        i8 angle_q;
+        i8 angle_q: 6;
+        Direction direction: 2;
         i16 elevation;
 
 

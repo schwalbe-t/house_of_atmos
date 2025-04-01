@@ -23,11 +23,11 @@ namespace houseofatmos::world {
             std::vector<NodeId> connected_high;
         };
         
-        const Terrain* terrain;
+        Terrain* terrain;
         StatefulRNG rng;
         std::unordered_map<NodeId, Node, NodeIdHash> graph;
 
-        TrackNetwork(const Terrain* terrain, ComplexBank* complexes):
+        TrackNetwork(Terrain* terrain, ComplexBank* complexes):
             AgentNetwork(complexes, "toast_train_lost"), terrain(terrain) {}
 
         TrackNetwork(TrackNetwork&& other) noexcept = default;

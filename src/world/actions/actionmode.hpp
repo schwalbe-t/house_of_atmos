@@ -284,7 +284,9 @@ namespace houseofatmos::world {
         TrackingMode(ActionContext ctx): ActionMode(ctx) {
             this->preview_ch_x = 0;
             this->preview_ch_z = 0;
-            this->preview_piece = TrackPiece(0, 0, TrackPiece::Straight, 0, 0);
+            this->preview_piece = TrackPiece(
+                0, 0, TrackPiece::Straight, 0, TrackPiece::Any, 0
+            );
             this->placement_valid = true;
         }
 

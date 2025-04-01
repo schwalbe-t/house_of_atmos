@@ -156,6 +156,20 @@ namespace houseofatmos::ui_icon {
     static inline const ui::Background terrain_vertex
         = MAKE_HOA_UI_ICON(Vec<2>(176, 64), Vec<2>(8, 8));
 
+    static const ui::Background track_any_icon 
+        = MAKE_HOA_UI_ICON(Vec<2>(192, 64), Vec<2>(8, 8));
+    static const Vec<2> track_dir_icon_first = Vec<2>(0, -1); // in ndc
+    static const std::vector<ui::Background> track_dir_icons = {
+        MAKE_HOA_UI_ICON(Vec<2>(200, 64), Vec<2>(8, 8)),
+        MAKE_HOA_UI_ICON(Vec<2>(208, 64), Vec<2>(8, 8)),
+        MAKE_HOA_UI_ICON(Vec<2>(216, 64), Vec<2>(8, 8)),
+        MAKE_HOA_UI_ICON(Vec<2>(224, 64), Vec<2>(8, 8)),
+        MAKE_HOA_UI_ICON(Vec<2>(232, 64), Vec<2>(8, 8)),
+        MAKE_HOA_UI_ICON(Vec<2>(240, 64), Vec<2>(8, 8)),
+        MAKE_HOA_UI_ICON(Vec<2>(248, 64), Vec<2>(8, 8)),
+        MAKE_HOA_UI_ICON(Vec<2>(256, 64), Vec<2>(8, 8))
+    };
+
     static inline const ui::Background wood 
         = MAKE_HOA_UI_ICON(Vec<2>(16, 88), Vec<2>(8, 8));
     static inline const ui::Background barley 
