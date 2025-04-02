@@ -34,11 +34,14 @@ namespace houseofatmos::world {
             &ui_icon::map_marker_carriage,
             "ui_carriage", "ui_remove_carriage",
             [](AbstractAgent agent, World& world) {
-                for(size_t c = 0; c < world.carriages.agents.size(); c += 1) {
-                    Carriage& carriage = world.carriages.agents[c];
-                    if(carriage.as_abstract().data != agent.data) { continue; }
-                    auto removed = world.carriages.agents.begin() + c;
-                    world.carriages.agents.erase(removed);
+                auto current = world.carriages.agents.begin();
+                while(current != world.carriages.agents.end()) {
+                    Carriage& carriage = *current;
+                    if(carriage.as_abstract().data != agent.data) {
+                        current = std::next(current);
+                        continue;
+                    }
+                    world.carriages.agents.erase(current);
                 }
             },
             {}
@@ -48,11 +51,14 @@ namespace houseofatmos::world {
             &ui_icon::map_marker_train,
             "ui_train", "ui_remove_train",
             [](AbstractAgent agent, World& world) {
-                for(size_t t = 0; t < world.trains.agents.size(); t += 1) {
-                    Train& train = world.trains.agents[t];
-                    if(train.as_abstract().data != agent.data) { continue; }
-                    auto removed = world.trains.agents.begin() + t;
-                    world.trains.agents.erase(removed);
+                auto current = world.trains.agents.begin();
+                while(current != world.trains.agents.end()) {
+                    Train& train = *current;
+                    if(train.as_abstract().data != agent.data) {
+                        current = std::next(current);
+                        continue;
+                    }
+                    world.trains.agents.erase(current);
                 }
             },
             {
@@ -85,11 +91,14 @@ namespace houseofatmos::world {
             &ui_icon::map_marker_boat,
             "ui_boat", "ui_remove_boat",
             [](AbstractAgent agent, World& world) {
-                for(size_t c = 0; c < world.boats.agents.size(); c += 1) {
-                    Boat& boat = world.boats.agents[c];
-                    if(boat.as_abstract().data != agent.data) { continue; }
-                    auto removed = world.boats.agents.begin() + c;
-                    world.boats.agents.erase(removed);
+                auto current = world.boats.agents.begin();
+                while(current != world.boats.agents.end()) {
+                    Boat& boat = *current;
+                    if(boat.as_abstract().data != agent.data) {
+                        current = std::next(current);
+                        continue;
+                    }
+                    world.boats.agents.erase(current);
                 }
             },
             {}

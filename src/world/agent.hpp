@@ -71,6 +71,19 @@ namespace houseofatmos::world {
             std::vector<Vec<3>> points; 
 
             Section(NodeId node): node(node) {}
+
+            f64 length(std::optional<Vec<3>> prev = std::nullopt) const {
+                if(this->points.size() == 0) { return 0.0; }
+                Vec<3> previous = prev.has_value()? *prev : this->points[0];
+                size_t i = prev.has_value()? 0 : 1;
+                f64 sum = 0.0;
+                for(; i < this->points.size(); i += 1) {
+                    Vec<3> point = this->points[i];
+                    sum += (point - previous).len();
+                    previous = point;
+                }
+                return sum;
+            }
         };
 
         Vec<3> start;
@@ -510,7 +523,7 @@ namespace houseofatmos::world {
             u64 agent_count, agent_offset;
         };
 
-        std::vector<Agent> agents;
+        std::list<Agent> agents;
         Network network;
 
         AgentManager(Network&& network): network(std::move(network)) {}
@@ -523,7 +536,6 @@ namespace houseofatmos::world {
             buffer.copy_array_at_into(
                 serialized.agent_offset, serialized.agent_count, agents
             );
-            this->agents.reserve(agents.size());
             for(const SerializedAgent& agent: agents) {
                 this->agents.push_back(Agent(agent, buffer, settings));
             }

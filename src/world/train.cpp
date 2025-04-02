@@ -102,6 +102,31 @@ namespace houseofatmos::world {
         }
     }
 
+    static const u64 max_block_size = 4;
+
+    void TrackNetwork::assign_to_blocks(NodeId piece, Block* previous) {
+        Node& node = this->graph.at(piece);
+        if(node.block != nullptr) { return; }
+        bool is_conflict = piece->direction == TrackPiece::Any;
+        bool add_to_prev = !is_conflict
+            && previous != nullptr
+            && previous->type != Block::Conflict
+            && previous->size < max_block_size;
+        node.block = previous;
+        if(!add_to_prev) {
+            Block::Type type = is_conflict? Block::Conflict : Block::Simple;
+            this->blocks.push_back(Block(type));
+            node.block = &this->blocks.back();
+        }
+        node.block->size += 1;
+        for(NodeId connected: node.connected_low) {
+            this->assign_to_blocks(connected, node.block);
+        }
+        for(NodeId connected: node.connected_high) {
+            this->assign_to_blocks(connected, node.block);
+        }
+    }
+
     void TrackNetwork::reload() {
         this->graph.clear();
         u64 world_w_ch = this->terrain->width_in_chunks();
@@ -115,6 +140,16 @@ namespace houseofatmos::world {
                     auto node = Node(chunk_x, chunk_z, {}, {});
                     this->find_connections(node_id, node);
                     this->graph[node_id] = node;
+                }
+            }
+        }
+        this->blocks.clear();
+        for(u64 chunk_x = 0; chunk_x < world_w_ch; chunk_x += 1) {
+            for(u64 chunk_z = 0; chunk_z < world_h_ch; chunk_z += 1) {
+                const Terrain::ChunkData& chunk = this->terrain
+                    ->chunk_at(chunk_x, chunk_z);
+                for(const TrackPiece& track_piece: chunk.track_pieces) {
+                    this->assign_to_blocks(&track_piece);
                 }
             }
         }
@@ -395,6 +430,65 @@ namespace houseofatmos::world {
         return length_sum + padding;
     }
 
+    void Train::manage_block_ownership(TrackNetwork& network) {
+        f64 curr_front_dist = this->front_path_dist();
+        f64 curr_back_dist = std::max(
+            curr_front_dist - this->length() - 5.0, 0.0
+        );
+        const auto& sections = this->current_path().sections;
+        size_t back_sect = this->current_path().after(curr_back_dist).second;
+        size_t front_sect = this->current_path().after(curr_front_dist).second;
+        size_t next_sect = front_sect + 1;
+        for(OwnedBlock& owning: this->owning_blocks) {
+            owning.justified = false;
+        }
+        bool may_take_all = true;
+        for(size_t sect_i = back_sect; sect_i < next_sect; sect_i += 1) {
+            const auto& section = sections[sect_i];
+            const TrackNetwork::Node& node = network.graph.at(section.node);
+            if(node.block->owner != this) { continue; }
+            auto owned_block = std::find_if(
+                this->owning_blocks.begin(), this->owning_blocks.end(), 
+                [n = &node](const auto& b) { return b.block == n->block; }
+            );
+            if(owned_block == this->owning_blocks.end()) { continue; }
+            owned_block->justified = true;
+        }
+        for(size_t sect_i = next_sect; sect_i < sections.size(); sect_i += 1) {
+            const auto& section = sections[sect_i];
+            const TrackNetwork::Node& node = network.graph.at(section.node);
+            if(node.block->owner == this) { 
+                auto owned_block = std::find_if(
+                    this->owning_blocks.begin(), this->owning_blocks.end(), 
+                    [n = &node](const auto& b) { return b.block == n->block; }
+                );
+                owned_block->justified = true;
+                continue;
+            }
+            if(!node.block->in_queue(this)) { node.block->await(this); }
+            may_take_all &= node.block->may_take(this);
+            if(node.block->type == TrackNetwork::Block::Conflict) { continue; }
+            break;
+        }
+        if(!may_take_all) { return; }
+        for(size_t sect_i = next_sect; sect_i < sections.size(); sect_i += 1) {
+            const auto& section = sections[sect_i];
+            const TrackNetwork::Node& node = network.graph.at(section.node);
+            if(!node.block->may_take(this)) { break; }
+            node.block->take(this);
+            this->owning_blocks.push_back(OwnedBlock(node.block, true));
+        }
+        for(OwnedBlock& owning: this->owning_blocks) {
+            if(owning.justified) { continue; }
+            owning.block->release(this);
+        }
+        auto new_owned_end = std::remove_if(
+            this->owning_blocks.begin(), this->owning_blocks.end(),
+            [](const auto& b) { return !b.justified; }
+        );
+        this->owning_blocks.erase(new_owned_end, this->owning_blocks.end());
+    }
+
     static const f64 base_chugga_period = 0.5;
     static const f64 chugga_speed_factor = 1.0 / 5.0;
 
@@ -402,6 +496,7 @@ namespace houseofatmos::world {
         TrackNetwork& network, engine::Scene& scene, 
         const engine::Window& window, ParticleManager* particles
     ) {
+        this->manage_block_ownership(network);
         this->speaker.position = this->position;
         this->speaker.update();
         bool play_whistle = this->current_state() != this->prev_state
