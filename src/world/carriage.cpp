@@ -87,13 +87,18 @@ namespace houseofatmos::world {
             {
                 (Carriage::CarriageTypeInfo::Driver) {
                     Vec<3>(0.0, 1.2, 2.35),
-                    pi / 2.0 // 90 degrees
+                    0.0 // 0 degrees
                 }
             },
             0.5, // wheel radius
             100, // capacity
             4.0, // speed
-            1000 // cost
+            1000, // cost
+            Player::Rideable(
+                Vec<3>(0.0, 0.6, -1.75), // position offset
+                pi, // rotation offset - 180 degrees
+                (u64) human::Animation::Sit // animation
+            )
         },
         /* Passenger */ {
             "carriage_name_passenger",
@@ -109,13 +114,18 @@ namespace houseofatmos::world {
             {
                 (Carriage::CarriageTypeInfo::Driver) {
                     Vec<3>(0.0, 1.2, 2.35),
-                    pi / 2.0 // 90 degrees
+                    0.0 // 0 degrees
                 }
             },
             0.5, // wheel radius
             0, // capacity
             5.0, // speed
-            1500 // cost
+            1500, // cost
+            Player::Rideable(
+                Vec<3>(0.0, 1.25, -1.2), // position offset
+                0.0, // rotation offset
+                (u64) human::Animation::Sit // animation
+            )
         }
     };
 
@@ -160,6 +170,28 @@ namespace houseofatmos::world {
         );
     }
 
+    void Carriage::update_rideable(Player& player, Interactables& interactables) {
+        CarriageTypeInfo carriage_info = Carriage::carriage_types()
+            .at((size_t) this->type);
+        f64 yaw;
+        Mat<4> inst = this->build_transform(nullptr, nullptr, &yaw);
+        Vec<3> offset = carriage_info.rideable.position 
+            + carriage_info.carriage_offset;
+        this->rideable.position = (inst * offset.with(1.0)).swizzle<3>("xyz");
+        this->rideable.angle = yaw + carriage_info.rideable.angle;
+        this->rideable.animation_id = carriage_info.rideable.animation_id;
+        if(this->interactable != nullptr) {
+            this->interactable->pos = this->rideable.position;
+        }
+        bool show_interaction = player.riding != &this->rideable
+            && this->interactable == nullptr;
+        if(!show_interaction) { return; }
+        this->interactable = interactables.create([this, p = &player]() {
+            p->riding = &this->rideable;
+            this->interactable = nullptr;
+        });
+    }
+
     static const f64 step_sound_period = 0.5 / 5.0;
 
     void Carriage::update(
@@ -168,8 +200,9 @@ namespace houseofatmos::world {
         Player& player, Interactables* interactables
     ) {
         (void) particles;
-        (void) player;
-        (void) interactables;
+        if(interactables != nullptr) {
+            this->update_rideable(player, *interactables);
+        }
         this->speaker.position = this->position;
         this->speaker.update();
         bool play_state_sound = this->current_state() != this->prev_state
@@ -190,13 +223,25 @@ namespace houseofatmos::world {
     }
 
     static const f64 alignment_points_dist = 1.5;
+    static const Vec<3> model_heading = Vec<3>(0, 0, 1);
 
-    Vec<3> Carriage::find_heading() const {
+    Mat<4> Carriage::build_transform(
+        Vec<3>* position_out, f64* pitch_out, f64* yaw_out
+    ) const {
         Vec<3> back = this->current_path()
             .after(this->current_path_dist() - alignment_points_dist).first;
         Vec<3> front = this->current_path()
             .after(this->current_path_dist() + alignment_points_dist).first;
-        return (front - back).normalized();
+        Vec<3> position = (front - back) / 2 + back;
+        Vec<3> heading = (front - back).normalized();
+        auto [pitch, yaw] = Agent<CarriageNetwork>
+            ::compute_heading_angles(heading, model_heading);
+        if(position_out != nullptr) { *position_out = position; }
+        if(pitch_out != nullptr) { *pitch_out = pitch; }
+        if(yaw_out != nullptr) { *yaw_out = yaw; }
+        return Mat<4>::translate(position)
+            * Mat<4>::rotate_y(yaw)
+            * Mat<4>::rotate_x(pitch);
     }
 
     void Carriage::render_horses(
@@ -218,10 +263,7 @@ namespace houseofatmos::world {
                 window.time() * (is_moving? 2.5 : 0.5), 
                 horse_animation.length()
             );
-            Mat<4> horse_transform
-                = Mat<4>::translate(this->position)
-                * Mat<4>::rotate_y(this->yaw)
-                * Mat<4>::rotate_x(this->pitch)
+            Mat<4> horse_transform = this->build_transform() 
                 * Mat<4>::translate(carriage_info.horse_offsets[horse_i])
                 * Mat<4>::translate(carriage_info.carriage_offset);
             renderer.render(
@@ -246,15 +288,14 @@ namespace houseofatmos::world {
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
             .at((size_t) this->type);
         for(const auto& driver_inst: carriage_info.drivers) {
-            Mat<4> driver_transform = Mat<4>::translate(this->position)
-                * Mat<4>::rotate_y(this->yaw)
-                * Mat<4>::rotate_x(this->pitch)
+            f64 yaw;
+            Mat<4> driver_transform 
+                = this->build_transform(nullptr, nullptr, &yaw)
                 * Mat<4>::translate(driver_inst.offset)
                 * Mat<4>::translate(carriage_info.carriage_offset);
             driver.position = (driver_transform * Vec<4>(0, 0, 0, 1))
                 .swizzle<3>("xyz");
-            f64 angle = this->yaw + driver_inst.angle;
-            driver.face_in_direction(Vec<3>(cos(angle), 0, sin(angle)));
+            driver.angle = yaw + driver_inst.angle;
             driver.render(scene, window, renderer);
         }
     }
@@ -265,10 +306,7 @@ namespace houseofatmos::world {
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
             .at((size_t) this->type);
         engine::Model& carriage_model = scene.get(carriage_info.model);
-        Mat<4> carriage_transform 
-            = Mat<4>::translate(this->position)
-            * Mat<4>::rotate_y(this->yaw)
-            * Mat<4>::rotate_x(this->pitch)
+        Mat<4> carriage_transform = this->build_transform()
             * Mat<4>::translate(carriage_info.carriage_offset);
         const engine::Animation& carriage_animation
             = carriage_model.animation("roll");
@@ -282,20 +320,11 @@ namespace houseofatmos::world {
         );
     }
 
-    static const Vec<3> model_heading = Vec<3>(0, 0, 1);
-
     void Carriage::render(
         Renderer& renderer, CarriageNetwork& network,
         engine::Scene& scene, const engine::Window& window
     ) {
         (void) network;
-        if(this->current_state() == AgentState::Travelling) {
-            Vec<3> heading = this->find_heading();
-            auto [n_pitch, n_yaw] = Agent<CarriageNetwork>
-                ::compute_heading_angles(heading, model_heading);
-            this->pitch = n_pitch;
-            this->yaw = n_yaw;
-        }
         this->render_carriage(renderer, scene);
         this->render_drivers(renderer, scene, window);
         this->render_horses(renderer, scene, window);

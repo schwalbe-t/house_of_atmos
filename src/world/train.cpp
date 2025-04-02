@@ -495,9 +495,6 @@ namespace houseofatmos::world {
         Agent<TrackNetwork>(serialized.agent, buffer) {
         this->loco_type = serialized.locomotive;
         this->car_count = serialized.car_count;
-        const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
-            .at((size_t) this->loco_type);
-        this->cars.resize(loco_info.loco_cars.size() + this->car_count);
         this->speaker.volume = settings.sfx_volume;
     }
 
@@ -537,6 +534,30 @@ namespace houseofatmos::world {
                 - front_dist;
         }
         return INFINITY;
+    }
+
+    Mat<4> Train::build_car_transform(
+        size_t car_idx, Vec<3>* position_out, f64* pitch_out, f64* yaw_out
+    ) const {
+        const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
+            .at((size_t) this->loco_type);
+        const Train::Car& car_info = this->car_at(car_idx);
+        f64 train_front = this->front_path_dist();
+        f64 car_start = train_front - this->offset_of_car(car_idx);
+        Vec<3> front = this->current_path()
+            .after(car_start - loco_info.car_type.front_axle).first;
+        Vec<3> back = this->current_path()
+            .after(car_start - loco_info.car_type.back_axle).first;
+        Vec<3> position = (front - back) / 2.0 + back;
+        Vec<3> heading = (front - back).normalized();
+        auto [pitch, yaw] = Agent<TrackNetwork>
+            ::compute_heading_angles(heading, car_info.model_heading);
+        if(position_out != nullptr) { *position_out = position; }
+        if(pitch_out != nullptr) { *pitch_out = pitch; }
+        if(yaw_out != nullptr) { *yaw_out = yaw; }
+        return Mat<4>::translate(position)
+            * Mat<4>::rotate_y(yaw) 
+            * Mat<4>::rotate_x(pitch);
     }
 
     void Train::release_unjustified_blocks(TrackNetwork& network) {
@@ -621,18 +642,11 @@ namespace houseofatmos::world {
     void Train::update_rideable(Player& player, Interactables& interactables) {
         const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
             .at((size_t) this->loco_type);
-        const Train::Car& car_info = this->car_at(0);
-        f64 car_center = this->front_path_dist()
-            - this->offset_of_car(0) 
-            - (car_info.length / 2.0);
-        Vec<3> position = this->current_path().after(car_center).first;
-        Mat<4> inst
-            = Mat<4>::translate(position)
-            * Mat<4>::rotate_y(this->cars[0].yaw)
-            * Mat<4>::rotate_x(this->cars[0].pitch);
+        f64 yaw;
+        Mat<4> inst = this->build_car_transform(0, nullptr, nullptr, &yaw);
         this->rideable.position = (inst * loco_info.rideable.position.with(1.0))
             .swizzle<3>("xyz");
-        this->rideable.angle = this->cars[0].yaw;
+        this->rideable.angle = yaw + loco_info.rideable.angle;
         this->rideable.animation_id = loco_info.rideable.animation_id;
         if(this->interactable != nullptr) {
             this->interactable->pos = this->rideable.position;
@@ -684,37 +698,16 @@ namespace houseofatmos::world {
             this->speaker.play(scene.get(sound::chugga));
             this->last_chugga_time = window.time();
         }
-        bool emit_smoke = play_chugga && this->cars.size() > 0
-            && particles != nullptr;
+        bool emit_smoke = play_chugga && particles != nullptr;
         if(emit_smoke) {
             const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
                 .at((size_t) this->loco_type);
-            const Train::Car& car_info = this->car_at(0);
-            f64 car_center = this->front_path_dist()
-                - this->offset_of_car(0) 
-                - (car_info.length / 2.0);
-            Vec<3> position = this->current_path().after(car_center).first;
-            Mat<4> transform
-                = Mat<4>::translate(position)
-                * Mat<4>::rotate_y(this->cars[0].yaw)
-                * Mat<4>::rotate_x(this->cars[0].pitch);
+            Mat<4> transform = this->build_car_transform(0);
             Vec<4> smoke_pos = transform * loco_info.smoke_origin.with(1.0);
             particles->add(particle::random_smoke(network.rng)
                 ->at(smoke_pos.swizzle<3>("xyz"))
             );
         }
-    }
-
-    Vec<3> Train::find_heading(size_t car_idx) const {
-        const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
-            .at((size_t) this->loco_type);
-        f64 train_front = this->front_path_dist();
-        f64 car_start = train_front - this->offset_of_car(car_idx);
-        Vec<3> front = this->current_path()
-            .after(car_start - loco_info.car_type.front_axle).first;
-        Vec<3> back = this->current_path()
-            .after(car_start - loco_info.car_type.back_axle).first;
-        return (front - back).normalized();
     }
 
     void Train::render(
@@ -725,27 +718,12 @@ namespace houseofatmos::world {
         (void) window;
         const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
             .at((size_t) this->loco_type);
-        this->cars.resize(loco_info.loco_cars.size() + this->car_count);
         f64 train_front = this->front_path_dist();
-        for(size_t car_idx = 0; car_idx < this->cars.size(); car_idx += 1) {
+        size_t full_car_count = loco_info.loco_cars.size() + this->car_count;
+        for(size_t car_idx = 0; car_idx < full_car_count; car_idx += 1) {
             const Train::Car& car_info = this->car_at(car_idx);
-            f64 car_center = train_front
-                - this->offset_of_car(car_idx) 
-                - (car_info.length / 2.0);
-            CarState& car = this->cars[car_idx];
-            if(this->current_state() == AgentState::Travelling) {
-                Vec<3> heading = this->find_heading(car_idx);
-                auto [pitch, yaw] = Agent<TrackNetwork>
-                    ::compute_heading_angles(heading, car_info.model_heading);
-                car.pitch = pitch;
-                car.yaw = yaw;
-            }
             engine::Model& model = scene.get(car_info.model);
-            Vec<3> position = this->current_path().after(car_center).first;
-            Mat<4> transform
-                = Mat<4>::translate(position)
-                * Mat<4>::rotate_y(car.yaw) 
-                * Mat<4>::rotate_x(car.pitch);
+            Mat<4> transform = this->build_car_transform(car_idx);
             const engine::Animation& animation = model.animation("roll");
             f64 rolled_rotations = train_front 
                 / (car_info.wheel_radius * 2 * pi);

@@ -42,6 +42,7 @@ namespace houseofatmos::world {
                         continue;
                     }
                     world.carriages.agents.erase(current);
+                    return;
                 }
             },
             {}
@@ -59,6 +60,7 @@ namespace houseofatmos::world {
                         continue;
                     }
                     world.trains.agents.erase(current);
+                    return;
                 }
             },
             {
@@ -99,6 +101,7 @@ namespace houseofatmos::world {
                         continue;
                     }
                     world.boats.agents.erase(current);
+                    return;
                 }
             },
             {}

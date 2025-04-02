@@ -58,9 +58,6 @@ namespace houseofatmos::world {
 
         Type type;
 
-        private:
-        f64 yaw;
-
         public:
         Boat(Type type, Vec<3> position);
         Boat(
@@ -84,7 +81,9 @@ namespace houseofatmos::world {
             return Boat::types().at((size_t) this->type).capacity;
         }
 
-        Vec<3> find_heading() const;
+        Mat<4> build_transform(
+            Vec<3>* position_out = nullptr, f64* yaw_out = nullptr
+        );
 
         void render(
             Renderer& renderer, BoatNetwork& network,

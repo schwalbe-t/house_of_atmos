@@ -65,6 +65,7 @@ namespace houseofatmos::world {
             u64 capacity;
             f64 speed;
             u64 cost;
+            Player::Rideable rideable;
         };
 
         static const std::vector<CarriageTypeInfo>& carriage_types();
@@ -98,7 +99,8 @@ namespace houseofatmos::world {
         engine::Speaker speaker = engine::Speaker(
             engine::Speaker::Space::World, 5.0
         );
-        f64 yaw = 0.0, pitch = 0.0;
+        std::shared_ptr<Interactable> interactable = nullptr;
+        Player::Rideable rideable;
         AgentState prev_state = AgentState::Travelling;
         f64 last_step_time = 0.0;
 
@@ -127,13 +129,18 @@ namespace houseofatmos::world {
             return Carriage::carriage_types().at((size_t) this->type).capacity;
         }
 
+        void update_rideable(Player& player, Interactables& interactables);
+
         void update(
             CarriageNetwork& network, engine::Scene& scene, 
             const engine::Window& window, ParticleManager* particles,
             Player& player, Interactables* interactables
         ) override;
 
-        Vec<3> find_heading() const;
+        Mat<4> build_transform(
+            Vec<3>* position_out = nullptr, 
+            f64* pitch_out = nullptr, f64* yaw_out = nullptr
+        ) const;
 
         private:
         void render_horses(

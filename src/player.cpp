@@ -31,8 +31,8 @@ namespace houseofatmos {
                 : this->in_water? swim_speed 
                 : walk_speed;
             this->next_step = heading * speed * window.delta_time();
-            this->confirmed_step = this->character.position;
         }
+        this->confirmed_step = this->character.position;
     }
 
     void Player::apply_confirmed_step(

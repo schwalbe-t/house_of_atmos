@@ -239,10 +239,6 @@ namespace houseofatmos::world {
             u64 car_count;
         };
 
-        struct CarState {
-            f64 yaw = 0.0, pitch = 0.0;
-        };
-
         struct OwnedBlock {
             TrackNetwork::Block* block;
             bool justified;
@@ -257,7 +253,6 @@ namespace houseofatmos::world {
         );
         std::shared_ptr<Interactable> interactable = nullptr;
         Player::Rideable rideable;
-        std::vector<CarState> cars;
         std::vector<OwnedBlock> owning_blocks;
         AgentState prev_state = AgentState::Idle;
         f64 last_chugga_time = 0.0;
@@ -323,6 +318,12 @@ namespace houseofatmos::world {
             return total;
         }
 
+        Mat<4> build_car_transform(
+            size_t car_idx, 
+            Vec<3>* position_out = nullptr, 
+            f64* pitch_out = nullptr, f64* yaw_out = nullptr
+        ) const;
+
         void release_unjustified_blocks(TrackNetwork& network);
         void take_next_blocks(TrackNetwork& network);
 
@@ -337,8 +338,6 @@ namespace houseofatmos::world {
             const engine::Window& window, ParticleManager* particles,
             Player& player, Interactables* interactables
         ) override;
-
-        Vec<3> find_heading(size_t car_idx) const;
 
         void render(
             Renderer& renderer, TrackNetwork& network,

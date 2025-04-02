@@ -90,17 +90,27 @@ namespace houseofatmos::world {
         );
     }
 
-    static const f64 alignment_points_dist = 1.5;
+    static const f64 alignment_points_dist = 2.5;
+    static const Vec<3> model_heading = Vec<3>(0, 0, 1);
 
-    Vec<3> Boat::find_heading() const {
+    Mat<4> Boat::build_transform(Vec<3>* position_out, f64* yaw_out) {
+        TypeInfo boat_info = Boat::types().at((size_t) this->type);
         Vec<3> back = this->current_path()
             .after(this->current_path_dist() - alignment_points_dist).first;
         Vec<3> front = this->current_path()
             .after(this->current_path_dist() + alignment_points_dist).first;
-        return (front - back).normalized();
+        f64 storage_level = (f64) this->stored_item_count() 
+            / (f64) this->item_storage_capacity();
+        f64 elev = water_level + storage_level * boat_info.weight_height_factor;
+        Vec<3> position = (front - back) / 2 + back + Vec<3>(0, elev, 0);
+        Vec<3> heading = (front - back).normalized();
+        auto [pitch, yaw] = Agent<BoatNetwork>
+            ::compute_heading_angles(heading, model_heading);
+        if(position_out != nullptr) { *position_out = position; }
+        if(yaw_out != nullptr) { *yaw_out = yaw; }
+        return Mat<4>::translate(position)
+            * Mat<4>::rotate_y(yaw);
     }
-
-    static const Vec<3> model_heading = Vec<3>(0, 0, 1);
 
     void Boat::render(
         Renderer& renderer, BoatNetwork& network,
@@ -108,20 +118,9 @@ namespace houseofatmos::world {
     ) {
         (void) network;
         (void) window;
-        if(this->current_state() == AgentState::Travelling) {
-            Vec<3> heading = this->find_heading();
-            auto [n_pitch, n_yaw] = Agent<BoatNetwork>
-                ::compute_heading_angles(heading, model_heading);
-            this->yaw = n_yaw;
-        }
         TypeInfo boat_info = Boat::types().at((size_t) this->type);
         engine::Model& model = scene.get(boat_info.model);
-        f64 storage_level = (f64) this->stored_item_count() 
-            / (f64) this->item_storage_capacity();
-        f64 elev = water_level + storage_level * boat_info.weight_height_factor;
-        Mat<4> transform = Mat<4>::translate(this->position)
-            * Mat<4>::rotate_y(this->yaw)
-            * Mat<4>::translate(Vec<3>(0, elev, 0));
+        Mat<4> transform = this->build_transform();
         renderer.render(model, std::array { transform });
     }
 
