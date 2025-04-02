@@ -4,6 +4,7 @@
 #include "agent.hpp"
 #include "terrain.hpp"
 #include <algorithm>
+#include <unordered_set>
 
 namespace houseofatmos::world {
 
@@ -158,7 +159,7 @@ namespace houseofatmos::world {
         Terrain* terrain;
         StatefulRNG rng;
         std::list<Block> blocks;
-        std::list<Signal> signals;
+        std::vector<Signal> signals;
         std::unordered_map<NodeId, Node, NodeIdHash> graph;
 
         TrackNetwork(Terrain* terrain, ComplexBank* complexes):
@@ -171,6 +172,7 @@ namespace houseofatmos::world {
         private:
         void find_connections(NodeId node, Node& node_data);
         void assign_to_blocks(NodeId node, Block* previous = nullptr);
+        void create_signals(NodeId node);
         public:
         void reload() override;
 
@@ -190,6 +192,17 @@ namespace houseofatmos::world {
         ) override;
 
         std::optional<NodeId> closest_node_to(const Vec<3>& position) override;
+
+
+        void update(
+            engine::Scene& scene, const engine::Window& window
+        ) override;
+
+        void render(
+            const Vec<3>& observer, f64 draw_distance,
+            Renderer& renderer, engine::Scene& scene, 
+            const engine::Window& window
+        ) override;
 
     };
 
@@ -230,6 +243,7 @@ namespace houseofatmos::world {
 
 
         static void load_resources(engine::Scene& scene) {
+            scene.load(TrackNetwork::semaphore);
             for(const auto& loco_type: Train::locomotive_types()) {
                 for(const auto& car: loco_type.loco_cars) {
                     scene.load(car.model);

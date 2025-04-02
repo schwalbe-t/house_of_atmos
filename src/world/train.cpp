@@ -127,6 +127,47 @@ namespace houseofatmos::world {
         }
     }
 
+    static const f64 signal_track_dist = 2.0;
+    static const Vec<3> signal_model_dir = Vec<3>(0, 0, 1);
+
+    void TrackNetwork::create_signals(NodeId node_i) {
+        const Node& node = this->graph.at(node_i);
+        const std::vector<NodeId>* connected = nullptr;
+        switch(node_i->direction) {
+            case TrackPiece::Any: return; // conflict
+            case TrackPiece::Ascending: connected = &node.connected_high; break;
+            case TrackPiece::Descending: connected = &node.connected_low; break;
+            default: engine::error("Unhandled 'TrackPiece::Direction'!");
+        }
+        u64 tiles_per_chunk = this->terrain->tiles_per_chunk();
+        u64 units_per_tile = this->terrain->units_per_tile();
+        const std::vector<Vec<3>>& piece_points = TrackPiece::types()
+            .at((size_t) node_i->type).points;
+        Mat<4> inst = node_i->build_transform(
+            node.chunk_x, node.chunk_z, tiles_per_chunk, units_per_tile
+        );
+        Vec<3> low = (inst * piece_points[0].with(1)).swizzle<3>("xyz");
+        Vec<3> high = (inst * piece_points.back().with(1)).swizzle<3>("xyz");
+        Vec<3> pos = (high - low) / 2 + low;
+        for(NodeId c_node_i: *connected) {
+            const Node& c_node = this->graph.at(c_node_i);
+            if(c_node.block == node.block) { continue; }
+            u64 c_tx = c_node.chunk_x * tiles_per_chunk + c_node_i->x;
+            u64 c_tz = c_node.chunk_z * tiles_per_chunk + c_node_i->z;
+            Vec<3> c_pos = Vec<3>(c_tx + 0.5, 0, c_tz + 0.5) * units_per_tile
+                + Vec<3>(0, c_node_i->elevation, 0);
+            Vec<3> dir = c_pos - pos;
+            Vec<3> offset = Vec<3>(dir.z(), dir.y(), -dir.x()).normalized();
+            Vec<3> signal_pos = pos + offset * signal_track_dist;
+            f64 angle_cross = signal_model_dir.x() * dir.z()
+                - signal_model_dir.z() * dir.x();
+            f64 signal_angle = atan2(angle_cross, signal_model_dir.dot(dir));
+            this->signals.push_back(Signal(
+                node.block, c_node.block, signal_pos, signal_angle
+            ));
+        }
+    }
+
     void TrackNetwork::reload() {
         this->graph.clear();
         u64 world_w_ch = this->terrain->width_in_chunks();
@@ -150,6 +191,16 @@ namespace houseofatmos::world {
                     ->chunk_at(chunk_x, chunk_z);
                 for(const TrackPiece& track_piece: chunk.track_pieces) {
                     this->assign_to_blocks(&track_piece);
+                }
+            }
+        }
+        this->signals.clear();
+        for(u64 chunk_x = 0; chunk_x < world_w_ch; chunk_x += 1) {
+            for(u64 chunk_z = 0; chunk_z < world_h_ch; chunk_z += 1) {
+                const Terrain::ChunkData& chunk = this->terrain
+                    ->chunk_at(chunk_x, chunk_z);
+                for(const TrackPiece& track_piece: chunk.track_pieces) {
+                    this->create_signals(&track_piece);
                 }
             }
         }
@@ -277,6 +328,28 @@ namespace houseofatmos::world {
             }
         }
         return std::nullopt;
+    }
+
+    void TrackNetwork::update(
+        engine::Scene& scene, const engine::Window& window
+    ) {
+        (void) scene;
+        for(Signal& signal: this->signals) {
+            signal.update(window);
+        }
+    }
+
+    void TrackNetwork::render(
+        const Vec<3>& observer, f64 draw_distance,
+        Renderer& renderer, engine::Scene& scene, 
+        const engine::Window& window
+    ) {
+        (void) window;
+        for(Signal& signal: this->signals) {
+            f64 distance = (signal.position - observer).len();
+            if(distance > draw_distance) { continue; }
+            signal.render(renderer, scene);
+        }
     }
 
 
@@ -452,9 +525,7 @@ namespace houseofatmos::world {
 
     void Train::release_unjustified_blocks(TrackNetwork& network) {
         f64 curr_front_dist = this->front_path_dist();
-        f64 curr_back_dist = std::max(
-            curr_front_dist - this->length() - 5.0, 0.0
-        );
+        f64 curr_back_dist = curr_front_dist - this->length();
         const auto& sections = this->current_path().sections;
         size_t back_sect = this->current_path().after(curr_back_dist).second;
         for(OwnedBlock& owning: this->owning_blocks) {
@@ -500,7 +571,6 @@ namespace houseofatmos::world {
             if(node.block->type == TrackNetwork::Block::Conflict) { continue; }
             break;
         }
-        // TODO: DON'T BOTHER QUEUEING IF THE FINAL BLOCK IS OCCUPIED
         if(!may_take_all) { return; }
         for(size_t sect_i = front_sect; sect_i < sections.size(); sect_i += 1) {
             const auto& section = sections[sect_i];

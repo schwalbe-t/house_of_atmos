@@ -55,6 +55,18 @@ namespace houseofatmos::world {
             (void) window;
         }
 
+        virtual void render(
+            const Vec<3>& observer, f64 draw_distance,
+            Renderer& renderer, engine::Scene& scene, 
+            const engine::Window& window
+        ) {
+            (void) observer;
+            (void) draw_distance;
+            (void) renderer;
+            (void) scene;
+            (void) window;
+        }
+
         virtual ~AgentNetwork() = default;
 
     };
@@ -593,6 +605,9 @@ namespace houseofatmos::world {
             Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window
         ) {
+            this->network.render(
+                observer, draw_distance, renderer, scene, window
+            );
             for(Agent& agent: this->agents) {
                 f64 distance = (agent.position - observer).len();
                 bool is_visible = distance <= draw_distance;
