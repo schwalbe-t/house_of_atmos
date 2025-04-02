@@ -164,9 +164,12 @@ namespace houseofatmos::world {
 
     void Carriage::update(
         CarriageNetwork& network, engine::Scene& scene, 
-        const engine::Window& window, ParticleManager* particles
+        const engine::Window& window, ParticleManager* particles,
+        Player& player, Interactables* interactables
     ) {
         (void) particles;
+        (void) player;
+        (void) interactables;
         this->speaker.position = this->position;
         this->speaker.update();
         bool play_state_sound = this->current_state() != this->prev_state

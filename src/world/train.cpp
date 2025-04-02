@@ -388,7 +388,7 @@ namespace houseofatmos::world {
         5.0, // length
         1.1, 3.9, // offsets of the front and back axles
         0.5, // wheel radius
-        0 // item capacity
+        10 // item capacity
     );
 
     static std::vector<Train::LocomotiveTypeInfo> locomotive_infos = {
@@ -416,7 +416,12 @@ namespace houseofatmos::world {
             2.0, // acceleration
             1.75, // braking distance
             5.0, // top speed
-            5000 // cost
+            5000, // cost
+            Player::Rideable(
+                Vec<3>(0.0, 0.9, -1.72), // position offset
+                0.0, // rotation offset
+                (u64) human::Animation::Stand // animation
+            )
         },
         /* Small */ {
             "locomotive_name_small",
@@ -442,7 +447,12 @@ namespace houseofatmos::world {
             1.75, // acceleration
             2.0, // braking distance
             7.5, // top speed
-            7500 // cost
+            7500, // cost
+            Player::Rideable(
+                Vec<3>(0.0, 1.325, -2.20), // position offset
+                0.0, // rotation offset
+                (u64) human::Animation::Sit // animation
+            )
         },
         /* Tram */ {
             "locomotive_name_tram",
@@ -455,7 +465,12 @@ namespace houseofatmos::world {
             2.0, // acceleration
             1.75, // braking distance
             7.0, // top speed
-            6500 // cost
+            6500, // cost
+            Player::Rideable(
+                Vec<3>(0.0, 1.2, -2.15), // position offset
+                0.0, // rotation offset
+                (u64) human::Animation::Sit // animation
+            )
         }
     };
 
@@ -603,18 +618,48 @@ namespace houseofatmos::world {
         this->velocity = std::min(this->velocity, stop_limit);
     }
 
-
+    void Train::update_rideable(Player& player, Interactables& interactables) {
+        const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
+            .at((size_t) this->loco_type);
+        const Train::Car& car_info = this->car_at(0);
+        f64 car_center = this->front_path_dist()
+            - this->offset_of_car(0) 
+            - (car_info.length / 2.0);
+        Vec<3> position = this->current_path().after(car_center).first;
+        Mat<4> inst
+            = Mat<4>::translate(position)
+            * Mat<4>::rotate_y(this->cars[0].yaw)
+            * Mat<4>::rotate_x(this->cars[0].pitch);
+        this->rideable.position = (inst * loco_info.rideable.position.with(1.0))
+            .swizzle<3>("xyz");
+        this->rideable.angle = this->cars[0].yaw;
+        this->rideable.animation_id = loco_info.rideable.animation_id;
+        if(this->interactable != nullptr) {
+            this->interactable->pos = this->rideable.position;
+        }
+        bool show_interaction = player.riding != &this->rideable
+            && this->interactable == nullptr;
+        if(!show_interaction) { return; }
+        this->interactable = interactables.create([this, p = &player]() {
+            p->riding = &this->rideable;
+            this->interactable = nullptr;
+        });
+    }
 
     static const f64 base_chugga_period = 0.5;
     static const f64 chugga_speed_factor = 1.0 / 5.0;
 
     void Train::update(
         TrackNetwork& network, engine::Scene& scene, 
-        const engine::Window& window, ParticleManager* particles
+        const engine::Window& window, ParticleManager* particles,
+        Player& player, Interactables* interactables
     ) {
         this->release_unjustified_blocks(network);
         this->take_next_blocks(network);
         this->update_velocity(window, network);
+        if(interactables != nullptr) {
+            this->update_rideable(player, *interactables);
+        }
         this->speaker.position = this->position;
         this->speaker.update();
         bool play_whistle = this->current_state() != this->prev_state
@@ -651,7 +696,7 @@ namespace houseofatmos::world {
             Vec<3> position = this->current_path().after(car_center).first;
             Mat<4> transform
                 = Mat<4>::translate(position)
-                * Mat<4>::rotate_y(this->cars[0].yaw) 
+                * Mat<4>::rotate_y(this->cars[0].yaw)
                 * Mat<4>::rotate_x(this->cars[0].pitch);
             Vec<4> smoke_pos = transform * loco_info.smoke_origin.with(1.0);
             particles->add(particle::random_smoke(network.rng)

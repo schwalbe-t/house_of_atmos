@@ -211,7 +211,8 @@ namespace houseofatmos::world {
             f64 acceleration;
             f64 braking_distance;
             f64 top_speed;
-            u64 cost;
+            u64 cost; 
+            Player::Rideable rideable;
         };
 
         static const std::vector<LocomotiveTypeInfo>& locomotive_types();
@@ -254,6 +255,8 @@ namespace houseofatmos::world {
         engine::Speaker speaker = engine::Speaker(
             engine::Speaker::Space::World, 5.0
         );
+        std::shared_ptr<Interactable> interactable = nullptr;
+        Player::Rideable rideable;
         std::vector<CarState> cars;
         std::vector<OwnedBlock> owning_blocks;
         AgentState prev_state = AgentState::Idle;
@@ -327,9 +330,12 @@ namespace houseofatmos::world {
             const engine::Window& window, TrackNetwork& network
         );
 
+        void update_rideable(Player& player, Interactables& interactables);
+
         void update(
             TrackNetwork& network, engine::Scene& scene, 
-            const engine::Window& window, ParticleManager* particles
+            const engine::Window& window, ParticleManager* particles,
+            Player& player, Interactables* interactables
         ) override;
 
         Vec<3> find_heading(size_t car_idx) const;

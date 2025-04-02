@@ -17,17 +17,31 @@ namespace houseofatmos {
     static const f64 swim_speed = 2.5;
 
     void Player::update(const engine::Window& window) {
-        Vec<3> heading = get_player_heading(window);
-        f64 speed = this->is_riding? ride_speed 
-            : this->in_water? swim_speed 
-            : walk_speed;
-        this->next_step = heading * speed * window.delta_time();
-        this->confirmed_step = this->character.position;
+        if(this->riding != nullptr) {
+            this->character.position = this->riding->position;
+            this->character.angle = this->riding->angle;
+            this->character.action 
+                = Character::Action(this->riding->animation_id, INFINITY);
+            if(window.was_pressed(engine::Key::Space)) {
+                this->riding = nullptr;
+            }
+        } else {
+            Vec<3> heading = get_player_heading(window);
+            f64 speed = this->is_riding? ride_speed 
+                : this->in_water? swim_speed 
+                : walk_speed;
+            this->next_step = heading * speed * window.delta_time();
+            this->confirmed_step = this->character.position;
+        }
     }
 
     void Player::apply_confirmed_step(
         engine::Scene& scene, const engine::Window& window
     ) {
+        if(this->riding != nullptr) { 
+            this->character.update(scene, window);
+            return; 
+        }
         bool is_moving = this->next_step.len() > 0;
         this->character.action = Character::Action(
             (u64) human::Animation::Stand, window.delta_time()

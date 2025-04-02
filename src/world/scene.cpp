@@ -361,6 +361,7 @@ namespace houseofatmos::world {
         Player& player
     ) {
         player.update(window);
+        if(player.riding != nullptr) { return; }
         bool in_coll = !terrain.valid_player_position(
             human::collider.at(player.character.position), player.is_riding
         );
@@ -425,7 +426,9 @@ namespace houseofatmos::world {
         }
         implement_mode_keybinds(*this, window);
         update_ui_visibiliy(*this, window);
-        this->world->update(*this, window, this->toasts, &this->particles);
+        this->world->update(
+            *this, window, this->toasts, &this->particles, &this->interactables
+        );
         this->world->balance.update_counter(*this->coin_counter);
         this->dialogues.update(
             *this, window, this->world->player.character.position

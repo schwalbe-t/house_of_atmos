@@ -4,6 +4,8 @@
 #include "complex.hpp"
 #include "../renderer.hpp"
 #include "../particles.hpp"
+#include "../player.hpp"
+#include "../interactable.hpp"
 #include <algorithm>
 
 namespace houseofatmos::world {
@@ -502,12 +504,15 @@ namespace houseofatmos::world {
 
         virtual void update(
             Network& network, engine::Scene& scene, 
-            const engine::Window& window, ParticleManager* particles
+            const engine::Window& window, ParticleManager* particles,
+            Player& player, Interactables* interactables
         ) {
             (void) network;
             (void) scene;
             (void) window;
             (void) particles;
+            (void) player;
+            (void) interactables;
         }
 
         virtual void render(
@@ -596,12 +601,16 @@ namespace houseofatmos::world {
 
         void update(
             engine::Scene& scene, const engine::Window& window,
-            ParticleManager* particles
+            ParticleManager* particles,
+            Player& player, Interactables* interactables
         ) {
             this->network.update(scene, window);
             for(Agent& agent: this->agents) {
                 agent.update_state(this->network, window);
-                agent.update(this->network, scene, window, particles);
+                agent.update(
+                    this->network, scene, window, particles, 
+                    player, interactables
+                );
             }
         }
 

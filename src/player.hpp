@@ -17,6 +17,12 @@ namespace houseofatmos {
     
     struct Player {
     
+        struct Rideable {
+            Vec<3> position;
+            f64 angle;
+            u64 animation_id;
+        };
+
         struct Serialized {
             Vec<3> position;
             f64 angle;
@@ -24,6 +30,7 @@ namespace houseofatmos {
 
 
         public:
+        const Rideable* riding = nullptr;
         Character character;
         Vec<3> next_step;
         Vec<3> confirmed_step;

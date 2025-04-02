@@ -81,7 +81,8 @@ namespace houseofatmos::world {
 
         void update(
             engine::Scene& scene, const engine::Window& window, Toasts& toasts,
-            ParticleManager* particles = nullptr
+            ParticleManager* particles = nullptr, 
+            Interactables* interactables = nullptr
         );
 
     };

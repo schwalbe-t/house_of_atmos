@@ -129,7 +129,8 @@ namespace houseofatmos::world {
 
         void update(
             CarriageNetwork& network, engine::Scene& scene, 
-            const engine::Window& window, ParticleManager* particles
+            const engine::Window& window, ParticleManager* particles,
+            Player& player, Interactables* interactables
         ) override;
 
         Vec<3> find_heading() const;
