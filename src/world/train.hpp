@@ -34,33 +34,9 @@ namespace houseofatmos::world {
 
             Type type;
             const Train* owner = nullptr;
-            std::vector<const Train*> queue; // FIFO ([0] is next)
             u64 size = 0; // number of pieces that belong to the block
         
             Block(Type type = Block::Simple): type(type) {}
-
-            bool in_queue(const Train* train) {
-                return std::find(this->queue.begin(), this->queue.end(), train)
-                    != this->queue.end();
-            }
-            void await(const Train* train) { 
-                if(this->in_queue(train) || this->owner == train) { return; }
-                this->queue.push_back(train); 
-            }
-            bool may_take(const Train* train) {
-                return this->owner == nullptr
-                    && this->queue.size() >= 1
-                    && this->queue[0] == train;
-            }
-            void take(const Train* train) {
-                if(!this->may_take(train)) { return; }
-                this->owner = train;
-                this->queue.erase(this->queue.begin());
-            }
-            void release(const Train* train) {
-                if(this->owner != train) { return; }
-                this->owner = nullptr;
-            }
         };
 
         struct Signal {
@@ -110,6 +86,9 @@ namespace houseofatmos::world {
                 bool clear = this->to->owner == this->from->owner;
                 if(this->to->type == Block::Conflict) {
                     clear &= this->from->owner != nullptr;
+                }
+                if(this->to->type == Block::Simple) {
+                    clear |= this->to->owner == nullptr;
                 }
                 return clear? Proceed : Danger;
             }
@@ -230,7 +209,7 @@ namespace houseofatmos::world {
             f64 whistle_pitch;
             u64 max_car_count;
             f64 acceleration;
-            f64 braking;
+            f64 braking_distance;
             f64 top_speed;
             u64 cost;
         };

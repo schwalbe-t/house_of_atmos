@@ -413,8 +413,8 @@ namespace houseofatmos::world {
             Vec<3>(0.0, 3.0, 1.22), // relative smoke origin
             1.4, // whistle pitch
             3, // max car count
-            2.5, // acceleration
-            2.5, // braking
+            2.0, // acceleration
+            1.75, // braking distance
             5.0, // top speed
             5000 // cost
         },
@@ -439,8 +439,8 @@ namespace houseofatmos::world {
             Vec<3>(0.0, 2.6, 2.0), // relative smoke origin
             1.3, // whistle pitch
             4, // max car count
-            2.5, // acceleration
-            4.0, // braking
+            1.75, // acceleration
+            2.0, // braking distance
             7.5, // top speed
             7500 // cost
         },
@@ -452,8 +452,8 @@ namespace houseofatmos::world {
             Vec<3>(0.395, 3.087, -1.702), // relative smoke origin
             1.35, // whistle pitch
             2, // max car count
-            3.5, // acceleration
-            3.5, // braking
+            2.0, // acceleration
+            1.75, // braking distance
             7.0, // top speed
             6500 // cost
         }
@@ -510,15 +510,16 @@ namespace houseofatmos::world {
     }
 
     f64 Train::wait_point_distance(TrackNetwork& network) const {
+        f64 front_dist = this->front_path_dist();
         const auto& sections = this->current_path().sections;
-        size_t section_i = this->current_path()
-            .after(this->front_path_dist()).second + 1;
-        f64 distance = 0.0;
-        for(; section_i < sections.size(); section_i += 1) {
-            const auto& section = sections[section_i];
+        size_t sect_i = this->current_path().after(front_dist).second + 1;
+        for(; sect_i < sections.size(); sect_i += 1) {
+            const auto& section = sections[sect_i];
             const TrackNetwork::Node& node = network.graph.at(section.node);
-            if(node.block->owner != this) { return distance; }
-            distance += section.length();
+            if(node.block->owner == this) { continue; }
+            return this->current_path().section_distance(sect_i) 
+                - section.length() / 2.0
+                - front_dist;
         }
         return INFINITY;
     }
@@ -544,7 +545,7 @@ namespace houseofatmos::world {
         }
         for(OwnedBlock& owning: this->owning_blocks) {
             if(owning.justified) { continue; }
-            owning.block->release(this);
+            owning.block->owner = nullptr;
         }
         auto new_owned_end = std::remove_if(
             this->owning_blocks.begin(), this->owning_blocks.end(),
@@ -566,8 +567,7 @@ namespace houseofatmos::world {
             const auto& section = sections[sect_i];
             const TrackNetwork::Node& node = network.graph.at(section.node);
             if(node.block == current_block) { continue; }
-            node.block->await(this);
-            may_take_all &= node.block->may_take(this);
+            may_take_all &= node.block->owner == nullptr;
             if(node.block->type == TrackNetwork::Block::Conflict) { continue; }
             break;
         }
@@ -576,9 +576,10 @@ namespace houseofatmos::world {
             const auto& section = sections[sect_i];
             const TrackNetwork::Node& node = network.graph.at(section.node);
             if(node.block == current_block) { continue; }
-            if(!node.block->may_take(this)) { break; }
-            node.block->take(this);
+            node.block->owner = this;
             this->owning_blocks.push_back(OwnedBlock(node.block, true));
+            if(node.block->type == TrackNetwork::Block::Conflict) { continue; }
+            break;
         }
     }
 
@@ -588,19 +589,18 @@ namespace houseofatmos::world {
         const Train::LocomotiveTypeInfo& loco_info = Train::locomotive_types()
             .at((size_t) this->loco_type);
         f64 await_signal_after = this->wait_point_distance(network);
-        f64 end_after = this->current_path().length() - this->front_path_dist();
-        if(std::min(await_signal_after, end_after) < 10.0) {
-            this->velocity -= loco_info.braking * window.delta_time();
-            this->velocity = std::max(this->velocity, 1.0);
-            if(await_signal_after < 1.0) { this->velocity = 0.0; }
-        } else {
-            this->velocity += loco_info.acceleration * window.delta_time();
-        }
-        if(this->current_path_dist() < this->length()) { 
-            this->velocity = 0.0; 
-        }
+        if(await_signal_after < 1.0) { await_signal_after = 0.0; }
+        f64 end_after = std::max(
+            this->current_path().length() - this->front_path_dist(),
+            1.0
+        );
+        f64 stop_limit = std::min(await_signal_after, end_after) 
+            / loco_info.braking_distance;
+        this->velocity += loco_info.acceleration * window.delta_time();
+        if(this->current_path_dist() < this->length()) { this->velocity = 0.0; }
         this->velocity = std::max(this->velocity, 0.0);
         this->velocity = std::min(this->velocity, loco_info.top_speed);
+        this->velocity = std::min(this->velocity, stop_limit);
     }
 
 
@@ -631,7 +631,9 @@ namespace houseofatmos::world {
         f64 next_chugga_time = this->last_chugga_time 
             + base_chugga_period / chugga_speed;
         bool play_chugga = this->current_state() == AgentState::Travelling
-            && next_chugga_time <= window.time();
+            && next_chugga_time <= window.time()
+            && this->current_path_dist() > this->length()
+            && this->velocity >= 1.0;
         if(play_chugga) {
             this->speaker.pitch = chugga_speed;
             this->speaker.play(scene.get(sound::chugga));
