@@ -113,6 +113,18 @@ namespace houseofatmos::world {
             return { position, sect_c - 1 }; 
         }
 
+        f64 length() const {
+            f64 sum = 0.0;
+            Vec<3> last_pos = this->start;
+            for(const Section& section: this->sections) {
+                sum += section.length(last_pos);
+                if(section.points.size() >= 1) {
+                    last_pos = section.points.back();
+                }
+            }
+            return sum;
+        }
+
 
         private:
         struct NodeSearchState {

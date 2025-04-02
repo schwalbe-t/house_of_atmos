@@ -216,7 +216,9 @@ namespace houseofatmos::world {
             Vec<3> smoke_origin;
             f64 whistle_pitch;
             u64 max_car_count;
-            f64 speed;
+            f64 acceleration;
+            f64 braking;
+            f64 top_speed;
             u64 cost;
         };
 
@@ -263,7 +265,7 @@ namespace houseofatmos::world {
         std::vector<OwnedBlock> owning_blocks;
         AgentState prev_state = AgentState::Idle;
         f64 last_chugga_time = 0.0;
-        f64 last_back_dist = 0.0;
+        f64 velocity = 0.0;
 
         public:
         Train(
@@ -304,26 +306,14 @@ namespace houseofatmos::world {
 
         f64 offset_of_car(size_t car_idx) const;
 
-        f64 wait_point_distance(TrackNetwork& network) const {
-            const auto& sections = this->current_path().sections;
-            size_t section_i = this->current_path()
-                .after(this->front_path_dist()).second + 1;
-            f64 distance = 0.0;
-            for(; section_i < sections.size(); section_i += 1) {
-                const auto& section = sections[section_i];
-                const TrackNetwork::Node& node = network.graph.at(section.node);
-                if(node.block->owner != this) { return distance; }
-                distance += section.length();
-            }
-            return INFINITY;
-        }
+        f64 wait_point_distance(TrackNetwork& network) const;
 
 
         f64 current_speed(TrackNetwork& network) override {
-            f64 wait_after = this->wait_point_distance(network);
-            f64 top_speed = Train::locomotive_types()
-                .at((size_t) this->loco_type).speed;
-            return std::min(wait_after, top_speed);
+            (void) network;
+            f64 len = this->length();
+            if(this->current_path_dist() < len) { return len; }
+            return this->velocity;
         }
 
         u64 item_storage_capacity() override {
@@ -337,7 +327,12 @@ namespace houseofatmos::world {
             return total;
         }
 
-        void manage_block_ownership(TrackNetwork& network);
+        void release_unjustified_blocks(TrackNetwork& network);
+        void take_next_blocks(TrackNetwork& network);
+
+        void update_velocity(
+            const engine::Window& window, TrackNetwork& network
+        );
 
         void update(
             TrackNetwork& network, engine::Scene& scene, 
