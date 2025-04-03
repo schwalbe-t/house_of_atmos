@@ -150,7 +150,7 @@ namespace houseofatmos::world {
 
         private:
         void find_connections(NodeId node, Node& node_data);
-        void assign_to_blocks(NodeId node, Block* previous = nullptr);
+        void assign_nodes_to_blocks(NodeId node, Block* previous = nullptr);
         void create_signals(NodeId node);
         public:
         void reload() override;
@@ -302,8 +302,12 @@ namespace houseofatmos::world {
 
         f64 current_speed(TrackNetwork& network) override {
             (void) network;
+            f64 await_signal_after = this->wait_point_distance(network);
+            if(await_signal_after < 1.0) { return 0.0; }
+            const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
+                .at((size_t) this->loco_type);
             f64 len = this->length();
-            if(this->current_path_dist() < len) { return len; }
+            if(this->current_path_dist() < len) { return loco_info.top_speed; }
             return this->velocity;
         }
 
@@ -326,6 +330,9 @@ namespace houseofatmos::world {
 
         void release_unjustified_blocks(TrackNetwork& network);
         void take_next_blocks(TrackNetwork& network);
+
+        void on_new_path(TrackNetwork& network) override;
+        void on_network_reset(TrackNetwork& network) override;
 
         void update_velocity(
             const engine::Window& window, TrackNetwork& network

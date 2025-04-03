@@ -104,7 +104,7 @@ namespace houseofatmos::world {
 
     static const u64 max_block_size = 4;
 
-    void TrackNetwork::assign_to_blocks(NodeId piece, Block* previous) {
+    void TrackNetwork::assign_nodes_to_blocks(NodeId piece, Block* previous) {
         Node& node = this->graph.at(piece);
         if(node.block != nullptr) { return; }
         bool is_conflict = piece->direction == TrackPiece::Any;
@@ -120,10 +120,10 @@ namespace houseofatmos::world {
         }
         node.block->size += 1;
         for(NodeId connected: node.connected_low) {
-            this->assign_to_blocks(connected, node.block);
+            this->assign_nodes_to_blocks(connected, node.block);
         }
         for(NodeId connected: node.connected_high) {
-            this->assign_to_blocks(connected, node.block);
+            this->assign_nodes_to_blocks(connected, node.block);
         }
     }
 
@@ -190,7 +190,7 @@ namespace houseofatmos::world {
                 const Terrain::ChunkData& chunk = this->terrain
                     ->chunk_at(chunk_x, chunk_z);
                 for(const TrackPiece& track_piece: chunk.track_pieces) {
-                    this->assign_to_blocks(&track_piece);
+                    this->assign_nodes_to_blocks(&track_piece);
                 }
             }
         }
@@ -463,8 +463,8 @@ namespace houseofatmos::world {
             1.35, // whistle pitch
             2, // max car count
             2.0, // acceleration
-            1.75, // braking distance
-            7.0, // top speed
+            1.5, // braking distance
+            12.5, // top speed
             6500, // cost
             Player::Rideable(
                 Vec<3>(0.0, 1.2, -2.15), // position offset
@@ -499,8 +499,14 @@ namespace houseofatmos::world {
     }
 
     Train::Serialized Train::serialize(engine::Arena& buffer) const {
+        SerializedAgent agent = Agent<TrackNetwork>::serialize(buffer); // this is a non-static
+        if(this->current_path().sections.size() > 0) {
+            f64 curr_front_dist = this->front_path_dist();
+            f64 curr_back_dist = curr_front_dist - this->length();
+            agent.position = this->current_path().after(curr_back_dist).first;
+        }
         return Serialized(
-            Agent<TrackNetwork>::serialize(buffer), // this is a non-static
+            agent, 
             this->loco_type,
             this->car_count
         );
@@ -619,13 +625,33 @@ namespace houseofatmos::world {
         }
     }
 
+    void Train::on_network_reset(TrackNetwork& network) {
+        (void) network;
+        this->owning_blocks.clear();
+    }
+
+    void Train::on_new_path(TrackNetwork& network) {
+        f64 curr_front_dist = this->front_path_dist();
+        f64 curr_back_dist = curr_front_dist - this->length();
+        const auto& sections = this->current_path().sections;
+        size_t back_sect = this->current_path().after(curr_back_dist).second;
+        size_t front_sect = this->current_path().after(curr_front_dist).second;
+        size_t sect_limit = std::min(front_sect + 1, sections.size());
+        for(size_t sect_i = back_sect; sect_i < sect_limit; sect_i += 1) {
+            TrackNetwork::Block* block = network.graph
+                .at(sections[sect_i].node).block;
+            if(block->owner != nullptr) { break; }
+            block->owner = this;
+            this->owning_blocks.push_back(OwnedBlock(block, true));
+        }
+    }
+
     void Train::update_velocity(
         const engine::Window& window, TrackNetwork& network
     ) {
         const Train::LocomotiveTypeInfo& loco_info = Train::locomotive_types()
             .at((size_t) this->loco_type);
         f64 await_signal_after = this->wait_point_distance(network);
-        if(await_signal_after < 1.0) { await_signal_after = 0.0; }
         f64 end_after = std::max(
             this->current_path().length() - this->front_path_dist(),
             1.0

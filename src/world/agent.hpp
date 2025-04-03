@@ -483,6 +483,39 @@ namespace houseofatmos::world {
             }
         }
 
+        virtual void update(
+            Network& network, engine::Scene& scene, 
+            const engine::Window& window, ParticleManager* particles,
+            Player& player, Interactables* interactables
+        ) {
+            (void) network;
+            (void) scene;
+            (void) window;
+            (void) particles;
+            (void) player;
+            (void) interactables;
+        }
+
+        virtual void on_new_path(Network& network) {
+            (void) network;
+        }
+
+        virtual void on_network_reset(Network& network) {
+            (void) network;
+        }
+
+        virtual void render(
+            Renderer& renderer, Network& network,
+            engine::Scene& scene, const engine::Window& window
+        ) {
+            (void) renderer;
+            (void) network;
+            (void) scene;
+            (void) window;
+        }
+
+        virtual ~Agent() = default;
+
         bool find_path(Network& network) {
             if(this->schedule.size() == 0) { this->state = AgentState::Idle; }
             bool requires_path = this->state == AgentState::Travelling 
@@ -499,33 +532,9 @@ namespace houseofatmos::world {
             this->path = *found;
             this->distance = 0.0;
             this->has_path = true;
+            this->on_new_path(network);
             return true;
         }
-
-        virtual void update(
-            Network& network, engine::Scene& scene, 
-            const engine::Window& window, ParticleManager* particles,
-            Player& player, Interactables* interactables
-        ) {
-            (void) network;
-            (void) scene;
-            (void) window;
-            (void) particles;
-            (void) player;
-            (void) interactables;
-        }
-
-        virtual void render(
-            Renderer& renderer, Network& network,
-            engine::Scene& scene, const engine::Window& window
-        ) {
-            (void) renderer;
-            (void) network;
-            (void) scene;
-            (void) window;
-        }
-
-        virtual ~Agent() = default;
 
 
         static std::pair<f64, f64> compute_heading_angles(
@@ -589,6 +598,7 @@ namespace houseofatmos::world {
             this->network.reload();
             bool any_became_lost = false;
             for(Agent& agent: this->agents) {
+                agent.on_network_reset(network);
                 bool was_lost = agent.current_state() == AgentState::Lost;
                 agent.find_path(this->network);
                 bool is_lost = agent.current_state() == AgentState::Lost;

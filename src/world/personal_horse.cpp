@@ -50,9 +50,11 @@ namespace houseofatmos::world {
                 this->set_ridden();
             });
         }
-        // set to free if riding and space bar pressed or in water
+        // set to free if riding and space bar pressed or in water 
+        // or riding something else
         bool player_got_off = window.was_pressed(engine::Key::Space)
-            || this->player->in_water;
+            || this->player->in_water
+            || this->player->riding != nullptr;
         if(this->state == State::Ridden && player_got_off) {
             this->set_free(pos);
         }
