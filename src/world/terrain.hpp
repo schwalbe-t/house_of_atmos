@@ -4,7 +4,7 @@
 #include <engine/arena.hpp>
 #include <engine/rng.hpp>
 #include "../interactable.hpp"
-#include "complex.hpp"
+#include "complex_id.hpp"
 #include "building.hpp"
 #include "foliage.hpp"
 #include "bridge.hpp"

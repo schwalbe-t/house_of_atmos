@@ -1,9 +1,13 @@
 
 #pragma once
 
-#include "agent.hpp"
+#include "../renderer.hpp"
 
 namespace houseofatmos::world {
+
+    using namespace houseofatmos;
+    using namespace houseofatmos::engine::math;
+
 
     struct TrackPiece {
 

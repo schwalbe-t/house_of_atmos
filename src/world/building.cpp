@@ -49,6 +49,7 @@ namespace houseofatmos::world {
             2, 2, // size
             std::nullopt, // no interior
             500, // building cost
+            10, // storage capacity
             Building::TypeInfo::allow_destruction,
             5, // workers
             0, // residents
@@ -70,6 +71,7 @@ namespace houseofatmos::world {
             2, 2, // size
             std::nullopt, // no interior
             1000, // building cost
+            10, // storage capacity
             Building::TypeInfo::allow_destruction,
             15, // workers
             0, // residents
@@ -88,6 +90,7 @@ namespace houseofatmos::world {
             2, 2, // size
             std::nullopt, // no interior
             1000, // building cost
+            10, // storage capacity
             Building::TypeInfo::allow_destruction,
             5, // workers
             0, // residents
@@ -106,6 +109,7 @@ namespace houseofatmos::world {
             2, 1, // size
             std::nullopt, // no interior
             1000, // building cost
+            10, // storage capacity
             Building::TypeInfo::allow_destruction,
             25, // workers
             0, // residents
@@ -124,6 +128,7 @@ namespace houseofatmos::world {
             1, 1, // size
             std::nullopt, // no interior
             500, // building cost
+            0, // storage capacity
             Building::TypeInfo::allow_destruction,
             0, // workers
             5, // residents
@@ -156,6 +161,7 @@ namespace houseofatmos::world {
             3, 3, // size
             std::nullopt, // no interior
             2000, // building cost
+            0, // storage capacity
             Building::TypeInfo::allow_destruction,
             20, // workers
             0, // residents
@@ -191,6 +197,7 @@ namespace houseofatmos::world {
             3, 3, // size
             std::nullopt, // no interior
             0, // building cost (can't be built nor destroyed)
+            500, // storage capacity
             Building::TypeInfo::indestructible,
             0, // workers
             0, // residents
@@ -213,6 +220,7 @@ namespace houseofatmos::world {
             3, 2, // size
             (Building::LinkedInterior) { { 0, 1, 0 }, interior::mansion },
             0, // building cost (can't be built nor destroyed)
+            0, // storage capacity
             Building::TypeInfo::indestructible,
             0, // workers
             0, // residents
@@ -237,6 +245,7 @@ namespace houseofatmos::world {
             2, 2, // size
             std::nullopt, // no interior
             500, // building cost
+            10, // storage capacity
             Building::TypeInfo::allow_destruction,
             5, // workers
             0, // residents
@@ -261,6 +270,7 @@ namespace houseofatmos::world {
             2, 2, // size
             std::nullopt, // no interior
             500, // building cost
+            10, // storage capacity
             Building::TypeInfo::allow_destruction,
             5, // workers
             0, // residents
@@ -282,6 +292,7 @@ namespace houseofatmos::world {
             3, 3, // size
             std::nullopt, // no interior
             5000, // building cost
+            0, // storage capacity
             Building::TypeInfo::allow_destruction,
             20, // workers
             0, // residents
@@ -303,8 +314,28 @@ namespace houseofatmos::world {
             3, 3, // size
             std::nullopt, // no interior
             5000, // building cost
+            0, // storage capacity
             Building::TypeInfo::allow_destruction,
             30, // workers
+            0, // residents
+            std::nullopt // no particles
+        },
+        /* Type::Storage */ {
+            "building_name_storage",
+            &ui_icon::storage,
+            Building::TypeInfo::keep_terrain,
+            { 
+                "res/buildings/storage.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            std::nullopt, 0.0,
+            { RelCollider({ -2.5, -0.5, -5 }, { 5, 1, 10 }) },
+            1, 2, // size
+            std::nullopt, // no interior
+            500, // building cost
+            500, // storage capacity
+            Building::TypeInfo::allow_destruction,
+            0, // workers
             0, // residents
             std::nullopt // no particles
         }

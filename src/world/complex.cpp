@@ -196,14 +196,36 @@ namespace houseofatmos::world {
     std::span<const std::pair<std::pair<u64, u64>, Complex::Member>>
         Complex::get_members() const { return this->members; }
 
+    u64 Complex::capacity(const Terrain& terrain) const {
+        u64 sum = 0;
+        for(const auto& member: this->members) {
+            auto [x, z] = member.first;
+            const Building* building = terrain.building_at((i64) x, (i64) z);
+            if(building == nullptr) { continue; }
+            sum += Building::types().at((size_t) building->type).capacity;
+        }
+        return sum;
+    }
+
+    u64 Complex::free_capacity(Item::Type item, const Terrain& terrain) const {
+        u64 capacity = this->capacity(terrain);
+        u64 stored = this->stored_count(item);
+        if(stored >= capacity) { return 0; }
+        return capacity - stored;
+    }
+
     u64 Complex::stored_count(Item::Type item) const {
         auto count = this->storage.find(item);
         if(count == this->storage.end()) { return 0; }
         return count->second;
     }
 
-    void Complex::add_stored(Item::Type item, u64 amount) {
-        this->storage[item] += amount;
+    u64 Complex::add_stored(
+        Item::Type item, u64 amount, const Terrain& terrain
+    ) {
+        u64 added = std::min(this->free_capacity(item, terrain), amount);
+        this->storage[item] += added;
+        return added;
     }
 
     void Complex::remove_stored(Item::Type item, u64 amount) {
@@ -235,7 +257,7 @@ namespace houseofatmos::world {
 
     void Complex::update(
         const engine::Window& window, Balance& balance, 
-        research::Research& research
+        research::Research& research, const Terrain& terrain
     ) {
         for(auto& member: this->members) {
             for(Conversion& conversion: member.second.conversions) {
@@ -247,6 +269,11 @@ namespace houseofatmos::world {
                 for(auto& [count, item]: conversion.inputs) {
                     u64 present_count = this->stored_count(item) / count;
                     allowed_times = std::min(allowed_times, present_count);
+                }
+                for(auto& [count, item]: conversion.outputs) {
+                    u64 capacity_count 
+                        = this->free_capacity(item, terrain) / count;
+                    allowed_times = std::min(allowed_times, capacity_count);
                 }
                 if(allowed_times == 0) { continue; }
                 for(auto& [count, item]: conversion.inputs) {
@@ -261,7 +288,7 @@ namespace houseofatmos::world {
                         balance.coins += produced;
                     }
                     if(!storable) { continue; }
-                    this->add_stored(item, produced);
+                    this->add_stored(item, produced, terrain);
                 }
             }
         }
@@ -340,11 +367,11 @@ namespace houseofatmos::world {
 
     void ComplexBank::update(
         const engine::Window& window, Balance& balance, 
-        research::Research& research
+        research::Research& research, const Terrain& terrain
     ) {
         for(Complex& complex: this->complexes) {
             if(complex.is_free()) { continue; }
-            complex.update(window, balance, research);
+            complex.update(window, balance, research, terrain);
         }
     }
 

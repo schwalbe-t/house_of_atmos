@@ -3,8 +3,10 @@
 
 #include <engine/arena.hpp>
 #include <engine/window.hpp>
+#include "complex_id.hpp"
 #include "../balance.hpp"
 #include "../research/research.hpp"
+#include "terrain.hpp"
 #include "item.hpp"
 #include <vector>
 #include <utility>
@@ -98,8 +100,10 @@ namespace houseofatmos::world {
         const Member& member_at(u64 tile_x, u64 tile_z) const;
         size_t member_count() const;
         std::span<const std::pair<std::pair<u64, u64>, Member>> get_members() const;
+        u64 capacity(const Terrain& terrain) const;
+        u64 free_capacity(Item::Type item, const Terrain& terrain) const;
         u64 stored_count(Item::Type item) const;
-        void add_stored(Item::Type item, u64 amount);
+        u64 add_stored(Item::Type item, u64 amount, const Terrain& terrain);
         void remove_stored(Item::Type item, u64 amount);
         void set_stored(Item::Type item, u64 amount);
         const std::unordered_map<Item::Type, u64>& stored_items() const;
@@ -108,17 +112,13 @@ namespace houseofatmos::world {
 
         void update(
             const engine::Window& window, Balance& balance, 
-            research::Research& research
+            research::Research& research, const Terrain& terrain
         );
 
         Serialized serialize(engine::Arena& buffer) const;
 
     };
 
-
-    struct ComplexId {
-        u32 index;
-    };
 
     struct ComplexBank {
 
@@ -144,7 +144,7 @@ namespace houseofatmos::world {
 
         void update(
             const engine::Window& window, Balance& balance, 
-            research::Research& research
+            research::Research& research, const Terrain& terrain
         );
 
         Serialized serialize(engine::Arena& buffer) const;

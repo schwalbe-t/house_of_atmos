@@ -464,7 +464,9 @@ namespace houseofatmos::world {
         this->boats.update(
             scene, window, particles, this->player, interactables
         );
-        this->complexes.update(window, this->balance, this->research);
+        this->complexes.update(
+            window, this->balance, this->research, this->terrain
+        );
         this->research.check_completion(toasts);
     }
 

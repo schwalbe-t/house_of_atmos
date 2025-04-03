@@ -822,6 +822,12 @@
         "de": "Werft",
         "bg": "Корабна работ."
     },
+    "building_name_storage": {
+        "_context": "Name of a building used to store goods to be used later",
+        "en": "Storage",
+        "de": "Lager",
+        "bg": "Склад"
+    },
 
 
 

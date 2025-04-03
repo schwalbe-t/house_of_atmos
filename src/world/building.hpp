@@ -6,7 +6,7 @@
 #include "../collider.hpp"
 #include "../ui_const.hpp"
 #include "../particles.hpp"
-#include "complex.hpp"
+#include "complex_id.hpp"
 
 namespace houseofatmos::world {
 
@@ -36,6 +36,7 @@ namespace houseofatmos::world {
             u8 width, height; // in tiles
             std::optional<LinkedInterior> interior;
             u64 cost; // in coins
+            u64 capacity;
             bool destructible;
             u64 workers;
             u64 residents;
@@ -99,7 +100,8 @@ namespace houseofatmos::world {
             Pasture,
             TreeFarm,
             TrainDepot,
-            ShipYard
+            ShipYard,
+            Storage
         };
 
         Type type;

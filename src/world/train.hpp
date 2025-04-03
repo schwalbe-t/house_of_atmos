@@ -142,7 +142,8 @@ namespace houseofatmos::world {
         std::unordered_map<NodeId, Node, NodeIdHash> graph;
 
         TrackNetwork(Terrain* terrain, ComplexBank* complexes):
-            AgentNetwork(complexes, "toast_train_lost"), terrain(terrain) {}
+            AgentNetwork(complexes, terrain, "toast_train_lost"), 
+            terrain(terrain) {}
 
         TrackNetwork(TrackNetwork&& other) noexcept = default;
         TrackNetwork& operator=(TrackNetwork&& other) noexcept = default;

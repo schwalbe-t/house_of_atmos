@@ -20,11 +20,14 @@ namespace houseofatmos::world {
 
 
         ComplexBank* complexes;
+        const Terrain* terrain;
         std::string local_lost_msg;
 
         AgentNetwork(
-            ComplexBank* complexes, std::string local_lost_msg
-        ): complexes(complexes), local_lost_msg(std::move(local_lost_msg)) {}
+            ComplexBank* complexes, const Terrain* terrain, 
+            std::string local_lost_msg
+        ): complexes(complexes), terrain(terrain), 
+            local_lost_msg(std::move(local_lost_msg)) {}
 
         AgentNetwork(AgentNetwork&& other) noexcept = default;
         AgentNetwork& operator=(AgentNetwork&& other) noexcept = default;
@@ -384,9 +387,10 @@ namespace houseofatmos::world {
                     break;
                 }
                 case AgentStop::Unload: {
-                    u64 transferred = planned;
+                    u64 transferred = complex.add_stored(
+                        stop.item, planned, *network.terrain
+                    );
                     this->items[stop.item] -= transferred;
-                    complex.add_stored(stop.item, transferred);
                     break;
                 }
                 case AgentStop::Maintain: break;

@@ -331,7 +331,8 @@ namespace houseofatmos::world {
         }),
         BuildingGroup(Building::Stable, {}),
         BuildingGroup(Building::TrainDepot, {}),
-        BuildingGroup(Building::ShipYard, {})
+        BuildingGroup(Building::ShipYard, {}),
+        BuildingGroup(Building::Storage, { {} }),
     };
 
     static ui::Element create_building_selector(

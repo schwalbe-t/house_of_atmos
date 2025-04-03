@@ -19,14 +19,13 @@ namespace houseofatmos::world {
 
     struct TileNetwork: AgentNetwork<TileNetworkNode> {
 
-        const Terrain* terrain;
         u64 max_target_dist;
 
         TileNetwork(
             const Terrain* terrain, ComplexBank* complexes, 
             std::string local_lost_msg, u64 max_target_dist
-        ): AgentNetwork(complexes, local_lost_msg), 
-            terrain(terrain), max_target_dist(max_target_dist) {}
+        ): AgentNetwork(complexes, terrain, local_lost_msg), 
+            max_target_dist(max_target_dist) {}
 
         TileNetwork(TileNetwork&& other) noexcept = default;
         TileNetwork& operator=(TileNetwork&& other) noexcept = default;
