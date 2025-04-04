@@ -129,6 +129,15 @@ namespace houseofatmos::world {
             return Carriage::carriage_types().at((size_t) this->type).capacity;
         }
 
+        std::string_view local_name() override {
+            return Carriage::carriage_types()
+                .at((size_t) this->type).local_name;
+        }
+
+        const ui::Background* icon() { 
+            return Carriage::carriage_types().at((size_t) this->type).icon;
+        }
+
         void update_rideable(Player& player, Interactables& interactables);
 
         void update(

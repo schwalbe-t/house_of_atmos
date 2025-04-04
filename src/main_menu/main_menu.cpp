@@ -12,9 +12,9 @@ namespace houseofatmos {
             settings(std::move(settings)), 
             local_ref(this->settings.localization()) {
         u32 background_seed = random_init();
-        this->terrain.generate_elevation(background_seed);
+        this->terrain.generate_elevation(background_seed, 20.0, -5.0);
         this->terrain.generate_foliage(background_seed);
-        this->renderer.camera.look_at = Vec<3>(16, 0.0, 16) 
+        this->renderer.camera.look_at = Vec<3>(12.5, 0.0, 32.0) 
             * this->terrain.units_per_tile();
         this->renderer.camera.look_at
             .y() = this->terrain.elevation_at(this->renderer.camera.look_at);
@@ -310,7 +310,7 @@ namespace houseofatmos {
     }
 
     void MainMenu::render_background(engine::Window& window) {
-        world::Scene::configure_renderer(this->renderer, this->settings);
+        world::Scene::configure_renderer(this->renderer, this->settings, 1.0);
         this->renderer.configure(window, *this);
         this->terrain.load_chunks_around(
             this->renderer.camera.look_at, 

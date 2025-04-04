@@ -219,7 +219,8 @@ namespace houseofatmos::world {
             );
             *this->selected_info_right = building->complex.has_value()
                 ? TerrainMap::display_complex_info(
-                    this->world->complexes.get(*building->complex), *this->local
+                    this->world->complexes.get(*building->complex), 
+                    *this->local, this->world->terrain
                 )
                 : ui::Element().as_phantom().as_movable();
         }
@@ -235,11 +236,12 @@ namespace houseofatmos::world {
         if(this->selected_type == SelectionType::Complex) {
             const Complex& complex = this->world->complexes
                 .get(this->selected.complex);
-            *this->selected_info_right 
-                = TerrainMap::display_complex_info(complex, *this->local);
+            *this->selected_info_right = TerrainMap::display_complex_info(
+                complex, *this->local, this->world->terrain
+            );
         }
         if(this->selected_type == SelectionType::Agent) {
-            *this->selected_info_right = this->display_agent_info(
+            *this->selected_info_right = this->display_agent_details(
                 this->selected.agent.a, *this->selected.agent.d
             );
         }
@@ -365,11 +367,14 @@ namespace houseofatmos::world {
         );
     }
 
-    void TerrainMap::add_agent_stop_marker(AbstractAgent agent, size_t stop_i) {
+    void TerrainMap::add_agent_stop_marker(
+        AbstractAgent agent, std::span<const size_t> stop_indices
+    ) {
+        if(stop_indices.size() == 0) { return; }
         Vec<3> ag_tile_pos = agent.position() 
             / this->world->terrain.units_per_tile();
         const Complex& complex = this->world->complexes
-            .get(agent.schedule()[stop_i].target);
+            .get(agent.schedule()[stop_indices[0]].target);
         const auto& [mem_x, mem_z] = complex
             .closest_member_to((u64) ag_tile_pos.x(), (u64) ag_tile_pos.z());
         const Building* member = this->world->terrain
@@ -379,12 +384,17 @@ namespace houseofatmos::world {
         Vec<2> marker_pos = Vec<2>(
             mem_x + building.width / 2.0, mem_z + building.height / 2.0
         ) * this->world->terrain.units_per_tile();
+        std::string text = "#";
+        bool had_stop = false;
+        for(size_t stop_i: stop_indices) {
+            if(had_stop) { text += ","; }
+            text += std::to_string(stop_i + 1);
+            had_stop = true;
+        }
         this->add_marker(marker_pos, ui::Element()
             .as_phantom()
             .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(
-                "#" + std::to_string(stop_i + 1), &ui_font::dark
-            )
+            .with_text(text, &ui_font::dark)
             .as_movable()
         );
     }
@@ -402,9 +412,10 @@ namespace houseofatmos::world {
                     ? &ui_icon::map_marker_selected
                     : agent_display.marker,
             [this, agent, ag_d = &agent_display]() {
-                this->selected_info_bottom->hidden = true;
+                *this->selected_info_bottom 
+                    = TerrainMap::display_agent_info(agent, *this->local);
                 *this->selected_info_right 
-                    = this->display_agent_info(agent, *ag_d);
+                    = this->display_agent_details(agent, *ag_d);
                 this->selected_type = SelectionType::Agent;
                 this->selected.agent.a = agent;
                 this->selected.agent.d = ag_d;
@@ -413,8 +424,13 @@ namespace houseofatmos::world {
             false
         );
         if(!is_selected) { return; }
+        std::unordered_map<size_t, std::vector<size_t>> complex_stops;
         for(size_t stop_i = 0; stop_i < agent.schedule().size(); stop_i += 1) {
-            this->add_agent_stop_marker(agent, stop_i);
+            size_t complex_i = agent.schedule()[stop_i].target.index;
+            complex_stops[complex_i].push_back(stop_i);
+        }
+        for(const auto& [complex_i, stop_indices]: complex_stops) {
+            this->add_agent_stop_marker(agent, stop_indices);
         }
     }
 
@@ -565,7 +581,7 @@ namespace houseofatmos::world {
         const engine::Localization& local
     ) {
         const Building::TypeInfo& building = Building::types().at((size_t) type);
-        std::string worker_info = building.residents > building.workers
+        std::string worker_info_text = building.residents > building.workers
             ? local.pattern(
                 "ui_provided_workers", 
                 { std::to_string(building.residents - building.workers) }
@@ -574,6 +590,10 @@ namespace houseofatmos::world {
                 "ui_required_workers",
                 { std::to_string(building.workers - building.residents) }
             );
+        std::string capacity_info_text = local.pattern(
+            "ui_item_storage_capacity", 
+            { std::to_string(building.capacity) }
+        );
         ui::Element info = ui::Element()
             .with_pos(0.5, 0.95, ui::position::window_fract)
             .with_size(0, 0, ui::size::units_with_children)
@@ -604,7 +624,13 @@ namespace houseofatmos::world {
                     )
                     .with_child(ui::Element()
                         .with_size(0, 0, ui::size::unwrapped_text)
-                        .with_text(worker_info, &ui_font::dark)
+                        .with_text(worker_info_text, &ui_font::dark)
+                        .with_padding(1)
+                        .as_movable()
+                    )
+                    .with_child(ui::Element()
+                        .with_size(0, 0, ui::size::unwrapped_text)
+                        .with_text(capacity_info_text, &ui_font::dark)
                         .with_padding(1)
                         .as_movable()
                     )
@@ -622,7 +648,8 @@ namespace houseofatmos::world {
 
     
     ui::Element TerrainMap::display_complex_info(
-        const Complex& complex, const engine::Localization& local
+        const Complex& complex, const engine::Localization& local,
+        const Terrain& terrain
     ) {
         static const f64 display_prec = 1000;
         static const f64 display_epsilon = 0.00001;
@@ -654,10 +681,12 @@ namespace houseofatmos::world {
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
+        std::string storage_capacity 
+            = std::to_string(complex.capacity(terrain));
         for(const auto& [item, count]: complex.stored_items()) {
             if(count == 0) { continue; }
             storage.children.push_back(TerrainMap::display_item_stack(
-                item, std::to_string(count), local
+                item, std::to_string(count) + "/" + storage_capacity, local
             ));
         }
         if(storage.children.size() == 0) {
@@ -811,6 +840,52 @@ namespace houseofatmos::world {
             )
             .as_movable();
         return button;
+    }
+
+    ui::Element TerrainMap::display_agent_info(
+        AbstractAgent agent, const engine::Localization& local
+    ) {
+        ui::Element icon = ui::Element();
+        if(agent.icon() != nullptr) {
+            icon.with_size(
+                agent.icon()->edge_size.x(), agent.icon()->edge_size.y(),
+                ui::size::units
+            );
+            icon.with_background(agent.icon());
+        }
+        ui::Element name = ui::Element()
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(local.text(agent.local_name()), &ui_font::dark)
+            .as_movable();
+        std::string capacity_info_text = local.pattern(
+            "ui_item_storage_capacity", 
+            { std::to_string(agent.item_storage_capacity()) }
+        );
+        ui::Element capacity_info = ui::Element()
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(capacity_info_text, &ui_font::dark)
+            .as_movable();
+        ui::Element info = ui::Element()
+            .with_pos(0.5, 0.95, ui::position::window_fract)
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_background(&ui_background::note)
+            .with_list_dir(ui::Direction::Vertical)
+            .with_child(ui::Element()
+                .with_size(0, 0, ui::size::units_with_children)
+                .with_list_dir(ui::Direction::Horizontal)
+                .with_child(icon.with_padding(2).as_movable())
+                .with_child(ui::Element()
+                    .with_size(0, 0, ui::size::units_with_children)
+                    .with_list_dir(ui::Direction::Vertical)
+                    .with_child(name.with_padding(1).as_movable())
+                    .with_child(capacity_info.with_padding(1).as_movable())
+                    .with_padding(1)
+                    .as_movable()
+                )
+                .as_movable()
+            )
+            .as_movable();
+        return info;
     }
 
     ui::Element TerrainMap::display_agent_stop(
@@ -987,7 +1062,7 @@ namespace houseofatmos::world {
         return info;
     }
 
-    ui::Element TerrainMap::display_agent_info(
+    ui::Element TerrainMap::display_agent_details(
         AbstractAgent agent, const AgentDisplay& agent_display
     ) {
         std::string status;
@@ -1089,14 +1164,26 @@ namespace houseofatmos::world {
                 .as_movable()
         );
         for(const auto& button: agent_display.buttons) {
-            ui::Element button_elem 
-                = make_ui_button(this->local->text(button.local_text))
-                .with_click_handler([h = button.handler, agent, this]() {
+            ui::Element button_elem
+                = make_ui_button(this->local->text(button.local_text));
+            if(button.show_if(agent, *this->world)) {
+                auto handler = [
+                    h = button.handler, agent, this, ag_d = &agent_display
+                ]() {
                     h(agent, *this->world, this->toasts);
-                })
-                .with_padding(2)
-                .as_movable();
-            buttons.children.push_back(std::move(button_elem));
+                    *this->selected_info_bottom 
+                        = TerrainMap::display_agent_info(agent, *this->local);
+                    *this->selected_info_right 
+                        = this->display_agent_details(agent, *ag_d);
+                };
+                button_elem.with_click_handler(std::move(handler));
+            } else {
+                button_elem.with_background(&ui_background::border_dark);
+                button_elem.child_at<0>().font = &ui_font::dark;
+            }
+            buttons.children.push_back(
+                button_elem.with_padding(2).as_movable()
+            );
         }
         info.children.push_back(buttons.with_padding(2).as_movable());
         info.children.push_back(ui::Element()
@@ -1107,9 +1194,13 @@ namespace houseofatmos::world {
         );
         info.children.push_back(schedule_info.with_padding(3.0).as_movable());
         info.children.push_back(std::move(add_stop));
+        std::string on_board_text = this->local->pattern("ui_on_board", {
+            std::to_string(agent.stored_item_count()),
+            std::to_string(agent.item_storage_capacity())
+        });
         info.children.push_back(ui::Element()
             .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(this->local->text("ui_on_board"), &ui_font::dark)
+            .with_text(on_board_text, &ui_font::dark)
             .with_padding(1)
             .as_movable()
         );

@@ -323,6 +323,15 @@ namespace houseofatmos::world {
             return total;
         }
 
+        std::string_view local_name() override {
+            return Train::locomotive_types()
+                .at((size_t) this->loco_type).local_name;
+        }
+
+        const ui::Background* icon() { 
+            return Train::locomotive_types().at((size_t) this->loco_type).icon;
+        }
+
         Mat<4> build_car_transform(
             size_t car_idx, 
             Vec<3>* position_out = nullptr, 

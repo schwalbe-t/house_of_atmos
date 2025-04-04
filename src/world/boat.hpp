@@ -81,6 +81,14 @@ namespace houseofatmos::world {
             return Boat::types().at((size_t) this->type).capacity;
         }
 
+        std::string_view local_name() override {
+            return Boat::types().at((size_t) this->type).local_name;
+        }
+
+        const ui::Background* icon() { 
+            return Boat::types().at((size_t) this->type).icon;
+        }
+
         Mat<4> build_transform(
             Vec<3>* position_out = nullptr, f64* yaw_out = nullptr
         );

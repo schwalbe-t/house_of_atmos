@@ -192,6 +192,13 @@
         "en": "Provides {} worker(s)",
         "bg": "Предоставя {} работни(к/ци)"
     },
+    "ui_item_storage_capacity": {
+        "_contxt": "The number of items an agent (carriage, boat, train, ...) can carry at a time",
+        "_placeholders": "Number of items",
+        "de": "Platz für {} Artikel",
+        "en": "Space for {} items",
+        "bg": "Място за {} артикула"
+    },
     "ui_bridge_selection": {
         "_context": "Title of the bridge type selection UI (when building a bridge)",
         "de": "Brückenauswahl",
@@ -351,10 +358,11 @@
         "bg": "Цъкнете целевия комплекс"
     },
     "ui_on_board": {
-        "_context": "Same as 'ui_storage', but for carriages (and later possibly trains) - Lists the stored items on board of a carriage underneath",
-        "de": "An Bord",
-        "en": "On board",
-        "bg": "На борд"
+        "_context": "Same as 'ui_storage', but for agents (carriages, trains, boats, ...) - Lists the stored items on board of the vehicle underneath",
+        "_placeholders": "#1: number of items on board; #2: number of items that can fit into the agent",
+        "de": "An Bord ({}/{})",
+        "en": "On board ({}/{})",
+        "bg": "На борд ({}/{})"
     },
     "ui_required": {
         "_context": "Shown in the research viewer - title of the section that tells the user how much they need to produce to unlock the given advancement",
@@ -410,7 +418,7 @@
     },
     "toast_building_requires_resource": {
         "_context": "Pop-up that notifies the user that the building they attempted to build needs to be placed on a specific resource",
-        "_placeholder": "The localized name of the resource it needs to be placed on",
+        "_placeholders": "The localized name of the resource it needs to be placed on",
         "de": "Gebäude muss auf {} platziert werden!",
         "en": "Building needs to be placed on {}!",
         "bg": "Сградата трябва да бъде построена върху {}!"

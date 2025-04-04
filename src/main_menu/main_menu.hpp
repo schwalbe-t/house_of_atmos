@@ -36,7 +36,7 @@ namespace houseofatmos {
         Renderer renderer;
         engine::Texture background = engine::Texture(16, 16);
         world::Terrain terrain = world::Terrain(
-            32, 32, MainMenu::units_per_tile, MainMenu::tiles_per_chunk
+            64, 64, MainMenu::units_per_tile, MainMenu::tiles_per_chunk
         );
         ui::Manager ui = ui::Manager(0.0);
 

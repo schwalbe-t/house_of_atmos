@@ -20,6 +20,7 @@ namespace houseofatmos::world {
         struct AgentDisplay {
             struct Button {
                 std::string_view local_text;
+                bool (*show_if)(AbstractAgent, World&);
                 void (*handler)(AbstractAgent, World&, Toasts&);
             };
 
@@ -30,20 +31,27 @@ namespace houseofatmos::world {
             std::vector<Button> buttons;
         };
 
+        template<typename A>
+        static inline void remove_agent(
+            AbstractAgent removed, std::list<A>& agents
+        ) {
+            auto current = agents.begin();
+            while(current != agents.end()) {
+                A& agent = *current;
+                if(agent.as_abstract().data != removed.data) {
+                    current = std::next(current);
+                    continue;
+                }
+                agents.erase(current);
+                return;
+            }
+        }
+
         static inline AgentDisplay carriage_display = {
             &ui_icon::map_marker_carriage,
             "ui_carriage", "ui_remove_carriage",
-            [](AbstractAgent agent, World& world) {
-                auto current = world.carriages.agents.begin();
-                while(current != world.carriages.agents.end()) {
-                    Carriage& carriage = *current;
-                    if(carriage.as_abstract().data != agent.data) {
-                        current = std::next(current);
-                        continue;
-                    }
-                    world.carriages.agents.erase(current);
-                    return;
-                }
+            +[](AbstractAgent a, World& w) {
+                TerrainMap::remove_agent<Carriage>(a, w.carriages.agents);
             },
             {}
         };
@@ -51,39 +59,42 @@ namespace houseofatmos::world {
         static inline AgentDisplay train_display = {
             &ui_icon::map_marker_train,
             "ui_train", "ui_remove_train",
-            [](AbstractAgent agent, World& world) {
-                auto current = world.trains.agents.begin();
-                while(current != world.trains.agents.end()) {
-                    Train& train = *current;
-                    if(train.as_abstract().data != agent.data) {
-                        current = std::next(current);
-                        continue;
-                    }
-                    world.trains.agents.erase(current);
-                    return;
-                }
+            +[](AbstractAgent a, World& w) {
+                TerrainMap::remove_agent<Train>(a, w.trains.agents);
             },
             {
                 AgentDisplay::Button(
                     "ui_train_add_car", 
-                    [](AbstractAgent agent, World& w, Toasts& t) {
+                    +[](AbstractAgent agent, World& world) {
+                        (void) world;
                         auto t_agent = (Agent<TrackNetwork>*) agent.data;
                         auto train = dynamic_cast<Train*>(t_agent);
                         const auto& loco_info = Train::locomotive_types()
                             .at((size_t) train->loco_type);
-                        bool append = train->car_count < loco_info.max_car_count
-                            && w.balance.pay_coins(Train::train_car_cost, t);
+                        return train->car_count < loco_info.max_car_count;
+                    },
+                    +[](AbstractAgent agent, World& w, Toasts& t) {
+                        auto t_agent = (Agent<TrackNetwork>*) agent.data;
+                        auto train = dynamic_cast<Train*>(t_agent);
+                        bool append = w.balance
+                            .pay_coins(Train::train_car_cost, t);
                         if(append) { train->car_count += 1; }
                     }
                 ),
                 AgentDisplay::Button(
                     "ui_train_remove_car", 
-                    [](AbstractAgent agent, World& world, Toasts& toasts) {
+                    +[](AbstractAgent agent, World& world) {
+                        (void) world;
+                        auto t_agent = (Agent<TrackNetwork>*) agent.data;
+                        auto train = dynamic_cast<Train*>(t_agent);
+                        return train->car_count > 0;
+                    },
+                    +[](AbstractAgent agent, World& world, Toasts& toasts) {
                         (void) world;
                         (void) toasts;
                         auto t_agent = (Agent<TrackNetwork>*) agent.data;
                         auto train = dynamic_cast<Train*>(t_agent);
-                        if(train->car_count > 0) { train->car_count -= 1; }
+                        train->car_count -= 1;
                     }
                 )
             }
@@ -92,17 +103,8 @@ namespace houseofatmos::world {
         static inline AgentDisplay boat_display = {
             &ui_icon::map_marker_boat,
             "ui_boat", "ui_remove_boat",
-            [](AbstractAgent agent, World& world) {
-                auto current = world.boats.agents.begin();
-                while(current != world.boats.agents.end()) {
-                    Boat& boat = *current;
-                    if(boat.as_abstract().data != agent.data) {
-                        current = std::next(current);
-                        continue;
-                    }
-                    world.boats.agents.erase(current);
-                    return;
-                }
+            +[](AbstractAgent a, World& w) {
+                TerrainMap::remove_agent<Boat>(a, w.boats.agents);
             },
             {}
         };
@@ -146,7 +148,9 @@ namespace houseofatmos::world {
             Vec<2> pos, const ui::Background* icon, 
             std::function<void ()>&& handler, bool is_phantom = false
         );
-        void add_agent_stop_marker(AbstractAgent agent, size_t stop_i);
+        void add_agent_stop_marker(
+            AbstractAgent agent, std::span<const size_t> stop_indices
+        );
         void add_agent_markers(
             AbstractAgent agent, const AgentDisplay& agent_display
         );
@@ -198,7 +202,8 @@ namespace houseofatmos::world {
         );
 
         static ui::Element display_complex_info(
-            const Complex& complex, const engine::Localization& local
+            const Complex& complex, const engine::Localization& local,
+            const Terrain& terrain
         );
 
         static ui::Element create_selection_container(std::string title);
@@ -214,9 +219,13 @@ namespace houseofatmos::world {
             const engine::Localization& local
         );
 
+        static ui::Element display_agent_info(
+            AbstractAgent agent, const engine::Localization& local
+        );
+
         ui::Element display_agent_stop(AbstractAgent agent, size_t stop_i);
 
-        ui::Element display_agent_info(
+        ui::Element display_agent_details(
             AbstractAgent agent, const AgentDisplay& agent_display
         );
 

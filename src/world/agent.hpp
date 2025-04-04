@@ -274,6 +274,9 @@ namespace houseofatmos::world {
             size_t& (*stop_i)(void*);
             Vec<3>& (*position)(void*);
             std::unordered_map<Item::Type, u64>& (*items)(void*);
+            u64 (*item_storage_capacity)(void*);
+            std::string_view (*local_name)(void*);
+            const ui::Background* (*icon)(void*);
         };
 
         void* data;
@@ -296,6 +299,23 @@ namespace houseofatmos::world {
         }
         std::unordered_map<Item::Type, u64>& items() const {
             return this->impl->items(this->data);
+        }
+        u64 item_storage_capacity() const {
+            return this->impl->item_storage_capacity(this->data);
+        }
+        std::string_view local_name() const {
+            return this->impl->local_name(this->data);
+        }
+        const ui::Background* icon() const {
+            return this->impl->icon(this->data);
+        }
+
+        u64 stored_item_count() const {
+            u64 total = 0;
+            for(const auto [item, count]: this->items()) {
+                total += count;
+            }
+            return total;
         }
     };
 
@@ -333,6 +353,15 @@ namespace houseofatmos::world {
             +[](void* d) -> Vec<3>& { return ((Agent<Network>*) d)->position; },
             +[](void* d) -> std::unordered_map<Item::Type, u64>& { 
                 return ((Agent<Network>*) d)->items; 
+            },
+            +[](void* d) -> u64 { 
+                return ((Agent<Network>*) d)->item_storage_capacity(); 
+            },
+            +[](void* d) -> std::string_view { 
+                return ((Agent<Network>*) d)->local_name(); 
+            },
+            +[](void* d) -> const ui::Background* { 
+                return ((Agent<Network>*) d)->icon(); 
             }
         };
 
@@ -424,6 +453,12 @@ namespace houseofatmos::world {
         virtual f64 current_speed(Network& network) = 0;
 
         virtual u64 item_storage_capacity() = 0;
+
+        virtual std::string_view local_name() = 0;
+
+        virtual const ui::Background* icon() { 
+            return nullptr; 
+        }
 
         u64 stored_item_count() const {
             u64 total = 0;
