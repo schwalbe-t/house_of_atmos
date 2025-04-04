@@ -30,6 +30,9 @@ namespace houseofatmos {
         if(j.contains("ui_size_divisor")) {
             s.ui_size_divisor = j.at("ui_size_divisor");
         }
+        if(j.contains("signal_side_left")) {
+            s.signal_side_left = j.at("signal_side_left");
+        }
         if(j.contains("do_dithering")) {
             s.do_dithering = j.at("do_dithering");
         }
@@ -52,6 +55,7 @@ namespace houseofatmos {
         serialized["sound_volume"] = this->sfx_volume->gain;
         serialized["view_distance"] = this->view_distance;
         serialized["ui_size_divisor"] = this->ui_size_divisor;
+        serialized["signal_side_left"] = this->signal_side_left;
         serialized["do_dithering"] = this->do_dithering;
         serialized["do_pixelation"] = this->do_pixelation;
         json last_games = json::array();
@@ -215,25 +219,6 @@ namespace houseofatmos {
             }
         );
         menu.children.push_back(view_distance.with_padding(4.0).as_movable());
-        /*
-        ui::Element change_window_mode = create_button(
-            this->fullscreen
-                ? local.text("menu_windowed")
-                : local.text("menu_fullscreen"),
-            [this, local = &local](
-                ui::Element& element, Vec<2> cursor
-            ) {
-                (void) cursor;
-                this->fullscreen = !this->fullscreen;
-                element.child_at<0>().text = this->fullscreen
-                    ? local->text("menu_windowed")
-                    : local->text("menu_fullscreen");
-            }
-        );
-        menu.children.push_back(
-            change_window_mode.with_padding(2.0).as_movable()
-        );     
-        */
         ui::Element toggle_buttons = ui::Element()
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
@@ -242,6 +227,19 @@ namespace houseofatmos {
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
+        toggle_buttons.children.push_back(create_button(
+            local.text(this->signal_side_left? "menu_left" : "menu_right"), 
+            [this, local = &local](ui::Element& e, auto cursor) {
+                (void) cursor;
+                this->signal_side_left = !this->signal_side_left;
+                e.child_at<0>().text = local
+                    ->text(this->signal_side_left? "menu_left" : "menu_right");
+            }
+        ));
+        toggle_labels.children.push_back(
+            create_text(local.text("menu_signal_side"))
+                .with_padding(2.0).as_movable()
+        );
         toggle_buttons.children
             .push_back(create_toggle(&this->fullscreen, &local));
         toggle_labels.children.push_back(
@@ -313,6 +311,7 @@ namespace houseofatmos {
         // other speakers contain references to their respective controlling volumes
         // view distance needs to be respected by the specific scene
         // ui size needs to be respected by the specific scene
+        // signal side is respected by track network
     }
 
 }

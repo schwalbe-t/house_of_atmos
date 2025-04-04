@@ -24,6 +24,7 @@ namespace houseofatmos {
             = std::make_shared<engine::Volume>(engine::Volume(1.0));
         u64 view_distance = 2;
         f64 ui_size_divisor = 300.0;
+        bool signal_side_left = true;
         bool do_dithering = true;
         bool do_pixelation = true;
         std::vector<std::string> last_games;

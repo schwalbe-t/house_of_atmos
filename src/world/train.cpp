@@ -158,6 +158,7 @@ namespace houseofatmos::world {
                 + Vec<3>(0, c_node_i->elevation, 0);
             Vec<3> dir = c_pos - pos;
             Vec<3> offset = Vec<3>(dir.z(), dir.y(), -dir.x()).normalized();
+            if(!this->settings->signal_side_left) { offset *= -1; }
             Vec<3> signal_pos = pos + offset * signal_track_dist;
             f64 angle_cross = signal_model_dir.x() * dir.z()
                 - signal_model_dir.z() * dir.x();
@@ -348,7 +349,7 @@ namespace houseofatmos::world {
         for(Signal& signal: this->signals) {
             f64 distance = (signal.position - observer).len();
             if(distance > draw_distance) { continue; }
-            signal.render(renderer, scene);
+            signal.render(*this, renderer, scene);
         }
     }
 

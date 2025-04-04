@@ -116,10 +116,15 @@ namespace houseofatmos::world {
                 }
             }
 
-            void render(Renderer& renderer, engine::Scene& scene) {
+            void render(
+                TrackNetwork& network, Renderer& renderer, engine::Scene& scene
+            ) {
                 engine::Model& model = scene.get(TrackNetwork::semaphore);
+                Vec<3> scale = network.settings->signal_side_left
+                    ? Vec<3>(1, 1, 1) : Vec<3>(-1, 1, 1);
                 Mat<4> inst = Mat<4>::translate(this->position)
-                    * Mat<4>::rotate_y(this->rotation);
+                    * Mat<4>::rotate_y(this->rotation)
+                    * Mat<4>::scale(scale);
                 const engine::Animation& animation = model
                     .animation(Signal::state_anim_name(this->state));
                 renderer.render(
@@ -135,15 +140,17 @@ namespace houseofatmos::world {
             Block* block = nullptr;
         };
         
+        const Settings* settings;
         Terrain* terrain;
         StatefulRNG rng;
         std::list<Block> blocks;
         std::vector<Signal> signals;
         std::unordered_map<NodeId, Node, NodeIdHash> graph;
 
-        TrackNetwork(Terrain* terrain, ComplexBank* complexes):
-            AgentNetwork(complexes, terrain, "toast_train_lost"), 
-            terrain(terrain) {}
+        TrackNetwork(
+            const Settings* settings, Terrain* terrain, ComplexBank* complexes
+        ): AgentNetwork(complexes, terrain, "toast_train_lost"), 
+            settings(settings), terrain(terrain) {}
 
         TrackNetwork(TrackNetwork&& other) noexcept = default;
         TrackNetwork& operator=(TrackNetwork&& other) noexcept = default;

@@ -324,7 +324,7 @@ namespace houseofatmos::world {
             CarriageNetwork(&this->terrain, &this->complexes)
         )), 
         trains(TrainManager(
-            TrackNetwork(&this->terrain, &this->complexes)
+            TrackNetwork(&this->settings, &this->terrain, &this->complexes)
         )),
         boats(BoatManager(
             BoatNetwork(&this->terrain, &this->complexes)
@@ -344,7 +344,7 @@ namespace houseofatmos::world {
                 CarriageNetwork(&this->terrain, &this->complexes)
             )), 
             trains(TrainManager(
-                TrackNetwork(&this->terrain, &this->complexes)
+                TrackNetwork(&this->settings, &this->terrain, &this->complexes)
             )),
             boats(BoatManager(
                 BoatNetwork(&this->terrain, &this->complexes)
@@ -369,7 +369,7 @@ namespace houseofatmos::world {
             serialized.carriages, buffer, this->settings
         );
         this->trains = TrainManager(
-            TrackNetwork(&this->terrain, &this->complexes),
+            TrackNetwork(&this->settings, &this->terrain, &this->complexes),
             serialized.trains, buffer, this->settings
         );
         this->boats = BoatManager(

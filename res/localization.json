@@ -133,6 +133,24 @@
         "de": "Nein",
         "bg": "Не"
     },
+    "menu_left": {
+        "_context": "Text of a button that shows that signals are to be placed on the left side of tracks",
+        "en": "Left",
+        "de": "Links",
+        "bg": "Ляво"
+    },
+    "menu_right": {
+        "_context": "Text of a button that shows that signals are to be placed on the right side of tracks",
+        "en": "Right",
+        "de": "Rechts",
+        "bg": "Дясно"
+    },
+    "menu_signal_side": {
+        "_context": "Setting for setting the side that train signals should be placed on.",
+        "en": "Train signal side",
+        "de": "Zugsignalseite",
+        "bg": "Страна на влаковите сигнали"
+    },
     "menu_fullscreen": {
         "_context": "Setting for making the game run in fullscreen mode",
         "en": "Fullscreen",
