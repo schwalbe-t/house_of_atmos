@@ -52,7 +52,7 @@ namespace houseofatmos::world {
         void load_resources();
         static DirectionalLight create_sun(const Vec<3>& focus_point);
         static void configure_renderer(
-            Renderer& renderer, const Settings& settings
+            Renderer& renderer, const Settings& settings, f64 camera_dist = 0.0
         );
         void update_ui();
 

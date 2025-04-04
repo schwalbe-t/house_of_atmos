@@ -44,8 +44,14 @@ namespace houseofatmos {
             return 1.0 / this->ui_size_divisor;
         }
 
-        u64 resolution() const {
-            return this->do_pixelation? 480 : UINT64_MAX;
+        u64 min_resolution = 360;
+        u64 max_resolution = 768;
+
+        u64 resolution(f64 camera_dist = 0.0) const {
+            if(!this->do_pixelation) { return UINT64_MAX; }
+            u64 diff = Settings::max_resolution - Settings::min_resolution; 
+            f64 factor = std::min(std::max(camera_dist, 0.0), 1.0);
+            return Settings::min_resolution + (u64) (factor * (f64) diff);
         }
 
         static ui::Element create_slider(

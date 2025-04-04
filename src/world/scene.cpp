@@ -123,9 +123,9 @@ namespace houseofatmos::world {
     }
 
     void Scene::configure_renderer(
-        Renderer& renderer, const Settings& settings
+        Renderer& renderer, const Settings& settings, f64 camera_dist
     ) {
-        renderer.resolution = settings.resolution();
+        renderer.resolution = settings.resolution(camera_dist);
         renderer.fog_gradiant_range = 10.0;
         renderer.fog_start_dist = settings.view_distance
             * World::tiles_per_chunk * World::units_per_tile
@@ -495,7 +495,11 @@ namespace houseofatmos::world {
     }
 
     void Scene::render(engine::Window& window) {
-        Scene::configure_renderer(this->renderer, this->world->settings);
+        f64 camera_dist_n = (this->camera_distance - Scene::min_camera_dist)
+            / (Scene::max_camera_dist - Scene::min_camera_dist);
+        Scene::configure_renderer(
+            this->renderer, this->world->settings, camera_dist_n
+        );
         *this->sun = Scene::create_sun(this->world->player.character.position);
         this->renderer.fog_origin = this->world->player.character.position;
         this->renderer.configure(window, *this);

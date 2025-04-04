@@ -6,9 +6,10 @@
 namespace houseofatmos::particle {
 
     static inline Vec<3> wind_direction(const engine::Window& window) {
-        f64 angle = sin(window.time() / 100) * sin(window.time() / 230) * pi;
+        f64 angle = sin(window.time() / 100) * sin(window.time() / 230);
+        angle = (angle + 1.0) / 2.0 * pi;
         f64 speed = 1.0 + sin(window.time() / 60) * 0.5;
-        return Vec<3>(cos(angle), 0, sin(angle)) * speed;
+        return Vec<3>(cos(angle), 0, -sin(angle)) * speed;
     }
 
 

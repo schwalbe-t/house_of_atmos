@@ -46,6 +46,7 @@ namespace houseofatmos::world {
             Carriage(carriage_type, pos, rng, world.settings)
         );
         speaker.position = pos;
+        speaker.pitch = 1.0;
         speaker.play(scene.get(sound::horse));
     }
 
@@ -75,10 +76,13 @@ namespace houseofatmos::world {
             toasts.add_error("toast_no_valid_train_location", {});
             return;
         }
-        u64 cost = Train::locomotive_types().at((size_t) loco_type).cost;
+        const Train::LocomotiveTypeInfo& loco_info = Train::locomotive_types()
+            .at((size_t) loco_type);
+        u64 cost = loco_info.cost;
         if(!world.balance.pay_coins(cost, toasts)) { return; }
         world.trains.agents.push_back(Train(loco_type, pos, world.settings));
         speaker.position = pos;
+        speaker.pitch = loco_info.whistle_pitch;
         speaker.play(scene.get(sound::train_whistle));
     }
 

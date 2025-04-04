@@ -532,9 +532,13 @@ namespace houseofatmos::world {
                 this->state = AgentState::Lost;
                 return false;
             }
+            if(found->sections.size() == 0) {                
+                this->distance = this->path.length();
+            } else {
+                this->path = *found;
+                this->distance = 0.0;
+            }
             this->state = AgentState::Travelling;
-            this->path = *found;
-            this->distance = 0.0;
             this->has_path = true;
             this->on_new_path(network);
             return true;
