@@ -101,7 +101,10 @@ namespace houseofatmos::world {
             TreeFarm,
             TrainDepot,
             ShipYard,
-            Storage
+            Storage,
+            CommissaryWorks,
+            ManufacturingWorks,
+            ClothWorks
         };
 
         Type type;

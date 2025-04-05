@@ -29,6 +29,20 @@ namespace houseofatmos::world {
         }
     };
 
+    static const ParticleSpawner::Type commissary_works_smoke = {
+        5.0, // attempt period in seconds
+        1.0, // spawn chance on every attempt
+        // spawn function
+        [](ParticleSpawner& spawner, ParticleManager& particles) { 
+            particles.add(particle::random_smoke(spawner.rng)
+                ->at(spawner.position + Vec<3>(2.5, 4.0, -1.5))
+            );
+            particles.add(particle::random_smoke(spawner.rng)
+                ->at(spawner.position + Vec<3>(4.0, 4.0, -1.5))
+            );
+        }
+    };
+
     static std::vector<Building::TypeInfo> type_infos = {
         /* Type::Farmland */ {
             "building_name_farmland",
@@ -338,7 +352,74 @@ namespace houseofatmos::world {
             0, // workers
             0, // residents
             std::nullopt // no particles
-        }
+        },
+        /* Type::CommissaryWorks */ {
+            "building_name_commissary_works",
+            &ui_icon::commissary_works,
+            Building::TypeInfo::remove_terrain,
+            { 
+                "res/buildings/commissary_works.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            std::nullopt, 0.0,
+            { 
+                RelCollider({ -5.00, -0.5, -2.5 }, { 3.0, 1, 5.0 }),
+                RelCollider({ -2.00, -0.5, -2.5 }, { 7.0, 1, 2.5 }),
+                RelCollider({  1.45, -0.5,  2.2 }, { 0.1, 1, 0.1 }),
+                RelCollider({  4.70, -0.5,  2.2 }, { 0.1, 1, 0.1 })
+            },
+            2, 1, // size
+            std::nullopt, // no interior
+            1000, // building cost
+            10, // storage capacity
+            Building::TypeInfo::allow_destruction,
+            25, // workers
+            0, // residents
+            [](Vec<3> p, StatefulRNG& r) { 
+                return commissary_works_smoke.at(p, r); 
+            }
+        },
+        /* Type::ManufacturingWorks */ {
+            "building_name_manufacturing_works",
+            &ui_icon::manufacturing_works,
+            Building::TypeInfo::keep_terrain,
+            { 
+                "res/buildings/manufacturing_works.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            std::nullopt, 0.0,
+            { RelCollider({ -5.0, -0.5, -7.5 }, { 10, 1, 15 }) },
+            2, 3, // size
+            std::nullopt, // no interior
+            2000, // building cost
+            10, // storage capacity
+            Building::TypeInfo::allow_destruction,
+            25, // workers
+            0, // residents
+            std::nullopt // no particles
+        },
+        /* Type::ClothWorks */ {
+            "building_name_cloth_works",
+            &ui_icon::cloth_works,
+            Building::TypeInfo::keep_terrain,
+            { 
+                "res/buildings/cloth_works.glb", Renderer::model_attribs,
+                engine::FaceCulling::Disabled
+            },
+            std::nullopt, 0.0,
+            { 
+                RelCollider({ -7.50, -0.5, -2.5 }, { 5.0, 1, 5.0 }),
+                RelCollider({  2.50, -0.5, -2.5 }, { 5.0, 1, 5.0 })
+            },
+            3, 1, // size
+            std::nullopt, // no interior
+            1500, // building cost
+            10, // storage capacity
+            Building::TypeInfo::allow_destruction,
+            15, // workers
+            0, // residents
+            std::nullopt // no particles
+        },
     };
 
     const std::vector<Building::TypeInfo>& Building::types() {

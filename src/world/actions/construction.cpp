@@ -110,36 +110,6 @@ namespace houseofatmos::world {
         BuildingGroup(Building::Factory, {
             { 
                 { Conversion( 
-                    { { 4, Item::Yarn } }, 
-                    { { 1, Item::Fabric } }, 
-                    4.0
-                ) },
-                std::nullopt,
-                research::Research::RewardFabric
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::Cattle } }, 
-                    { { 8, Item::Milk } }, 
-                    4.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::Cattle } }, 
-                    { { 4, Item::Beef } }, 
-                    4.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::Cattle } }, 
-                    { { 2, Item::Leather } }, 
-                    8.0
-                ) }
-            },
-            { 
-                { Conversion( 
                     { { 2, Item::IronOre }, { 1, Item::Coal } }, 
                     { { 2, Item::Steel } }, 
                     4.0 
@@ -193,31 +163,6 @@ namespace houseofatmos::world {
             },
             { 
                 { Conversion( 
-                    { { 2, Item::Fabric } }, 
-                    { { 1, Item::Clothing } }, 
-                    4.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 8, Item::Milk }, { 1, Item::Salt } }, 
-                    { { 4, Item::Cheese } }, 
-                    8.0
-                ) },
-                std::nullopt,
-                research::Research::RewardCheese
-            },
-            { 
-                { Conversion( 
-                    { { 4, Item::Beef }, { 1, Item::Salt }, { 1, Item::Coal } }, 
-                    { { 4, Item::Steak } }, 
-                    4.0
-                ) },
-                std::nullopt,
-                research::Research::RewardSteak
-            },
-            { 
-                { Conversion( 
                     { { 2, Item::CrudeOil }, { 1, Item::Coal } }, 
                     { { 2, Item::Oil } }, 
                     4.0
@@ -227,79 +172,8 @@ namespace houseofatmos::world {
             },
             { 
                 { Conversion( 
-                    { { 4, Item::Malt }, { 2, Item::Hops }, { 1, Item::Coal } }, 
-                    { { 4, Item::Beer } }, 
-                    8.0
-                ) },
-                std::nullopt,
-                research::Research::RewardBeer
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::Leather }, { 3, Item::Steel } }, 
-                    { { 1, Item::Armor } }, 
-                    4.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 4, Item::Flour }, { 1, Item::Coal } }, 
-                    { { 4, Item::Bread } }, 
-                    4.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::Planks }, { 2, Item::Steel } }, 
-                    { { 1, Item::Tools } }, 
-                    4.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 4, Item::BrassPlates } }, 
-                    { { 1, Item::BrassPots } }, 
-                    4.0
-                ) },
-                std::nullopt,
-                research::Research::RewardBrassPots
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::BrassPlates }, { 1, Item::BrassRods } }, 
-                    { { 1, Item::OilLanterns } }, 
-                    4.0
-                ) },
-                std::nullopt,
-                research::Research::RewardOilLanterns
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::BrassPlates }, { 4, Item::BrassGears } }, 
-                    { { 1, Item::Watches } }, 
-                    4.0
-                ) },
-                std::nullopt,
-                research::Research::RewardWatches
-            },
-            { 
-                { Conversion( 
                     { { 2, Item::Steel } }, 
                     { { 1, Item::SteelBeams } }, 
-                    4.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 2, Item::Planks }, { 4, Item::BrassGears } }, 
-                    { { 1, Item::PowerLooms } }, 
-                    4.0
-                ) }
-            },
-            {
-                { Conversion( 
-                    { { 4, Item::BrassPlates }, { 4, Item::BrassGears } }, 
-                    { { 1, Item::SteamEngines } }, 
                     4.0
                 ) }
             }
@@ -333,6 +207,148 @@ namespace houseofatmos::world {
         BuildingGroup(Building::TrainDepot, {}),
         BuildingGroup(Building::ShipYard, {}),
         BuildingGroup(Building::Storage, { {} }),
+        BuildingGroup(Building::CommissaryWorks, {
+            { 
+                { Conversion( 
+                    { { 4, Item::Flour }, { 1, Item::Coal } }, 
+                    { { 4, Item::Bread } }, 
+                    4.0
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::Cattle } }, 
+                    { { 8, Item::Milk } }, 
+                    4.0
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 8, Item::Milk }, { 1, Item::Salt } }, 
+                    { { 4, Item::Cheese } }, 
+                    8.0
+                ) },
+                std::nullopt,
+                research::Research::RewardCheese
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::Cattle } }, 
+                    { { 4, Item::Beef } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardSteak
+            },
+            { 
+                { Conversion( 
+                    { { 4, Item::Beef }, { 1, Item::Salt }, { 1, Item::Coal } }, 
+                    { { 4, Item::Steak } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardSteak
+            },
+            { 
+                { Conversion( 
+                    { { 4, Item::Malt }, { 2, Item::Hops }, { 1, Item::Coal } }, 
+                    { { 4, Item::Beer } }, 
+                    8.0
+                ) },
+                std::nullopt,
+                research::Research::RewardBeer
+            }
+        }),
+        BuildingGroup(Building::ManufacturingWorks, {
+            {
+                { Conversion( 
+                    { { 4, Item::BrassPlates }, { 4, Item::BrassGears } }, 
+                    { { 1, Item::SteamEngines } }, 
+                    4.0
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::Leather }, { 3, Item::Steel } }, 
+                    { { 1, Item::Armor } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardSteel
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::Planks }, { 2, Item::Steel } }, 
+                    { { 1, Item::Tools } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardSteel
+            },
+            { 
+                { Conversion( 
+                    { { 4, Item::BrassPlates } }, 
+                    { { 1, Item::BrassPots } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardBrassPots
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::BrassPlates }, { 1, Item::BrassRods } }, 
+                    { { 1, Item::OilLanterns } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardOilLanterns
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::BrassPlates }, { 4, Item::BrassGears } }, 
+                    { { 1, Item::Watches } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardWatches
+            },
+            { 
+                { Conversion( 
+                    { { 2, Item::Planks }, { 4, Item::BrassGears } }, 
+                    { { 1, Item::PowerLooms } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardPlanks
+            }
+        }),
+        BuildingGroup(Building::ClothWorks, {
+            { 
+                { Conversion( 
+                    { { 1, Item::Cattle } }, 
+                    { { 2, Item::Leather } }, 
+                    8.0
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 4, Item::Yarn } }, 
+                    { { 1, Item::Fabric } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardFabric
+            },
+            { 
+                { Conversion( 
+                    { { 2, Item::Fabric } }, 
+                    { { 1, Item::Clothing } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardFabric
+            }
+        })
     };
 
     static ui::Element create_building_selector(

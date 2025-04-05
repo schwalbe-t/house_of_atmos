@@ -854,6 +854,24 @@
         "de": "Lager",
         "bg": "Склад"
     },
+    "building_name_commissary_works": {
+        "_context": "Name of a building that produces foods and consumables such as milk, steak, beer, cheese and bread",
+        "en": "Commissary Works",
+        "de": "Versorgungswerk",
+        "bg": "Хранителен цех"
+    },
+    "building_name_manufacturing_works": {
+        "_context": "Name of a building that produces machines, gadgets, tools (for example tools, watches, oil lanterns) and other things from smaller components",
+        "en": "Manufacturing Works",
+        "de": "Manufakturwerk",
+        "bg": "Производствен цех"
+    },
+    "building_name_cloth_works": {
+        "_context": "Name of a building that produces cloth and related products, such as cloth, leather, shirts or sails",
+        "en": "Cloth Works",
+        "de": "Textilwerk",
+        "bg": "Текстилен цех"
+    },
 
 
 
