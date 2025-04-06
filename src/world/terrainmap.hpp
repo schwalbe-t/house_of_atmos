@@ -206,13 +206,6 @@ namespace houseofatmos::world {
             const Terrain& terrain
         );
 
-        static ui::Element create_selection_container(std::string title);
-
-        static ui::Element create_selection_item(
-            const ui::Background* icon, std::string text, bool selected,
-            std::function<void ()>&& handler
-        );
-
         static ui::Element display_item_selector(
             std::span<const Item::Type> items, 
             std::function<void (Item::Type)>&& handler,

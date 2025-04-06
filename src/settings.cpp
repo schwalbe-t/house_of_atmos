@@ -1,7 +1,7 @@
 
 #include <nlohmann/json.hpp>
 #include "settings.hpp"
-#include "ui_const.hpp"
+#include "ui_util.hpp"
 #include "audio_const.hpp"
 #include <filesystem>
 #include <fstream>
@@ -138,40 +138,11 @@ namespace houseofatmos {
         return container;
     }
 
-    static ui::Element create_text(std::string text) {
-        ui::Element span = ui::Element()
-            .as_phantom()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, &ui_font::dark)
-            .with_padding(2.0)
-            .as_phantom()
-            .as_movable();
-        return span;
-    }
-
-    static ui::Element create_button(
-        std::string text, std::function<void (ui::Element&, Vec<2>)>&& handler
-    ) {
-        ui::Element button = ui::Element()
-            .as_phantom()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, &ui_font::bright)
-            .with_padding(2.0)
-            .with_background(
-                &ui_background::button, &ui_background::button_select
-            )
-            .with_click_handler(std::move(handler))
-            .with_padding(2.0)
-            .as_phantom()
-            .as_movable();
-        return button;
-    }
-
     static ui::Element create_toggle(
         bool* property, const engine::Localization* local
     ) {
-        return create_button(
-            *property? local->text("menu_yes") : local->text("menu_no"),
+        return ui_util::create_button(
+            local->text(*property? "menu_yes" : "menu_no"),
             [property, local](ui::Element& e, auto cursor) {
                 (void) cursor; 
                 *property = !*property;
@@ -192,7 +163,9 @@ namespace houseofatmos {
             .with_background(&ui_background::scroll_vertical)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();   
-        menu.children.push_back(create_text(local.text("menu_music_volume")));
+        menu.children.push_back(
+            ui_util::create_text(local.text("menu_music_volume"))
+        );
         ui::Element ost_volume = Settings::create_slider(
             96.0, 8.0, 24.0,
             0, 100, 5, this->ost_volume->gain * 100.0, 
@@ -201,7 +174,9 @@ namespace houseofatmos {
             }
         );
         menu.children.push_back(ost_volume.with_padding(4.0).as_movable());
-        menu.children.push_back(create_text(local.text("menu_sound_volume")));
+        menu.children.push_back(
+            ui_util::create_text(local.text("menu_sound_volume"))
+        );
         ui::Element sfx_volume = Settings::create_slider(
             96.0, 8.0, 24.0,
             0, 100, 5, this->sfx_volume->gain * 100.0, 
@@ -210,7 +185,9 @@ namespace houseofatmos {
             }
         );
         menu.children.push_back(sfx_volume.with_padding(4.0).as_movable());
-        menu.children.push_back(create_text(local.text("menu_view_distance")));
+        menu.children.push_back(
+            ui_util::create_text(local.text("menu_view_distance"))
+        );
         ui::Element view_distance = Settings::create_slider(
             96.0, 8.0, 24.0,
             1, 5, 1, this->view_distance, 
@@ -227,7 +204,7 @@ namespace houseofatmos {
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        toggle_buttons.children.push_back(create_button(
+        toggle_buttons.children.push_back(ui_util::create_button(
             local.text(this->signal_side_left? "menu_left" : "menu_right"), 
             [this, local = &local](ui::Element& e, auto cursor) {
                 (void) cursor;
@@ -237,40 +214,36 @@ namespace houseofatmos {
             }
         ));
         toggle_labels.children.push_back(
-            create_text(local.text("menu_signal_side"))
-                .with_padding(2.0).as_movable()
+            ui_util::create_text(local.text("menu_signal_side"), 4.0)
         );
         toggle_buttons.children
             .push_back(create_toggle(&this->fullscreen, &local));
         toggle_labels.children.push_back(
-            create_text(local.text("menu_fullscreen"))
-                .with_padding(2.0).as_movable()
+            ui_util::create_text(local.text("menu_fullscreen"), 4.0)
         );
         toggle_buttons.children
             .push_back(create_toggle(&this->do_dithering, &local));
         toggle_labels.children.push_back(
-            create_text(local.text("menu_dithering"))
-                .with_padding(2.0).as_movable()
+            ui_util::create_text(local.text("menu_dithering"), 4.0)
         );
         toggle_buttons.children
             .push_back(create_toggle(&this->do_pixelation, &local));
         toggle_labels.children.push_back(
-            create_text(local.text("menu_pixelation"))
-                .with_padding(2.0).as_movable()
+            ui_util::create_text(local.text("menu_pixelation"), 4.0)
         );
         // // 1 => 550, 2 => 500, 3 => 450, 4 => 400, 
         // // 5 => 350, 6 => 300, 7 => 250, 8 => 200
         toggle_buttons.children.push_back(ui::Element()
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
-            .with_child(create_button(
+            .with_child(ui_util::create_button(
                 "+", [this](auto& e, auto c) {
                     (void) e; (void) c;
                     f64& div = this->ui_size_divisor;
                     div = std::max(div - 50.0, 200.0);
                 }
             ))
-            .with_child(create_button(
+            .with_child(ui_util::create_button(
                 "-", [this](auto& e, auto c) {
                     (void) e; (void) c;
                     f64& div = this->ui_size_divisor;
@@ -280,8 +253,7 @@ namespace houseofatmos {
             .as_movable()
         );
         toggle_labels.children.push_back(
-            create_text(local.text("menu_ui_size"))
-                .with_padding(2.0).as_movable()
+            ui_util::create_text(local.text("menu_ui_size"), 4.0)
         );
         menu.children.push_back(ui::Element()
             .with_size(0, 0, ui::size::units_with_children)
@@ -290,7 +262,7 @@ namespace houseofatmos {
             .with_child(std::move(toggle_labels))
             .as_movable()
         );
-        menu.children.push_back(create_button(
+        menu.children.push_back(ui_util::create_button(
             local.text("menu_close_menu"),
             [h = std::move(close_handler)](ui::Element& e, Vec<2> c) {
                 (void) e; (void) c;

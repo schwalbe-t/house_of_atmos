@@ -130,8 +130,8 @@ namespace houseofatmos::world {
         renderer.fog_start_dist = settings.view_distance
             * World::tiles_per_chunk * World::units_per_tile
             - renderer.fog_gradiant_range;
-        renderer.fog_dist_scale = Vec<3>(1.0, 0.0, 1.0); // only take Y axis into account
-        renderer.fog_color = Vec<4>(239, 239, 230, 255) / 255.0;
+        renderer.fog_dist_scale = Vec<3>(1.0, 0.0, 1.0); // only take the X and Z axes into account
+        renderer.fog_color = Vec<4>(200, 200, 209, 255) / 255.0;
         renderer.shadow_depth_bias = 0.0003;
         renderer.shadow_normal_offset = 0.055;
         renderer.shadow_out_of_bounds_lit = true;

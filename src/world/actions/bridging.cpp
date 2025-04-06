@@ -1,5 +1,6 @@
 
 #include "common.hpp"
+#include "../../ui_util.hpp"
 
 namespace houseofatmos::world {
 
@@ -19,7 +20,7 @@ namespace houseofatmos::world {
         const engine::Localization* local, const research::Research* research
     ) {
         ui::Element selector 
-            = TerrainMap::create_selection_container(
+            = ui_util::create_selection_container(
                 local->text("ui_bridge_selection")
             )
             .with_pos(0.95, 0.5, ui::position::window_fract)
@@ -30,7 +31,7 @@ namespace houseofatmos::world {
                 || research->is_unlocked(*r_advancement);
             if(!unlocked) { continue; }
             const Bridge::TypeInfo& type = Bridge::types().at(type_id);
-            selector.children.push_back(TerrainMap::create_selection_item(
+            selector.children.push_back(ui_util::create_selection_item(
                 type.icon, local->text(type.local_name), 
                 (size_t) *s_type == type_id,
                 [ui, dest, s_type, local, research, type_id]() {

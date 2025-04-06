@@ -1,6 +1,7 @@
 
 #include <samhocevar/portable-file-dialogs.h>
 #include "pause_menu.hpp"
+#include "../ui_util.hpp"
 #include "../main_menu/main_menu.hpp"
 #include <algorithm>
 
@@ -34,23 +35,6 @@ namespace houseofatmos {
         this->toasts.add_toast("toast_saved_game", { this->world->save_path });
     }
 
-    static ui::Element make_button(
-        const std::string& text, std::function<void ()>&& handler
-    ) {
-        ui::Element button = ui::Element()
-            .as_phantom()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, &ui_font::bright)
-            .with_padding(2)
-            .with_background(
-                &ui_background::button, &ui_background::button_select
-            )
-            .with_click_handler(std::move(handler))
-            .with_padding(2)
-            .as_movable();
-        return button;
-    }
-
     void PauseMenu::show_root_menu(engine::Window& window) {
         Toasts::States toast_states = this->toasts.make_states();
         this->ui.root.children.clear();
@@ -66,14 +50,14 @@ namespace houseofatmos {
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        buttons.children.push_back(make_button(
+        buttons.children.push_back(ui_util::create_button(
             local.text("menu_resume_game"), 
             [window = &window, this]() {
                 window->set_scene(std::shared_ptr<engine::Scene>(this->previous)); 
             }
         ));
         if(this->world->saving_allowed && this->world->save_path.size() > 0) {
-            buttons.children.push_back(make_button(
+            buttons.children.push_back(ui_util::create_button(
                 local.text("menu_save_game"),
                 [this, window = &window]() {
                     this->save_game(*window); 
@@ -81,7 +65,7 @@ namespace houseofatmos {
             ));
         }
         if(this->world->saving_allowed) {
-            buttons.children.push_back(make_button(
+            buttons.children.push_back(ui_util::create_button(
                 local.text("menu_save_game_as"),
                 [this, local = &local, window = &window]() {
                     std::string new_path = pfd::save_file(
@@ -99,13 +83,13 @@ namespace houseofatmos {
                 }
             ));
         }
-        buttons.children.push_back(make_button(
+        buttons.children.push_back(ui_util::create_button(
             local.text("menu_settings"),
             [window = &window, this]() {
                 this->show_settings(*window);
             }
         ));
-        buttons.children.push_back(make_button(
+        buttons.children.push_back(ui_util::create_button(
             local.text("menu_to_main_menu"),
             [window = &window, this]() {
                 this->world->write_to_file();

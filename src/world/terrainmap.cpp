@@ -1,5 +1,5 @@
 
-#include "../ui_const.hpp"
+#include "../ui_util.hpp"
 #include "terrainmap.hpp"
 #include <format>
 
@@ -732,65 +732,6 @@ namespace houseofatmos::world {
         return info;
     }
 
-    ui::Element TerrainMap::create_selection_container(std::string title) {
-        ui::Element selector = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_background(&ui_background::note)
-            .with_list_dir(ui::Direction::Vertical)
-            .as_movable();
-        if(title.size() > 0) {
-            selector.children.push_back(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(title, &ui_font::dark)
-                .with_padding(2)
-                .as_movable()
-            );
-        }
-        return selector;
-    }
-
-    ui::Element TerrainMap::create_selection_item(
-        const ui::Background* icon, std::string text, bool selected,
-        std::function<void ()>&& handler
-    ) {
-        ui::Element item = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Horizontal)
-            .with_child(ui::Element()
-                .as_phantom()
-                .with_size(
-                    icon->edge_size.x(), icon->edge_size.y(), ui::size::units
-                )
-                .with_background(icon)
-                .as_movable()
-            )
-            .with_child(ui::Element()
-                .as_phantom()
-                .with_pos(
-                    0, 
-                    (icon->edge_size.y() - ui_font::dark.height) / 2.0 - 2.0, 
-                    ui::position::parent_list_units
-                )
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(text, &ui_font::dark)
-                .with_padding(2)
-                .as_phantom()
-                .as_movable()
-            )
-            .with_background(
-                selected
-                    ? &ui_background::border_selected
-                    : &ui_background::border,
-                selected
-                    ? &ui_background::border_selected
-                    : &ui_background::border_hovering
-            )
-            .with_click_handler(std::move(handler))
-            .with_padding(2)
-            .as_movable();
-        return item;
-    }
-
     static const size_t max_column_items = 15;
     
     ui::Element TerrainMap::display_item_selector(
@@ -802,7 +743,7 @@ namespace houseofatmos::world {
             = std::make_shared<std::function<void (Item::Type)>>(
                 std::move(passed_handler)
             );
-        ui::Element container = TerrainMap::create_selection_container("")
+        ui::Element container = ui_util::create_selection_container("")
             .with_list_dir(ui::Direction::Horizontal)
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .as_movable();
@@ -819,7 +760,7 @@ namespace houseofatmos::world {
             for(size_t item_i = first_item_i; item_i < end_item_i; item_i += 1) {
                 Item::Type item = items[item_i];
                 const Item::TypeInfo& item_info = Item::types().at((size_t) item);
-                column.children.push_back(TerrainMap::create_selection_item(
+                column.children.push_back(ui_util::create_selection_item(
                     item_info.icon, local.text(item_info.local_name), false,
                     [item, handler]() { (*handler)(item); }
                 ));

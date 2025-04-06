@@ -196,6 +196,12 @@
         "en": "Product Selection",
         "bg": "Избиране на продукт"
     },
+    "ui_back": {
+        "_context": "Button used to go back",
+        "de": "Zurück",
+        "en": "Back",
+        "bg": "Назад"
+    },
     "ui_required_workers": {
         "_context": "The number of workers needed by a building",
         "_placeholders": "Number of workers",
@@ -776,6 +782,27 @@
 
 
 
+    "building_category_name_resources": {
+        "_context": "Name of the broader category of buildings which have the shared purpose of gathering natural resources",
+        "en": "Resources",
+        "de": "Rohstoffe",
+        "bg": "Ресурси"
+    },
+    "building_category_name_production": {
+        "_context": "Name of the broader category of buildings which have the shared purpose of producing goods from other goods",
+        "en": "Production",
+        "de": "Produktion",
+        "bg": "Производство"
+    },
+    "building_category_name_logistics": {
+        "_context": "Name of the broader category of buildings which have the shared purpose of aiding in transportation of goods from one place to another",
+        "en": "Logistics",
+        "de": "Logistik",
+        "bg": "Логистика"
+    },
+
+
+
     "building_name_farmland": {
         "_context": "Name of the 'building' that is a simple field used to grow crops",
         "de": "Ackerland",
@@ -809,7 +836,7 @@
     "building_name_stable": {
         "_context": "Name of the building that horses are kept in",
         "de": "Pferdestall",
-        "en": "Stable",
+        "en": "Horse Stable",
         "bg": "Конюшня"
     },
     "building_name_plaza": {
@@ -838,9 +865,9 @@
     },
     "building_name_train_depot": {
         "_context": "Name of a large building used to store and maintain trains",
-        "en": "Depot",
-        "de": "Depot",
-        "bg": "Депо"
+        "en": "Train Depot",
+        "de": "Zugdepot",
+        "bg": "Влакoво депо"
     },
     "building_name_ship_yard": {
         "_context": "Name of a building and the land around it used to construct and maintain ships",

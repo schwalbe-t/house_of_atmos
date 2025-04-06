@@ -1,5 +1,6 @@
 
 #include "common.hpp"
+#include "../../ui_util.hpp"
 
 namespace houseofatmos::world {
 
@@ -130,12 +131,12 @@ namespace houseofatmos::world {
         std::function<void (const C&, size_t)> handler
     ) {
         const std::string& title = local.text(local_title);
-        ui::Element selector = TerrainMap::create_selection_container(title)
+        ui::Element selector = ui_util::create_selection_container(title)
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .as_movable();
         for(size_t ci = 0; ci < choices.size(); ci += 1) {
             const C& choice = choices[ci];
-            selector.children.push_back(TerrainMap::create_selection_item(
+            selector.children.push_back(ui_util::create_selection_item(
                 choice_icon(choice), local.text(local_choice_name(choice)),
                 false,
                 [handler, choice = &choice, ci]() { handler(*choice, ci); }

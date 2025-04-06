@@ -1,6 +1,7 @@
 
 #include <samhocevar/portable-file-dialogs.h>
 #include "main_menu.hpp"
+#include "../ui_util.hpp"
 #include "../world/scene.hpp"
 #include "../tutorial/tutorial.hpp"
 #include <filesystem>
@@ -35,23 +36,6 @@ namespace houseofatmos {
         this->load(this->local_ref);
         this->load(MainMenu::title_sprite.texture);
         this->load(MainMenu::blur_shader);
-    }
-
-    static ui::Element make_button(
-        const std::string& text, std::function<void ()>&& handler
-    ) {
-        ui::Element button = ui::Element()
-            .as_phantom()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, &ui_font::bright)
-            .with_padding(2)
-            .with_background(
-                &ui_background::button, &ui_background::button_select
-            )
-            .with_click_handler(std::move(handler))
-            .with_padding(2)
-            .as_movable();
-        return button;
     }
 
     static void remove_missing_last_games(Settings& settings) {
@@ -113,7 +97,7 @@ namespace houseofatmos {
             .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        buttons.children.push_back(make_button(
+        buttons.children.push_back(ui_util::create_button(
             local.text("menu_new_game"),
             [window = &window, local = &local, this]() {
                 this->before_next_frame = [window, this]() {
@@ -137,7 +121,7 @@ namespace houseofatmos {
                     ? last_backslash + 1
                     : 0;
             std::string short_name = game_path.substr(short_start);
-            buttons.children.push_back(make_button(
+            buttons.children.push_back(ui_util::create_button(
                 local.pattern("menu_load_previous_game", { short_name }),
                 [window = &window, local = &local, this, path = game_path]() {
                     this->before_next_frame = [this, path, local, window]() {
@@ -147,7 +131,7 @@ namespace houseofatmos {
                 }
             ));
         }
-        buttons.children.push_back(make_button(
+        buttons.children.push_back(ui_util::create_button(
             local.text("menu_load_game"),
             [local = &local, window = &window, this]() {
                 std::vector<std::string> chosen = pfd::open_file(
@@ -164,13 +148,13 @@ namespace houseofatmos {
                 this->show_loading_screen(*local);
             }
         ));
-        buttons.children.push_back(make_button(
+        buttons.children.push_back(ui_util::create_button(
             local.text("menu_settings"),
             [this, local = &local, window = &window]() {
                 this->show_settings(*local, *window);
             }
         ));
-        buttons.children.push_back(make_button(
+        buttons.children.push_back(ui_util::create_button(
             local.text("menu_exit_game"),
             []() { std::exit(0); }
         ));
@@ -230,7 +214,7 @@ namespace houseofatmos {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [name, locale]: languages) {
-            selection.children.push_back(make_button(
+            selection.children.push_back(ui_util::create_button(
                 name, 
                 [this, locale = &locale, window = &window]() {
                     this->settings.locale = *locale;
@@ -270,7 +254,7 @@ namespace houseofatmos {
             .with_size(150, 50, ui::size::units)
             .with_pos(0.5, 0.5, ui::position::window_fract)
             .with_text(local.text(local_text), &ui_font::dark)
-            .with_child(make_button(
+            .with_child(ui_util::create_button(
                     local.text("menu_close_menu"), 
                     [this, local = &local, window = &window]() {
                         this->show_title_screen(*local, *window);
