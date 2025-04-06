@@ -30,127 +30,129 @@ namespace houseofatmos::tutorial {
         )
     });
 
-    static world::World create_world(Settings&& settings) {
-        auto world = world::World(std::move(settings), 128, 128);
+    static std::shared_ptr<world::World> create_world(Settings&& settings) {
+        auto world = std::make_shared<world::World>(
+            std::move(settings), 128, 128
+        );
         // west river
-        world.terrain.set_area_elevation(0, 0, 128, 128, 4);
-        world.terrain.set_area_elevation(37, 0, 45, 128, 3);
-        world.terrain.set_area_elevation(38, 0, 44, 128, 1);
-        world.terrain.set_area_elevation(39, 0, 43, 128, 0);
-        world.terrain.set_area_elevation(40, 0, 42, 128, -1);
-        world.terrain.set_area_elevation(41, 0, 41, 128, -2);
+        world->terrain.set_area_elevation(0, 0, 128, 128, 4);
+        world->terrain.set_area_elevation(37, 0, 45, 128, 3);
+        world->terrain.set_area_elevation(38, 0, 44, 128, 1);
+        world->terrain.set_area_elevation(39, 0, 43, 128, 0);
+        world->terrain.set_area_elevation(40, 0, 42, 128, -1);
+        world->terrain.set_area_elevation(41, 0, 41, 128, -2);
         // east river
-        world.terrain.set_area_elevation(89, 0, 95, 128,  1);
-        world.terrain.set_area_elevation(90, 0, 94, 128,  0);
-        world.terrain.set_area_elevation(91, 0, 93, 128, -1);
-        world.terrain.set_area_elevation(92, 0, 92, 128, -2);
+        world->terrain.set_area_elevation(89, 0, 95, 128,  1);
+        world->terrain.set_area_elevation(90, 0, 94, 128,  0);
+        world->terrain.set_area_elevation(91, 0, 93, 128, -1);
+        world->terrain.set_area_elevation(92, 0, 92, 128, -2);
         // foliage
-        world.terrain.generate_foliage();
+        world->terrain.generate_foliage();
         // structures east of rivers
-        world.terrain.place_building(world::Building::Mansion, 12, 49);
-        world.terrain.remove_foliage_at(13, 53);
-        for_line(13, 50, 13, 52, set_path_at(world.terrain));
-        for_line(7, 52, 21, 52, set_path_at(world.terrain));
-        for_line(21, 52, 21, 62, set_path_at(world.terrain));
-        for_line(21, 62, 35, 62, set_path_at(world.terrain));
-        for_line(35, 52, 35, 62, set_path_at(world.terrain));
-        for_line(36, 52, 45, 52, remove_foliage_from(world.terrain));
-        world.terrain.bridges.push_back((world::Bridge) {
+        world->terrain.place_building(world::Building::Mansion, 12, 49);
+        world->terrain.remove_foliage_at(13, 53);
+        for_line(13, 50, 13, 52, set_path_at(world->terrain));
+        for_line(7, 52, 21, 52, set_path_at(world->terrain));
+        for_line(21, 52, 21, 62, set_path_at(world->terrain));
+        for_line(21, 62, 35, 62, set_path_at(world->terrain));
+        for_line(35, 52, 35, 62, set_path_at(world->terrain));
+        for_line(36, 52, 45, 52, remove_foliage_from(world->terrain));
+        world->terrain.bridges.push_back((world::Bridge) {
             world::Bridge::Stone, 36, 52, 45, 52, 4
         });
         // structures between the two rivers
-        for_line(46, 52, 63, 52, set_path_at(world.terrain));
-        for_line(63, 52, 63, 76, set_path_at(world.terrain));
-        for_line(58, 79, 63, 79, set_path_at(world.terrain));
-        for_line(58, 79, 58, 84, set_path_at(world.terrain));
-        for_line(62, 80, 62, 86, set_path_at(world.terrain));
-        for_line(62, 86, 64, 86, set_path_at(world.terrain));
-        for_line(65, 77, 71, 77, set_path_at(world.terrain));
-        for_line(68, 78, 68, 80, set_path_at(world.terrain));
-        for_line(68, 80, 87, 80, set_path_at(world.terrain));
-        for_line(69, 80, 69, 84, set_path_at(world.terrain));
-        world.terrain.place_building(world::Building::House, 64, 73);
-        world.terrain.place_building(world::Building::House, 64, 75);
-        world.terrain.place_building(world::Building::House, 66, 76);
-        world.terrain.place_building(world::Building::House, 68, 76);
-        world.terrain.place_building(world::Building::House, 70, 76);
-        world.terrain.place_building(world::Building::House, 59, 78);
-        world.terrain.place_building(world::Building::House, 61, 78);
-        world.terrain.place_building(world::Building::House, 66, 78);
-        world.terrain.place_building(world::Building::House, 57, 79);
-        world.terrain.place_building(world::Building::House, 69, 79);
-        world.terrain.place_building(world::Building::House, 71, 79);
-        world.terrain.place_building(world::Building::House, 73, 79);
-        world.terrain.place_building(world::Building::House, 59, 80);
-        world.terrain.place_building(world::Building::House, 61, 80);
-        world.terrain.place_building(world::Building::House, 63, 80);
-        world.terrain.place_building(world::Building::House, 67, 80);
-        world.terrain.place_building(world::Building::House, 57, 81);
-        world.terrain.place_building(world::Building::House, 71, 81);
-        world.terrain.place_building(world::Building::House, 59, 82);
-        world.terrain.place_building(world::Building::House, 61, 82);
-        world.terrain.place_building(world::Building::House, 68, 82);
-        world.terrain.place_building(world::Building::House, 70, 82);
-        world.terrain.place_building(world::Building::House, 57, 83);
-        world.terrain.place_building(world::Building::House, 61, 84);
-        world.terrain.place_building(world::Building::House, 68, 84);
-        world.terrain.place_building(world::Building::House, 70, 84);
-        world.terrain.place_building(world::Building::House, 61, 86);
-        world.terrain.place_building(world::Building::House, 62, 87);
-        world.terrain.place_building(world::Building::House, 64, 87); 
-        world::ComplexId village_center_id = world.complexes.create_complex();
-        world.terrain.place_building(
+        for_line(46, 52, 63, 52, set_path_at(world->terrain));
+        for_line(63, 52, 63, 76, set_path_at(world->terrain));
+        for_line(58, 79, 63, 79, set_path_at(world->terrain));
+        for_line(58, 79, 58, 84, set_path_at(world->terrain));
+        for_line(62, 80, 62, 86, set_path_at(world->terrain));
+        for_line(62, 86, 64, 86, set_path_at(world->terrain));
+        for_line(65, 77, 71, 77, set_path_at(world->terrain));
+        for_line(68, 78, 68, 80, set_path_at(world->terrain));
+        for_line(68, 80, 87, 80, set_path_at(world->terrain));
+        for_line(69, 80, 69, 84, set_path_at(world->terrain));
+        world->terrain.place_building(world::Building::House, 64, 73);
+        world->terrain.place_building(world::Building::House, 64, 75);
+        world->terrain.place_building(world::Building::House, 66, 76);
+        world->terrain.place_building(world::Building::House, 68, 76);
+        world->terrain.place_building(world::Building::House, 70, 76);
+        world->terrain.place_building(world::Building::House, 59, 78);
+        world->terrain.place_building(world::Building::House, 61, 78);
+        world->terrain.place_building(world::Building::House, 66, 78);
+        world->terrain.place_building(world::Building::House, 57, 79);
+        world->terrain.place_building(world::Building::House, 69, 79);
+        world->terrain.place_building(world::Building::House, 71, 79);
+        world->terrain.place_building(world::Building::House, 73, 79);
+        world->terrain.place_building(world::Building::House, 59, 80);
+        world->terrain.place_building(world::Building::House, 61, 80);
+        world->terrain.place_building(world::Building::House, 63, 80);
+        world->terrain.place_building(world::Building::House, 67, 80);
+        world->terrain.place_building(world::Building::House, 57, 81);
+        world->terrain.place_building(world::Building::House, 71, 81);
+        world->terrain.place_building(world::Building::House, 59, 82);
+        world->terrain.place_building(world::Building::House, 61, 82);
+        world->terrain.place_building(world::Building::House, 68, 82);
+        world->terrain.place_building(world::Building::House, 70, 82);
+        world->terrain.place_building(world::Building::House, 57, 83);
+        world->terrain.place_building(world::Building::House, 61, 84);
+        world->terrain.place_building(world::Building::House, 68, 84);
+        world->terrain.place_building(world::Building::House, 70, 84);
+        world->terrain.place_building(world::Building::House, 61, 86);
+        world->terrain.place_building(world::Building::House, 62, 87);
+        world->terrain.place_building(world::Building::House, 64, 87); 
+        world::ComplexId village_center_id = world->complexes.create_complex();
+        world->terrain.place_building(
             world::Building::Plaza, 62, 77, village_center_id
         );
-        world.terrain.place_building(
+        world->terrain.place_building(
             world::Building::Factory, 63, 82, village_center_id
         );
-        world.terrain.place_building(
+        world->terrain.place_building(
             world::Building::Factory, 63, 83, village_center_id
         );
-        world.terrain.place_building(
+        world->terrain.place_building(
             world::Building::Factory, 63, 84, village_center_id
         );
-        world.terrain.place_building(
+        world->terrain.place_building(
             world::Building::Factory, 63, 85, village_center_id
         );
-        world::Complex& village_center = world.complexes.get(village_center_id);
+        world::Complex& village_center = world->complexes.get(village_center_id);
         village_center.add_member(62, 77, bread_plaza_cm);
         village_center.add_member(63, 82, bread_factory_cm);
         village_center.add_member(63, 83, bread_factory_cm);
         village_center.add_member(63, 84, bread_factory_cm);
         village_center.add_member(63, 85, bread_factory_cm);
         // structures west of the rivers
-        for_line(96, 80, 111, 80, set_path_at(world.terrain));
-        world.terrain.set_path_at(111, 79);
-        world.terrain.set_path_at(111, 77);
-        world.terrain.set_path_at(111, 75);
-        for_line(111, 66, 111, 73, set_path_at(world.terrain));
-        world::ComplexId farmland_center_id = world.complexes.create_complex();
-        world.terrain.place_building(
+        for_line(96, 80, 111, 80, set_path_at(world->terrain));
+        world->terrain.set_path_at(111, 79);
+        world->terrain.set_path_at(111, 77);
+        world->terrain.set_path_at(111, 75);
+        for_line(111, 66, 111, 73, set_path_at(world->terrain));
+        world::ComplexId farmland_center_id = world->complexes.create_complex();
+        world->terrain.place_building(
             world::Building::Farmland, 109, 67, farmland_center_id
         );
-        world.terrain.place_building(
+        world->terrain.place_building(
             world::Building::Farmland, 109, 70, farmland_center_id
         );
-        world.terrain.place_building(
+        world->terrain.place_building(
             world::Building::Farmland, 112, 67, farmland_center_id
         );
-        world.terrain.place_building(
+        world->terrain.place_building(
             world::Building::Farmland, 112, 70, farmland_center_id
         );
-        world::Complex& farmland_center = world.complexes.get(farmland_center_id);
+        world::Complex& farmland_center = world->complexes.get(farmland_center_id);
         farmland_center.add_member(109, 67, wheat_farm_cm);
         farmland_center.add_member(109, 70, wheat_farm_cm);
         farmland_center.add_member(112, 67, wheat_farm_cm);
         farmland_center.add_member(112, 70, wheat_farm_cm);
         // other stuff
-        world.saving_allowed = false;
-        world.player.character.position = Vec<3>(13.5, 0, 51.5)
-            * world.terrain.units_per_tile();
-        world.balance.coins = 0;
-        world.personal_horse.pos = Vec<3>(14.25, 0, 52.25)
-            * world.terrain.units_per_tile();
+        world->saving_allowed = false;
+        world->player.character.position = Vec<3>(13.5, 0, 51.5)
+            * world->terrain.units_per_tile();
+        world->balance.coins = 0;
+        world->personal_horse.pos = Vec<3>(14.25, 0, 52.25)
+            * world->terrain.units_per_tile();
         return world;
     }
 
@@ -515,10 +517,8 @@ namespace houseofatmos::tutorial {
     std::shared_ptr<engine::Scene> create_grownup_scene(
         std::shared_ptr<world::World> world_after
     ) {
-        auto world = std::make_shared<world::World>(
-            create_world(Settings(world_after->settings))
-        );
-        auto scene = std::make_shared<world::Scene>(std::move(world));
+        auto world = create_world(Settings(world_after->settings));
+        auto scene = std::make_shared<world::Scene>(world);
         scene->cutscene.append(create_cutscene(scene, world_after));
         return scene;
     }

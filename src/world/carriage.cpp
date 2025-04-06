@@ -9,7 +9,7 @@ namespace houseofatmos::world {
         auto [x, z] = node;
         bool has_path = this->terrain->path_at((i64) x, (i64) z)
             && this->terrain->building_at((i64) x, (i64) z) == nullptr;
-        bool has_bridge = this->terrain->bridge_at((i64) x, (i64) z);
+        bool has_bridge = this->terrain->bridge_at((i64) x, (i64) z) != nullptr;
         return has_path || has_bridge;
     }
 

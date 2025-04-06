@@ -10,15 +10,6 @@
 
 namespace houseofatmos::tutorial {
 
-    static world::World create_dummy_world(Settings&& settings) {
-        auto world = world::World(std::move(settings), 16, 16);
-        world.saving_allowed = false;
-        world.balance.coins = 0;
-        return world;
-    }
-
-
-
     static const f64 maid_v_pitch = 2.3;
     static const f64 maid_v_speed = 3.3;
 
@@ -129,7 +120,6 @@ namespace houseofatmos::tutorial {
     std::shared_ptr<engine::Scene> create_discovery_scene(
         std::shared_ptr<world::World> world_after
     ) {
-        auto dummy_world = create_dummy_world(Settings(world_after->settings));
         auto scene_after = std::make_shared<world::Scene>(world_after);
         auto scene = std::make_shared<interior::Scene>(
             interior::mansion,

@@ -74,6 +74,9 @@ namespace houseofatmos::world {
         );
         World(Settings&& settings, const engine::Arena& serialized);
 
+        World(World&& other) noexcept = delete;
+        World& operator=(World&& other) noexcept = delete;
+
         void generate_map(u32 seed);
         
         engine::Arena serialize() const;
