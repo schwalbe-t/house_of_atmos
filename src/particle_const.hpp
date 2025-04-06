@@ -33,8 +33,8 @@ namespace houseofatmos::particle {
         Vec<2>(0, 0), // position on texture
         Vec<2>(32, 32), // size on texture
         10.0, // duration in seconds
-        smoke_position,
-        smoke_size
+        &smoke_position,
+        &smoke_size
     );
 
     static inline const Particle::Type smoke_medium = Particle::Type(
@@ -42,8 +42,8 @@ namespace houseofatmos::particle {
         Vec<2>(32, 0), // position on texture
         Vec<2>(32, 32), // size on texture
         10.0, // duration in seconds
-        smoke_position,
-        smoke_size
+        &smoke_position,
+        &smoke_size
     );
 
     static inline const Particle::Type smoke_small = Particle::Type(
@@ -51,8 +51,8 @@ namespace houseofatmos::particle {
         Vec<2>(64, 0), // position on texture
         Vec<2>(32, 32), // size on texture
         10.0, // duration in seconds
-        smoke_position,
-        smoke_size
+        &smoke_position,
+        &smoke_size
     );
 
     inline const Particle::Type* random_smoke(StatefulRNG& rng) {
@@ -85,8 +85,8 @@ namespace houseofatmos::particle {
         Vec<2>(0, 40), // position on texture
         Vec<2>(8, 8), // size on texture
         10.0, // duration in seconds
-        tree_shedding_position,
-        tree_shedding_size
+        &tree_shedding_position,
+        &tree_shedding_size
     );
 
     static inline const Particle::Type falling_needle = Particle::Type(
@@ -94,8 +94,39 @@ namespace houseofatmos::particle {
         Vec<2>(16, 40), // position on texture
         Vec<2>(8, 8), // size on texture
         10.0, // duration in seconds
-        tree_shedding_position,
-        tree_shedding_size
+        &tree_shedding_position,
+        &tree_shedding_size
+    );
+
+
+    static inline Vec<3> spark_position(
+        const Particle& particle, const engine::Window& window
+    ) {
+        (void) window;
+        f64 angle = fmod(particle.start_pos.sum(), 0.01) / 0.01 * 2 * pi;
+        Vec<3> dir = Vec<3>(cos(angle), 0.0, sin(angle));
+        f64 progress = particle.age * 2;
+        f64 height = -3.0 * pow(progress - 0.81652053254, 2) + 2.0;
+        return particle.start_pos
+            + (dir * progress) 
+            + Vec<3>(0.0, height, 0.0);
+    }
+
+    static inline Vec<2> spark_size(
+        const Particle& particle, const engine::Window& window
+    ) {
+        (void) particle;
+        (void) window;
+        return Vec<2>(0.25, 0.25);
+    }
+
+    static inline const Particle::Type spark = Particle::Type(
+        engine::Texture::LoadArgs("res/particles.png"),
+        Vec<2>(32, 40), // position on texture
+        Vec<2>(4, 4), // size on texture
+        1.5, // duration in seconds
+        &spark_position,
+        &spark_size
     );
 
 

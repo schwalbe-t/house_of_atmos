@@ -104,7 +104,8 @@ namespace houseofatmos::world {
             Storage,
             CommissaryWorks,
             ManufacturingWorks,
-            ClothWorks
+            ClothWorks,
+            MetallurgicalWorks
         };
 
         Type type;

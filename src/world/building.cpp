@@ -43,6 +43,31 @@ namespace houseofatmos::world {
         }
     };
 
+    static const ParticleSpawner::Type metallurgical_works_particles = {
+        2.0, // attempt period in seconds
+        1.0, // spawn chance on every attempt
+        // spawn function
+        [](ParticleSpawner& spawner, ParticleManager& particles) {
+            if(spawner.rng.next_f64() < 0.4) {
+                particles.add(particle::random_smoke(spawner.rng)
+                    ->at(spawner.position + Vec<3>(-2.0, 6.0, -4.0))
+                );
+            }
+            if(spawner.rng.next_f64() < 0.3) {
+                particles.add(particle::random_smoke(spawner.rng)
+                    ->at(spawner.position + Vec<3>(-3.5, 6.0, -4.0))
+                );
+            }
+            f64 spark_ox = spawner.rng.next_f64();
+            f64 spark_oz = spawner.rng.next_f64();
+            Vec<3> spark_offset = (Vec<3>(spark_ox, 0, spark_oz) * 2) 
+                - Vec<3>(1, 0, 1);
+            particles.add(particle::spark
+                .at(spawner.position + Vec<3>(-2, 0.8, 2) + spark_offset)
+            );
+        }
+    };
+
     static std::vector<Building::TypeInfo> type_infos = {
         /* Type::Farmland */ {
             "building_name_farmland",
@@ -420,6 +445,31 @@ namespace houseofatmos::world {
             0, // residents
             std::nullopt // no particles
         },
+        /* Type::MetallurgicalWorks */ {
+            "building_name_metallurgical_works",
+            &ui_icon::metallurgical_works,
+            Building::TypeInfo::remove_terrain,
+            {
+                "res/buildings/metallurgical_works.glb", 
+                Renderer::model_attribs, engine::FaceCulling::Disabled
+            },
+            std::nullopt, 0.0,
+            { 
+                RelCollider({ -5, -0.5, -5 }, { 6, 1,  4.0 }),
+                RelCollider({  1, -0.5, -5 }, { 4, 1, 10.0 }),
+                RelCollider({ -3, -0.5, -1 }, { 2, 1,  4.2 })
+            },
+            2, 2, // size
+            std::nullopt, // no interior
+            1500, // building cost
+            10, // storage capacity
+            Building::TypeInfo::allow_destruction,
+            20, // workers
+            0, // residents
+            [](Vec<3> p, StatefulRNG& r) { 
+                return metallurgical_works_particles.at(p, r); 
+            }
+        }
     };
 
     const std::vector<Building::TypeInfo>& Building::types() {

@@ -105,17 +105,6 @@ namespace houseofatmos::world {
                     { { 1, Item::Malt } }, 
                     1.0 
                 ) }
-            }
-        }),
-        BuildingGroup(Building::Factory, {
-            { 
-                { Conversion( 
-                    { { 2, Item::IronOre }, { 1, Item::Coal } }, 
-                    { { 2, Item::Steel } }, 
-                    4.0 
-                ) },
-                std::nullopt,
-                research::Research::RewardSteel
             },
             { 
                 { Conversion( 
@@ -125,57 +114,6 @@ namespace houseofatmos::world {
                 ) },
                 std::nullopt,
                 research::Research::RewardPlanks
-            },
-            { 
-                { Conversion( 
-                    { { 2, Item::CopperOre }, { 1, Item::ZincOre }, { 1, Item::Coal } }, 
-                    { { 3, Item::Brass } }, 
-                    4.0 
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::Brass } }, 
-                    { { 4, Item::BrassRods } }, 
-                    2.0 
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::Brass } }, 
-                    { { 1, Item::BrassPlates } }, 
-                    2.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::BrassPlates }, { 4, Item::BrassRods } }, 
-                    { { 4, Item::BrassGears } }, 
-                    2.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 1, Item::Wood } }, 
-                    { { 1, Item::Coal } }, 
-                    4.0
-                ) }
-            },
-            { 
-                { Conversion( 
-                    { { 2, Item::CrudeOil }, { 1, Item::Coal } }, 
-                    { { 2, Item::Oil } }, 
-                    4.0
-                ) },
-                std::nullopt,
-                research::Research::RewardOil
-            },
-            { 
-                { Conversion( 
-                    { { 2, Item::Steel } }, 
-                    { { 1, Item::SteelBeams } }, 
-                    4.0
-                ) }
             }
         }),
         BuildingGroup(Building::Pasture, {
@@ -347,6 +285,70 @@ namespace houseofatmos::world {
                 ) },
                 std::nullopt,
                 research::Research::RewardFabric
+            }
+        }),
+        BuildingGroup(Building::MetallurgicalWorks, {
+            { 
+                { Conversion( 
+                    { { 1, Item::Wood } }, 
+                    { { 1, Item::Coal } }, 
+                    4.0
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 2, Item::CopperOre }, { 1, Item::ZincOre }, { 1, Item::Coal } }, 
+                    { { 3, Item::Brass } }, 
+                    4.0 
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::Brass } }, 
+                    { { 4, Item::BrassRods } }, 
+                    2.0 
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::Brass } }, 
+                    { { 1, Item::BrassPlates } }, 
+                    2.0
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 1, Item::BrassPlates }, { 4, Item::BrassRods } }, 
+                    { { 4, Item::BrassGears } }, 
+                    2.0
+                ) }
+            },
+            { 
+                { Conversion( 
+                    { { 2, Item::IronOre }, { 1, Item::Coal } }, 
+                    { { 2, Item::Steel } }, 
+                    4.0 
+                ) },
+                std::nullopt,
+                research::Research::RewardSteel
+            },
+            { 
+                { Conversion( 
+                    { { 2, Item::Steel } }, 
+                    { { 1, Item::SteelBeams } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardSteel
+            },
+            { 
+                { Conversion( 
+                    { { 2, Item::CrudeOil }, { 1, Item::Coal } }, 
+                    { { 2, Item::Oil } }, 
+                    4.0
+                ) },
+                std::nullopt,
+                research::Research::RewardOil
             }
         })
     };

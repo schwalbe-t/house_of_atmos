@@ -281,6 +281,8 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON(Vec<2>(240, 128), Vec<2>(16, 16));
     static inline const ui::Background cloth_works
         = MAKE_HOA_UI_ICON(Vec<2>(256, 128), Vec<2>(16, 16));
+    static inline const ui::Background metallurgical_works
+        = MAKE_HOA_UI_ICON(Vec<2>(272, 128), Vec<2>(16, 16));
 
     static inline const ui::Background wooden_bridge
         = MAKE_HOA_UI_ICON(Vec<2>(16, 144), Vec<2>(16, 16));

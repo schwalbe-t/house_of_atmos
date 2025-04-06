@@ -872,6 +872,12 @@
         "de": "Textilwerk",
         "bg": "Текстилен цех"
     },
+    "building_name_metallurgical_works": {
+        "_context": "Name of a building that produces anything related to metal, including steel, brass, other alloys and materials out of those metals, including beams, gears and rods",
+        "en": "Metallurgical Works",
+        "de": "Metallurgiewerk",
+        "bg": "Металургичен цех"
+    },
 
 
 
