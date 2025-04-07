@@ -546,15 +546,13 @@ namespace houseofatmos::world {
     Mat<4> Train::build_car_transform(
         size_t car_idx, Vec<3>* position_out, f64* pitch_out, f64* yaw_out
     ) const {
-        const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
-            .at((size_t) this->loco_type);
         const Train::Car& car_info = this->car_at(car_idx);
         f64 train_front = this->front_path_dist();
         f64 car_start = train_front - this->offset_of_car(car_idx);
         Vec<3> front = this->current_path()
-            .after(car_start - loco_info.car_type.front_axle).first;
+            .after(car_start - car_info.front_axle).first;
         Vec<3> back = this->current_path()
-            .after(car_start - loco_info.car_type.back_axle).first;
+            .after(car_start - car_info.back_axle).first;
         Vec<3> position = (front - back) / 2.0 + back;
         Vec<3> heading = (front - back).normalized();
         auto [pitch, yaw] = Agent<TrackNetwork>
