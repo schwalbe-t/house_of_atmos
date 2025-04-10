@@ -112,7 +112,8 @@ namespace houseofatmos::world {
 
         void update(
             const engine::Window& window, Balance& balance, 
-            research::Research& research, const Terrain& terrain
+            research::Research& research, const Terrain& terrain,
+            Toasts& toasts
         );
 
         Serialized serialize(engine::Arena& buffer) const;
@@ -144,7 +145,8 @@ namespace houseofatmos::world {
 
         void update(
             const engine::Window& window, Balance& balance, 
-            research::Research& research, const Terrain& terrain
+            research::Research& research, const Terrain& terrain,
+            Toasts& toasts
         );
 
         Serialized serialize(engine::Arena& buffer) const;

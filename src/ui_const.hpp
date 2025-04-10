@@ -246,8 +246,10 @@ namespace houseofatmos::ui_icon {
         = MAKE_HOA_UI_ICON(Vec<2>(24, 112), Vec<2>(8, 8));
     static inline const ui::Background steam_engines
         = MAKE_HOA_UI_ICON(Vec<2>(32, 112), Vec<2>(8, 8));
-    static inline const ui::Background coins
+    static inline const ui::Background locomotive_frames
         = MAKE_HOA_UI_ICON(Vec<2>(40, 112), Vec<2>(8, 8));
+    static inline const ui::Background coins
+        = MAKE_HOA_UI_ICON(Vec<2>(48, 112), Vec<2>(8, 8));
 
     static inline const ui::Background farmland
         = MAKE_HOA_UI_ICON(Vec<2>(16, 128), Vec<2>(16, 16));

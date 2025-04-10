@@ -396,6 +396,7 @@ namespace houseofatmos::world {
         /* Basic */ {
             "locomotive_name_basic",
             &ui_icon::basic_locomotive,
+            research::Research::Reward::BasicLocomotive,
             {
                 Train::Car(
                     engine::Model::LoadArgs(
@@ -427,6 +428,7 @@ namespace houseofatmos::world {
         /* Small */ {
             "locomotive_name_small",
             &ui_icon::small_locomotive,
+            research::Research::Reward::SmallLocomotive,
             {
                 Train::Car(
                     engine::Model::LoadArgs(
@@ -458,6 +460,7 @@ namespace houseofatmos::world {
         /* Tram */ {
             "locomotive_name_tram",
             &ui_icon::tram,
+            research::Research::Reward::Tram,
             { train_car_tram },
             train_car_tram,
             Vec<3>(0.395, 3.087, -1.702), // relative smoke origin

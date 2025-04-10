@@ -1,232 +1,311 @@
 
 #include "view.hpp"
 #include "research.hpp"
+#include "../ui_util.hpp"
+#include <algorithm>
 
 namespace houseofatmos::research {
 
+    static ui::Background tree_background = ui::Background(
+        View::background_design, Vec<2>(0, 0),
+        Vec<2>(0, 0), Vec<2>(200, 128)
+    );
+
+    struct ConditionDisplay {
+        ui::Background unlock_overlay;
+        Vec<2> overlay_offset;
+        const ui::Background* icon;
+        Vec<2> icon_offset;
+    };
+
+    static std::vector<ConditionDisplay> condition_displays = {
+        /* SteamEngines */ {
+            ui::Background(
+                View::background_design, Vec<2>(200, 0),
+                Vec<2>(0, 0), Vec<2>(200, 104)
+            ),
+            Vec<2>(0, 0),
+            &ui_icon::steam_engines,
+            Vec<2>(12, 12)
+        },
+        /* BrassPots */ {
+            ui::Background(
+                View::background_design, Vec<2>(200, 104),
+                Vec<2>(0, 0), Vec<2>(104, 32)
+            ),
+            Vec<2>(24, 24),
+            &ui_icon::brass_pots,
+            Vec<2>(36, 36)
+        },
+        /* PowerLooms */ {
+            ui::Background(
+                View::background_design, Vec<2>(200, 136),
+                Vec<2>(0, 0), Vec<2>(80, 32)
+            ),
+            Vec<2>(24, 48),
+            &ui_icon::power_looms,
+            Vec<2>(36, 60)
+        },
+        /* SteelBeams */ {
+            ui::Background(
+                View::background_design, Vec<2>(200, 168),
+                Vec<2>(0, 0), Vec<2>(104, 56)
+            ),
+            Vec<2>(24, 72),
+            &ui_icon::steel_beams,
+            Vec<2>(36, 84)
+        },
+        /* CoalLocomotives */ {
+            ui::Background(
+                View::background_design, Vec<2>(200, 224),
+                Vec<2>(0, 0), Vec<2>(104, 32)
+            ),
+            Vec<2>(48, 96),
+            &ui_icon::locomotive_frames,
+            Vec<2>(60, 108)
+        }
+    };
+
+    struct RewardDisplay {
+        const ui::Background* icon;
+        Vec<2> icon_offset;
+    };
+
+    static std::vector<RewardDisplay> reward_displays = {
+        /* Steel */ { &ui_icon::steel, Vec<2>(36, 12) },
+        /* SteelBeams */ { &ui_icon::steel_beams, Vec<2>(60, 12) },
+        /* BrassPots */ { &ui_icon::brass_pots, Vec<2>(84, 12) },
+        /* Oil */ { &ui_icon::oil, Vec<2>(108, 12) },
+        /* OilLanterns */ { &ui_icon::oil_lanterns, Vec<2>(132, 12) },
+        /* Watches */ { &ui_icon::watches, Vec<2>(156, 12) },
+        /* PowerLooms */ { &ui_icon::power_looms, Vec<2>(180, 12) },
+
+        /* Steak */ { &ui_icon::steak, Vec<2>(60, 36) },
+        /* Cheese */ { &ui_icon::cheese, Vec<2>(84, 36) },
+        /* Beer */ { &ui_icon::beer, Vec<2>(108, 36) },
+
+        /* Fabric */ { &ui_icon::fabric, Vec<2>(60, 60) },
+        /* Clothing */ { &ui_icon::clothing, Vec<2>(84, 60) },
+
+        /* Tracking */ { &ui_icon::tracking, Vec<2>(56, 80) },
+        /* LocomotiveFrames */ { &ui_icon::locomotive_frames, Vec<2>(84, 84) },
+        /* SteelBridges */ { &ui_icon::metal_bridge, Vec<2>(104, 80) },
+
+        /* BasicLocomotive */ { &ui_icon::basic_locomotive, Vec<2>(80, 104) },
+        /* SmallLocomotive */ { &ui_icon::small_locomotive, Vec<2>(104, 104) },
+        /* Tram */ { &ui_icon::tram, Vec<2>(128, 104) }
+    };
+
+    ui::Element View::build_research_tree() {
+        Vec<2> root_size = tree_background.edge_size;
+        ui::Element root = ui::Element()
+            .with_size(root_size.x(), root_size.y(), ui::size::units)
+            .with_background(&tree_background)
+            .as_movable();
+        size_t cond_c = Research::conditions().size();
+        for(size_t c = cond_c - 1; cond_c >= 1; c -= 1) {
+            bool is_unlocked = this->world->research
+                .is_unlocked((Research::Condition) c);
+            bool is_selected = this->selected_cond.has_value()
+                && (size_t) (*this->selected_cond) == c;
+            const ConditionDisplay& display = condition_displays[c];
+            Vec<2> overlay_size = display.unlock_overlay.edge_size;
+            ui::Element overlay = ui::Element()
+                .with_size(overlay_size.x(), overlay_size.y(), ui::size::units)
+                .with_pos(
+                    display.overlay_offset.x(), display.overlay_offset.y(), 
+                    ui::position::parent_offset_units
+                )
+                .with_background(is_unlocked? &display.unlock_overlay : nullptr)
+                .with_click_handler([this, c, is_selected]() {
+                    if(is_selected) { return; }
+                    this->selected_cond = (Research::Condition) c;
+                    this->view_update_timer = INFINITY;
+                })
+                .as_movable();
+            root.children.push_back(std::move(overlay));
+            if(c == 0) { break; }
+        }
+        for(size_t c = 0; c < Research::conditions().size(); c += 1) {
+            const ConditionDisplay& display = condition_displays[c];
+            bool is_selected = this->selected_cond.has_value()
+                && (size_t) (*this->selected_cond) == c;
+            root.children.push_back(ui_util::create_icon(display.icon)
+                .with_pos(
+                    display.icon_offset.x(), display.icon_offset.y(), 
+                    ui::position::parent_offset_units
+                )
+                .with_padding(0.0)
+                .as_phantom()
+                .with_background(
+                    is_selected? &ui_background::border_selected : nullptr
+                )
+                .as_movable()
+            );
+        }
+        for(size_t r = 0; r < Research::rewards().size(); r += 1) {
+            const RewardDisplay& display = reward_displays[r];
+            root.children.push_back(ui_util::create_icon(display.icon)
+                .with_pos(
+                    display.icon_offset.x(), display.icon_offset.y(), 
+                    ui::position::parent_offset_units
+                )
+                .as_movable()
+            );
+        }
+        return root;
+    }
+
+    ui::Element View::build_condition_display(
+        Research::Condition cond, const engine::Localization& local
+    ) {
+        ui::Element root = ui::Element()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        const Research::ConditionInfo& cond_info = Research::conditions()
+            .at((size_t) cond);
+        const ConditionDisplay& cond_display = condition_displays
+            .at((size_t) cond);
+        bool is_unlocked = this->world->research.is_unlocked(cond);
+        root.children.push_back(ui_util::create_icon_with_text(
+            cond_display.icon, 
+            local.text(cond_info.local_name) + (is_unlocked? "✅" : ""), 
+            4.0
+        ));
+        if(cond_info.parents.size() > 0) {
+            root.children.push_back(ui_util::create_text(
+                local.text("ui_condition_required_conditions")
+            ));
+            for(const Research::Condition& parent: cond_info.parents) {
+                const Research::ConditionInfo& parent_info 
+                    = Research::conditions().at((size_t) parent);
+                const ConditionDisplay& parent_display
+                    = condition_displays.at((size_t) parent);
+                bool par_unlocked = this->world->research.is_unlocked(parent);
+                root.children.push_back(ui_util::create_icon_with_text(
+                    parent_display.icon, 
+                    local.text(parent_info.local_name) 
+                        + (par_unlocked? "✅" : ""),
+                    1.0
+                ));
+            }
+        }
+        root.children.push_back(
+            ui_util::create_text(local.text("ui_condition_required_items"))
+        );
+        const world::Item::TypeInfo& item_info = world::Item::types()
+            .at((size_t) cond_info.item);
+        const Research::ConditionInfo::Progress& progress = this->world
+            ->research.progress.at(cond);
+        root.children.push_back(ui_util::create_icon_with_text(
+            item_info.icon, 
+            std::to_string(progress.produced) + "/" 
+                + std::to_string(cond_info.required) + " " 
+                + local.text(item_info.local_name)
+                + (progress.produced >= cond_info.required? "✅" : ""),
+            1.0
+        ));
+        root.children.push_back(
+            ui_util::create_text(local.text("ui_condition_rewards"))
+        );
+        for(size_t r = 0; r < Research::rewards().size(); r += 1) {
+            const Research::RewardInfo& reward_info = Research::rewards()
+                .at((size_t) r);
+            const auto& req = reward_info.required;
+            bool is_reward = std::find(req.begin(), req.end(), cond) 
+                != req.end();
+            if(!is_reward) { continue; }
+            const RewardDisplay& reward_display = reward_displays
+                .at((size_t) r);
+            root.children.push_back(ui_util::create_icon_with_text(
+                reward_display.icon, 
+                local.text(reward_info.local_name) + (is_unlocked? "✅" : ""),
+                1.0
+            ));
+        }
+        ui::Element padded = root
+            .with_padding(3.0)
+            .with_background(&ui_background::scroll_vertical)
+            .as_movable();
+        return padded;
+    }
+    
+
+
     View::View(
         std::shared_ptr<world::World>&& world,
-        std::shared_ptr<Scene>&& previous, 
-        const engine::Texture& last_frame
-    ): last_frame(last_frame), toasts(Toasts(world->settings)) {
+        std::shared_ptr<Scene>&& previous
+    ): toasts(Toasts(world->settings)) {
         this->world = std::move(world);
         this->previous = std::move(previous);
         ui::Manager::load_shaders(*this);
         ui_const::load_all(*this);
         audio_const::load_all(*this);
         this->load(this->world->settings.localization());
-        this->load(View::blur_shader);
+        this->load(View::background_design);
     }
 
-
-    
-    static ui::Element create_icon_text(
-        const ui::Background* icon, std::string text, const ui::Font* font
-    ) {
-        ui::Element container = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Horizontal)
-            .as_movable();
-        container.children.push_back(ui::Element()
-            .with_size(icon->edge_size.x(), icon->edge_size.y(), ui::size::units)
-            .with_background(icon)
-            .as_movable()
-        );
-        container.children.push_back(ui::Element()
-            .with_size(
-                4.0, (icon->edge_size.y() - font->height) / 2.0, 
-                ui::size::units_with_children
-            )
-            .with_child(ui::Element()
-                .with_pos(1.0, 0.5, ui::position::parent_offset_fract)
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(text, font)
-                .as_movable()
-            )
-            .as_movable()
-        );
-        return container;
-    }
-
-    static ui::Element create_research_item(
-        const engine::Localization& local, 
-        const Research& research, Research::Advancement advancement
-    ) {
-        const Research::AdvancementInfo& advancement_info 
-            = Research::advancements().at((size_t) advancement);
-        const Research::AdvancementProgress& progress 
-            = research.progress.at(advancement);
-        bool parents_unlocked = research.parents_unlocked(advancement);
-        const ui::Background* background = parents_unlocked
-            ? &ui_background::note : &ui_background::border_dark;
-        const ui::Font* font = parents_unlocked
-            ? &ui_font::dark : &ui_font::bright;
-        ui::Element content = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Vertical)
-            .as_movable();
-        std::string title = local.text(advancement_info.local_name);
-        if(progress.is_unlocked) { title += " ✅"; }
-        content.children.push_back(
-            create_icon_text(advancement_info.icon, title, font)
-                .with_padding(2.0)
-                .as_movable()
-        );
-        ui::Element requirements = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Vertical)
-            .as_movable();
-        requirements.children.push_back(ui::Element()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(local.text("ui_required"), font)
-            .with_padding(3.0)
-            .as_movable()
-        );
-        for(Research::Advancement parent: advancement_info.parents) {
-            const Research::AdvancementInfo& parent_info 
-                = Research::advancements().at((size_t) parent);
-            std::string text = local.text(parent_info.local_name);
-            if(research.is_unlocked(parent)) { text += " ✅"; }
-            requirements.children.push_back(
-                create_icon_text(parent_info.icon, text, font)
-                    .with_padding(1.0)
-                    .as_movable()
-            );
-        }
-        size_t item_c = progress.item_conditions.size();
-        for(size_t item_i = 0; item_i < item_c; item_i += 1) {
-            u64 produced = progress.item_conditions[item_i].produced_count;
-            u64 required = advancement_info.item_conditions[item_i].required_count;
-            const world::Item::TypeInfo& item_info = world::Item::types()
-                .at((size_t) advancement_info.item_conditions[item_i].item);
-            std::string text = std::to_string(produced);
-            text += "/" + std::to_string(required);
-            text += " " + local.text(item_info.local_name);
-            if(produced >= required) { text += " ✅"; }
-            requirements.children.push_back(
-                create_icon_text(item_info.icon, text, font)
-                    .with_padding(1.0)
-                    .as_movable()
-            );
-        }
-        content.children.push_back(requirements
-            .with_padding(2.0)
-            .as_movable()
-        );
-        ui::Element container = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_pos(0.5, 0.5, ui::position::parent_offset_fract)
-            .with_background(background)
-            .with_child(content
-                .with_padding(2.0)
-                .as_movable()
-            )
-            .as_movable();
-        Vec<2> pos = advancement_info.view_pos;
-        ui::Element wrapper = ui::Element()
-            .with_pos(pos.x(), pos.y(), ui::position::parent_offset_fract)
-            .with_size(0, 0, ui::size::units)
-            .with_child(std::move(container))
-            .as_movable();
-        return wrapper;
-    }
-
-    void View::init_ui() {
+    void View::init_ui(engine::Window& window) {
         Toasts::States toast_states = this->toasts.make_states();
         this->ui.root.children.clear();
         const engine::Localization& local
             = this->get(this->world->settings.localization());
-        ui::Element view = ui::Element()
-            .with_pos(0.5, 0.5, ui::position::parent_offset_fract)
-            .with_size(1.0, 1.0, ui::size::window_fract)
-            .as_movable();
-        for(size_t adv_i = 0; adv_i < Research::advancements().size(); adv_i += 1) {
-            view.children.push_back(create_research_item(
-                local, 
-                this->world->research, (Research::Advancement) adv_i
-            ));
+        this->ui.with_element(
+            this->build_research_tree()
+                .with_pos(0.85, 0.5, ui::position::window_fract)
+                .as_movable()
+        );
+        if(this->selected_cond.has_value()) {
+            this->ui.with_element(
+                this->build_condition_display(*this->selected_cond, local)
+                    .with_pos(0.15, 0.5, ui::position::window_fract)
+                    .as_movable()
+            );
         }
-        this->ui.with_element(ui::Element()
-            .with_handle(&this->view_root)
-            .with_pos(
-                this->view_offset.x() * 2, -this->view_offset.y() * 2, 
-                ui::position::window_ndc
-            )
-            .with_size(0, 0, ui::size::units)
-            .with_child(std::move(view))
+        ui::Element back_button = ui_util::create_button(
+            local.text("ui_back"),
+            [this, window = &window]() {
+                window->set_scene(
+                    std::shared_ptr<engine::Scene>(this->previous)
+                );
+            }
+        );
+        this->ui.with_element(back_button
+            .with_pos(10, 10, ui::position::window_bl_units)
             .as_movable()
         );
-        // add elements here!
         this->toasts.set_scene(this);
         this->ui.with_element(this->toasts.create_container());
         this->toasts.put_states(std::move(toast_states));
     }
 
-    static const f64 view_update_time = 1.0 / 10.0;
-
-    void View::update_view(const engine::Window& window) {
-        bool mouse_down = window.is_down(engine::Button::Left)
-            || window.is_down(engine::Button::Middle)
-            || window.is_down(engine::Button::Right);
-        Vec<2> cursor_pos = window.cursor_pos_px() 
-            / Vec<2>(window.width(), window.height());
-        bool started_dragging = mouse_down && !this->view_anchor.has_value();
-        if(started_dragging) {
-            this->view_anchor = (Anchor) { cursor_pos, this->view_offset };
-        }
-        if(this->view_anchor.has_value()) {
-            Vec<2> distance = cursor_pos - this->view_anchor->cursor_pos;
-            this->view_offset = this->view_anchor->view_offset + distance;
-        }
-        bool stopped_dragging = !mouse_down && this->view_anchor.has_value();
-        if(stopped_dragging) {
-            this->view_anchor = std::nullopt;
-        }
-        this->view_root->position.x() = this->view_offset.x() * 2;
-        this->view_root->position.y() = -this->view_offset.y() * 2;
-        this->view_update_timer += window.delta_time();
-        if(this->view_update_timer >= view_update_time) {
-            this->view_update_timer = 0.0;
-            this->init_ui();
-        }
-    }
-
-
+    static const f64 view_update_time = 1.0;
 
     void View::update(engine::Window& window) {
         this->world->settings.apply(*this, window);
-        this->ui.unit_fract_size = this->world->settings.ui_size_fract();
         this->get(audio_const::soundtrack).update();
-        if(this->ui.root.children.size() == 0) {
-            this->init_ui();
-        }
         bool was_closed = window.was_pressed(engine::Key::E)
             || window.was_pressed(engine::Key::Escape);
         if(was_closed) {
             window.set_scene(std::shared_ptr<engine::Scene>(this->previous));
         }
         this->world->update(*this, window, this->toasts);
-        this->update_view(window);
+        this->view_update_timer += window.delta_time();
+        if(this->view_update_timer >= view_update_time) {
+            this->view_update_timer = 0.0;
+            this->init_ui(window);
+        }
         this->toasts.update(*this);
         this->ui.update(window);
     }
 
+    static const Vec<3> background_color = Vec<3>(31, 14, 28) / 255.0;
+
     void View::render(engine::Window& window) {
-        if(!this->background.has_value()) {
-            this->background = engine::Texture(
-                this->last_frame.width(), this->last_frame.height()
-            );
-            engine::Shader& blur = this->get(View::blur_shader);
-            blur.set_uniform("u_texture_w", (i64) this->background->width());
-            blur.set_uniform("u_texture_h", (i64) this->background->height());
-            i64 blur_rad = (i64) ((window.width() + window.height()) / 200.0);
-            blur.set_uniform("u_blur_rad", blur_rad);
-            this->last_frame.blit(this->background->as_target(), blur);
-        }
-        this->black_backdrop.resize_fast(window.width(), window.height());
-        this->black_backdrop.as_target().clear_color({ 0, 0, 0, 1 });
-        window.show_texture(this->black_backdrop);
-        window.show_texture(*this->background);
+        this->background.resize_fast(window.width(), window.height());
+        this->background.as_target().clear_color(background_color.with(1.0));
+        window.show_texture(this->background);
         this->ui.render(*this, window);
         window.show_texture(this->ui.output());
     }

@@ -3,6 +3,7 @@
 
 #include "agent.hpp"
 #include "terrain.hpp"
+#include "../research/research.hpp"
 #include <algorithm>
 #include <unordered_set>
 
@@ -211,6 +212,7 @@ namespace houseofatmos::world {
         struct LocomotiveTypeInfo {
             std::string_view local_name;
             const ui::Background* icon;
+            std::optional<research::Research::Reward> req_reward;
             std::vector<Car> loco_cars;
             const Car& car_type;
             Vec<3> smoke_origin;

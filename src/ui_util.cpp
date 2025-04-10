@@ -121,4 +121,45 @@ namespace houseofatmos::ui_util {
         );
     }
 
+
+    ui::Element create_icon(const ui::Background* icon) {
+        ui::Element result = ui::Element()
+            .as_phantom()
+            .with_size(
+                icon->edge_size.x(), icon->edge_size.y(), ui::size::units
+            )
+            .with_background(icon)
+            .as_movable();
+        return result;
+    }
+
+
+    ui::Element create_icon_with_text(
+        const ui::Background* icon, 
+        std::string text,
+        f64 padding,
+        f64 text_padding, 
+        const ui::Font* font
+    ) {
+        f64 text_vert_pad = (icon->edge_size.y() - font->height) / 2 
+            - text_padding;
+        ui::Element root = ui::Element()
+            .as_phantom()
+            .with_size(0, 0, ui::size::units_with_children)
+            .with_list_dir(ui::Direction::Horizontal)
+            .as_movable();
+        root.children.push_back(create_icon(icon));
+        root.children.push_back(ui::Element()
+            .as_phantom()
+            .with_pos(0, text_vert_pad, ui::position::parent_list_units)
+            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_text(text, font)
+            .with_padding(text_padding)
+            .as_phantom()
+            .as_movable()
+        );
+        ui::Element padded = root.with_padding(padding).as_movable();
+        return padded;
+    }
+
 }

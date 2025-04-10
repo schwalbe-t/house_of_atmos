@@ -31,7 +31,7 @@ namespace houseofatmos::world {
             Clothing, Cheese, Steak, Oil, Beer, Armor, Bread, Tools, BrassPots,
             OilLanterns, Watches,
 
-            SteelBeams, PowerLooms, SteamEngines, Coins
+            SteelBeams, PowerLooms, SteamEngines, LocomotiveFrames, Coins
         };
 
         struct Stack {

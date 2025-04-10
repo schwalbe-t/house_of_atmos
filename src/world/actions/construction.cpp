@@ -135,9 +135,7 @@ namespace houseofatmos::world {
                             { { 1, Item::Wood } }, 
                             { { 4, Item::Planks } }, 
                             4.0 
-                        ) },
-                        std::nullopt,
-                        research::Research::RewardPlanks
+                        ) }
                     }
                 }),
                 BuildingGroup(Building::Pasture, {
@@ -173,21 +171,10 @@ namespace houseofatmos::world {
                     },
                     { 
                         { Conversion( 
-                            { { 8, Item::Milk }, { 1, Item::Salt } }, 
-                            { { 4, Item::Cheese } }, 
-                            8.0
-                        ) },
-                        std::nullopt,
-                        research::Research::RewardCheese
-                    },
-                    { 
-                        { Conversion( 
                             { { 1, Item::Cattle } }, 
                             { { 4, Item::Beef } }, 
                             4.0
-                        ) },
-                        std::nullopt,
-                        research::Research::RewardSteak
+                        ) }
                     },
                     { 
                         { Conversion( 
@@ -196,7 +183,16 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardSteak
+                        research::Research::Reward::Steak
+                    },
+                    { 
+                        { Conversion( 
+                            { { 8, Item::Milk }, { 1, Item::Salt } }, 
+                            { { 4, Item::Cheese } }, 
+                            8.0
+                        ) },
+                        std::nullopt,
+                        research::Research::Reward::Cheese
                     },
                     { 
                         { Conversion( 
@@ -205,7 +201,7 @@ namespace houseofatmos::world {
                             8.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardBeer
+                        research::Research::Reward::Beer
                     }
                 }),
                 BuildingGroup(Building::MetallurgicalWorks, {
@@ -251,7 +247,7 @@ namespace houseofatmos::world {
                             4.0 
                         ) },
                         std::nullopt,
-                        research::Research::RewardSteel
+                        research::Research::Reward::Steel
                     },
                     { 
                         { Conversion( 
@@ -260,7 +256,7 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardSteel
+                        research::Research::Reward::SteelBeams
                     },
                     { 
                         { Conversion( 
@@ -269,7 +265,7 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardOil
+                        research::Research::Reward::Oil
                     }
                 }),
                 BuildingGroup(Building::ManufacturingWorks, {
@@ -285,18 +281,14 @@ namespace houseofatmos::world {
                             { { 1, Item::Leather }, { 3, Item::Steel } }, 
                             { { 1, Item::Armor } }, 
                             4.0
-                        ) },
-                        std::nullopt,
-                        research::Research::RewardSteel
+                        ) }
                     },
                     { 
                         { Conversion( 
                             { { 1, Item::Planks }, { 2, Item::Steel } }, 
                             { { 1, Item::Tools } }, 
                             4.0
-                        ) },
-                        std::nullopt,
-                        research::Research::RewardSteel
+                        ) }
                     },
                     { 
                         { Conversion( 
@@ -305,7 +297,7 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardBrassPots
+                        research::Research::Reward::BrassPots
                     },
                     { 
                         { Conversion( 
@@ -314,7 +306,7 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardOilLanterns
+                        research::Research::Reward::OilLanterns
                     },
                     { 
                         { Conversion( 
@@ -323,7 +315,7 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardWatches
+                        research::Research::Reward::Watches
                     },
                     { 
                         { Conversion( 
@@ -332,7 +324,16 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardPlanks
+                        research::Research::Reward::PowerLooms
+                    },
+                    {
+                        { Conversion(
+                            { { 4, Item::BrassGears }, { 4, Item::Steel } },
+                            { { 1, Item::LocomotiveFrames } },
+                            8.0
+                        ) },
+                        std::nullopt,
+                        research::Research::Reward::LocomotiveFrames
                     }
                 }),
                 BuildingGroup(Building::ClothWorks, {
@@ -350,7 +351,7 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardFabric
+                        research::Research::Reward::Fabric
                     },
                     { 
                         { Conversion( 
@@ -359,7 +360,7 @@ namespace houseofatmos::world {
                             4.0
                         ) },
                         std::nullopt,
-                        research::Research::RewardFabric
+                        research::Research::Reward::Clothing
                     }
                 })
             }
@@ -422,8 +423,8 @@ namespace houseofatmos::world {
             );
             for(size_t var_i = first_var_i; var_i < end_var_i; var_i += 1) {
                 const auto& variant = group->variants[var_i];
-                bool is_unlocked = !variant.required_advancement.has_value()
-                    || ctx.research->is_unlocked(*variant.required_advancement);
+                bool is_unlocked = !variant.req_reward.has_value()
+                    || ctx.research->is_unlocked(*variant.req_reward);
                 if(!is_unlocked) { continue; }
                 if(variant.conversions.size() == 0) { continue; }
                 if(variant.conversions.at(0).outputs.size() == 0) { continue; }
@@ -471,9 +472,8 @@ namespace houseofatmos::world {
             for(size_t var_i = 0; var_i < locked_var_c; var_i += 1) {
                 const ConstructionMode::BuildingVariant& var
                     = group.variants[var_i];
-                bool is_unlocked = !var.required_advancement.has_value()
-                    || ctx.research
-                        ->is_unlocked(*var.required_advancement);
+                bool is_unlocked = !var.req_reward.has_value()
+                    || ctx.research->is_unlocked(*var.req_reward);
                 if(is_unlocked) { unlocked_v.push_back(var_i); }
             }
             bool not_unlocked = group.variants.size() >= 1
@@ -635,13 +635,13 @@ namespace houseofatmos::world {
         const ConstructionMode::BuildingVariant* building_variant
     ) {
         bool requires_resource = building_variant != nullptr
-            && building_variant->required_resource.has_value();
+            && building_variant->req_resource.has_value();
         if(!requires_resource) { return true; }
         for(i64 x = tile_x; x < tile_x + (i64) building_type.width; x += 1) {
             for(i64 z = tile_z; z < tile_z +(i64)  building_type.height; z += 1) {
                 const Resource* resource = terrain.resource_at(x, z);
                 bool is_present = resource != nullptr
-                    && resource->type == *building_variant->required_resource;
+                    && resource->type == *building_variant->req_resource;
                 if(is_present) { return true; }
             }
         }
@@ -745,7 +745,7 @@ namespace houseofatmos::world {
                 });
             } else if(!has_resource) {
                 Resource::Type r_resource = *(**this->selected_variant)
-                    .required_resource;
+                    .req_resource;
                 this->toasts.add_error("toast_building_requires_resource", {
                     local.text(
                         Resource::types().at((size_t) r_resource).local_name

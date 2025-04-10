@@ -351,12 +351,6 @@ namespace houseofatmos::world {
             )),
             personal_horse(PersonalHorse(this->settings)) {
         const auto& serialized = buffer.value_at<World::Serialized>(0);
-        this->save_path = std::string(std::string_view(
-            buffer.array_at<char>(
-                serialized.save_path_offset, serialized.save_path_len
-            ).data(), 
-            (size_t) serialized.save_path_len
-        ));
         this->terrain = Terrain(
             serialized.terrain, World::units_per_tile, World::tiles_per_chunk,
             buffer
@@ -402,10 +396,6 @@ namespace houseofatmos::world {
         research::Research::Serialized research = this->research.serialize(buffer);
         auto& serialized = buffer.value_at<World::Serialized>(root_offset);
         serialized.format_version = World::current_format_version;
-        serialized.save_path_len = this->save_path.size();
-        serialized.save_path_offset = buffer.alloc_array<char>(
-            this->save_path.data(), this->save_path.size()
-        );
         serialized.terrain = terrain;
         serialized.complexes = complexes;
         serialized.player = player;
@@ -465,9 +455,8 @@ namespace houseofatmos::world {
             scene, window, particles, this->player, interactables
         );
         this->complexes.update(
-            window, this->balance, this->research, this->terrain
+            window, this->balance, this->research, this->terrain, toasts
         );
-        this->research.check_completion(toasts);
     }
 
 }

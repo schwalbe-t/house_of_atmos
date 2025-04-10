@@ -3,218 +3,146 @@
 
 namespace houseofatmos::research {
 
-    static const f64 incr = 0.25;
-
-    static std::vector<Research::AdvancementInfo> advancement_infos = {
-        // Steam Engines and what it unlocks
-        /* Advancement::SteamEngines */ {
+    static std::vector<Research::ConditionInfo> condition_infos = {
+        /* SteamEngines */ {
             "item_name_steam_engines",
-            &ui_icon::steam_engines,
-            { 0.5 + 1 * incr, 0.5 + 0 * incr },
             {},
-            { { world::Item::SteamEngines, 25 } }
+            world::Item::SteamEngines, 25
         },
-        /* Advancement::RewardSteel */ {
-            "item_name_steel",
-            &ui_icon::steel,
-            { 0.5 + 2 * incr, 0.5 - 1 * incr },
-            { Research::Advancement::SteamEngines },
-            {}
-        },
-        /* Advancement::RewardPlanks */ {
-            "item_name_planks",
-            &ui_icon::planks,
-            { 0.5 + 2 * incr, 0.5 + 0 * incr },
-            { Research::Advancement::SteamEngines },
-            {}
-        },
-        /* Advancement::RewardOil */ {
-            "item_name_oil",
-            &ui_icon::oil,
-            { 0.5 + 2 * incr, 0.5 + 1 * incr },
-            { Research::Advancement::SteamEngines },
-            {}
-        },
-        /* Advancement::RewardBrassPots */ {
+        /* BrassPots */ {
             "item_name_brass_pots",
-            &ui_icon::brass_pots,
-            { 0.5 + 3 * incr, 0.5 - 1 * incr },
-            { Research::Advancement::SteamEngines },
-            {}
+            { Research::Condition::SteamEngines },
+            world::Item::BrassPots, 50
         },
-        /* Advancement::RewardOilLanterns */ {
-            "item_name_oil_lanterns",
-            &ui_icon::oil_lanterns,
-            { 0.5 + 3 * incr, 0.5 + 0 * incr },
-            { Research::Advancement::SteamEngines },
-            {}
-        },
-        /* Advancement::RewardWatches */ {
-            "item_name_watches",
-            &ui_icon::watches,
-            { 0.5 + 3 * incr, 0.5 + 1 * incr },
-            { Research::Advancement::SteamEngines },
-            {}
-        },
-
-        // Steel Beams and what it unlocks
-        /* Advancement::SteelBeams */ {
-            "item_name_steel_beams",
-            &ui_icon::steel_beams,
-            { 0.5 + 0 * incr, 0.5 + 1 * incr },
-            { Research::Advancement::SteamEngines },
-            { { world::Item::SteelBeams, 200 } }
-        },
-        /* Advancement::RewardSteelBridges */ {
-            "bridge_name_metal",
-            &ui_icon::metal_bridge,
-            { 0.5 + 0 * incr, 0.5 + 2 * incr },
-            { Research::Advancement::SteelBeams },
-            {}
-        },
-
-        // Power Looms and what it unlocks
-        /* Advancement::PowerLooms */ {
+        /* PowerLooms */ {
             "item_name_power_looms",
-            &ui_icon::power_looms,
-            { 0.5 - 1 * incr, 0.5 + 0 * incr },
-            { Research::Advancement::SteamEngines },
-            { { world::Item::PowerLooms, 25 } }
+            { Research::Condition::SteamEngines },
+            world::Item::PowerLooms, 25
         },
-        /* Advancement::RewardFabric */ {
-            "item_name_fabric",
-            &ui_icon::fabric,
-            { 0.5 - 2 * incr, 0.5 + 0 * incr },
-            { Research::Advancement::PowerLooms },
-            {}
+        /* SteelBeams */ {
+            "item_name_steel_beams",
+            { Research::Condition::SteamEngines },
+            world::Item::SteelBeams, 50
         },
-        
-        // Brass Pots and what it unlocks
-        /* Advancement::BrassPots */ {
-            "item_name_brass_pots",
-            &ui_icon::brass_pots,
-            { 0.5 + 0 * incr, 0.5 - 1 * incr },
-            { Research::Advancement::SteamEngines },
-            { { world::Item::BrassPots, 50 } }
-        },
-        /* Advancement::RewardCheese */ {
-            "item_name_cheese",
-            &ui_icon::cheese,
-            { 0.5 - 1 * incr, 0.5 - 2 * incr },
-            { Research::Advancement::BrassPots },
-            {}
-        },
-        /* Advancement::RewardSteak */ {
-            "item_name_steak",
-            &ui_icon::steak,
-            { 0.5 + 0 * incr, 0.5 - 2 * incr },
-            { Research::Advancement::BrassPots },
-            {}
-        },
-        /* Advancement::RewardBeer */ {
-            "item_name_beer",
-            &ui_icon::beer,
-            { 0.5 + 1 * incr, 0.5 - 2 * incr },
-            { Research::Advancement::BrassPots },
-            {}
+        /* CoalLocomotives */ {
+            "item_name_locomotive_frames",
+            { Research::Condition::SteelBeams },
+            world::Item::LocomotiveFrames, 25
         }
     };
 
-    const std::vector<Research::AdvancementInfo>& Research::advancements() {
-        return advancement_infos;
+    const std::vector<Research::ConditionInfo>& Research::conditions() {
+        return condition_infos;
     }
 
 
+    static std::vector<Research::RewardInfo> reward_infos = {
+        /* Steel */ { 
+            "item_name_steel", { Research::Condition::SteamEngines } 
+        },
+        /* SteelBeams */ { 
+            "item_name_steel_beams", { Research::Condition::SteamEngines } 
+        },
+        /* BrassPots */ { 
+            "item_name_brass_pots", { Research::Condition::SteamEngines } 
+        },
+        /* Oil */ { 
+            "item_name_oil", { Research::Condition::SteamEngines } 
+        },
+        /* OilLanterns */ { 
+            "item_name_oil_lanterns", { Research::Condition::SteamEngines } 
+        },
+        /* Watches */ { 
+            "item_name_watches", { Research::Condition::SteamEngines } 
+        },
+        /* PowerLooms */ { 
+            "item_name_power_looms", { Research::Condition::SteamEngines } 
+        },
 
-    Research::AdvancementProgress::AdvancementProgress(size_t item_cond_count) {
-        this->item_conditions.resize(item_cond_count);
-    }
+        /* Steak */ { 
+            "item_name_steak", { Research::Condition::BrassPots } 
+        },
+        /* Cheese */ { 
+            "item_name_cheese", { Research::Condition::BrassPots } 
+        },
+        /* Beer */ { 
+            "item_name_beer", { Research::Condition::BrassPots } 
+        },
 
-    Research::AdvancementProgress::AdvancementProgress(
-        const Serialized& serialized, const engine::Arena& buffer
-    ) {
-        this->is_unlocked = serialized.is_unlocked;
-        buffer.copy_array_at_into(
-            serialized.item_conds_offset, serialized.item_conds_count, 
-            this->item_conditions
-        );
-    }
+        /* Fabric */ { 
+            "item_name_fabric", { Research::Condition::PowerLooms } 
+        },
+        /* Clothing */ { 
+            "item_name_clothing", { Research::Condition::PowerLooms } 
+        },
 
-    Research::AdvancementProgress::Serialized 
-    Research::AdvancementProgress::serialize(engine::Arena& buffer) const {
-        return {
-            this->is_unlocked,
-            this->item_conditions.size(), 
-            buffer.alloc_array(this->item_conditions)
-        };
+        /* Tracking */ { 
+            "ui_train_tracks", { Research::Condition::SteelBeams }
+        },
+        /* LocomotiveFrames */ {
+            "item_name_locomotive_frames", { Research::Condition::SteelBeams }
+        },
+        /* SteelBridges */ { 
+            "bridge_name_metal", { Research::Condition::SteelBeams } 
+        },
+
+        /* BasicLocomotive */ {
+            "locomotive_name_basic", { Research::Condition::CoalLocomotives } 
+        },
+        /* SmallLocomotive */ { 
+            "locomotive_name_small", { Research::Condition::CoalLocomotives } 
+        },
+        /* Tram */ { 
+            "locomotive_name_tram", { Research::Condition::CoalLocomotives } 
+        }
+    };
+
+    const std::vector<Research::RewardInfo>& Research::rewards() {
+        return reward_infos;
     }
 
 
 
     Research::Research() {
-        this->progress.reserve(Research::advancements().size());
-        for(size_t adv_i = 0; adv_i < Research::advancements().size(); adv_i += 1) {
-            this->progress[(Research::Advancement) adv_i] = AdvancementProgress(
-                Research::advancements().at(adv_i).item_conditions.size()
-            );
+        this->progress.reserve(Research::conditions().size());
+        for(size_t c = 0; c < Research::conditions().size(); c += 1) {
+            this->progress[(Condition) c] = {};
         }
     }
 
     Research::Research(const Serialized& serialized, const engine::Arena& buffer) {
-        std::unordered_map<Advancement, AdvancementProgress::Serialized> items;
         buffer.copy_map_at_into(
-            serialized.items_offset, serialized.items_count, items
+            serialized.cond_offset, serialized.cond_count, this->progress
         );
-        this->progress.reserve(items.size());
-        for(size_t adv_i = 0; adv_i < Research::advancements().size(); adv_i += 1) {
-            auto advancement = (Research::Advancement) adv_i;
-            this->progress[advancement] = items.contains(advancement)
-                ? AdvancementProgress(items[advancement], buffer)
-                : AdvancementProgress(
-                    Research::advancements().at(adv_i).item_conditions.size()
-                );
+        for(size_t c = 0; c < Research::conditions().size(); c += 1) {
+            if(this->progress.contains((Condition) c)) { continue; }
+            this->progress[(Condition) c] = {};
         }
     }
 
     Research::Serialized Research::serialize(engine::Arena& buffer) const {
-        std::unordered_map<Advancement, AdvancementProgress::Serialized> items;
-        items.reserve(this->progress.size());
-        for(const auto& [advancement, progress]: this->progress) {
-            items[advancement] = progress.serialize(buffer);
-        }
         return {
-            items.size(), buffer.alloc_map(items)
+            this->progress.size(), buffer.alloc_map(this->progress)
         };
     }
 
 
-    void Research::report_item_production(world::Item::Type item, u64 count) {
-        for(auto& [advancement, progress]: this->progress) {
-            const AdvancementInfo& info 
-                = Research::advancements().at((size_t) advancement);
-            size_t item_c_c = progress.item_conditions.size();
-            for(size_t item_c_i = 0; item_c_i < item_c_c; item_c_i += 1) {
-                if(info.item_conditions[item_c_i].item != item) { continue; }
-                progress.item_conditions[item_c_i].produced_count += count;
+    void Research::report_item_production(
+        world::Item::Type item, u64 count, Toasts& toasts
+    ) {
+        for(auto& [condition, progress]: this->progress) {
+            const ConditionInfo& info 
+                = Research::conditions().at((size_t) condition);
+            if(info.item != item) { continue; }
+            bool was_completed = progress.produced >= info.required;
+            progress.produced += count;
+            bool is_completed = progress.produced >= info.required;
+            if(is_completed) { progress.produced = info.required; }
+            if(is_completed && !was_completed) {
+                const std::string& name = toasts.localization()
+                    .text(info.local_name);
+                toasts.add_toast("toast_research_complete", { name });
             }
-        }
-    }
-
-    void Research::check_completion(Toasts& toasts) {
-        for(auto& [advancement, progress]: this->progress) {
-            if(progress.is_unlocked) { continue; }
-            const AdvancementInfo& info 
-                = Research::advancements().at((size_t) advancement);
-            progress.is_unlocked = this->parents_unlocked(advancement);
-            size_t item_c_c = progress.item_conditions.size();
-            for(size_t item_c_i = 0; item_c_i < item_c_c; item_c_i += 1) {
-                u64 required = info.item_conditions[item_c_i].required_count;
-                u64 produced = progress.item_conditions[item_c_i].produced_count;
-                progress.is_unlocked &= (produced >= required);
-            }
-            if(!progress.is_unlocked) { continue; }
-            const std::string& name = toasts.localization().text(info.local_name);
-            toasts.add_toast("toast_research_complete", { name });
         }
     }
 

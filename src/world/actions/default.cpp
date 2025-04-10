@@ -126,6 +126,7 @@ namespace houseofatmos::world {
         const engine::Localization& local,
         std::string_view local_title, 
         std::span<const C> choices,
+        std::function<bool (const C&)> choice_unlocked,
         std::string_view (*local_choice_name)(const C&),
         const ui::Background* (*choice_icon)(const C&),
         std::function<void (const C&, size_t)> handler
@@ -136,6 +137,7 @@ namespace houseofatmos::world {
             .as_movable();
         for(size_t ci = 0; ci < choices.size(); ci += 1) {
             const C& choice = choices[ci];
+            if(!choice_unlocked(choice)) { continue; }
             selector.children.push_back(ui_util::create_selection_item(
                 choice_icon(choice), local.text(local_choice_name(choice)),
                 false,
@@ -185,6 +187,7 @@ namespace houseofatmos::world {
                     *this->selector.element 
                         = create_agent_selector<Carriage::CarriageTypeInfo>(
                         this->local, "ui_carriage", Carriage::carriage_types(),
+                        [](auto ct) { (void) ct; return true; },
                         [](auto ct) { return ct.local_name; },
                         [](auto ct) { return ct.icon; },
                         [scene = &scene, this, asx, asz](auto ct, auto ti) {
@@ -203,6 +206,11 @@ namespace houseofatmos::world {
                     *this->selector.element 
                         = create_agent_selector<Train::LocomotiveTypeInfo>(
                         this->local, "ui_train", Train::locomotive_types(),
+                        [this](const Train::LocomotiveTypeInfo& ct) { 
+                            return !ct.req_reward.has_value() 
+                                || this->world->research
+                                    .is_unlocked(*ct.req_reward);
+                        },
                         [](auto ct) { return ct.local_name; },
                         [](auto ct) { return ct.icon; },
                         [scene = &scene, this, asx, asz](auto ct, auto ti) {
@@ -222,6 +230,7 @@ namespace houseofatmos::world {
                     *this->selector.element 
                         = create_agent_selector<Boat::TypeInfo>(
                         this->local, "ui_boat", Boat::types(),
+                        [](auto ct) { (void) ct; return true; },
                         [](auto ct) { return ct.local_name; },
                         [](auto ct) { return ct.icon; },
                         [this, asx, asz](auto ct, auto ti) {

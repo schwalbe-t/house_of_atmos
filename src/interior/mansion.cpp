@@ -10,9 +10,10 @@ namespace houseofatmos::interior {
         const std::shared_ptr<world::World>& world, 
         const Renderer& renderer, engine::Window& window
     ) {
+        (void) renderer;
         window.set_scene(std::make_shared<research::View>(
             std::shared_ptr<world::World>(world), 
-            window.scene(), renderer.output()
+            window.scene()
         ));
     }
 

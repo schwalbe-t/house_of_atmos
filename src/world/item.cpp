@@ -199,6 +199,11 @@ namespace houseofatmos::world {
             &ui_icon::steam_engines,
             !item_storable
         },
+        /* LocomotiveFrames */ {
+            "item_name_locomotive_frames",
+            &ui_icon::locomotive_frames,
+            !item_storable
+        },
         /* Coins */ {
             "item_name_coins",
             &ui_icon::coins,

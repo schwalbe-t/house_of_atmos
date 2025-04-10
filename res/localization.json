@@ -388,11 +388,29 @@
         "en": "On board ({}/{})",
         "bg": "На борд ({}/{})"
     },
-    "ui_required": {
-        "_context": "Shown in the research viewer - title of the section that tells the user how much they need to produce to unlock the given advancement",
-        "de": "Voraussetzungen",
-        "en": "Requirements",
+    "ui_condition_required_conditions": {
+        "_context": "Shown in the research viewer - title of the section that tells the user what other conditions they need to first unlock before unlocking a given condition",
+        "de": "Benötigt",
+        "en": "Required",
         "bg": "Изисквания"
+    },
+    "ui_condition_required_items": {
+        "_context": "Shown in the research viewer - title of the section that tells the user how much they need to produce to unlock the given condition",
+        "de": "Benötigte Produkte",
+        "en": "Required Items",
+        "bg": "Необходими предмети"
+    },
+    "ui_condition_rewards": {
+        "_context": "Shown in the research viewer - title of the section that tells the user what items or features a given condition unlocks",
+        "de": "Belohnungen",
+        "en": "Rewards",
+        "bg": "Награди"
+    },
+    "ui_train_tracks": {
+        "_context": "Name for the rails / tracks that trains drive on",
+        "de": "Zugstrecken",
+        "en": "Train Tracks",
+        "bg": "Железопътни релси"
     },
 
 
@@ -772,6 +790,12 @@
         "en": "Steam Engines",
         "de": "Dampfmaschinen",
         "bg": "Парни машини"
+    },
+    "item_name_locomotive_frames": {
+        "_context": "Name of the base part of a steam locomotive",
+        "en": "Locomotive Frames",
+        "de": "Lokomotivrahmen",
+        "bg": "Рамки на локомотиви"
     },
     "item_name_coins": {
         "_context": "Name of the coins item",

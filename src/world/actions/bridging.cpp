@@ -7,11 +7,11 @@ namespace houseofatmos::world {
     namespace ui = houseofatmos::engine::ui;
 
 
-    static const std::vector<std::optional<research::Research::Advancement>> 
-            required_bridge_advancements = {
+    static const std::vector<std::optional<research::Research::Reward>> 
+            required_bridge_rewards = {
         std::nullopt, // Bridge::Type::Wooden
         std::nullopt, // Bridge::Type::Stone
-        research::Research::RewardSteelBridges
+        research::Research::Reward::SteelBridges
     };
 
     static ui::Element create_bridge_selector(
@@ -26,9 +26,9 @@ namespace houseofatmos::world {
             .with_pos(0.95, 0.5, ui::position::window_fract)
             .as_movable();
         for(size_t type_id = 0; type_id < Bridge::types().size(); type_id += 1) {
-            auto r_advancement = required_bridge_advancements[type_id];
-            bool unlocked = !r_advancement.has_value()
-                || research->is_unlocked(*r_advancement);
+            auto req_reward = required_bridge_rewards[type_id];
+            bool unlocked = !req_reward.has_value()
+                || research->is_unlocked(*req_reward);
             if(!unlocked) { continue; }
             const Bridge::TypeInfo& type = Bridge::types().at(type_id);
             selector.children.push_back(ui_util::create_selection_item(

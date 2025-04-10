@@ -257,7 +257,7 @@ namespace houseofatmos::world {
 
     void Complex::update(
         const engine::Window& window, Balance& balance, 
-        research::Research& research, const Terrain& terrain
+        research::Research& research, const Terrain& terrain, Toasts& toasts
     ) {
         for(auto& member: this->members) {
             for(Conversion& conversion: member.second.conversions) {
@@ -283,7 +283,7 @@ namespace houseofatmos::world {
                 for(auto& [count, item]: conversion.outputs) {
                     bool storable = Item::types().at(item).storable;
                     u64 produced = allowed_times * count;
-                    research.report_item_production(item, produced);
+                    research.report_item_production(item, produced, toasts);
                     if(item == Item::Coins) {
                         balance.coins += produced;
                     }
@@ -367,11 +367,12 @@ namespace houseofatmos::world {
 
     void ComplexBank::update(
         const engine::Window& window, Balance& balance, 
-        research::Research& research, const Terrain& terrain
+        research::Research& research, const Terrain& terrain,
+        Toasts& toasts
     ) {
         for(Complex& complex: this->complexes) {
             if(complex.is_free()) { continue; }
-            complex.update(window, balance, research, terrain);
+            complex.update(window, balance, research, terrain, toasts);
         }
     }
 

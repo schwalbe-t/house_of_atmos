@@ -11,15 +11,43 @@ namespace houseofatmos::world {
 
     static const f64 max_speaker_dist = 25.0 * World::units_per_tile;
 
-    static const std::vector<
-        std::pair<const ui::Background*, ActionManager::Mode>
-    > action_modes = {
-        { &ui_icon::terraforming, ActionManager::Mode::Terraform },
-        { &ui_icon::construction, ActionManager::Mode::Construction },
-        { &ui_icon::bridging, ActionManager::Mode::Bridging},
-        { &ui_icon::pathing, ActionManager::Mode::Pathing },
-        { &ui_icon::tracking, ActionManager::Mode::Tracking },
-        { &ui_icon::demolition, ActionManager::Mode::Demolition}
+    struct ActionModeItem {
+        ActionManager::Mode mode;
+        const ui::Background* icon;
+        std::optional<research::Research::Reward> req_reward;
+    };
+
+    static const std::vector<ActionModeItem> action_modes = {
+        { 
+            ActionManager::Mode::Terraform,
+            &ui_icon::terraforming, 
+            std::nullopt
+        },
+        { 
+            ActionManager::Mode::Construction,
+            &ui_icon::construction, 
+            std::nullopt
+        },
+        { 
+            ActionManager::Mode::Bridging,
+            &ui_icon::bridging, 
+            std::nullopt
+        },
+        { 
+            ActionManager::Mode::Pathing,
+            &ui_icon::pathing, 
+            std::nullopt
+        },
+        { 
+            ActionManager::Mode::Tracking,
+            &ui_icon::tracking, 
+            research::Research::Reward::Tracking
+        },
+        { 
+            ActionManager::Mode::Demolition,
+            &ui_icon::demolition, 
+            std::nullopt
+        }
     };
 
     static ui::Element create_mode_selector(Scene* scene) {
@@ -30,14 +58,17 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(u64 mode_i = 0; mode_i < action_modes.size(); mode_i += 1) {
-            const auto& [mode_icon, mode] = action_modes[mode_i];
-            bool is_selected = scene->action_mode.current_type() == mode;
+            const auto& mode = action_modes[mode_i];
+            bool is_unlocked = !mode.req_reward.has_value()
+                || scene->world->research.is_unlocked(*mode.req_reward);
+            if(!is_unlocked) { continue; }
+            bool is_selected = scene->action_mode.current_type() == mode.mode;
             mode_list.children.push_back(ui::Element()
                 .with_size(16, 16, ui::size::units)
-                .with_background(mode_icon)
+                .with_background(mode.icon)
                 .with_click_handler([scene, is_selected, mode]() {
                     scene->action_mode.set_mode(
-                        is_selected? ActionManager::Mode::Default : mode
+                        is_selected? ActionManager::Mode::Default : mode.mode
                     );
                 })
                 .with_padding(0)
@@ -310,7 +341,10 @@ namespace houseofatmos::world {
         if(window.was_pressed(engine::Key::V)) {
             selected = ActionManager::Mode::Pathing;
         }
-        if(window.was_pressed(engine::Key::T)) {
+        bool started_tracking = window.was_pressed(engine::Key::T)
+            && scene.world->research
+                .is_unlocked(research::Research::Reward::Tracking);
+        if(started_tracking) {
             selected = ActionManager::Mode::Tracking;
         }
         if(window.was_pressed(engine::Key::R)) {

@@ -173,9 +173,8 @@ namespace houseofatmos::world {
 
         struct BuildingVariant {
             std::vector<Conversion> conversions = {};
-            std::optional<Resource::Type> required_resource = std::nullopt;
-            std::optional<research::Research::Advancement> required_advancement
-                = std::nullopt;
+            std::optional<Resource::Type> req_resource = std::nullopt;
+            std::optional<research::Research::Reward> req_reward = std::nullopt;
         };
 
         u64 selected_x, selected_z;

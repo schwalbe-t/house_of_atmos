@@ -7,7 +7,6 @@
 #include <engine/localization.hpp>
 #include <engine/arena.hpp>
 #include "../settings.hpp"
-#include "../ui_const.hpp"
 #include "../audio_const.hpp"
 #include "../toasts.hpp"
 #include "../world/world.hpp"
@@ -19,37 +18,30 @@ namespace houseofatmos::research {
 
     struct View: engine::Scene {
 
-        static inline const engine::Shader::LoadArgs blur_shader = {
-            "res/shaders/blur_vert.glsl", "res/shaders/blur_frag.glsl"
-        };
-
-        struct Anchor {
-            Vec<2> cursor_pos;
-            Vec<2> view_offset;
+        static inline const engine::Texture::LoadArgs background_design = {
+            "res/research.png"
         };
 
 
         std::shared_ptr<world::World> world;
         std::shared_ptr<Scene> previous;
-        const engine::Texture& last_frame;
 
-        engine::Texture black_backdrop = engine::Texture(16, 16);
-        std::optional<engine::Texture> background = std::nullopt;
-        ui::Manager ui = ui::Manager(0.0);
-        ui::Element* view_root = nullptr;
-        f64 view_update_timer = 0.0;
+        engine::Texture background = engine::Texture(16, 16);
+        ui::Manager ui = ui::Manager(1.0 / 225.0);
         Toasts toasts;
-        std::optional<Anchor> view_anchor = std::nullopt;
-        Vec<2> view_offset;
+        f64 view_update_timer = INFINITY;
+        std::optional<Research::Condition> selected_cond = std::nullopt;
 
         View(
             std::shared_ptr<world::World>&& world,
-            std::shared_ptr<Scene>&& previous, 
-            const engine::Texture& last_frame
+            std::shared_ptr<Scene>&& previous
         );
 
-        void init_ui();
-        void update_view(const engine::Window& window);
+        ui::Element build_research_tree();
+        ui::Element build_condition_display(
+            Research::Condition cond, const engine::Localization& local
+        );
+        void init_ui(engine::Window& window);
 
         void update(engine::Window& window) override;
         void render(engine::Window& window) override;
