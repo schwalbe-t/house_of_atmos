@@ -12,8 +12,10 @@ namespace houseofatmos::world {
 
     void TerraformMode::init_ui() {
         this->ui.with_element(ui::Element()
-            .with_pos(50, 15, ui::position::window_bl_units)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::unit * 50, 
+                ui::height::window - ui::unit * 15 - ui::vert::height
+            )
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Horizontal)
             .as_movable()
@@ -21,8 +23,8 @@ namespace houseofatmos::world {
         this->mode_selection = &this->ui.root.children.back();
         this->ui.with_element(ui::Element()
             .as_phantom()
-            .with_pos(0.0, 0.0, ui::position::window_tl_units)
-            .with_size(1.0, 1.0, ui::size::window_fract)
+            .with_pos(ui::null, ui::null)
+            .with_size(ui::width::window, ui::height::window)
             .as_movable()
         );
         this->vertex_markers = &this->ui.root.children.back();
@@ -35,18 +37,22 @@ namespace houseofatmos::world {
         for(size_t mode_i = 0; mode_i < (size_t) Mode::TotalCount; mode_i += 1) {
             bool is_selected = mode_i == (size_t) mode;
             this->mode_selection->children.push_back(ui::Element()
-                .with_size(16, 16, ui::size::units)
+                .as_phantom()
+                .with_size(ui::unit * 16, ui::unit * 16)
                 .with_background(TerraformMode::mode_icons[mode_i])
-                .with_click_handler([this, mode_i]() {
-                    if(mode_i == (u64) this->mode) { return; }
-                    this->set_mode((Mode) mode_i);
-                })
-                .with_padding(0)
-                .with_background(
-                    is_selected? &ui_background::border_selected
-                        : &ui_background::border,
-                    is_selected? &ui_background::border_selected
-                        : &ui_background::border_hovering
+                .with_child(ui::Element()
+                    .with_size(ui::width::parent, ui::height::parent)
+                    .with_click_handler([this, mode_i]() {
+                        if(mode_i == (u64) this->mode) { return; }
+                        this->set_mode((Mode) mode_i);
+                    })
+                    .with_background(
+                        is_selected? &ui_background::border_selected
+                            : &ui_background::border,
+                        is_selected? &ui_background::border_selected
+                            : &ui_background::border_hovering
+                    )
+                    .as_movable()
                 )
                 .with_padding(2)
                 .as_movable()
@@ -214,14 +220,12 @@ namespace houseofatmos::world {
                 Vec<2> ndc = renderer.world_to_ndc(world);
                 this->vertex_markers->children.push_back(ui::Element()
                     .as_phantom()
-                    .with_pos(ndc.x(), ndc.y(), ui::position::window_ndc)
-                    .with_child(ui::Element()
-                        .as_phantom()
-                        .with_pos(-4, -4, ui::position::parent_offset_units)
-                        .with_size(8, 8, ui::size::units)
-                        .with_background(&ui_icon::terrain_vertex)
-                        .as_movable()
+                    .with_pos(
+                        ui::horiz::window_ndc(ndc.x()) - ui::unit * 4, 
+                        ui::vert::window_ndc(ndc.y()) - ui::unit * 4
                     )
+                    .with_size(ui::unit * 8, ui::unit * 8)
+                    .with_background(&ui_icon::terrain_vertex)
                     .as_movable()
                 );
             }

@@ -12,8 +12,8 @@ namespace houseofatmos::engine::ui {
         this->size_px = Vec<2>();
         this->position_px = Vec<2>();
         this->hovering = false;
-        this->with_size(10, 10, size::units);
-        this->with_pos(0, 0, position::parent_list_units);
+        this->with_size(ui::width::children, ui::height::children);
+        this->with_pos(ui::horiz::list, ui::vert::list);
         this->with_list_dir(Direction::Vertical);
         this->with_background(nullptr, nullptr);
         this->with_texture(nullptr);
@@ -34,10 +34,10 @@ namespace houseofatmos::engine::ui {
             *to.handle = nullptr;    
             to.handle = nullptr;
         }
-        to.size = from.size;
-        to.size_func = from.size_func;
-        to.position = from.position;
-        to.pos_func = from.pos_func;
+        to.width_func = from.width_func;
+        to.height_func = from.height_func;
+        to.horiz_func = from.horiz_func;
+        to.vert_func = from.vert_func;
         to.children = std::move(from.children);
         to.list_direction = from.list_direction;
         to.background = from.background;
@@ -79,15 +79,17 @@ namespace houseofatmos::engine::ui {
         }
     }
 
-    Element& Element::with_padding(f64 amount) {
+    Element& Element::with_padding(LayoutFunc amount) {
         auto padding = Element()
-            .with_pos(this->position.x(), this->position.y(), this->pos_func)
-            .with_size(amount * 2, amount * 2, size::units_with_children)
+            .with_size(
+                width::children + (amount * 2),
+                height::children + (amount * 2)
+            )
+            .with_pos(this->horiz_func, this->vert_func)
             .as_movable();
-        padding.children.push_back(
-            std::move(this->with_pos(
-                amount, amount, position::parent_list_units
-            ))
+        padding.children.push_back(this
+            ->with_pos(horiz::parent + amount, vert::parent + amount)
+            .as_movable()
         );
         *this = std::move(padding);
         return *this;
@@ -112,8 +114,9 @@ namespace houseofatmos::engine::ui {
     }
 
     bool Element::update_root(const Window& window, f64 unit) {
-        this->update_size(nullptr, window, unit);
-        this->update_position(std::nullopt, window, unit);
+        auto ctx = LayoutContext(*this, window, unit);
+        this->update_size(ctx);
+        this->update_position(ctx);
         this->update_hovering(window);
         return this->update_clicked(window);
     }
@@ -121,32 +124,34 @@ namespace houseofatmos::engine::ui {
     void Element::render_root(
         Manager& manager, Scene& scene, const Window& window, f64 unit
     ) {
-        this->update_size(nullptr, window, unit);
-        this->update_position(std::nullopt, window, unit);
+        auto ctx = LayoutContext(*this, window, unit);
+        this->update_size(ctx);
+        this->update_position(ctx);
         this->update_hovering(window);
         this->render(manager, scene, unit);
     }
 
 
-    void Element::update_size(
-        const Element* parent, const Window& window, f64 unit
-    ) {
+    void Element::update_size(LayoutContext ctx) {
         if(this->hidden) { return; }
-        this->size_px = this->size_func(*this, parent, window, unit);
-        for(Element& child: this->children) {
-            child.update_size(this, window, unit);
-        }
-    }
-
-    void Element::update_position(
-        std::optional<ChildRef> parent, const Window& window, f64 unit
-    ) {
-        if(this->hidden) { return; }
-        this->position_px = this->pos_func(*this, parent, window, unit);
+        this->size_px.x() = this->width_func.impl(ctx);
+        this->size_px.y() = this->height_func.impl(ctx);
         size_t child_i = 0;
         for(Element& child: this->children) {
-            auto child_ref = (ChildRef) { *this, child_i };
-            child.update_position(child_ref, window, unit);
+            child.update_size(ctx.for_child(child, child_i));
+            child_i += 1;
+        }
+        this->size_px.x() = this->width_func.impl(ctx);
+        this->size_px.y() = this->height_func.impl(ctx);
+    }
+
+    void Element::update_position(LayoutContext ctx) {
+        if(this->hidden) { return; }
+        this->position_px.x() = this->horiz_func.impl(ctx);
+        this->position_px.y() = this->vert_func.impl(ctx);
+        size_t child_i = 0;
+        for(Element& child: this->children) {
+            child.update_position(ctx.for_child(child, child_i));
             child_i += 1;
         }
     }
@@ -181,11 +186,6 @@ namespace houseofatmos::engine::ui {
             this->on_click(*this, window.cursor_pos_px() - this->position_px); 
         }
         return handled;
-    }
-
-
-    void Element::force_size_compute(const Window& window, f64 unit) {
-        this->update_size(nullptr, window, unit);
     }
 
 
@@ -372,23 +372,6 @@ namespace houseofatmos::engine::ui {
         return std::string::npos;
     }
 
-    static f64 collect_text_width(
-        std::string_view text, const Font& font
-    ) {
-        size_t c_len = 0;
-        f64 width = 0.0;
-        for(size_t o = 0; o < text.size(); o += c_len) {
-            if(o > 0) {
-                width += font.char_padding;
-            }
-            c_len = utf8_char_length(text.substr(o));
-            std::string_view c = text.substr(o, c_len);
-            size_t idx = utf8_find_char_pos(font.chars, c);
-            width += font.char_widths[idx];
-        }
-        return width;
-    }
-
     static f64 find_next_space_distance(
         std::string_view text, const Font& font,
         size_t o
@@ -409,6 +392,41 @@ namespace houseofatmos::engine::ui {
             ns_dist += font.char_widths[idx];
         }
         return ns_dist;
+    }
+
+    static Vec<2> find_text_bounds(
+        const ui::Element& e, f64 unit, bool wrap_text
+    ) {
+        if(e.font == nullptr) { return Vec<2>(0, 0); }
+        Vec<2> max_offset;
+        Vec<2> char_offset;
+        size_t c_len;
+        for(size_t o = 0; o < e.text.size(); o += c_len) {
+            c_len = utf8_char_length(std::string_view(e.text).substr(o));
+            std::string_view c = std::string_view(e.text).substr(o, c_len);
+            if(c_len == 1 && c[0] == ' ') {
+                f64 ns_pos_x = char_offset.x()
+                    + find_next_space_distance(e.text, *e.font, o);
+                if(ns_pos_x * unit > e.final_size().x()) {
+                    c = "\n";
+                }
+            }
+            if(c_len == 1 && c[0] == '\n' && wrap_text) {
+                char_offset.x() = 0.0;
+                char_offset.y() += e.font->height + e.font->char_padding;
+                continue;
+            }
+            size_t idx = utf8_find_char_pos(e.font->chars, c);
+            if(idx == std::string::npos) { idx = 0; }
+            f64 width = e.font->char_widths[idx];
+            char_offset.x() += width + e.font->char_padding;
+            max_offset.x() = std::max(max_offset.x(), char_offset.x());
+            max_offset.y() = std::max(max_offset.y(), char_offset.y());
+        }
+        return Vec<2>(
+            std::max((max_offset.x() - 1.0), 0.0) * unit,
+            (max_offset.y() + e.font->height) * unit 
+        );
     }
 
     void Element::render_text(
@@ -456,181 +474,137 @@ namespace houseofatmos::engine::ui {
 
 
 
-    Vec<2> position::window_tl_units(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) parent;
-        (void) window;
-        return self.position * unit;
-    }
+    LayoutFunc null = LayoutFunc([](auto ctx) { (void) ctx; return 0.0; });
 
-    Vec<2> position::window_tr_units(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) parent;
-        return Vec<2>(
-            window.width() - (self.position.x() * unit) - self.final_size().x(),
-            self.position.y() * unit
-        );
-    }
-
-    Vec<2> position::window_bl_units(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) parent;
-        return Vec<2>(
-            self.position.x() * unit,
-            window.height() - (self.position.y() * unit) - self.final_size().y()
-        );
-    }
-
-    Vec<2> position::window_br_units(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) parent;
-        return window.size() - (self.position * unit) - self.final_size();
-    }
-
-    Vec<2> position::window_fract(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) parent;
-        (void) unit;
-        return (window.size() - self.final_size()) * self.position;
-    }
-
-    Vec<2> position::window_ndc(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) parent;
-        (void) unit;
-        return Vec<2>(
-            window.width() * (self.position.x() + 1.0) / 2.0,
-            window.height() * (1.0 - ((self.position.y() + 1.0) / 2.0))
-        );
-    }
-
-    Vec<2> position::parent_list_units(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) window;
-        if(!parent.has_value()) {
-            engine::error("Cannot use 'position::parent_units' with root element!");
-        }
-        return parent->element.final_pos()
-            + parent->element.offset_of_child(parent->child_i)
-            + (self.position * unit);
-    }
-
-    Vec<2> position::parent_list_fract(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) window;
-        (void) unit;
-        if(!parent.has_value()) {
-            engine::error("Cannot use 'position::parent_fract' with root element!");
-        }
-        return parent->element.final_pos()
-            + parent->element.offset_of_child(parent->child_i)
-            + (parent->element.final_size() - self.final_size()) * self.position;
-    }
-
-    Vec<2> position::parent_offset_units(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) window;
-        if(!parent.has_value()) {
-            engine::error("Cannot use 'position::parent_units' with root element!");
-        }
-        return parent->element.final_pos()
-            + (self.position * unit);
-    }
-
-    Vec<2> position::parent_offset_fract(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    ) {
-        (void) window;
-        (void) unit;
-        if(!parent.has_value()) {
-            engine::error("Cannot use 'position::parent_fract' with root element!");
-        }
-        return parent->element.final_pos()
-            + (parent->element.final_size() - self.final_size()) * self.position;
-    }
+    LayoutFunc unit = LayoutFunc([](auto ctx) { return ctx.unit; });
 
 
 
-    Vec<2> size::units(
-        Element& self, const Element* parent, const Window& window, f64 unit
-    ) {
-        (void) parent;
-        (void) window;
-        return self.size * unit;
-    }
-
-    Vec<2> size::parent_fract(
-        Element& self, const Element* parent, const Window& window, f64 unit
-    ) {
-        (void) window;
-        (void) unit;
-        if(parent == nullptr) {
+    LayoutFunc width::parent = LayoutFunc([](auto ctx) {
+        if(ctx.parent == nullptr) {
             engine::error(
-                "Cannot use 'size::parent_fract' with the root element or "
+                "Cannot use 'width::parent' with the root element or "
                 "an element whose parents' size depends on that of its children!"
             );
         }
-        return parent->final_size() * self.size;
-    }
+        return ctx.parent->final_size().x();
+    });
 
-    Vec<2> size::window_fract(
-        Element& self, const Element* parent, const Window& window, f64 unit
-    ) {
-        (void) parent;
-        (void) unit;
-        return window.size() * self.size;
-    }
+    LayoutFunc width::window = LayoutFunc([](auto ctx) {
+        return ctx.window->width();
+    });
 
-    Vec<2> size::units_with_children(
-        Element& self, const Element* parent, const Window& window, f64 unit
-    ) {
-        (void) parent;
-        Vec<2> size;
-        for(Element& child: self.children) {
-            child.force_size_compute(window, unit);
-            size.x() = std::max(size.x(), child.final_size().x());
-            size.y() = std::max(size.y(), child.final_size().y());
+    LayoutFunc width::children = LayoutFunc([](auto ctx) {
+        if(ctx.self->list_direction == Direction::Horizontal) {
+            return ctx.self->offset_of_child(ctx.self->children.size()).x();
         }
-        Vec<2> offset = self.offset_of_child(self.children.size());
-        switch(self.list_direction) {
-            case Direction::Horizontal:
-                return Vec<2>(offset.x(), size.y()) + self.size * unit;
-            case Direction::Vertical:
-                return Vec<2>(size.x(), offset.y()) + self.size * unit;
+        f64 width = 0.0;
+        for(Element& child: ctx.self->children) {
+            width = std::max(width, child.final_size().x());
         }
-        engine::error("Unhandled 'Direction' in 'size::units_with_children'!");
+        return width;
+    });
+
+    LayoutFunc width::text = LayoutFunc([](auto ctx) {
+        return find_text_bounds(*ctx.self, ctx.unit, false).x();
+    });
+
+
+
+    LayoutFunc height::parent = LayoutFunc([](auto ctx) {
+        if(ctx.parent == nullptr) {
+            engine::error(
+                "Cannot use 'height::parent' with the root element or "
+                "an element whose parents' size depends on that of its children!"
+            );
+        }
+        return ctx.parent->final_size().y();
+    });
+
+    LayoutFunc height::window = LayoutFunc([](auto ctx) {
+        return ctx.window->height();
+    });
+
+    LayoutFunc height::children = LayoutFunc([](auto ctx) {
+        if(ctx.self->list_direction == Direction::Vertical) {
+            return ctx.self->offset_of_child(ctx.self->children.size()).y();
+        }
+        f64 height = 0.0;
+        for(Element& child: ctx.self->children) {
+            height = std::max(height, child.final_size().y());
+        }
+        return height;
+    });
+
+    LayoutFunc height::text = LayoutFunc([](auto ctx) {
+        return find_text_bounds(*ctx.self, ctx.unit, true).y();
+    });
+    
+
+
+    LayoutFunc horiz::in_window_fract(f64 fract) {
+        return (width::window - horiz::width) * fract;
     }
 
-    Vec<2> size::unwrapped_text(
-        Element& self, const Element* parent, const Window& window, f64 unit
-    ) {
-        (void) parent;
-        (void) window;
-        if(self.font == nullptr) { return Vec<2>(0.0, 0.0); }
-        Vec<2> size;
-        size.x() = collect_text_width(self.text, *self.font);
-        size.y() = self.font->height;
-        return size * unit;
+    LayoutFunc horiz::in_parent_fract(f64 fract) {
+        return horiz::parent + (width::parent - horiz::width) * fract;
     }
+
+    LayoutFunc horiz::window_ndc(f64 ndc) {
+        return width::window * ((ndc + 1.0) * 0.5);
+    }
+
+    LayoutFunc horiz::parent = LayoutFunc([](auto ctx) {
+        if(ctx.parent == nullptr) {
+            engine::error("Cannot use 'horiz::parent' with root element!");
+        }
+        return ctx.parent->final_pos().x();
+    });
+
+    LayoutFunc horiz::list = LayoutFunc([](auto ctx) {
+        if(ctx.parent == nullptr) {
+            engine::error("Cannot use 'horiz::list' with root element!");
+        }
+        return ctx.parent->final_pos().x()
+            + ctx.parent->offset_of_child(ctx.child_i).x();
+    });
+
+    LayoutFunc horiz::width = LayoutFunc([](auto ctx) {
+        return ctx.self->final_size().x();
+    });
+
+
+
+    LayoutFunc vert::in_window_fract(f64 fract) {
+        return (height::window - vert::height) * fract;
+    }
+
+    LayoutFunc vert::in_parent_fract(f64 fract) {
+        return vert::parent + (height::parent - vert::height) * fract;
+    }
+
+    LayoutFunc vert::window_ndc(f64 ndc) {
+        return height::window * (1.0 - ((ndc + 1.0) / 2.0));
+    }
+
+    LayoutFunc vert::parent = LayoutFunc([](auto ctx) {
+        if(ctx.parent == nullptr) {
+            engine::error("Cannot use 'vert::parent' with root element!");
+        }
+        return ctx.parent->final_pos().y();
+    });
+
+    LayoutFunc vert::list = LayoutFunc([](auto ctx) {
+        if(ctx.parent == nullptr) {
+            engine::error("Cannot use 'vert::list' with root element!");
+        }
+        return ctx.parent->final_pos().y()
+            + ctx.parent->offset_of_child(ctx.child_i).y();
+    });
+
+    LayoutFunc vert::height = LayoutFunc([](auto ctx) {
+        return ctx.self->final_size().y();
+    });
 
 
 

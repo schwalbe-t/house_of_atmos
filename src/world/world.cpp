@@ -307,7 +307,7 @@ namespace houseofatmos::world {
         Vec<3> player_spawn_tile = mansion_center_tile + Vec<3>(0, 0, 0.5);
         this->player.character.position = player_spawn_tile 
             * this->terrain.units_per_tile();
-        this->balance.coins = 50000;
+        this->balance.set_coins_silent(50000);
         Vec<3> horse_spawn_pos = (player_spawn_tile + Vec<3>(-0.25, 0, 0.5))
             * this->terrain.units_per_tile();
         this->personal_horse.set_free(horse_spawn_pos);

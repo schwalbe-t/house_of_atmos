@@ -150,7 +150,7 @@ namespace houseofatmos::tutorial {
         world->saving_allowed = false;
         world->player.character.position = Vec<3>(13.5, 0, 51.5)
             * world->terrain.units_per_tile();
-        world->balance.coins = 0;
+        world->balance.set_coins_silent(0);
         world->personal_horse.pos = Vec<3>(14.25, 0, 52.25)
             * world->terrain.units_per_tile();
         return world;
@@ -174,11 +174,8 @@ namespace houseofatmos::tutorial {
             * scene->world->terrain.units_per_tile()
             + Vec<3>(0.0, 4.0, 0.0);
         father->face_in_direction({ 1, 0, 0 });
-        auto update_scene = [scene, after](engine::Window& window) {
-            if(window.was_pressed(engine::Key::Tab)) {
-                after->settings = scene->world->settings;
-                window.set_scene(std::make_shared<world::Scene>(after));
-            }
+        auto update_scene = [scene](engine::Window& window) {
+            (void) window;
             for(auto& chunk: scene->world->terrain.all_loaded_chunks()) {
                 chunk.interactables.clear();
             }

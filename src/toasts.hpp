@@ -3,7 +3,7 @@
 
 #include <engine/ui.hpp>
 #include <engine/localization.hpp>
-#include "ui_const.hpp"
+#include "ui_util.hpp"
 #include "audio_const.hpp"
 #include <chrono>
 
@@ -58,8 +58,7 @@ namespace houseofatmos {
             ui::Element container = ui::Element()
                 .as_phantom()
                 .with_handle(&this->toasts_container)
-                .with_pos(10, 10, ui::position::window_tl_units)
-                .with_size(0, 0, ui::size::units_with_children)
+                .with_pos(ui::unit * 10, ui::unit * 10)
                 .as_movable();
             return container;
         }
@@ -89,9 +88,11 @@ namespace houseofatmos {
             }
             f64 death_time = Toasts::current_time() + duration;
             toast_timers.push_back(death_time);
-            this->elements().push_back(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->localization().pattern(name, values), font)
+            std::string text = this->localization().pattern(name, values);
+            this->elements().push_back(ui_util::create_text(text, 0, font)
+                .with_size(
+                    ui::width::text.min(ui::unit * 150), ui::height::text
+                )
                 .with_background(background)
                 .with_padding(5.0)
                 .as_movable()

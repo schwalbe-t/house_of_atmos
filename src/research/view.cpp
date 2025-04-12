@@ -26,7 +26,7 @@ namespace houseofatmos::research {
             ),
             Vec<2>(0, 0),
             &ui_icon::steam_engines,
-            Vec<2>(12, 12)
+            Vec<2>(8, 8)
         },
         /* BrassPots */ {
             ui::Background(
@@ -35,7 +35,7 @@ namespace houseofatmos::research {
             ),
             Vec<2>(24, 24),
             &ui_icon::brass_pots,
-            Vec<2>(36, 36)
+            Vec<2>(32, 32)
         },
         /* PowerLooms */ {
             ui::Background(
@@ -44,7 +44,7 @@ namespace houseofatmos::research {
             ),
             Vec<2>(24, 48),
             &ui_icon::power_looms,
-            Vec<2>(36, 60)
+            Vec<2>(32, 56)
         },
         /* SteelBeams */ {
             ui::Background(
@@ -53,7 +53,7 @@ namespace houseofatmos::research {
             ),
             Vec<2>(24, 72),
             &ui_icon::steel_beams,
-            Vec<2>(36, 84)
+            Vec<2>(32, 80)
         },
         /* CoalLocomotives */ {
             ui::Background(
@@ -62,7 +62,7 @@ namespace houseofatmos::research {
             ),
             Vec<2>(48, 96),
             &ui_icon::locomotive_frames,
-            Vec<2>(60, 108)
+            Vec<2>(56, 104)
         }
     };
 
@@ -99,7 +99,7 @@ namespace houseofatmos::research {
     ui::Element View::build_research_tree() {
         Vec<2> root_size = tree_background.edge_size;
         ui::Element root = ui::Element()
-            .with_size(root_size.x(), root_size.y(), ui::size::units)
+            .with_size(ui::unit * root_size.x(), ui::unit * root_size.y())
             .with_background(&tree_background)
             .as_movable();
         size_t cond_c = Research::conditions().size();
@@ -111,10 +111,12 @@ namespace houseofatmos::research {
             const ConditionDisplay& display = condition_displays[c];
             Vec<2> overlay_size = display.unlock_overlay.edge_size;
             ui::Element overlay = ui::Element()
-                .with_size(overlay_size.x(), overlay_size.y(), ui::size::units)
+                .with_size(
+                    ui::unit * overlay_size.x(), ui::unit * overlay_size.y()
+                )
                 .with_pos(
-                    display.overlay_offset.x(), display.overlay_offset.y(), 
-                    ui::position::parent_offset_units
+                    ui::horiz::parent + ui::unit * display.overlay_offset.x(), 
+                    ui::vert::parent + ui::unit * display.overlay_offset.y()
                 )
                 .with_background(is_unlocked? &display.unlock_overlay : nullptr)
                 .with_click_handler([this, c, is_selected]() {
@@ -130,13 +132,19 @@ namespace houseofatmos::research {
             const ConditionDisplay& display = condition_displays[c];
             bool is_selected = this->selected_cond.has_value()
                 && (size_t) (*this->selected_cond) == c;
-            root.children.push_back(ui_util::create_icon(display.icon)
+            root.children.push_back(ui::Element()
                 .with_pos(
-                    display.icon_offset.x(), display.icon_offset.y(), 
-                    ui::position::parent_offset_units
+                    ui::horiz::parent + ui::unit * display.icon_offset.x(), 
+                    ui::vert::parent + ui::unit * display.icon_offset.y()
                 )
-                .with_padding(0.0)
-                .as_phantom()
+                .with_size(ui::unit * 16, ui::unit * 16)
+                .with_child(ui_util::create_icon(display.icon)
+                    .with_pos(
+                        ui::horiz::in_parent_fract(0.5), 
+                        ui::vert::in_parent_fract(0.5)
+                    )
+                    .as_movable()
+                )
                 .with_background(
                     is_selected? &ui_background::border_selected : nullptr
                 )
@@ -147,8 +155,8 @@ namespace houseofatmos::research {
             const RewardDisplay& display = reward_displays[r];
             root.children.push_back(ui_util::create_icon(display.icon)
                 .with_pos(
-                    display.icon_offset.x(), display.icon_offset.y(), 
-                    ui::position::parent_offset_units
+                    ui::horiz::parent + ui::unit * display.icon_offset.x(), 
+                    ui::vert::parent + ui::unit * display.icon_offset.y()
                 )
                 .as_movable()
             );
@@ -160,7 +168,6 @@ namespace houseofatmos::research {
         Research::Condition cond, const engine::Localization& local
     ) {
         ui::Element root = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         const Research::ConditionInfo& cond_info = Research::conditions()
@@ -253,13 +260,19 @@ namespace houseofatmos::research {
             = this->get(this->world->settings.localization());
         this->ui.with_element(
             this->build_research_tree()
-                .with_pos(0.85, 0.5, ui::position::window_fract)
+                .with_pos(
+                    ui::horiz::in_window_fract(0.85),
+                    ui::vert::in_window_fract(0.5)
+                )
                 .as_movable()
         );
         if(this->selected_cond.has_value()) {
             this->ui.with_element(
                 this->build_condition_display(*this->selected_cond, local)
-                    .with_pos(0.15, 0.5, ui::position::window_fract)
+                    .with_pos(
+                        ui::horiz::in_window_fract(0.15),
+                        ui::vert::in_window_fract(0.5)
+                    )
                     .as_movable()
             );
         }
@@ -272,7 +285,10 @@ namespace houseofatmos::research {
             }
         );
         this->ui.with_element(back_button
-            .with_pos(10, 10, ui::position::window_bl_units)
+            .with_pos(
+                ui::unit * 10,
+                ui::height::window - ui::unit * 10 - ui::vert::height
+            )
             .as_movable()
         );
         this->toasts.set_scene(this);

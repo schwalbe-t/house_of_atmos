@@ -39,8 +39,10 @@ namespace houseofatmos::world {
     void TerrainMap::create_container() {
         this->ui.root.children.push_back(ui::Element()
             .as_phantom()
-            .with_pos(0.5, 0.5, ui::position::window_fract)
-            .with_size(0.9, 0.9, ui::size::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), ui::vert::in_window_fract(0.5)
+            )
+            .with_size(ui::width::window * 0.9, ui::height::window * 0.9)
             .with_background(&ui_background::scroll_horizontal)
             .with_handle(&this->container)
             .as_hidden(true)
@@ -275,58 +277,31 @@ namespace houseofatmos::world {
         this->container->texture = &this->output_tex;
     }
 
-    static ui::Element create_single_marker_info(
-        const ui::Background* icon, std::string text
-    ) {
-        Vec<2> icon_size = icon->edge_size;
-        ui::Element info = ui::Element()
-            .as_phantom()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Horizontal)
-            .with_child(ui::Element()
-                .as_phantom()
-                .with_size(icon_size.x(), icon_size.y(), ui::size::units)
-                .with_background(icon)
-                .as_movable()
-            )
-            .with_child(ui::Element()
-                .as_phantom()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_pos(
-                    0, (icon_size.y() - ui_font::bright.height) / 2 - 2.0, 
-                    ui::position::parent_list_units
-                )
-                .with_text(text, &ui_font::dark)
-                .with_padding(2)
-                .as_movable()
-            )
-            .as_movable();
-        return info;
-    }
-
     void TerrainMap::create_marker_info() {
         this->container->children.push_back(ui::Element()
             .as_phantom()
-            .with_pos(0.05, 0.95, ui::position::parent_offset_fract)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::horiz::in_window_fract(0.05),
+                ui::vert::in_window_fract(0.95)
+            )
             .with_list_dir(ui::Direction::Vertical)
-            .with_child(create_single_marker_info(
+            .with_child(ui_util::create_icon_with_text(
                 &ui_icon::map_marker_player, 
                 this->local->text("ui_current_position")
             ))
-            .with_child(create_single_marker_info(
+            .with_child(ui_util::create_icon_with_text(
                 &ui_icon::map_marker_personal_horse,
                 this->local->text("ui_personal_horse")
             ))
-            .with_child(create_single_marker_info(
+            .with_child(ui_util::create_icon_with_text(
                 &ui_icon::map_marker_carriage, 
                 this->local->text("ui_carriage")
             ))
-            .with_child(create_single_marker_info(
+            .with_child(ui_util::create_icon_with_text(
                 &ui_icon::map_marker_train, 
                 this->local->text("ui_train")
             ))
-            .with_child(create_single_marker_info(
+            .with_child(ui_util::create_icon_with_text(
                 &ui_icon::map_marker_boat, 
                 this->local->text("ui_boat")
             ))
@@ -342,13 +317,10 @@ namespace houseofatmos::world {
             + this->view_pos_px 
             + pos_norm * this->view_size_px;
         Vec<2> pos_un = pos_px / this->ui.px_per_unit();
-        this->container->children.push_back(ui::Element()
-            .as_phantom()
-            .with_pos(pos_un.x(), pos_un.y(), ui::position::window_tl_units)
-            .with_size(0, 0, ui::size::units)
-            .with_child(element
-                .with_pos(0.5, 1.0, ui::position::parent_offset_fract)
-                .as_movable()
+        this->container->children.push_back(element
+            .with_pos(
+                ui::unit * pos_un.x() - ui::horiz::width / 2, 
+                ui::unit * pos_un.y() - ui::vert::height
             )
             .as_movable()
         );
@@ -358,9 +330,7 @@ namespace houseofatmos::world {
         Vec<2> pos, const ui::Background* icon, std::function<void ()>&& handler,
         bool is_phantom
     ) {
-        this->add_marker(pos, ui::Element()
-            .with_size(icon->edge_size.x(), icon->edge_size.y(), ui::size::units)
-            .with_background(icon, &ui_icon::map_marker_selected)
+        this->add_marker(pos, ui_util::create_icon(icon)
             .with_click_handler(std::move(handler))
             .as_phantom(is_phantom)
             .as_movable()
@@ -391,12 +361,7 @@ namespace houseofatmos::world {
             text += std::to_string(stop_i + 1);
             had_stop = true;
         }
-        this->add_marker(marker_pos, ui::Element()
-            .as_phantom()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, &ui_font::dark)
-            .as_movable()
-        );
+        this->add_marker(marker_pos, ui_util::create_text(text, 0));
     }
 
     void TerrainMap::add_agent_markers(
@@ -483,22 +448,14 @@ namespace houseofatmos::world {
         f64 txt_pad = (item.icon->edge_size.y() - ui_font::dark.height) / 2;
         if(text_v_pad_out != nullptr) { *text_v_pad_out = txt_pad; }
         ui::Element info = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .with_child(ui::Element()
-                .with_pos(0, txt_pad, ui::position::parent_list_units)
-                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_pos(ui::horiz::list, ui::vert::list + ui::unit * txt_pad)
+                .with_size(ui::width::text, ui::height::text)
                 .with_text(text, &ui_font::dark)
                 .as_movable()
             )
-            .with_child(ui::Element()
-                .with_size(
-                    item.icon->edge_size.x(), item.icon->edge_size.y(), 
-                    ui::size::units
-                )
-                .with_background(item.icon)
-                .as_movable()
-            )
+            .with_child(ui_util::create_icon(item.icon))
             .as_movable();
         return info;
     }
@@ -509,7 +466,6 @@ namespace houseofatmos::world {
         f64* text_v_pad_out
     ) {
         ui::Element list = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .as_movable();
         bool had_item = false;
@@ -517,10 +473,12 @@ namespace houseofatmos::world {
         for(const Item::Stack& stack: stacks) {
             if(had_item) {
                 list.children.push_back(ui::Element()
-                    .with_size(0, 0, ui::size::units_with_children)
                     .with_child(ui::Element()
-                        .with_pos(0, text_v_pad, ui::position::parent_list_units)
-                        .with_size(0, 0, ui::size::unwrapped_text)
+                        .with_pos(
+                            ui::horiz::list, 
+                            ui::vert::list + ui::unit * text_v_pad
+                        )
+                        .with_size(ui::width::text, ui::height::text)
                         .with_text(" + ", &ui_font::dark)
                         .as_movable()
                     )
@@ -548,14 +506,14 @@ namespace houseofatmos::world {
             conv.outputs, local, &text_v_pad
         );
         ui::Element info = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .with_child(std::move(inputs))
             .with_child(ui::Element()
-                .with_size(0, 0, ui::size::units_with_children)
                 .with_child(ui::Element()
-                    .with_pos(0, text_v_pad, ui::position::parent_list_units)
-                    .with_size(0, 0, ui::size::unwrapped_text)
+                    .with_pos(
+                        ui::horiz::list, ui::vert::list + ui::unit * text_v_pad
+                    )
+                    .with_size(ui::width::text, ui::height::text)
                     .with_text(" → ", &ui_font::dark)
                     .as_movable()
                 )
@@ -563,10 +521,11 @@ namespace houseofatmos::world {
             )
             .with_child(std::move(outputs))
             .with_child(ui::Element()
-                .with_size(0, 0, ui::size::units_with_children)
                 .with_child(ui::Element()
-                    .with_pos(0, text_v_pad, ui::position::parent_list_units)
-                    .with_size(0, 0, ui::size::unwrapped_text)
+                    .with_pos(
+                        ui::horiz::list, ui::vert::list + ui::unit * text_v_pad
+                    )
+                    .with_size(ui::width::text, ui::height::text)
                     .with_text(period_str, &ui_font::dark)
                     .as_movable()
                 )
@@ -595,45 +554,25 @@ namespace houseofatmos::world {
             { std::to_string(building.capacity) }
         );
         ui::Element info = ui::Element()
-            .with_pos(0.5, 0.95, ui::position::window_fract)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5),
+                ui::vert::in_window_fract(0.95)
+            )
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Vertical)
             .with_child(ui::Element()
-                .with_size(0, 0, ui::size::units_with_children)
                 .with_list_dir(ui::Direction::Horizontal)
-                .with_child(ui::Element()
-                    .with_size(
-                        building.icon->edge_size.x(), building.icon->edge_size.y(),
-                        ui::size::units
-                    )
-                    .with_background(building.icon)
+                .with_child(ui_util::create_icon(building.icon)
                     .with_padding(2)
                     .as_movable()
                 )
                 .with_child(ui::Element()
-                    .with_size(0, 0, ui::size::units_with_children)
                     .with_list_dir(ui::Direction::Vertical)
-                    .with_child(ui::Element()
-                        .with_size(0, 0, ui::size::unwrapped_text)
-                        .with_text(
-                            local.text(building.local_name), &ui_font::dark
-                        )
-                        .with_padding(1)
-                        .as_movable()
+                    .with_child(
+                        ui_util::create_text(local.text(building.local_name), 1)
                     )
-                    .with_child(ui::Element()
-                        .with_size(0, 0, ui::size::unwrapped_text)
-                        .with_text(worker_info_text, &ui_font::dark)
-                        .with_padding(1)
-                        .as_movable()
-                    )
-                    .with_child(ui::Element()
-                        .with_size(0, 0, ui::size::unwrapped_text)
-                        .with_text(capacity_info_text, &ui_font::dark)
-                        .with_padding(1)
-                        .as_movable()
-                    )
+                    .with_child(ui_util::create_text(worker_info_text, 1))
+                    .with_child(ui_util::create_text(capacity_info_text, 1))
                     .with_padding(1)
                     .as_movable()
                 )
@@ -656,7 +595,6 @@ namespace houseofatmos::world {
         std::unordered_map<Item::Type, f64> throughput 
             = complex.compute_throughput();
         ui::Element inputs = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [item, freq]: throughput) {
@@ -667,7 +605,6 @@ namespace houseofatmos::world {
             ));
         }
         ui::Element outputs = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [item, freq]: throughput) {
@@ -678,7 +615,6 @@ namespace houseofatmos::world {
             ));
         }
         ui::Element storage = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         std::string storage_capacity 
@@ -690,43 +626,25 @@ namespace houseofatmos::world {
             ));
         }
         if(storage.children.size() == 0) {
-            storage.children.push_back(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_empty"), &ui_font::dark)
-                .as_movable()
+            storage.children.push_back(
+                ui_util::create_text(local.text("ui_empty"), 0)
             );
         }
         ui::Element info = ui::Element()
-            .with_pos(0.95, 0.5, ui::position::window_fract)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::horiz::in_window_fract(0.95),
+                ui::vert::in_window_fract(0.5)
+            )
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Vertical)
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_building_complex"), &ui_font::dark)
-                .with_padding(1)
-                .as_movable()
+            .with_child(
+                ui_util::create_text(local.text("ui_building_complex"), 1)
             )
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_inputs"), &ui_font::dark)
-                .with_padding(1)
-                .as_movable()
-            )
+            .with_child(ui_util::create_text(local.text("ui_inputs"), 1))
             .with_child(inputs.with_padding(3.0).as_movable())
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_outputs"), &ui_font::dark)
-                .with_padding(1)
-                .as_movable()
-            )
+            .with_child(ui_util::create_text(local.text("ui_outputs"), 1))
             .with_child(outputs.with_padding(3.0).as_movable())
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(local.text("ui_storage"), &ui_font::dark)
-                .with_padding(1)
-                .as_movable()
-            )
+            .with_child(ui_util::create_text(local.text("ui_storage"), 1))
             .with_child(storage.with_padding(3.0).as_movable())
             .as_movable();
         return info;
@@ -745,12 +663,14 @@ namespace houseofatmos::world {
             );
         ui::Element container = ui_util::create_selection_container("")
             .with_list_dir(ui::Direction::Horizontal)
-            .with_pos(0.5, 0.5, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5),
+                ui::vert::in_window_fract(0.5)
+            )
             .as_movable();
         size_t column_count = (items.size() / max_column_items) + 1;
         for(size_t column_i = 0; column_i < column_count; column_i += 1) {
             ui::Element column = ui::Element()
-                .with_size(0, 0, ui::size::units_with_children)
                 .with_list_dir(ui::Direction::Vertical)
                 .as_movable();
             size_t first_item_i = column_i * max_column_items;
@@ -770,56 +690,32 @@ namespace houseofatmos::world {
         return container;
     }
 
-    static ui::Element make_ui_button(std::string text) {
-        ui::Element button = ui::Element()
-            .as_phantom()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, &ui_font::bright)
-            .with_padding(1)
-            .with_background(
-                &ui_background::button, &ui_background::button_select
-            )
-            .as_movable();
-        return button;
-    }
-
     ui::Element TerrainMap::display_agent_info(
         AbstractAgent agent, const engine::Localization& local
     ) {
-        ui::Element icon = ui::Element();
-        if(agent.icon() != nullptr) {
-            icon.with_size(
-                agent.icon()->edge_size.x(), agent.icon()->edge_size.y(),
-                ui::size::units
-            );
-            icon.with_background(agent.icon());
-        }
-        ui::Element name = ui::Element()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(local.text(agent.local_name()), &ui_font::dark)
-            .as_movable();
+        ui::Element icon = agent.icon() == nullptr? ui::Element()
+            : ui_util::create_icon(agent.icon());
+        ui::Element name 
+            = ui_util::create_text(local.text(agent.local_name()), 1);
         std::string capacity_info_text = local.pattern(
             "ui_item_storage_capacity", 
             { std::to_string(agent.item_storage_capacity()) }
         );
-        ui::Element capacity_info = ui::Element()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(capacity_info_text, &ui_font::dark)
-            .as_movable();
+        ui::Element capacity_info = ui_util::create_text(capacity_info_text, 1);
         ui::Element info = ui::Element()
-            .with_pos(0.5, 0.95, ui::position::window_fract)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5),
+                ui::vert::in_window_fract(0.95)
+            )
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Vertical)
             .with_child(ui::Element()
-                .with_size(0, 0, ui::size::units_with_children)
                 .with_list_dir(ui::Direction::Horizontal)
                 .with_child(icon.with_padding(2).as_movable())
                 .with_child(ui::Element()
-                    .with_size(0, 0, ui::size::units_with_children)
                     .with_list_dir(ui::Direction::Vertical)
-                    .with_child(name.with_padding(1).as_movable())
-                    .with_child(capacity_info.with_padding(1).as_movable())
+                    .with_child(std::move(name))
+                    .with_child(std::move(capacity_info))
                     .with_padding(1)
                     .as_movable()
                 )
@@ -856,55 +752,38 @@ namespace houseofatmos::world {
         std::string_view local_item 
             = Item::types().at((size_t) stop->item).local_name;
         ui::Element info = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
-            .with_child(make_ui_button("🗑")
-                .with_click_handler([agent, stop_i]() {
-                    agent.schedule().erase(
-                        agent.schedule().begin() + stop_i
-                    );
-                    agent.reset_path();
-                })
-                .with_padding(2)
-                .as_movable()
+            .with_child(ui_util::create_button("🗑", [agent, stop_i]() {
+                agent.schedule().erase(
+                    agent.schedule().begin() + stop_i
+                );
+                agent.reset_path();
+            }, 2, 1))
+            .with_child(ui_util::create_button("↑", [agent, stop_i]() {
+                size_t swapped_with_i = stop_i == 0
+                    ? agent.schedule().size() - 1
+                    : stop_i - 1;
+                std::swap(
+                    agent.schedule()[swapped_with_i],
+                    agent.schedule()[stop_i]
+                );
+                agent.reset_path();
+            }, 2, 1))
+            .with_child(ui_util::create_button("↓", [agent, stop_i]() {
+                size_t swapped_with_i = (stop_i + 1)
+                    % agent.schedule().size();
+                std::swap(
+                    agent.schedule()[swapped_with_i],
+                    agent.schedule()[stop_i]
+                );
+                agent.reset_path();
+            }, 2, 1))
+            .with_child(
+                ui_util::create_text("#" + std::to_string(stop_i + 1), 3)
             )
-            .with_child(make_ui_button("↑")
-                .with_click_handler([agent, stop_i]() {
-                    size_t swapped_with_i = stop_i == 0
-                        ? agent.schedule().size() - 1
-                        : stop_i - 1;
-                    std::swap(
-                        agent.schedule()[swapped_with_i],
-                        agent.schedule()[stop_i]
-                    );
-                    agent.reset_path();
-                })
-                .with_padding(2)
-                .as_movable()
-            )
-            .with_child(make_ui_button("↓")
-                .with_click_handler([agent, stop_i]() {
-                    size_t swapped_with_i = (stop_i + 1)
-                        % agent.schedule().size();
-                    std::swap(
-                        agent.schedule()[swapped_with_i],
-                        agent.schedule()[stop_i]
-                    );
-                    agent.reset_path();
-                })
-                .with_padding(2)
-                .as_movable()
-            )
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(
-                    "#" + std::to_string(stop_i + 1), &ui_font::dark
-                )
-                .with_padding(3)
-                .as_movable()
-            )
-            .with_child(make_ui_button(this->local->text(local_action))
-                .with_click_handler([stop]() {
+            .with_child(ui_util::create_button(
+                this->local->text(local_action),
+                [stop]() {
                     switch(stop->action) {
                         case AgentStop::Load:
                             stop->action = AgentStop::Unload; break;
@@ -913,72 +792,55 @@ namespace houseofatmos::world {
                         case AgentStop::Maintain:
                             stop->action = AgentStop::Load; break;
                     }
-                })
-                .with_padding(2)
-                .as_movable()
-            )
-            .with_child(make_ui_button("+")
-                .with_click_handler([stop]() {
-                    switch(stop->unit) {
-                        case AgentStop::Fixed: 
-                            stop->amount.fixed += 1;
-                            break;
-                        case AgentStop::Fraction:
-                            i64 steps = (i64) round(stop->amount.fract / 0.05);
-                            stop->amount.fract = (f32) (steps + 1) * 0.05;
-                            stop->amount.fract = std::min(
-                                std::max(stop->amount.fract, (f32) 0), (f32) 1
-                            );
-                            break;
-                    }
-                })
-                .with_padding(2)
-                .as_movable()
-            )
-            .with_child(make_ui_button("-")
-                .with_click_handler([stop]() {
-                    switch(stop->unit) {
-                        case AgentStop::Fixed: 
-                            if(stop->amount.fixed > 0) { 
-                                stop->amount.fixed -= 1; 
-                            }
-                            break;
-                        case AgentStop::Fraction:
-                            i64 steps = (i64) round(stop->amount.fract / 0.05);
-                            stop->amount.fract = (f32) (steps - 1) * 0.05;
-                            stop->amount.fract = std::min(
-                                std::max(stop->amount.fract, (f32) 0), (f32) 1
-                            );
-                            break;
-                    }
-                })
-                .with_padding(2)
-                .as_movable()
-            )
-            .with_child(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(amount, &ui_font::dark)
-                .with_padding(3)
-                .as_movable()
-            )
-            .with_child(make_ui_button(unit)
-                .with_click_handler([stop]() {
-                    switch(stop->unit) {
-                        case AgentStop::Fixed:
-                            stop->unit = AgentStop::Fraction; 
-                            stop->amount.fract = 1.0;
-                            break;
-                        case AgentStop::Fraction:
-                            stop->unit = AgentStop::Fixed; 
-                            stop->amount.fixed = 0;
-                            break;
-                    }
-                })
-                .with_padding(2)
-                .as_movable()
-            )
-            .with_child(make_ui_button(this->local->text(local_item))
-                .with_click_handler([this, stop]() {
+                },
+                2, 1
+            ))
+            .with_child(ui_util::create_button("+", [stop]() {
+                switch(stop->unit) {
+                    case AgentStop::Fixed: 
+                        stop->amount.fixed += 1;
+                        break;
+                    case AgentStop::Fraction:
+                        i64 steps = (i64) round(stop->amount.fract / 0.05);
+                        stop->amount.fract = (f32) (steps + 1) * 0.05;
+                        stop->amount.fract = std::min(
+                            std::max(stop->amount.fract, (f32) 0), (f32) 1
+                        );
+                        break;
+                }
+            }, 2, 1))
+            .with_child(ui_util::create_button("-", [stop]() {
+                switch(stop->unit) {
+                    case AgentStop::Fixed: 
+                        if(stop->amount.fixed > 0) { 
+                            stop->amount.fixed -= 1; 
+                        }
+                        break;
+                    case AgentStop::Fraction:
+                        i64 steps = (i64) round(stop->amount.fract / 0.05);
+                        stop->amount.fract = (f32) (steps - 1) * 0.05;
+                        stop->amount.fract = std::min(
+                            std::max(stop->amount.fract, (f32) 0), (f32) 1
+                        );
+                        break;
+                }
+            }, 2, 1))
+            .with_child(ui_util::create_text(amount, 3))
+            .with_child(ui_util::create_button(unit, [stop]() {
+                switch(stop->unit) {
+                    case AgentStop::Fixed:
+                        stop->unit = AgentStop::Fraction; 
+                        stop->amount.fract = 1.0;
+                        break;
+                    case AgentStop::Fraction:
+                        stop->unit = AgentStop::Fixed; 
+                        stop->amount.fixed = 0;
+                        break;
+                }
+            }, 2, 1))
+            .with_child(ui_util::create_button(
+                this->local->text(local_item), 
+                [this, stop]() {
                     this->adding_stop = false;
                     std::vector<Item::Type> transferrable;
                     for(size_t item_i = 0; item_i < Item::types().size(); item_i += 1) {
@@ -993,12 +855,14 @@ namespace houseofatmos::world {
                                     .as_phantom().as_movable();
                             }, *this->local
                         )
-                        .with_pos(0.5, 0.5, ui::position::window_fract)
+                        .with_pos(
+                            ui::horiz::in_window_fract(0.5),
+                            ui::vert::in_window_fract(0.5)
+                        )
                         .as_movable();
-                })
-                .with_padding(2)
-                .as_movable()
-            )
+                },
+                2, 1
+            ))
             .as_movable();
         return info;
     }
@@ -1021,7 +885,6 @@ namespace houseofatmos::world {
             status, { std::to_string(agent.stop_i() + 1) }
         );
         ui::Element storage = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [item, count]: agent.items()) {
@@ -1031,14 +894,11 @@ namespace houseofatmos::world {
             ));
         }
         if(storage.children.size() == 0) {
-            storage.children.push_back(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_empty"), &ui_font::dark)
-                .as_movable()
+            storage.children.push_back(
+                ui_util::create_text(this->local->text("ui_empty"), 0)
             );
         }
         ui::Element schedule_info = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(u64 stop_i = 0; stop_i < agent.schedule().size(); stop_i += 1) {
@@ -1046,92 +906,76 @@ namespace houseofatmos::world {
                 .push_back(this->display_agent_stop(agent, stop_i));
         }
         if(schedule_info.children.size() == 0) {
-            schedule_info.children.push_back(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(this->local->text("ui_empty"), &ui_font::dark)
-                .as_movable()
+            schedule_info.children.push_back(
+                ui_util::create_text(this->local->text("ui_empty"), 0)
             );
         }
         ui::Element add_stop = this->adding_stop
-            ? ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(
-                    this->local->text("ui_click_target_complex"), 
-                    &ui_font::dark
-                )
-                .with_padding(4)
-                .as_movable()
-            : make_ui_button(this->local->text("ui_add_stop"))
-                .with_click_handler([this]() {
+            ? ui_util::create_text(
+                this->local->text("ui_click_target_complex"), 3
+            )
+            : ui_util::create_button(
+                this->local->text("ui_add_stop"), 
+                [this]() {
                     this->adding_stop = true;
-                })
-                .with_padding(4)
-                .as_movable();
+                },
+                2, 1
+            );
         ui::Element info = ui::Element()
-            .with_pos(0.95, 0.5, ui::position::window_fract)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::horiz::in_window_fract(0.95), ui::vert::in_window_fract(0.5)
+            )
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        info.children.push_back(ui::Element()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(
-                this->local->text(agent_display.local_title), &ui_font::dark
-            )
-            .with_padding(1)
-            .as_movable()
-        );
-        info.children.push_back(ui::Element()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(status_text, &ui_font::dark)
-            .with_padding(3)
-            .as_movable()
-        );
+        info.children.push_back(ui_util::create_text(
+            this->local->text(agent_display.local_title), 1
+        ));
+        info.children.push_back(ui_util::create_text(status_text, 3));
         ui::Element buttons = ui::Element()
             .as_phantom()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-            buttons.children.push_back(
-            make_ui_button(this->local->text(agent_display.local_remove))
-                .with_click_handler([this, agent, ag_d = &agent_display]() {
-                    ag_d->remove_impl(agent, *this->world);
-                    this->selected_info_right->hidden = true;
-                    this->selected_info_bottom->hidden = true;
-                    this->selected_type = SelectionType::None;
-                    this->adding_stop = false;
-                })
-                .with_padding(2)
-                .as_movable()
-        );
+        buttons.children.push_back(ui_util::create_button(
+            this->local->text(agent_display.local_remove),
+            [this, agent, ag_d = &agent_display]() {
+                ag_d->remove_impl(agent, *this->world);
+                this->selected_info_right->hidden = true;
+                this->selected_info_bottom->hidden = true;
+                this->selected_type = SelectionType::None;
+                this->adding_stop = false;
+            },
+            2, 1
+        ));
         for(const auto& button: agent_display.buttons) {
-            ui::Element button_elem
-                = make_ui_button(this->local->text(button.local_text));
             if(button.show_if(agent, *this->world)) {
-                auto handler = [
-                    h = button.handler, agent, this, ag_d = &agent_display
-                ]() {
-                    h(agent, *this->world, this->toasts);
-                    *this->selected_info_bottom 
-                        = TerrainMap::display_agent_info(agent, *this->local);
-                    *this->selected_info_right 
-                        = this->display_agent_details(agent, *ag_d);
-                };
-                button_elem.with_click_handler(std::move(handler));
+                buttons.children.push_back(ui_util::create_button(
+                    this->local->text(button.local_text),
+                    [
+                        h = button.handler, agent, this, ag_d = &agent_display
+                    ]() {
+                        h(agent, *this->world, this->toasts);
+                        *this->selected_info_bottom 
+                            = TerrainMap::display_agent_info(
+                                agent, *this->local
+                            );
+                        *this->selected_info_right 
+                            = this->display_agent_details(agent, *ag_d);
+                    },
+                    2, 1
+                ));
             } else {
-                button_elem.with_background(&ui_background::border_dark);
-                button_elem.child_at<0>().font = &ui_font::dark;
+                buttons.children.push_back(ui_util::create_button(
+                    this->local->text(button.local_text),
+                    []() {},
+                    2, 1,
+                    &ui_font::dark, &ui_background::border_dark, nullptr
+                ));
             }
-            buttons.children.push_back(
-                button_elem.with_padding(2).as_movable()
-            );
         }
         info.children.push_back(buttons.with_padding(2).as_movable());
-        info.children.push_back(ui::Element()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(this->local->text("ui_schedule"), &ui_font::dark)
-            .with_padding(1)
-            .as_movable()
+        info.children.push_back(
+            ui_util::create_text(this->local->text("ui_schedule"), 1)
         );
         info.children.push_back(schedule_info.with_padding(3.0).as_movable());
         info.children.push_back(std::move(add_stop));
@@ -1139,12 +983,7 @@ namespace houseofatmos::world {
             std::to_string(agent.stored_item_count()),
             std::to_string(agent.item_storage_capacity())
         });
-        info.children.push_back(ui::Element()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(on_board_text, &ui_font::dark)
-            .with_padding(1)
-            .as_movable()
-        );
+        info.children.push_back(ui_util::create_text(on_board_text, 1));
         info.children.push_back(storage.with_padding(3.0).as_movable());
         return info;
     }

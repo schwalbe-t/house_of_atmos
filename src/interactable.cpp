@@ -9,8 +9,8 @@ namespace houseofatmos {
         ui::Element container = ui::Element()
             .as_phantom()
             .with_handle(&this->container)
-            .with_pos(0, 0, ui::position::window_fract)
-            .with_size(1, 1, ui::size::window_fract)
+            .with_pos(ui::null, ui::null)
+            .with_size(ui::width::window, ui::height::window)
             .as_movable();
         return container;
     }
@@ -57,35 +57,35 @@ namespace houseofatmos {
             f64 dist = (instance->pos - pos).len();
             if(dist > max_interaction_distance) { continue; }
             this->container->children.push_back(ui::Element()
-                .as_phantom()
-                .with_pos(pos_ndc.x(), pos_ndc.y(), ui::position::window_ndc)
-                .with_size(0, 0, ui::size::units)
-                .with_child(ui::Element()
-                    .with_pos(-3.5, -3.5, ui::position::parent_offset_units)
-                    .with_size(7, 7, ui::size::units)
-                    .with_background(
-                        &ui_background::border, &ui_background::border_hovering
-                    )
-                    .with_click_handler([w_inst = &weak_instance]() {
-                        std::shared_ptr<Interactable> inst = w_inst->lock();
-                        if(inst == nullptr) { return; }
-                        inst->handler();
-                    })
-                    .as_movable()
+                .with_pos(
+                    ui::horiz::window_ndc(pos_ndc.x()) - ui::horiz::width / 2, 
+                    ui::vert::window_ndc(pos_ndc.y()) - ui::vert::height / 2 
                 )
+                .with_size(ui::unit * 7, ui::unit * 7)
+                .with_background(
+                    &ui_background::border, &ui_background::border_hovering
+                )
+                .with_click_handler([w_inst = &weak_instance]() {
+                    std::shared_ptr<Interactable> inst = w_inst->lock();
+                    if(inst == nullptr) { return; }
+                    inst->handler();
+                })
                 .as_movable()
             );
             if(dist >= closest_dist) { continue; }
             closest_inst = instance;
-            closest_elem = &this->container->children.back().child_at<0>();
+            closest_elem = &this->container->children.back();
             closest_dist = dist;
         }
         if(closest_elem != nullptr) {
             closest_elem->background = &ui_background::border_selected;
             closest_elem->children.push_back(ui::Element()
                 .as_phantom()
-                .with_pos(0.5, 0.5, ui::position::parent_offset_fract)
-                .with_size(0, 0, ui::size::unwrapped_text)
+                .with_pos(
+                    ui::horiz::in_parent_fract(0.5), 
+                    ui::vert::in_parent_fract(0.5)
+                )
+                .with_size(ui::width::text, ui::height::text)
                 .with_text("E", &ui_font::bright)
                 .as_movable()
             );

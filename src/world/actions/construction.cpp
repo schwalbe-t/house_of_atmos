@@ -404,17 +404,17 @@ namespace houseofatmos::world {
             = ui_util::create_selection_container(
                 ctx.local->text("ui_product_selection")
             )
-            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.95), ui::vert::in_window_fract(0.5)
+            )
             .as_movable();
         ui::Element container = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .as_movable();
         size_t column_count 
             = (group->variants.size() / max_column_variants) + 1;
         for(size_t column_i = 0; column_i < column_count; column_i += 1) {
             ui::Element column = ui::Element()
-                .with_size(0, 0, ui::size::units_with_children)
                 .with_list_dir(ui::Direction::Vertical)
                 .as_movable();
             size_t first_var_i = column_i * max_column_variants;
@@ -462,7 +462,9 @@ namespace houseofatmos::world {
             = ui_util::create_selection_container(
                 ctx.local->text("ui_building_selection")
             )
-            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.95), ui::vert::in_window_fract(0.5)
+            )
             .as_movable();
         for(const BuildingGroup& group: category->groups) {
             const Building::TypeInfo& type = Building::types()
@@ -518,7 +520,9 @@ namespace houseofatmos::world {
             = ui_util::create_selection_container(
                 ctx.local->text("ui_building_selection")
             )
-            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.95), ui::vert::in_window_fract(0.5)
+            )
             .as_movable();
         for(const BuildingCategory& category: buildable) {
             selector.children.push_back(ui_util::create_selection_item(

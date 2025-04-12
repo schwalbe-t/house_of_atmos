@@ -48,6 +48,42 @@
         "en": "New game",
         "bg": "Нова игра"
     },
+    "menu_mode_tutorial": {
+        "_context": "Text of the button used to start a new game by playing the tutorial, which teaches the player the basics of the game and its mechanics.",
+        "de": "Tutorial",
+        "en": "Tutorial",
+        "bg": "Урок"
+    },
+    "menu_mode_descr_tutorial": {
+        "_context": "Description for the tutorial mode (see 'menu_mode_tutorial')",
+        "de": "Spiele das Tutorial, welches nach Abschluss in ein klassisches Spiel übergeht. (Empfohlen für neue Spieler)",
+        "en": "Play the tutorial, which transitions into a classic game after completition. (Recommended for new players)",
+        "bg": "Изиграй урока, който след завършване преминава в класическа игра. (Препоръчва се за нови играчи)"
+    },
+    "menu_mode_classic": {
+        "_context": "Text of the button used to create a new game without playing the tutorial or the opening cutscenes.",
+        "de": "Klassisch",
+        "en": "Classic",
+        "bg": "Класически"
+    },
+    "menu_mode_descr_classic": {
+        "_context": "Description for the classic mode (see 'menu_mode_classic')",
+        "de": "Starte ein neues klassisches Spiel ohne das Tutorial oder jegliche andere Änderungen.",
+        "en": "Start a new classic game without the tutorial or any other changes.",
+        "bg": "Започни нова класическа игра без урока или други промени."
+    },
+    "menu_mode_creative": {
+        "_context": "Text of the button used to create a new game with unlimited money and all research already unlocked.",
+        "de": "Kreativ",
+        "en": "Creative",
+        "bg": "Креативен"
+    },
+    "menu_mode_descr_creative": {
+        "_context": "Description for the creative mode (see 'menu_mode_creative')",
+        "de": "Starte ein neues Spiel mit unlimitiertem Geld und allen Forschungen bereits abgeschlossen.",
+        "en": "Start a new game with unlimited money and all research already unlocked.",
+        "bg": "Започни нова игра с неограничени средства и отключени всички изследвания."
+    },
     "menu_load_previous_game": {
         "_context": "Text of a button used to load a previously loaded game",
         "_placeholders": "The path (or part of it) of the previously loaded game",
@@ -177,9 +213,9 @@
     },
     "menu_close_menu": {
         "_context": "Confirms and closes the current menu (e.g. credits, settings)",
-        "en": "Done",
-        "de": "Fertig",
-        "bg": "Готово"
+        "en": "Okay",
+        "de": "Okay",
+        "bg": "Добре"
     },
 
 
@@ -436,9 +472,9 @@
     },
     "toast_failed_to_auto_save_game": {
         "_context": "Pop-up that notifies the user that the game could not be saved automatically",
-        "de": "💾 Spiel konnte nicht automatisch gespeichert werden.",
-        "en": "💾 Game was unable to be saved automatically.",
-        "bg": "💾 Играта не можа да бъде запазена автоматично."
+        "de": "💾 Spiel konnte nicht automatisch gespeichert werden, da kein valider Speicherpfad festgelegt wurde.",
+        "en": "💾 Game was unable to be saved automatically as no valid save path has been specified.",
+        "bg": "💾 Играта не можа да бъде записана автоматично, тъй като не е зададен валиден път за запис."
     },
     "toast_indestructible": {
         "_context": "Pop-up that notifies the user when they try to demolish buildings they aren't allowed to (note: localized text should be why they can't do it, not what they did)",
@@ -1090,12 +1126,6 @@
         "en": "Father's Instructions",
         "de": "Vaters Anweisungen",
         "bg": "Напътствия на баща ти"
-    },
-    "dialogue_tutorial_0_prompt_0": {
-        "_context": "The prompt tells the player that they can use the tab key to skip the tutorial",
-        "en": "You may press the tab key to skip this tutorial at any time.",
-        "de": "Du kannst dieses Tutorial jederzeit mit der Tabulatortaste überspringen.",
-        "bg": "Можеш да натиснеш клавиша Tab, за да пропуснеш този урок по всяко време."
     },
     "dialogue_tutorial_0_father_1": {
         "_context": "The count father tells his small son to go and take a walk with him",

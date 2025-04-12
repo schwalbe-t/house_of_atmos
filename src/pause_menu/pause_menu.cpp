@@ -41,13 +41,15 @@ namespace houseofatmos {
         const engine::Localization& local 
             = this->get(this->world->settings.localization());
         this->ui.with_element(ui::Element()
-            .with_pos(0.5, 0.2, ui::position::window_fract)
-            .with_size(0.0, 0.0, ui::size::unwrapped_text)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5),
+                ui::horiz::in_window_fract(0.2)
+            )
+            .with_size(ui::width::text, ui::height::text)
             .with_text(local.text("menu_game_paused"), &ui_font::bright)
             .as_movable()
         );
         ui::Element buttons = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         buttons.children.push_back(ui_util::create_button(
@@ -99,8 +101,9 @@ namespace houseofatmos {
             }
         ));
         this->ui.with_element(ui::Element()
-            .with_pos(0.5, 0.7, ui::position::window_fract)
-            .with_size(0.0, 0.0, ui::size::units_with_children)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), ui::vert::in_window_fract(0.7)
+            )
             .with_child(std::move(buttons))
             .with_padding(5)
             .with_background(&ui_background::scroll_vertical)

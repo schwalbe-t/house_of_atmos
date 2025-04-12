@@ -52,8 +52,10 @@ namespace houseofatmos::world {
 
     static ui::Element create_mode_selector(Scene* scene) {
         ui::Element mode_list = ui::Element()
-            .with_pos(15, 15, ui::position::window_bl_units)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::unit * 15,
+                ui::height::window - ui::unit * 15 - ui::vert::height
+            )
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
@@ -64,20 +66,25 @@ namespace houseofatmos::world {
             if(!is_unlocked) { continue; }
             bool is_selected = scene->action_mode.current_type() == mode.mode;
             mode_list.children.push_back(ui::Element()
-                .with_size(16, 16, ui::size::units)
+                .as_phantom()
+                .with_size(ui::unit * 16, ui::unit * 16)
                 .with_background(mode.icon)
-                .with_click_handler([scene, is_selected, mode]() {
-                    scene->action_mode.set_mode(
-                        is_selected? ActionManager::Mode::Default : mode.mode
-                    );
-                })
-                .with_padding(0)
-                .with_background(
-                    is_selected? &ui_background::border_selected
-                        : &ui_background::border,
-                    is_selected? &ui_background::border_selected
-                        : &ui_background::border_hovering
-                )                
+                .with_child(ui::Element()
+                    .with_size(ui::width::parent, ui::height::parent)
+                    .with_click_handler([scene, is_selected, mode]() {
+                        scene->action_mode.set_mode(
+                            is_selected? ActionManager::Mode::Default
+                                : mode.mode
+                        );
+                    })
+                    .with_background(
+                        is_selected? &ui_background::border_selected
+                            : &ui_background::border,
+                        is_selected? &ui_background::border_selected
+                            : &ui_background::border_hovering
+                    )    
+                    .as_movable()
+                )            
                 .with_padding(2)
                 .as_movable()
             );
@@ -179,7 +186,7 @@ namespace houseofatmos::world {
         const CharacterType& type,
         const CharacterVariant::LoadArgs& variant,
         Vec<3> origin, std::shared_ptr<StatefulRNG> rng,
-        const Terrain& terrain, const engine::Window& window,
+        Terrain& terrain, const engine::Window& window,
         f64 spawn_distance, f64 roam_distance, f64 roam_vel,
         const Character& player, f64 player_stop_dist,
         std::shared_ptr<Interactable>&& interactable,
@@ -218,6 +225,12 @@ namespace houseofatmos::world {
                     bool next_pos_valid = terrain->valid_player_position(
                         human::collider.at(next_pos), true
                     );
+                    f64 tx = next_pos.x() / terrain->units_per_tile();
+                    f64 tz = next_pos.z() / terrain->units_per_tile();
+                    next_pos_valid = tx < 0.0 || tz < 0.0
+                        || tx >= (f64) terrain->width_in_tiles()
+                        || tz >= (f64) terrain->height_in_tiles()
+                        || terrain->track_pieces_at((i64) tx, (i64) tz) == 0;
                     if(current_pos_valid && !next_pos_valid) {
                         self.action.animation_id = no_action;
                     }
@@ -266,7 +279,7 @@ namespace houseofatmos::world {
 
     static void create_peasants(
         const Settings& settings,
-        const Terrain& terrain, const engine::Window& window, 
+        Terrain& terrain, const engine::Window& window, 
         const Character& player, std::vector<Character>& characters,
         Interactables& interactables, const engine::Localization& local,
         DialogueManager& dialogue

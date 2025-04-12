@@ -5,17 +5,11 @@ namespace houseofatmos::ui_util {
 
     ui::Element create_selection_container(std::string title) {
         ui::Element selector = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_background(&ui_background::note)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         if(title.size() > 0) {
-            selector.children.push_back(ui::Element()
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(title, &ui_font::dark)
-                .with_padding(2)
-                .as_movable()
-            );
+            selector.children.push_back(create_text(title));
         }
         return selector;
     }
@@ -25,30 +19,7 @@ namespace houseofatmos::ui_util {
         const ui::Background* icon, std::string text, bool selected,
         std::function<void ()>&& handler
     ) {
-        ui::Element item = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_list_dir(ui::Direction::Horizontal)
-            .with_child(ui::Element()
-                .as_phantom()
-                .with_size(
-                    icon->edge_size.x(), icon->edge_size.y(), ui::size::units
-                )
-                .with_background(icon)
-                .as_movable()
-            )
-            .with_child(ui::Element()
-                .as_phantom()
-                .with_pos(
-                    0, 
-                    (icon->edge_size.y() - ui_font::dark.height) / 2.0 - 2.0, 
-                    ui::position::parent_list_units
-                )
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(text, &ui_font::dark)
-                .with_padding(2)
-                .as_phantom()
-                .as_movable()
-            )
+        ui::Element item = create_icon_with_text(icon, text, 0.0)
             .with_background(
                 selected
                     ? &ui_background::border_selected
@@ -71,14 +42,11 @@ namespace houseofatmos::ui_util {
     ) {
         ui::Element span = ui::Element()
             .as_phantom()
-            .with_size(0, 0, ui::size::unwrapped_text)
+            .with_size(ui::width::text, ui::height::text)
             .with_text(text, font)
+            .with_padding(padding)
+            .as_phantom()
             .as_movable();
-        if(padding > 0.0) {
-            span = span.with_padding(padding)
-                .as_phantom()
-                .as_movable();
-        }
         return span;
     }
 
@@ -86,18 +54,17 @@ namespace houseofatmos::ui_util {
     ui::Element create_button(
         std::string text, 
         std::function<void (ui::Element&, Vec<2>)>&& handler,
+        f64 padding,
+        f64 text_padding,
         const ui::Font* font,
         const ui::Background* background,
         const ui::Background* background_hover
     ) {
-        ui::Element button = ui::Element()
-            .as_phantom()
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, font)
-            .with_padding(2.0)
+        ui::Element button = create_text(text, text_padding, font)
+            .as_phantom(false)
             .with_background(background, background_hover)
             .with_click_handler(std::move(handler))
-            .with_padding(2.0)
+            .with_padding(padding)
             .as_phantom()
             .as_movable();
         return button;
@@ -106,6 +73,8 @@ namespace houseofatmos::ui_util {
     ui::Element create_button(
         std::string text, 
         std::function<void ()>&& handler,
+        f64 padding,
+        f64 text_padding,
         const ui::Font* font,
         const ui::Background* background,
         const ui::Background* background_hover
@@ -117,6 +86,7 @@ namespace houseofatmos::ui_util {
                 (void) c;
                 handler();
             },
+            padding, text_padding,
             font, background, background_hover
         );
     }
@@ -126,7 +96,7 @@ namespace houseofatmos::ui_util {
         ui::Element result = ui::Element()
             .as_phantom()
             .with_size(
-                icon->edge_size.x(), icon->edge_size.y(), ui::size::units
+                ui::unit * icon->edge_size.x(), ui::unit * icon->edge_size.y()
             )
             .with_background(icon)
             .as_movable();
@@ -145,17 +115,13 @@ namespace houseofatmos::ui_util {
             - text_padding;
         ui::Element root = ui::Element()
             .as_phantom()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .as_movable();
         root.children.push_back(create_icon(icon));
-        root.children.push_back(ui::Element()
-            .as_phantom()
-            .with_pos(0, text_vert_pad, ui::position::parent_list_units)
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(text, font)
-            .with_padding(text_padding)
-            .as_phantom()
+        root.children.push_back(create_text(text, text_padding, font)
+            .with_pos(
+                ui::horiz::list, ui::vert::list + ui::unit * text_vert_pad
+            )
             .as_movable()
         );
         ui::Element padded = root.with_padding(padding).as_movable();

@@ -30,7 +30,7 @@ namespace houseofatmos::tutorial {
         world->player.character.type = &human::toddler;
         world->player.character.position = Vec<3>(13.5, 0, 24.5)
             * world->terrain.units_per_tile();
-        world->balance.coins = 0;
+        world->balance.set_coins_silent(0);
         return world;
     }
 
@@ -52,15 +52,11 @@ namespace houseofatmos::tutorial {
             * scene->world->terrain.units_per_tile()
             + Vec<3>(0.0, 3.0, 0.0);
         father->face_in_direction({ 0, 0, -1 });
-        auto update_scene = [scene, after](engine::Window& window) {
+        auto update_scene = [scene](engine::Window& window) {
             (void) window;
             scene->action_mode.remove_mode();
             scene->world->personal_horse.pos 
                 = Vec<3>(INFINITY, 0, INFINITY);
-            if(window.was_pressed(engine::Key::Tab)) {
-                after->settings = scene->world->settings;
-                window.set_scene(std::make_shared<world::Scene>(after));
-            }
             for(auto& chunk: scene->world->terrain.all_loaded_chunks()) {
                 chunk.interactables.clear();
             }
@@ -73,15 +69,7 @@ namespace houseofatmos::tutorial {
             // which skips most of the first section.
             // This 0 delay is here so that doesn't cause a problem :)
             await_delay(update_scene, 0.0),
-            await_delay(update_scene, 1.0),
-            say_dialogue(
-                scene, local,
-                "dialogue_tutorial_prompt_name", 
-                "dialogue_tutorial_0_prompt_0",
-                voice::popped, prompt_v_pitch, prompt_v_speed
-            ),
-            await_dialogue_end(scene, update_scene),
-            await_delay(update_scene, 1.0),
+            await_delay(update_scene, 2.5),
             say_dialogue(
                 scene, local,
                 "dialogue_tutorial_father_name", 

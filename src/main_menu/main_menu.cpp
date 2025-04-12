@@ -83,33 +83,28 @@ namespace houseofatmos {
         remove_missing_last_games(this->settings);
         this->ui.root.children.clear();
         this->ui.with_element(ui::Element()
-            .with_pos(0.5, 0.1, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), 
+                ui::vert::in_window_fract(0.1)
+            )
             .with_size(
-                MainMenu::title_sprite.edge_size.x(),
-                MainMenu::title_sprite.edge_size.y(),
-                ui::size::units
+                ui::unit * MainMenu::title_sprite.edge_size.x(),
+                ui::unit * MainMenu::title_sprite.edge_size.y()
             )
             .with_background(&MainMenu::title_sprite)
             .as_movable()
         );
         ui::Element buttons = ui::Element()
-            .with_pos(0.5, 0.8, ui::position::window_fract)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), 
+                ui::vert::in_window_fract(0.8)
+            )
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         buttons.children.push_back(ui_util::create_button(
             local.text("menu_new_game"),
-            [window = &window, local = &local, this]() {
-                this->before_next_frame = [window, this]() {
-                    auto world_after = std::make_shared<world::World>(
-                        Settings(this->settings), 256, 256
-                    );
-                    world_after->generate_map(random_init());
-                    window->set_scene(tutorial::create_toddler_scene(
-                        std::move(world_after)
-                    ));
-                };
-                this->show_loading_screen(*local);
+            [this, local = &local, window = &window]() {
+                this->show_gamemode_screen(*local, *window);
             }
         ));
         for(const std::string& game_path: this->settings.last_games) {
@@ -163,14 +158,11 @@ namespace houseofatmos {
             .with_background(&ui_background::scroll_vertical)
             .as_movable()
         );
-        this->ui.with_element(ui::Element()
-            .as_phantom()
-            .with_pos(10, 10, ui::position::window_br_units)
-            .with_size(
-                ui_icon::earth.edge_size.x(), ui_icon::earth.edge_size.y(), 
-                ui::size::units
+        this->ui.with_element(ui_util::create_icon(&ui_icon::earth)
+            .with_pos(
+                ui::width::window - ui::unit * 10 - ui::horiz::width, 
+                ui::height::window - ui::unit * 10 - ui::vert::height
             )
-            .with_background(&ui_icon::earth)
             .with_padding(1)
             .with_background(
                 &ui_background::border, &ui_background::border_hovering
@@ -182,20 +174,113 @@ namespace houseofatmos {
             .with_background(&ui_background::note)
             .as_movable()
         );
-        this->ui.with_element(ui::Element()
-            .with_pos(7.5, 7.5, ui::position::window_bl_units)
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(local.text("menu_copyright_notice"), &ui_font::bright)
+        ui::Element notice = ui_util::create_text(
+            local.text("menu_copyright_notice"), 0.0, &ui_font::bright
+        );
+        this->ui.with_element(notice
+            .with_pos(
+                ui::unit * 7.5, 
+                ui::height::window - ui::unit * 7.5 - ui::vert::height
+            )
+            .as_movable()
+        );
+    }
+
+    struct GameMode {
+        std::string_view local_name;
+        std::string_view local_descr;
+        std::shared_ptr<engine::Scene> (*init)(
+            std::shared_ptr<world::World> world
+        );
+    };
+
+    static const std::vector<GameMode> game_modes = {
+        GameMode(
+            "menu_mode_tutorial", "menu_mode_descr_tutorial", 
+            [](auto w) -> std::shared_ptr<engine::Scene> {
+                return tutorial::create_toddler_scene(std::move(w));
+            }
+        ),
+        GameMode(
+            "menu_mode_classic", "menu_mode_descr_classic", 
+            [](auto w) -> std::shared_ptr<engine::Scene> {
+                return std::make_shared<world::Scene>(w);
+            }
+        ),
+        GameMode(
+            "menu_mode_creative", "menu_mode_descr_creative", 
+            [](auto w) -> std::shared_ptr<engine::Scene> {
+                w->balance.set_coins_silent(Balance::infinite_coins);
+                size_t cond_c = research::Research::conditions().size();
+                for(size_t cond_i = 0; cond_i < cond_c; cond_i += 1) {
+                    const research::Research::ConditionInfo& cond_info
+                        = research::Research::conditions().at(cond_i);
+                    w->research.progress[(research::Research::Condition) cond_i]
+                        .produced = cond_info.required;
+                }
+                return std::make_shared<world::Scene>(w);
+            }
+        )
+    };
+
+    void MainMenu::show_gamemode_screen(
+        const engine::Localization& local, engine::Window& window
+    ) {
+        this->ui.root.children.clear();
+        ui::Element modes = ui::Element()
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), ui::vert::in_window_fract(0.5)
+            )
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        for(const GameMode& mode_info: game_modes) {
+            ui::Element mode = ui::Element()
+                .with_list_dir(ui::Direction::Vertical)
+                .as_movable();
+            mode.children.push_back(ui_util::create_button(
+                local.text(mode_info.local_name),
+                [window = &window, local = &local, i = mode_info.init, this]() {
+                    this->before_next_frame = [window, init = i, this]() {
+                        auto world_after = std::make_shared<world::World>(
+                            Settings(this->settings), 256, 256
+                        );
+                        world_after->generate_map(random_init());
+                        window->set_scene(init(world_after));
+                    };
+                    this->show_loading_screen(*local);
+                }
+            ));
+            mode.children.push_back(
+                ui_util::create_text(local.text(mode_info.local_descr), 0.0)
+                    .with_size(ui::unit * 150, ui::height::text)
+                    .with_padding(2.0)
+                    .as_movable()
+            );
+            modes.children.push_back(mode.with_padding(4).as_movable());
+        }
+        ui::Element back = ui_util::create_button(
+            local.text("ui_back"), 
+            [this, local = &local, window = &window]() {
+                this->show_title_screen(*local, *window);
+            }
+        );
+        modes.children.push_back(std::move(back));
+        this->ui.with_element(modes
+            .with_padding(5)
+            .with_background(&ui_background::scroll_vertical)
             .as_movable()
         );
     }
 
     void MainMenu::show_loading_screen(const engine::Localization& local) {
         this->ui.root.children.clear();
-        this->ui.with_element(ui::Element()
-            .with_pos(0.5, 0.5, ui::position::window_fract)
-            .with_size(0, 0, ui::size::unwrapped_text)
-            .with_text(local.text("menu_loading"), &ui_font::bright)
+        ui::Element text = ui_util::create_text(
+            local.text("menu_loading"), 0.0, &ui_font::bright
+        );
+        this->ui.with_element(text
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), ui::vert::in_window_fract(0.5)
+            )
             .as_movable()
         );
     }
@@ -209,8 +294,9 @@ namespace houseofatmos {
     void MainMenu::show_language_selection(engine::Window& window) {
         this->ui.root.children.clear();
         ui::Element selection = ui::Element()
-            .with_pos(0.5, 0.5, ui::position::window_fract)
-            .with_size(0, 0, ui::size::units_with_children)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), ui::vert::in_window_fract(0.5)
+            )
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         for(const auto& [name, locale]: languages) {
@@ -246,23 +332,30 @@ namespace houseofatmos {
     }
 
     void MainMenu::show_message(
-        std::string_view local_text, 
+        std::string_view local_text,
         const engine::Localization& local, engine::Window& window
     ) {
         this->ui.root.children.clear();
-        this->ui.with_element(ui::Element()
-            .with_size(150, 50, ui::size::units)
-            .with_pos(0.5, 0.5, ui::position::window_fract)
-            .with_text(local.text(local_text), &ui_font::dark)
-            .with_child(ui_util::create_button(
-                    local.text("menu_close_menu"), 
-                    [this, local = &local, window = &window]() {
-                        this->show_title_screen(*local, *window);
-                    }
-                )
-                .with_pos(0.0, 1.0, ui::position::parent_list_fract)
+        ui::Element container = ui::Element()
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), ui::vert::in_window_fract(0.5)
+            )
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        container.with_child(
+            ui_util::create_text(local.text(local_text) + "\n", 0)
+                .with_size(ui::unit * 150, ui::height::text)
+                .with_padding(2.0)
                 .as_movable()
-            )   
+        );
+        ui::Element back = ui_util::create_button(
+            local.text("menu_close_menu"), 
+            [this, local = &local, window = &window]() {
+                this->show_title_screen(*local, *window);
+            }
+        );
+        container.with_child(std::move(back));
+        this->ui.with_element(container
             .with_padding(4.0)
             .with_background(&ui_background::scroll_horizontal)
             .as_movable()

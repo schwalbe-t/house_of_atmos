@@ -91,32 +91,35 @@ namespace houseofatmos {
             f64 r_value = round(n_value * range / step) * step;
             f64 f_value = min + r_value;
             ui::Element& handle = slider.child_at<1>();
-            handle.position.x() = r_value / range;
-            ui::Element& value = container.child_at<1>().child_at<0>();
+            handle.horiz_func = ui::horiz::in_parent_fract(r_value / range);
+            ui::Element& value = container.child_at<1>();
             value.text = std::format("{}{}", f_value, suffix);
             h(f_value);
         };
         ui::Element container = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .with_click_handler(std::move(click_handler), ui::include_dragging)
             .as_movable();
         ui::Element slider = ui::Element()
             .as_phantom()
-            .with_size(length_units, height_units, ui::size::units)
-            .with_pos(0, 0, ui::position::parent_list_units)
+            .with_size(ui::unit * length_units, ui::unit * height_units)
             .as_movable();
         slider.children.push_back(ui::Element()
             .as_phantom()
-            .with_size(length_units, 0.0, ui::size::units)
-            .with_pos(0.5, 0.5, ui::position::parent_offset_fract)
+            .with_size(ui::unit * length_units, ui::null)
+            .with_pos(
+                ui::horiz::in_parent_fract(0.5), ui::vert::in_parent_fract(0.5)
+            )
             .with_background(&ui_background::border_dark)
             .as_movable()
         );
         f64 n_value = (value - min) / (max - min);
         slider.children.push_back(ui::Element()
-            .with_size(2, height_units, ui::size::units)
-            .with_pos(n_value, 0.5, ui::position::parent_offset_fract)
+            .with_size(ui::unit * 2, ui::unit * height_units)
+            .with_pos(
+                ui::horiz::in_parent_fract(n_value), 
+                ui::vert::in_parent_fract(0.5)
+            )
             .with_background(
                 &ui_background::button, &ui_background::button_select
             )
@@ -125,14 +128,12 @@ namespace houseofatmos {
         container.children.push_back(std::move(slider));
         f64 text_vert_pad = (height_units - ui_font::dark.height) / 2.0;
         ui::Element value_e = ui::Element()
-            .with_size(value_width_units, height_units, ui::size::units)
-            .with_pos(0, 0, ui::position::parent_list_units)
-            .with_child(ui::Element()
-                .with_pos(4.0, text_vert_pad, ui::position::parent_offset_units)
-                .with_size(0, 0, ui::size::unwrapped_text)
-                .with_text(std::format("{}{}", value, suffix), &ui_font::dark)
-                .as_movable()
+            .with_size(ui::unit * value_width_units, ui::unit * height_units)
+            .with_pos(
+                ui::horiz::list + ui::unit * 4, 
+                ui::vert::list + ui::unit * text_vert_pad
             )
+            .with_text(std::format("{}{}", value, suffix), &ui_font::dark)
             .as_movable();
         container.children.push_back(std::move(value_e));
         return container;
@@ -158,8 +159,9 @@ namespace houseofatmos {
     ) {
         window.cancel(engine::Button::Left);
         ui::Element menu = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_pos(0.5, 0.5, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), ui::vert::in_window_fract(0.5)
+            )
             .with_background(&ui_background::scroll_vertical)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();   
@@ -197,11 +199,9 @@ namespace houseofatmos {
         );
         menu.children.push_back(view_distance.with_padding(4.0).as_movable());
         ui::Element toggle_buttons = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         ui::Element toggle_labels = ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         toggle_buttons.children.push_back(ui_util::create_button(
@@ -234,7 +234,6 @@ namespace houseofatmos {
         // // 1 => 550, 2 => 500, 3 => 450, 4 => 400, 
         // // 5 => 350, 6 => 300, 7 => 250, 8 => 200
         toggle_buttons.children.push_back(ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .with_child(ui_util::create_button(
                 "+", [this](auto& e, auto c) {
@@ -256,7 +255,6 @@ namespace houseofatmos {
             ui_util::create_text(local.text("menu_ui_size"), 4.0)
         );
         menu.children.push_back(ui::Element()
-            .with_size(0, 0, ui::size::units_with_children)
             .with_list_dir(ui::Direction::Horizontal)
             .with_child(std::move(toggle_buttons))
             .with_child(std::move(toggle_labels))

@@ -8,13 +8,15 @@ namespace houseofatmos {
         ui::Element container = ui::Element()
             .with_handle(&this->container)
             .as_hidden(true)
-            .with_size(0, 0, ui::size::units_with_children)
-            .with_pos(0.5, 0.95, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.5), 
+                ui::vert::in_window_fract(0.95)
+            )
             .with_background(&ui_background::scroll_horizontal)
             .as_movable();
         container.children.push_back(ui::Element()
             .with_handle(&this->lines)
-            .with_size(150, 50, ui::size::units)
+            .with_size(ui::unit * 150, ui::height::text.max(ui::unit * 50))
             .with_text("", &ui_font::dark)
             .with_padding(3.0)
             .as_movable()

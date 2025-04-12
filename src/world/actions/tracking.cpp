@@ -10,8 +10,8 @@ namespace houseofatmos::world {
     void TrackingMode::init_ui() {
         this->ui.with_element(ui::Element()
             .as_phantom()
-            .with_pos(0.0, 0.0, ui::position::window_tl_units)
-            .with_size(1.0, 1.0, ui::size::window_fract)
+            .with_pos(ui::null, ui::null)
+            .with_size(ui::width::window, ui::height::window)
             .as_movable()
         );
         this->track_markers = &this->ui.root.children.back();
@@ -138,14 +138,12 @@ namespace houseofatmos::world {
             Vec<2> ndc = renderer.world_to_ndc(world);
             this->track_markers->children.push_back(ui::Element()
                 .as_phantom()
-                .with_pos(ndc.x(), ndc.y(), ui::position::window_ndc)
-                .with_child(ui::Element()
-                    .as_phantom()
-                    .with_pos(-4, -4, ui::position::parent_offset_units)
-                    .with_size(8, 8, ui::size::units)
-                    .with_background(&ui_icon::terrain_vertex)
-                    .as_movable()
+                .with_pos(
+                    ui::horiz::window_ndc(ndc.x()) - ui::unit * 4, 
+                    ui::vert::window_ndc(ndc.y()) - ui::unit * 4
                 )
+                .with_size(ui::unit * 8, ui::unit * 8)
+                .with_background(&ui_icon::terrain_vertex)
                 .as_movable()
             );
             f64 cursor_dist = (window.cursor_pos_ndc() - ndc).len();
@@ -199,32 +197,30 @@ namespace houseofatmos::world {
                         icon = &ui_icon::track_dir_icons[icon_i];
                     }
                     this->track_markers->children.push_back(ui::Element()
-                        .as_phantom()
-                        .with_pos(ndc.x(), ndc.y(), ui::position::window_ndc)
-                        .with_child(ui::Element()
-                            .with_pos(-4, -4, ui::position::parent_offset_units)
-                            .with_size(8, 8, ui::size::units)
-                            .with_background(icon)
-                            .with_click_handler([this, piece = &piece]() {
-                                TrackPiece::Direction d = piece->direction;
-                                switch(piece->direction) {
-                                    case TrackPiece::Any: 
-                                        d = TrackPiece::Descending; break;
-                                    case TrackPiece::Descending:
-                                        d = TrackPiece::Ascending; break;
-                                    case TrackPiece::Ascending:
-                                        d = TrackPiece::Any; break;
-                                }
-                                std::vector<TrackNetwork::NodeId> modified;
-                                fill_track_directions(
-                                    this->world->terrain, 
-                                    this->world->trains.network, 
-                                    modified, piece, d
-                                );
-                                this->world->trains.find_paths(&this->toasts);
-                            })
-                            .as_movable()
+                        .with_pos(
+                            ui::horiz::window_ndc(ndc.x()) - ui::unit * 4,
+                            ui::vert::window_ndc(ndc.y()) - ui::unit * 4
                         )
+                        .with_size(ui::unit * 8, ui::unit * 8)
+                        .with_background(icon)
+                        .with_click_handler([this, piece = &piece]() {
+                            TrackPiece::Direction d = piece->direction;
+                            switch(piece->direction) {
+                                case TrackPiece::Any: 
+                                    d = TrackPiece::Descending; break;
+                                case TrackPiece::Descending:
+                                    d = TrackPiece::Ascending; break;
+                                case TrackPiece::Ascending:
+                                    d = TrackPiece::Any; break;
+                            }
+                            std::vector<TrackNetwork::NodeId> modified;
+                            fill_track_directions(
+                                this->world->terrain, 
+                                this->world->trains.network, 
+                                modified, piece, d
+                            );
+                            this->world->trains.find_paths(&this->toasts);
+                        })
                         .as_movable()
                     );
                 }

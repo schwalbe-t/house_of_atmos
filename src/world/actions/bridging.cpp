@@ -23,7 +23,9 @@ namespace houseofatmos::world {
             = ui_util::create_selection_container(
                 local->text("ui_bridge_selection")
             )
-            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.95), ui::vert::in_window_fract(0.5)
+            )
             .as_movable();
         for(size_t type_id = 0; type_id < Bridge::types().size(); type_id += 1) {
             auto req_reward = required_bridge_rewards[type_id];

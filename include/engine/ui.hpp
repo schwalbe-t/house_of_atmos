@@ -22,14 +22,57 @@ namespace houseofatmos::engine::ui {
         size_t child_i;
     };
 
-    using SizeFunc = Vec<2> (*)(
-        Element& self, const Element* parent, const Window& window, f64 unit
-    );
+    struct LayoutContext {
+        Element* self;
+        const Element* parent;
+        size_t child_i;
+        const Window* window;
+        f64 unit;
 
-    using PosFunc = Vec<2> (*)(
-        Element& self, std::optional<ChildRef> parent, 
-        const Window& window, f64 unit
-    );
+        LayoutContext(Element& self, const Window& window, f64 unit): 
+            self(&self), parent(nullptr), child_i(0), 
+            window(&window), unit(unit) {}
+
+        LayoutContext for_child(Element& child, size_t child_i) {
+            auto ctx = LayoutContext(child, *this->window, this->unit);
+            ctx.parent = this->self;
+            ctx.child_i = child_i;
+            return ctx;
+        }
+    };
+
+    #define IMPL_LAYOUT_FUNC_OPERATOR(OP) \
+        LayoutFunc operator OP(LayoutFunc other) const { \
+            return LayoutFunc([l = this->impl, r = other.impl](auto ctx) { \
+                return l(ctx) OP r(ctx); \
+            }); \
+        } \
+        LayoutFunc operator OP(f64 other) const { \
+            return LayoutFunc([l = this->impl, r = other](auto ctx) { \
+                return l(ctx) OP r; \
+            }); \
+        }
+
+    struct LayoutFunc {
+        std::function<f64 (LayoutContext)> impl;
+
+        IMPL_LAYOUT_FUNC_OPERATOR(+)
+        IMPL_LAYOUT_FUNC_OPERATOR(-)
+        IMPL_LAYOUT_FUNC_OPERATOR(*)
+        IMPL_LAYOUT_FUNC_OPERATOR(/)
+
+        LayoutFunc min(LayoutFunc other) const {
+            return LayoutFunc([l = this->impl, r = other.impl](auto ctx) {
+                return std::min(l(ctx), r(ctx));
+            });
+        }
+
+        LayoutFunc max(LayoutFunc other) const {
+            return LayoutFunc([l = this->impl, r = other.impl](auto ctx) {
+                return std::max(l(ctx), r(ctx));
+            });
+        }
+    };
 
     enum struct Direction {
         Horizontal, Vertical
@@ -72,6 +115,42 @@ namespace houseofatmos::engine::ui {
     };
 
 
+    extern LayoutFunc null;
+    extern LayoutFunc unit;
+
+    namespace width {
+        extern LayoutFunc parent;
+        extern LayoutFunc window;
+        extern LayoutFunc children;
+        extern LayoutFunc text;
+    }
+
+    namespace height {
+        extern LayoutFunc parent;
+        extern LayoutFunc window;
+        extern LayoutFunc children;
+        extern LayoutFunc text;
+    }
+
+    namespace horiz {
+        LayoutFunc in_window_fract(f64 fract);
+        LayoutFunc in_parent_fract(f64 fract);
+        LayoutFunc window_ndc(f64 ndc);
+        extern LayoutFunc parent;
+        extern LayoutFunc list;
+        extern LayoutFunc width;
+    }
+
+    namespace vert {
+        LayoutFunc in_window_fract(f64 fract);
+        LayoutFunc in_parent_fract(f64 fract);
+        LayoutFunc window_ndc(f64 ndc);
+        extern LayoutFunc parent;
+        extern LayoutFunc list;
+        extern LayoutFunc height;
+    }
+
+
     static inline const bool include_dragging = true;
     static inline const bool ignore_dragging = false;
 
@@ -87,11 +166,11 @@ namespace houseofatmos::engine::ui {
 
 
         public:
-        Vec<2> size;
-        SizeFunc size_func;
+        LayoutFunc width_func;
+        LayoutFunc height_func;
         
-        Vec<2> position;
-        PosFunc pos_func;
+        LayoutFunc horiz_func;
+        LayoutFunc vert_func;
 
         // 'std::list' because:
         //   - preserves the addresses of children even on push / pop
@@ -124,14 +203,14 @@ namespace houseofatmos::engine::ui {
         Element(Element&& other) noexcept;
         Element& operator=(Element&& other) noexcept;
         ~Element();
-        Element& with_size(f64 width, f64 height, SizeFunc size_func) {
-            this->size = Vec<2>(width, height);
-            this->size_func = size_func;
+        Element& with_size(LayoutFunc width_func, LayoutFunc height_func) {
+            this->width_func = width_func;
+            this->height_func = height_func;
             return *this;
         }
-        Element& with_pos(f64 x, f64 y, PosFunc pos_func) {
-            this->position = Vec<2>(x, y);
-            this->pos_func = pos_func;
+        Element& with_pos(LayoutFunc horiz_func, LayoutFunc vert_func) {
+            this->horiz_func = horiz_func;
+            this->vert_func = vert_func;
             return *this;
         }
         Element& with_list_dir(Direction list_dir) {
@@ -163,7 +242,7 @@ namespace houseofatmos::engine::ui {
                 h();    
             };
             this->handle_dragging = handle_dragging;
-            return *this;
+            return this->as_phantom(false);
         }
         Element& with_click_handler(
             std::function<void (ui::Element&, Vec<2>)>&& handler, 
@@ -171,7 +250,7 @@ namespace houseofatmos::engine::ui {
         ) {
             this->on_click = std::move(handler);
             this->handle_dragging = handle_dragging;
-            return *this;
+            return this->as_phantom(false);
         }
         Element& with_text(
             std::string text, const Font* font, bool wrap_text = true
@@ -221,21 +300,16 @@ namespace houseofatmos::engine::ui {
             Manager& manager, Scene& scene, const Window& window, f64 unit
         );
 
-        // may be called by sizing functions to force computation of the
-        // child size first 
-        // (note that sizing function of child may not depend on parent element)
-        void force_size_compute(const Window& window, f64 unit);
-
-        Element& with_padding(f64 amount);
+        Element& with_padding(LayoutFunc amount);
+        Element& with_padding(f64 units) {
+            if(units == 0) { return *this; }
+            return this->with_padding(unit * units);
+        }
 
 
         private:
-        void update_size(
-            const Element* parent, const Window& window, f64 unit
-        );
-        void update_position(
-            std::optional<ChildRef> parent, const Window& window, f64 unit
-        );
+        void update_position(LayoutContext ctx);
+        void update_size(LayoutContext ctx);
         void update_hovering(const Window& window);
         bool update_clicked(const Window& window);
 
@@ -244,29 +318,6 @@ namespace houseofatmos::engine::ui {
         void render_text(Manager& manager, Scene& scene, f64 unit) const;
 
     };
-
-
-    namespace position {
-        Vec<2> window_tl_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_tr_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_bl_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_br_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> window_ndc(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> parent_list_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> parent_list_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> parent_offset_units(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-        Vec<2> parent_offset_fract(Element& self, std::optional<ChildRef> parent, const Window& window, f64 unit);
-    }
-
-
-    namespace size {
-        Vec<2> units(Element& self, const Element* parent, const Window& window, f64 unit);
-        Vec<2> parent_fract(Element& self, const Element* parent, const Window& window, f64 unit);
-        Vec<2> window_fract(Element& self, const Element* parent, const Window& window, f64 unit);
-        Vec<2> units_with_children(Element& self, const Element* parent, const Window& window, f64 unit);
-        Vec<2> unwrapped_text(Element& self, const Element* parent, const Window& window, f64 unit);
-    }
 
 
     struct Manager {
@@ -294,8 +345,8 @@ namespace houseofatmos::engine::ui {
 
         public:
         Element root = Element()
-            .with_pos(0, 0, ui::position::window_tl_units)
-            .with_size(1.0, 1.0, ui::size::window_fract)
+            .with_pos(null, null)
+            .with_size(width::window, height::window)
             .as_phantom() // still allows children to be clicked or hovered over
             .as_movable();
         f64 unit_fract_size; // fraction of window height

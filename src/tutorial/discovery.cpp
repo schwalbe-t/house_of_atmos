@@ -13,19 +13,12 @@ namespace houseofatmos::tutorial {
     static const f64 maid_v_pitch = 2.3;
     static const f64 maid_v_speed = 3.3;
 
-    static Cutscene create_cutscene(
-        std::shared_ptr<interior::Scene> scene,
-        std::shared_ptr<world::Scene> after
-    ) {
+    static Cutscene create_cutscene(std::shared_ptr<interior::Scene> scene) {
         // this is only legal because the previous scene already loads this :/
         const engine::Localization* local 
             = &scene->get(scene->world->settings.localization());
-        auto force_player_sit = [scene, after](engine::Window& window) {
-            if(window.was_pressed(engine::Key::Tab)) {
-                after->world->settings = scene->world->settings;
-                auto new_scene = after;
-                window.set_scene(std::move(new_scene));
-            }
+        auto force_player_sit = [scene](engine::Window& window) {
+            (void) window;
             scene->created_interactables.clear();
             scene->player.character.position = { 0, 0.8, 10.3 };
             scene->player.character.action = Character::Action(
@@ -120,13 +113,12 @@ namespace houseofatmos::tutorial {
     std::shared_ptr<engine::Scene> create_discovery_scene(
         std::shared_ptr<world::World> world_after
     ) {
-        auto scene_after = std::make_shared<world::Scene>(world_after);
         auto scene = std::make_shared<interior::Scene>(
             interior::mansion,
             std::shared_ptr<world::World>(world_after), 
-            std::shared_ptr<world::Scene>(scene_after)
+            std::make_shared<world::Scene>(world_after)
         );
-        scene->cutscene.append(create_cutscene(scene, scene_after));
+        scene->cutscene.append(create_cutscene(scene));
         return scene;
     }
 

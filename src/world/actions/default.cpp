@@ -133,7 +133,9 @@ namespace houseofatmos::world {
     ) {
         const std::string& title = local.text(local_title);
         ui::Element selector = ui_util::create_selection_container(title)
-            .with_pos(0.95, 0.5, ui::position::window_fract)
+            .with_pos(
+                ui::horiz::in_window_fract(0.95), ui::vert::in_window_fract(0.5)
+            )
             .as_movable();
         for(size_t ci = 0; ci < choices.size(); ci += 1) {
             const C& choice = choices[ci];
