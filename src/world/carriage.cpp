@@ -284,6 +284,7 @@ namespace houseofatmos::world {
     void Carriage::render_drivers(
         Renderer& renderer, engine::Scene& scene, const engine::Window& window
     ) const {
+        driver.update(scene, window);
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
             .at((size_t) this->type);
         for(const auto& driver_inst: carriage_info.drivers) {

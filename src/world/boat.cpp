@@ -58,6 +58,18 @@ namespace houseofatmos::world {
                 "res/entities/sail_boat.glb", Renderer::model_attribs,
                 engine::FaceCulling::Disabled
             ),
+            {
+                (Boat::TypeInfo::CrewMember) {
+                    Vec<3>(0.0, 2.5, -4.4), // position offset
+                    0.0, // rotation offset
+                    (u64) human::Animation::Stand // animation
+                },
+                (Boat::TypeInfo::CrewMember) {
+                    Vec<3>(-1.5, 2.25, 0.0), // position offset
+                    pi / 2, // rotation offset
+                    (u64) human::Animation::Stand // animation
+                }
+            },
             -1.0, // may sink up to one unit if loaded fully
             1000, // capacity
             2.5, // speed
@@ -111,6 +123,11 @@ namespace houseofatmos::world {
             * Mat<4>::rotate_y(yaw);
     }
 
+    static Character crew_member = Character(
+        &human::male, &human::peasant_man, 
+        { 0, 0, 0 }, (u64) human::Animation::Sit
+    );
+
     void Boat::render(
         Renderer& renderer, BoatNetwork& network,
         engine::Scene& scene, const engine::Window& window
@@ -119,8 +136,17 @@ namespace houseofatmos::world {
         (void) window;
         TypeInfo boat_info = Boat::types().at((size_t) this->type);
         engine::Model& model = scene.get(boat_info.model);
-        Mat<4> transform = this->build_transform();
+        f64 yaw;
+        Mat<4> transform = this->build_transform(nullptr, &yaw);
         renderer.render(model, std::array { transform });
+        crew_member.update(scene, window);
+        for(const Boat::TypeInfo::CrewMember& m: boat_info.crew_members) {
+            crew_member.position = (transform * m.offset.with(1))
+                .swizzle<3>("xyz");
+            crew_member.angle = yaw + m.angle;
+            crew_member.action = Character::Action(m.animation_id, INFINITY);
+            crew_member.render(scene, window, renderer);
+        }
     }
 
 }

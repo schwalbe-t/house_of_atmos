@@ -538,8 +538,8 @@ namespace houseofatmos::world {
                         const AgentStop& stop = this->schedule[this->stop_i];
                         this->do_stop_transfer(network, stop);
                         this->stop_i += 1;
-                        this->reset_path();
                         this->state = AgentState::Travelling;
+                        this->has_path = false;
                     }
                     break;
                 }

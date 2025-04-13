@@ -28,9 +28,16 @@ namespace houseofatmos::world {
     struct Boat: Agent<BoatNetwork> {
 
         struct TypeInfo {
+            struct CrewMember {
+                Vec<3> offset;
+                f64 angle;
+                u64 animation_id;
+            };
+
             std::string_view local_name;
             const ui::Background* icon;
             engine::Model::LoadArgs model;
+            std::vector<CrewMember> crew_members;
             f64 weight_height_factor;
             u64 capacity;
             f64 speed;

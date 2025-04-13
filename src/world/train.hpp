@@ -213,11 +213,18 @@ namespace houseofatmos::world {
         static inline const u64 train_car_cost = 250;
 
         struct LocomotiveTypeInfo {
+            struct Driver {
+                Vec<3> offset;
+                f64 angle;
+                u64 animation_id;
+            };
+
             std::string_view local_name;
             const ui::Background* icon;
             std::optional<research::Research::Reward> req_reward;
             std::vector<Car> loco_cars;
             const Car& car_type;
+            std::vector<Driver> drivers;
             Vec<3> smoke_origin;
             f64 whistle_pitch;
             u64 max_car_count;

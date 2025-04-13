@@ -404,7 +404,7 @@ namespace houseofatmos::world {
 
     static Train::Car train_car_tram = Train::Car(
         engine::Model::LoadArgs(
-            "res/trains/tram.glb", 
+            "res/trains/tram_car.glb", 
             Renderer::model_attribs,
             engine::FaceCulling::Disabled
         ),
@@ -412,7 +412,7 @@ namespace houseofatmos::world {
         5.0, // length
         1.1, 3.9, // offsets of the front and back axles
         0.5, // wheel radius
-        10 // item capacity
+        0 // item capacity
     );
 
     static std::vector<Train::LocomotiveTypeInfo> locomotive_infos = {
@@ -435,6 +435,13 @@ namespace houseofatmos::world {
                 )
             },
             train_car_old,
+            {
+                (Train::LocomotiveTypeInfo::Driver) {
+                    Vec<3>(0.5, 0.9, -1.72), // position offset
+                    0.0, // rotation offset
+                    (u64) human::Animation::Stand // animation
+                }
+            },
             Vec<3>(0.0, 3.0, 1.22), // relative smoke origin
             1.4, // whistle pitch
             3, // max car count
@@ -443,7 +450,7 @@ namespace houseofatmos::world {
             5.0, // top speed
             5000, // cost
             Player::Rideable(
-                Vec<3>(0.0, 0.9, -1.72), // position offset
+                Vec<3>(-0.5, 0.9, -1.72), // position offset
                 0.0, // rotation offset
                 (u64) human::Animation::Stand // animation
             )
@@ -467,6 +474,13 @@ namespace houseofatmos::world {
                 )
             },
             train_car_old,
+            {
+                (Train::LocomotiveTypeInfo::Driver) {
+                    Vec<3>(0.5, 1.325, -2.20), // position offset
+                    0.0, // rotation offset
+                    (u64) human::Animation::Sit // animation
+                }
+            },
             Vec<3>(0.0, 2.6, 2.0), // relative smoke origin
             1.3, // whistle pitch
             4, // max car count
@@ -475,7 +489,7 @@ namespace houseofatmos::world {
             7.5, // top speed
             7500, // cost
             Player::Rideable(
-                Vec<3>(0.0, 1.325, -2.20), // position offset
+                Vec<3>(-0.5, 1.325, -2.20), // position offset
                 0.0, // rotation offset
                 (u64) human::Animation::Sit // animation
             )
@@ -484,8 +498,28 @@ namespace houseofatmos::world {
             "locomotive_name_tram",
             &ui_icon::tram,
             research::Research::Reward::Tram,
-            { train_car_tram },
+            {
+                Train::Car(
+                    engine::Model::LoadArgs(
+                        "res/trains/tram_locomotive.glb", 
+                        Renderer::model_attribs,
+                        engine::FaceCulling::Disabled
+                    ),
+                    Vec<3>(0, 0, 1), // model heading
+                    5.0, // length
+                    1.1, 3.9, // offsets of the front and back axles
+                    0.5, // wheel radius
+                    25 // item capacity
+                )
+            },
             train_car_tram,
+            {
+                (Train::LocomotiveTypeInfo::Driver) {
+                    Vec<3>(0.0, 1.2, 1.6), // position offset
+                    0.0, // rotation offset
+                    (u64) human::Animation::Sit // animation
+                }
+            },
             Vec<3>(0.395, 3.087, -1.702), // relative smoke origin
             1.35, // whistle pitch
             2, // max car count
@@ -754,6 +788,11 @@ namespace houseofatmos::world {
         }
     }
 
+    static Character driver = Character(
+        &human::female, &human::peasant_woman, 
+        { 0, 0, 0 }, (u64) human::Animation::Sit
+    );
+
     void Train::render(
         Renderer& renderer, TrackNetwork& network,
         engine::Scene& scene, const engine::Window& window
@@ -775,6 +814,18 @@ namespace houseofatmos::world {
             renderer.render(
                 model, std::array { transform }, &animation, timestamp
             );
+        }
+        driver.update(scene, window);
+        for(const auto& driver_inst: loco_info.drivers) {
+            f64 yaw;
+            Mat<4> driver_transform 
+                = this->build_car_transform(0, nullptr, nullptr, &yaw);
+            driver.position = (driver_transform * driver_inst.offset.with(1))
+                .swizzle<3>("xyz");
+            driver.angle = yaw + driver_inst.angle;
+            driver.action 
+                = Character::Action(driver_inst.animation_id, INFINITY);
+            driver.render(scene, window, renderer);
         }
     }
 
