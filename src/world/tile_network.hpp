@@ -86,13 +86,15 @@ namespace houseofatmos::world {
                 <= this->max_target_dist;
         }
 
-        std::optional<NodeId> closest_node_to(const Vec<3>& position) override {
+        std::vector<NodeId> closest_nodes_to(const Vec<3>& position) override {
             Vec<3> tile = position / this->terrain->units_per_tile();
             u64 x = (u64) std::max(tile.x(), 0.0);
             x = std::min(x, this->terrain->width_in_tiles());
             u64 z = (u64) std::max(tile.z(), 0.0);
             z = std::min(z, this->terrain->height_in_tiles());
-            return NodeId(x, z);
+            NodeId node = NodeId(x, z);
+            if(!this->is_passable(node)) { return {}; }
+            return { node };
         }
 
     };

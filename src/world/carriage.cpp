@@ -137,9 +137,8 @@ namespace houseofatmos::world {
     Carriage::Carriage(
         CarriageType type, Vec<3> position, StatefulRNG& rng, 
         const Settings& settings
-    ) {
+    ): Agent<CarriageNetwork>(position) {
         this->type = type;
-        this->position = position;
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
             .at((size_t) this->type);
         size_t horse_count = carriage_info.horse_offsets.size();

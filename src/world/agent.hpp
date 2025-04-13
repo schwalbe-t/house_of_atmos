@@ -47,7 +47,7 @@ namespace houseofatmos::world {
             std::vector<Vec<3>>& out
         ) = 0;
 
-        virtual std::optional<NodeId> closest_node_to(
+        virtual std::vector<NodeId> closest_nodes_to(
             const Vec<3>& position
         ) = 0;
 
@@ -106,9 +106,7 @@ namespace houseofatmos::world {
         Vec<3> start;
         std::vector<Section> sections;
 
-        std::pair<Vec<3>, size_t> after(
-            f64 distance, bool* at_end = nullptr
-        ) const {
+        std::pair<Vec<3>, size_t> after(f64 distance) const {
             size_t sect_c = this->sections.size();
             f64 remaining = distance;
             Vec<3> position = this->start;
@@ -120,13 +118,11 @@ namespace houseofatmos::world {
                     f64 step_progress = std::min(remaining / step_len, 1.0);
                     position += step * step_progress;
                     if(remaining <= step_len) { 
-                        if(at_end != nullptr) { *at_end = false; }
                         return { position, sect_i }; 
                     }
                     remaining -= step_len;
                 }
             }
-            if(at_end != nullptr) { *at_end = true; }
             return { position, sect_c - 1 }; 
         }
 
@@ -145,6 +141,13 @@ namespace houseofatmos::world {
 
         f64 length() const {
             return this->section_distance(this->sections.size());
+        }
+
+        void append(const AgentPath& other) {
+            this->sections.insert(
+                this->sections.end(),
+                other.sections.begin(), other.sections.end()
+            );
         }
 
 
@@ -208,12 +211,13 @@ namespace houseofatmos::world {
         static std::optional<AgentPath<Network>> find(
             Network& network, Vec<3> start_pos, ComplexId target
         ) {
-            std::optional<NodeId> start = network.closest_node_to(start_pos);
-            if(!start.has_value()) { return std::nullopt; }
+            std::vector<NodeId> starts = network.closest_nodes_to(start_pos);
             NodeSearchStates nodes;
-            nodes[*start] = NodeSearchState(
-                0, network.node_target_dist(*start, target), std::nullopt
-            );
+            for(NodeId start: starts) {
+                nodes[start] = NodeSearchState(
+                    0, network.node_target_dist(start, target), std::nullopt
+                );
+            }
             std::vector<std::pair<NodeId, u64>> connected;
             for(;;) {
                 std::optional<NodeId> next = cheapest_node(nodes);
@@ -427,13 +431,17 @@ namespace houseofatmos::world {
         }
 
         public:
-        Agent() {}
+        Agent(Vec<3> position) {
+            this->position = position;
+            this->path.start = position;
+        }
         Agent(const SerializedAgent& serialized, const engine::Arena& buffer) {
             buffer.copy_array_at_into(
                 serialized.stop_offset, serialized.stop_count, this->schedule
             );
             this->stop_i = serialized.stop_i;
             this->position = serialized.position;
+            this->path.start = serialized.position;
             buffer.copy_map_at_into(
                 serialized.items_offset, serialized.items_count, this->items
             );
@@ -460,6 +468,10 @@ namespace houseofatmos::world {
             return nullptr; 
         }
 
+        virtual bool at_path_end() {
+            return this->distance >= this->path.length();
+        }
+
         u64 stored_item_count() const {
             u64 total = 0;
             for(const auto [item, count]: this->items) {
@@ -471,13 +483,19 @@ namespace houseofatmos::world {
         AgentState current_state() const { return this->state; }
         const AgentPath<Network>& current_path() const { return this->path; }
         f64 current_path_dist() const { return this->distance; }
-        void reset_path() { this->has_path = false; }
+        void reset_path() {
+            this->has_path = false;
+            this->path = AgentPath<Network>();
+            this->path.start = this->position;
+            this->distance = 0.0;
+        }
 
         AbstractAgent as_abstract() {
             return AbstractAgent((void*) this, &Agent<Network>::abstract_impl);
         }
 
         static inline const f64 load_time = 5.0;
+        static inline const u64 preserved_section_c = 10;
 
         void update_state(Network& network, const engine::Window& window) {
             if(this->schedule.size() == 0) { this->state = AgentState::Idle; }
@@ -498,16 +516,23 @@ namespace houseofatmos::world {
                     }
                     this->distance += window.delta_time() 
                         * this->current_speed(network);
-                    bool is_at_end;
-                    this->position = this->path
-                        .after(this->distance, &is_at_end).first;
-                    if(is_at_end) { 
+                    this->position = this->path.after(this->distance).first;
+                    if(this->at_path_end()) {
                         this->load_start_time = window.time();
                         this->state = AgentState::Loading; 
                     }
                     break;
                 }
                 case AgentState::Loading: {
+                    // reduce path length to a maximum of N segments
+                    if(this->path.sections.size() > preserved_section_c) {
+                        f64 remaining = this->path.length() - this->distance;
+                        this->path.sections.erase(
+                            this->path.sections.begin(), 
+                            this->path.sections.end() - preserved_section_c
+                        );
+                        this->distance = this->path.length() - remaining;
+                    }
                     f64 load_done_time = this->load_start_time + load_time;
                     if(window.time() >= load_done_time) {
                         const AgentStop& stop = this->schedule[this->stop_i];
@@ -561,18 +586,14 @@ namespace houseofatmos::world {
                 || this->state == AgentState::Lost;
             if(!requires_path) { return false; }
             ComplexId target = this->schedule[this->stop_i].target;
-            std::optional<AgentPath<Network>> found 
-                = AgentPath<Network>::find(network, this->position, target);
+            std::optional<AgentPath<Network>> found = AgentPath<Network>::find(
+                network, this->path.after(this->path.length()).first, target
+            );
             if(!found.has_value()) {
                 this->state = AgentState::Lost;
                 return false;
             }
-            if(found->sections.size() == 0) {                
-                this->distance = this->path.length();
-            } else {
-                this->path = *found;
-                this->distance = 0.0;
-            }
+            this->path.append(*found);
             this->state = AgentState::Travelling;
             this->has_path = true;
             this->on_new_path(network);
@@ -643,6 +664,7 @@ namespace houseofatmos::world {
             for(Agent& agent: this->agents) {
                 agent.on_network_reset(network);
                 bool was_lost = agent.current_state() == AgentState::Lost;
+                agent.reset_path();
                 agent.find_path(this->network);
                 bool is_lost = agent.current_state() == AgentState::Lost;
                 any_became_lost |= (!was_lost && is_lost);

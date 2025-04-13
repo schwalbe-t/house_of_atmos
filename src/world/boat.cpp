@@ -70,9 +70,8 @@ namespace houseofatmos::world {
     }
 
 
-    Boat::Boat(Type type, Vec<3> position) {
+    Boat::Boat(Type type, Vec<3> position): Agent<BoatNetwork>(position) {
         this->type = type;
-        this->position = position;
     }
 
     Boat::Boat(

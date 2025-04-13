@@ -3,9 +3,9 @@
 
 #include "agent.hpp"
 #include "terrain.hpp"
+#include "tile_network.hpp"
 #include "../research/research.hpp"
 #include <algorithm>
-#include <unordered_set>
 
 namespace houseofatmos::world {
 
@@ -35,7 +35,7 @@ namespace houseofatmos::world {
 
             Type type;
             const Train* owner = nullptr;
-            u64 size = 0; // number of pieces that belong to the block
+            u64 size = 0; // number of tiles containing pieces that belong to the block
         
             Block(Type type = Block::Simple): type(type) {}
         };
@@ -159,7 +159,10 @@ namespace houseofatmos::world {
 
         private:
         void find_connections(NodeId node, Node& node_data);
-        void assign_nodes_to_blocks(NodeId node, Block* previous = nullptr);
+        void assign_nodes_to_blocks(
+            TileNetwork::NodeId tile,
+            Block* previous = nullptr
+        );
         void create_signals(NodeId node);
         public:
         void reload() override;
@@ -179,7 +182,7 @@ namespace houseofatmos::world {
             std::vector<Vec<3>>& out
         ) override;
 
-        std::optional<NodeId> closest_node_to(const Vec<3>& position) override;
+        std::vector<NodeId> closest_nodes_to(const Vec<3>& position) override;
 
 
         void update(
@@ -247,6 +250,7 @@ namespace houseofatmos::world {
             SerializedAgent agent;
             LocomotiveType locomotive;
             u64 car_count;
+            f64 velocity;
         };
 
         struct OwnedBlock {
@@ -293,8 +297,18 @@ namespace houseofatmos::world {
             return this->offset_of_car(car_count); 
         }
 
+        f64 back_path_dist() const {
+            return std::min(
+                this->current_path_dist(), 
+                this->current_path().length() - this->length()
+            );
+        }
+
         f64 front_path_dist() const {
-            return std::max(this->current_path_dist(), this->length());
+            return std::min(
+                this->current_path_dist() + this->length(), 
+                this->current_path().length()
+            );
         }
 
         const Car& car_at(size_t car_idx) const {
@@ -312,12 +326,6 @@ namespace houseofatmos::world {
 
         f64 current_speed(TrackNetwork& network) override {
             (void) network;
-            f64 await_signal_after = this->wait_point_distance(network);
-            if(await_signal_after < 1.0) { return 0.0; }
-            const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
-                .at((size_t) this->loco_type);
-            f64 len = this->length();
-            if(this->current_path_dist() < len) { return loco_info.top_speed; }
             return this->velocity;
         }
 
@@ -337,8 +345,12 @@ namespace houseofatmos::world {
                 .at((size_t) this->loco_type).local_name;
         }
 
-        const ui::Background* icon() { 
+        const ui::Background* icon() override { 
             return Train::locomotive_types().at((size_t) this->loco_type).icon;
+        }
+
+        bool at_path_end() override {
+            return this->front_path_dist() >= this->current_path().length();
         }
 
         Mat<4> build_car_transform(
