@@ -22,14 +22,6 @@ namespace houseofatmos::world {
 
     struct Terrain {
 
-        struct Serialized {
-            u64 width, height;
-            u64 elevation_count, elevation_offset;
-            u64 chunk_count, chunk_offset;
-            u64 bridge_count, bridge_offset;
-        };
-
-
         static inline engine::Texture::LoadArgs ground_texture = {
             "res/terrain/ground.png"
         };
@@ -62,11 +54,11 @@ namespace houseofatmos::world {
 
         struct ChunkData {
             struct Serialized {
-                u64 foliage_count, foliage_offset;
-                u64 building_count, building_offset;
-                u64 paths_count, paths_offset;
-                u64 resources_count, resources_offset;
-                u64 track_pieces_count, track_pieces_offset;
+                engine::Arena::Array<Foliage> foliage;
+                engine::Arena::Array<Building> buildings;
+                engine::Arena::Array<Resource> resources;
+                engine::Arena::Array<TrackPiece> track_pieces;
+                engine::Arena::Array<u8> paths;
             };
 
             ChunkData(u64 size_tiles) {
@@ -94,6 +86,13 @@ namespace houseofatmos::world {
             }
 
             Serialized serialize(engine::Arena& buffer) const;
+        };
+
+        struct Serialized {
+            u64 width, height;
+            engine::Arena::Array<i16> elevation;
+            engine::Arena::Array<ChunkData::Serialized> chunks;
+            engine::Arena::Array<Bridge> bridges;
         };
 
         private:

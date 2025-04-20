@@ -142,7 +142,7 @@ namespace houseofatmos {
     static ui::Element create_toggle(
         bool* property, const engine::Localization* local
     ) {
-        return ui_util::create_button(
+        return ui_util::create_wide_button(
             local->text(*property? "menu_yes" : "menu_no"),
             [property, local](ui::Element& e, auto cursor) {
                 (void) cursor; 
@@ -204,7 +204,7 @@ namespace houseofatmos {
         ui::Element toggle_labels = ui::Element()
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        toggle_buttons.children.push_back(ui_util::create_button(
+        toggle_buttons.children.push_back(ui_util::create_wide_button(
             local.text(this->signal_side_left? "menu_left" : "menu_right"), 
             [this, local = &local](ui::Element& e, auto cursor) {
                 (void) cursor;

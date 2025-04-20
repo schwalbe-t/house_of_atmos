@@ -19,6 +19,8 @@ namespace houseofatmos::ui_util {
         const ui::Background* icon, std::string text, bool selected,
         std::function<void ()>&& handler
     ) {
+        ui::LayoutFunc pad_r_func = ui::unit * 2;
+        ui::LayoutFunc pad_d_func = ui::unit * 4;
         ui::Element item = create_icon_with_text(icon, text, 0.0)
             .with_background(
                 selected
@@ -29,9 +31,16 @@ namespace houseofatmos::ui_util {
                     : &ui_background::border_hovering
             )
             .with_click_handler(std::move(handler))
-            .with_padding(2)
             .as_movable();
-        return item;
+        item.width_func = item.width_func.max(ui::width::parent - pad_d_func);
+        item.horiz_func = ui::horiz::parent + pad_r_func;
+        item.vert_func = ui::vert::parent + pad_r_func;
+        ui::Element container = ui::Element().as_phantom().as_movable();
+        container.width_func = ui::width::parent
+            .max(ui::width::children + pad_d_func);
+        container.height_func = ui::height::children + pad_d_func;
+        container.children.push_back(std::move(item));
+        return container;
     }
 
 
@@ -80,6 +89,57 @@ namespace houseofatmos::ui_util {
         const ui::Background* background_hover
     ) {
         return create_button(
+            text,
+            [handler](auto& e, auto c) {
+                (void) e;
+                (void) c;
+                handler();
+            },
+            padding, text_padding,
+            font, background, background_hover
+        );
+    }
+
+    ui::Element create_wide_button(
+        std::string text, 
+        std::function<void (ui::Element&, Vec<2>)>&& handler,
+        f64 padding,
+        f64 text_padding,
+        const ui::Font* font,
+        const ui::Background* background,
+        const ui::Background* background_hover
+    ) {
+        ui::LayoutFunc pad_r_func = ui::unit * padding;
+        ui::LayoutFunc pad_d_func = ui::unit * (padding * 2);
+        ui::Element button = create_text(text, text_padding, font)
+            .as_phantom(false)
+            .with_background(background, background_hover)
+            .with_click_handler(std::move(handler))
+            .as_movable();
+        button.horiz_func = ui::horiz::parent + pad_r_func;
+        button.vert_func = ui::vert::parent + pad_r_func;
+        button.width_func = button.width_func
+            .max(ui::width::parent - pad_d_func);
+        ui::Element container = ui::Element()
+            .as_phantom()
+            .as_movable();
+        container.width_func = (ui::width::children + pad_d_func)
+            .max(ui::width::parent);
+        container.height_func = ui::height::children + pad_d_func;
+        container.children.push_back(std::move(button));
+        return container;
+    }
+
+    ui::Element create_wide_button(
+        std::string text, 
+        std::function<void ()>&& handler,
+        f64 padding,
+        f64 text_padding,
+        const ui::Font* font,
+        const ui::Background* background,
+        const ui::Background* background_hover
+    ) {
+        return create_wide_button(
             text,
             [handler](auto& e, auto c) {
                 (void) e;

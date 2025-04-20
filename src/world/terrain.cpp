@@ -1216,24 +1216,16 @@ namespace houseofatmos::world {
         this->chunk_tiles = chunk_tiles;
         this->view_chunk_x = 0;
         this->view_chunk_z = 0;
-        buffer.copy_array_at_into(
-            serialized.elevation_offset, serialized.elevation_count,
-            this->elevation
-        );
+        buffer.copy_into(serialized.elevation, this->elevation);
         this->width_chunks = (u64) ceil((f64) width / chunk_tiles);
         this->height_chunks = (u64) ceil((f64) height / chunk_tiles);
-        std::span<const ChunkData::Serialized> chunks = buffer
-            .array_at<ChunkData::Serialized>(
-                serialized.chunk_offset, serialized.chunk_count
-            );
-        this->chunks.reserve(chunks.size());
-        for(const ChunkData::Serialized& chunk: chunks) {
-            this->chunks.push_back(ChunkData(this->chunk_tiles, chunk, buffer));
-        }
-        buffer.copy_array_at_into(
-            serialized.bridge_offset, serialized.bridge_count,
-            this->bridges
+        buffer.copy_into<ChunkData::Serialized, ChunkData>(
+            serialized.chunks, this->chunks,
+            [&](const auto& c) {
+                return ChunkData(this->chunk_tiles, c, buffer); 
+            }
         );
+        buffer.copy_into(serialized.bridges, this->bridges);
     }
 
     Terrain::ChunkData::ChunkData(
@@ -1241,51 +1233,34 @@ namespace houseofatmos::world {
         const ChunkData::Serialized& serialized, const engine::Arena& buffer
     ) {
         this->size_tiles = size_tiles;
-        buffer.copy_array_at_into(
-            serialized.foliage_offset, serialized.foliage_count,
-            this->foliage
-        );
-        buffer.copy_array_at_into(
-            serialized.building_offset, serialized.building_count,
-            this->buildings
-        );
-        buffer.copy_array_at_into(
-            serialized.paths_offset, serialized.paths_count,
-            this->paths
-        );
-        buffer.copy_array_at_into(
-            serialized.resources_offset, serialized.resources_count,
-            this->resources
-        );
-        buffer.copy_array_at_into(
-            serialized.track_pieces_offset, serialized.track_pieces_count,
-            this->track_pieces
-        );
+        buffer.copy_into(serialized.foliage, this->foliage);
+        buffer.copy_into(serialized.buildings, this->buildings);
+        buffer.copy_into(serialized.resources, this->resources);
+        buffer.copy_into(serialized.track_pieces, this->track_pieces);
+        buffer.copy_into(serialized.paths, this->paths);
     }
 
     Terrain::ChunkData::Serialized Terrain::ChunkData::serialize(
         engine::Arena& buffer
     ) const {
         return {
-            this->foliage.size(), buffer.alloc_array(this->foliage),
-            this->buildings.size(), buffer.alloc_array(this->buildings),
-            this->paths.size(), buffer.alloc_array(this->paths),
-            this->resources.size(), buffer.alloc_array(this->resources),
-            this->track_pieces.size(), buffer.alloc_array(this->track_pieces)
+            buffer.alloc(this->foliage),
+            buffer.alloc(this->buildings),
+            buffer.alloc(this->resources),
+            buffer.alloc(this->track_pieces),
+            buffer.alloc(this->paths)
         };
     }
 
     Terrain::Serialized Terrain::serialize(engine::Arena& buffer) const {
-        auto chunk_data = std::vector<ChunkData::Serialized>();
-        chunk_data.reserve(this->chunks.size());
-        for(const ChunkData& chunk: this->chunks) {
-            chunk_data.push_back(chunk.serialize(buffer));
-        }
         return {
             this->width, this->height,
-            this->elevation.size(), buffer.alloc_array(this->elevation),
-            this->chunks.size(), buffer.alloc_array(chunk_data),
-            this->bridges.size(), buffer.alloc_array(this->bridges)
+            buffer.alloc(this->elevation),
+            buffer.alloc<ChunkData, ChunkData::Serialized>(
+                this->chunks, 
+                [&](const auto& c) { return c.serialize(buffer); }
+            ),
+            buffer.alloc(this->bridges)
         };
     }
 

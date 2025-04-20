@@ -111,9 +111,7 @@ namespace houseofatmos::research {
     }
 
     Research::Research(const Serialized& serialized, const engine::Arena& buffer) {
-        buffer.copy_map_at_into(
-            serialized.cond_offset, serialized.cond_count, this->progress
-        );
+        buffer.copy_into(serialized.progress, this->progress);
         for(size_t c = 0; c < Research::conditions().size(); c += 1) {
             if(this->progress.contains((Condition) c)) { continue; }
             this->progress[(Condition) c] = {};
@@ -122,7 +120,7 @@ namespace houseofatmos::research {
 
     Research::Serialized Research::serialize(engine::Arena& buffer) const {
         return {
-            this->progress.size(), buffer.alloc_map(this->progress)
+            buffer.alloc(this->progress)
         };
     }
 

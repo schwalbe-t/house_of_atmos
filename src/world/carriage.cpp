@@ -155,9 +155,7 @@ namespace houseofatmos::world {
         const Settings& settings
     ): Agent<CarriageNetwork>(serialized.agent, buffer) {
         this->type = serialized.type;
-        buffer.copy_array_at_into(
-            serialized.horses_offset, serialized.horses_count, this->horses
-        );
+        buffer.copy_into(serialized.horses, this->horses);
         this->speaker.volume = settings.sfx_volume;
     }
 
@@ -165,7 +163,7 @@ namespace houseofatmos::world {
         return Serialized(
             Agent<CarriageNetwork>::serialize(buffer), // this is a non-static
             this->type,
-            this->horses.size(), buffer.alloc_array(this->horses)
+            buffer.alloc(this->horses)
         );
     }
 

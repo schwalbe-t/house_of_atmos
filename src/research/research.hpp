@@ -56,7 +56,7 @@ namespace houseofatmos::research {
 
 
         struct Serialized {
-            u64 cond_count, cond_offset;
+            engine::Arena::Map<Condition, ConditionInfo::Progress> progress;
         };
 
         std::unordered_map<Condition, ConditionInfo::Progress> progress;

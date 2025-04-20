@@ -20,8 +20,8 @@ namespace houseofatmos::world {
 
     struct Conversion {
         struct Serialized {
-            u64 inputs_count, inputs_offset;
-            u64 outputs_count, outputs_offset;
+            engine::Arena::Array<Item::Stack> inputs;
+            engine::Arena::Array<Item::Stack> outputs;
             f64 period, passed;
         };
 
@@ -50,7 +50,7 @@ namespace houseofatmos::world {
         public:
         struct Member {
             struct Serialized {
-                u64 conversions_count, conversions_offset;
+                engine::Arena::Array<Conversion::Serialized> conversions;
             };
 
             Member(std::vector<Conversion> conversions) {
@@ -68,8 +68,10 @@ namespace houseofatmos::world {
 
 
         struct Serialized {
-            u64 members_count, members_offset;
-            u64 storage_count, storage_offset;
+            engine::Arena::Array<
+                std::pair<std::pair<u64, u64>, Member::Serialized>
+            > members;
+            engine::Arena::Map<Item::Type, u64> storage;
             bool free;
         };
 
@@ -124,8 +126,8 @@ namespace houseofatmos::world {
     struct ComplexBank {
 
         struct Serialized {
-            u64 complexes_count, complexes_offset;
-            u64 free_indices_count, free_indices_offset;
+            engine::Arena::Array<Complex::Serialized> complexes;
+            engine::Arena::Array<ComplexId> free_indices;
         };
 
         private:

@@ -921,6 +921,7 @@ namespace houseofatmos::world {
                 },
                 2, 1
             );
+        schedule_info.children.push_back(std::move(add_stop));
         ui::Element info = ui::Element()
             .with_pos(
                 ui::horiz::in_window_fract(0.95), ui::vert::in_window_fract(0.5)
@@ -936,7 +937,7 @@ namespace houseofatmos::world {
             .as_phantom()
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        buttons.children.push_back(ui_util::create_button(
+        buttons.children.push_back(ui_util::create_wide_button(
             this->local->text(agent_display.local_remove),
             [this, agent, ag_d = &agent_display]() {
                 ag_d->remove_impl(agent, *this->world);
@@ -949,7 +950,7 @@ namespace houseofatmos::world {
         ));
         for(const auto& button: agent_display.buttons) {
             if(button.show_if(agent, *this->world)) {
-                buttons.children.push_back(ui_util::create_button(
+                buttons.children.push_back(ui_util::create_wide_button(
                     this->local->text(button.local_text),
                     [
                         h = button.handler, agent, this, ag_d = &agent_display
@@ -965,7 +966,7 @@ namespace houseofatmos::world {
                     2, 1
                 ));
             } else {
-                buttons.children.push_back(ui_util::create_button(
+                buttons.children.push_back(ui_util::create_wide_button(
                     this->local->text(button.local_text),
                     []() {},
                     2, 1,
@@ -973,12 +974,11 @@ namespace houseofatmos::world {
                 ));
             }
         }
-        info.children.push_back(buttons.with_padding(2).as_movable());
+        info.children.push_back(buttons.with_padding(3.0).as_movable());
         info.children.push_back(
             ui_util::create_text(this->local->text("ui_schedule"), 1)
         );
         info.children.push_back(schedule_info.with_padding(3.0).as_movable());
-        info.children.push_back(std::move(add_stop));
         std::string on_board_text = this->local->pattern("ui_on_board", {
             std::to_string(agent.stored_item_count()),
             std::to_string(agent.item_storage_capacity())

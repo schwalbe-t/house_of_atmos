@@ -9,22 +9,16 @@ namespace houseofatmos::world {
     Conversion::Conversion(
         const Serialized& serialized, const engine::Arena& buffer
     ) {
-        buffer.copy_array_at_into(
-            serialized.inputs_offset, serialized.inputs_count,
-            this->inputs
-        );
-        buffer.copy_array_at_into(
-            serialized.outputs_offset, serialized.outputs_count,
-            this->outputs
-        );
+        buffer.copy_into(serialized.inputs, this->inputs);
+        buffer.copy_into(serialized.outputs, this->outputs);
         this->period = serialized.period;
         this->passed = serialized.passed;
     }
 
     Conversion::Serialized Conversion::serialize(engine::Arena& buffer) const {
         return (Serialized) {
-            this->inputs.size(), buffer.alloc_array(this->inputs),
-            this->outputs.size(), buffer.alloc_array(this->outputs),
+            buffer.alloc(this->inputs),
+            buffer.alloc(this->outputs),
             this->period, this->passed
         };
     }
@@ -34,10 +28,8 @@ namespace houseofatmos::world {
     Complex::Member::Member(
         const Serialized& serialized, const engine::Arena& buffer
     ) {
-        std::span<const Conversion::Serialized> conversions = buffer
-            .array_at<Conversion::Serialized>(
-                serialized.conversions_offset, serialized.conversions_count
-            );
+        std::span<const Conversion::Serialized> conversions 
+            = buffer.get(serialized.conversions);
         this->conversions.reserve(conversions.size());
         for(const Conversion::Serialized& conversion: conversions) {
             this->conversions.push_back(Conversion(conversion, buffer));
@@ -53,7 +45,7 @@ namespace houseofatmos::world {
             conversions.push_back(conversion.serialize(buffer));
         }
         return (Serialized) {
-            this->conversions.size(), buffer.alloc_array(conversions)
+            buffer.alloc(conversions)
         };
     }
 
@@ -64,28 +56,32 @@ namespace houseofatmos::world {
     }
 
     Complex::Complex(const Serialized& serialized, const engine::Arena& buffer) {
-        std::vector<std::pair<std::pair<u64, u64>, Member::Serialized>> members;
-        buffer.copy_array_at_into(
-            serialized.members_offset, serialized.members_count, members
+        buffer.copy_into<
+            std::pair<std::pair<u64, u64>, Member::Serialized>, 
+            std::pair<std::pair<u64, u64>, Member>
+        >(
+            serialized.members, this->members, 
+            [&](const auto& p) { return std::pair<std::pair<u64, u64>, Member>(
+                p.first, Member(p.second, buffer)
+            ); }
         );
-        for(const auto& [location, member]: members) {
-            this->members.push_back({ location, Member(member, buffer) });
-        }
-        buffer.copy_map_at_into(
-            serialized.storage_offset, serialized.storage_count, this->storage
-        );
+        buffer.copy_into(serialized.storage, this->storage);
         this->free = serialized.free;
     }
 
     Complex::Serialized Complex::serialize(engine::Arena& buffer) const {
-        std::vector<std::pair<std::pair<u64, u64>, Member::Serialized>> members;
-        members.reserve(this->members.size());
-        for(const auto& [location, member]: this->members) {
-            members.push_back({ location, member.serialize(buffer) });
-        }
         return (Serialized) {
-            this->members.size(), buffer.alloc_array(members),
-            this->storage.size(), buffer.alloc_map(this->storage),
+            buffer.alloc<
+                std::pair<std::pair<u64, u64>, Member>,
+                std::pair<std::pair<u64, u64>, Member::Serialized>
+            >(
+                this->members, [&](const auto& p) { 
+                    return std::pair<std::pair<u64, u64>, Member::Serialized>(
+                        p.first, p.second.serialize(buffer)
+                    ); 
+                }
+            ),
+            buffer.alloc(this->storage),
             this->free
         };
     }
@@ -298,29 +294,23 @@ namespace houseofatmos::world {
 
     ComplexBank::ComplexBank() {}
 
-    ComplexBank::ComplexBank(const Serialized& serialized, const engine::Arena& buffer) {
-        auto complexes = buffer.array_at<Complex::Serialized>(
-            serialized.complexes_offset, serialized.complexes_count
+    ComplexBank::ComplexBank(
+        const Serialized& serialized, const engine::Arena& buffer
+    ) {
+        buffer.copy_into<Complex::Serialized, Complex>(
+            serialized.complexes, this->complexes,
+            [&](const auto& c) { return Complex(c, buffer); }
         );
-        this->complexes.reserve(complexes.size());
-        for(const auto& complex: complexes) {
-            this->complexes.push_back(Complex(complex, buffer));
-        }
-        buffer.copy_array_at_into(
-            serialized.free_indices_offset, serialized.free_indices_count,
-            this->free_indices
-        );
+        buffer.copy_into(serialized.free_indices, this->free_indices);
     }
 
     ComplexBank::Serialized ComplexBank::serialize(engine::Arena& buffer) const {
-        std::vector<Complex::Serialized> complexes;
-        complexes.reserve(this->complexes.size());
-        for(const auto& complex: this->complexes) {
-            complexes.push_back(complex.serialize(buffer));
-        }
         return (Serialized) {
-            this->complexes.size(), buffer.alloc_array(complexes),
-            this->free_indices.size(), buffer.alloc_array(this->free_indices)
+            buffer.alloc<Complex, Complex::Serialized>(
+                this->complexes, 
+                [&](const auto& c) { return c.serialize(buffer); }
+            ),
+            buffer.alloc(this->free_indices)
         };
     }
 

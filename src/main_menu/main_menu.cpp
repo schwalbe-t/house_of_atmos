@@ -52,7 +52,7 @@ namespace houseofatmos {
     ) {
         std::vector<char> data = engine::GenericLoader::read_bytes(path);
         auto buffer = engine::Arena(data);
-        u32 format_version = buffer.value_at<u32>(0);
+        u32 format_version = buffer.get(engine::Arena::Position<u32>(0));
         u32 required_version = world::World::current_format_version;
         if(format_version != required_version) {
             std::string local_message = format_version < required_version
@@ -70,6 +70,7 @@ namespace houseofatmos {
     }
 
     static const size_t max_prev_games = 5;
+    static const size_t max_game_name_len = 10;
 
     void MainMenu::show_title_screen(
         const engine::Localization& local, engine::Window& window
@@ -101,23 +102,17 @@ namespace houseofatmos {
             )
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        buttons.children.push_back(ui_util::create_button(
+        buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_new_game"),
             [this, local = &local, window = &window]() {
                 this->show_gamemode_screen(*local, *window);
             }
         ));
         for(const std::string& game_path: this->settings.last_games) {
-            size_t last_slash = game_path.find_last_of('/');
-            size_t last_backslash = game_path.find_last_of('\\');
-            size_t short_start = last_slash != std::string::npos
-                ? last_slash + 1
-                : last_backslash != std::string::npos
-                    ? last_backslash + 1
-                    : 0;
-            std::string short_name = game_path.substr(short_start);
-            buttons.children.push_back(ui_util::create_button(
-                local.pattern("menu_load_previous_game", { short_name }),
+            std::string displayed_name 
+                = world::World::shortened_path(game_path);
+            buttons.children.push_back(ui_util::create_wide_button(
+                local.pattern("menu_load_previous_game", { displayed_name }),
                 [window = &window, local = &local, this, path = game_path]() {
                     this->before_next_frame = [this, path, local, window]() {
                         this->load_game_from(path, *local, *window);
@@ -126,7 +121,7 @@ namespace houseofatmos {
                 }
             ));
         }
-        buttons.children.push_back(ui_util::create_button(
+        buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_load_game"),
             [local = &local, window = &window, this]() {
                 std::vector<std::string> chosen = pfd::open_file(
@@ -143,13 +138,13 @@ namespace houseofatmos {
                 this->show_loading_screen(*local);
             }
         ));
-        buttons.children.push_back(ui_util::create_button(
+        buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_settings"),
             [this, local = &local, window = &window]() {
                 this->show_settings(*local, *window);
             }
         ));
-        buttons.children.push_back(ui_util::create_button(
+        buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_exit_game"),
             []() { std::exit(0); }
         ));

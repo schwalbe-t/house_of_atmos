@@ -89,7 +89,7 @@ namespace houseofatmos::world {
         struct Serialized {
             SerializedAgent agent;
             CarriageType type;
-            u64 horses_count, horses_offset;
+            engine::Arena::Array<HorseType> horses;
         };
 
         CarriageType type;

@@ -32,7 +32,9 @@ namespace houseofatmos {
             std::string(this->world->save_path)
         );
         this->world->settings.save_to(Settings::default_path);
-        this->toasts.add_toast("toast_saved_game", { this->world->save_path });
+        this->toasts.add_toast("toast_saved_game", {
+            world::World::shortened_path(this->world->save_path) 
+        });
     }
 
     void PauseMenu::show_root_menu(engine::Window& window) {
@@ -52,14 +54,14 @@ namespace houseofatmos {
         ui::Element buttons = ui::Element()
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        buttons.children.push_back(ui_util::create_button(
+        buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_resume_game"), 
             [window = &window, this]() {
                 window->set_scene(std::shared_ptr<engine::Scene>(this->previous)); 
             }
         ));
         if(this->world->saving_allowed && this->world->save_path.size() > 0) {
-            buttons.children.push_back(ui_util::create_button(
+            buttons.children.push_back(ui_util::create_wide_button(
                 local.text("menu_save_game"),
                 [this, window = &window]() {
                     this->save_game(*window); 
@@ -67,7 +69,7 @@ namespace houseofatmos {
             ));
         }
         if(this->world->saving_allowed) {
-            buttons.children.push_back(ui_util::create_button(
+            buttons.children.push_back(ui_util::create_wide_button(
                 local.text("menu_save_game_as"),
                 [this, local = &local, window = &window]() {
                     std::string new_path = pfd::save_file(
@@ -85,13 +87,13 @@ namespace houseofatmos {
                 }
             ));
         }
-        buttons.children.push_back(ui_util::create_button(
+        buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_settings"),
             [window = &window, this]() {
                 this->show_settings(*window);
             }
         ));
-        buttons.children.push_back(ui_util::create_button(
+        buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_to_main_menu"),
             [window = &window, this]() {
                 this->world->write_to_file();

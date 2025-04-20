@@ -17,7 +17,7 @@ namespace houseofatmos::world {
         // For any breaking change to the serialized structure of the world,
         // increment this number by 1
         // (any time an update makes it so old files can't be loaded anymore)
-        static inline u32 current_format_version = 2;
+        static inline u32 current_format_version = 3;
 
         struct Serialized {
             u32 format_version;
@@ -85,6 +85,23 @@ namespace houseofatmos::world {
             ParticleManager* particles = nullptr, 
             Interactables* interactables = nullptr
         );
+
+
+        static inline const size_t max_game_name_len = 10;
+
+        static inline std::string shortened_path(const std::string& game_path) {
+            size_t last_slash = game_path.find_last_of('/');
+            size_t last_backslash = game_path.find_last_of('\\');
+            size_t short_start = last_slash != std::string::npos
+                ? last_slash + 1
+                : last_backslash != std::string::npos
+                    ? last_backslash + 1
+                    : 0;
+            std::string short_name = game_path.substr(short_start);
+            return short_name.size() > max_game_name_len
+                ? short_name.substr(0, max_game_name_len) + "..."
+                : short_name;
+        }
 
     };
 

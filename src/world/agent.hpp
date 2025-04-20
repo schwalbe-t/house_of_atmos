@@ -324,10 +324,10 @@ namespace houseofatmos::world {
     };
 
     struct SerializedAgent {
-        u64 stop_count, stop_offset;
+        engine::Arena::Array<AgentStop> schedule;
         u64 stop_i;
         Vec<3> position;
-        u64 items_count, items_offset;
+        engine::Arena::Map<Item::Type, u64> items;
     };
 
     template<typename Network>
@@ -436,25 +436,21 @@ namespace houseofatmos::world {
             this->path.start = position;
         }
         Agent(const SerializedAgent& serialized, const engine::Arena& buffer) {
-            buffer.copy_array_at_into(
-                serialized.stop_offset, serialized.stop_count, this->schedule
-            );
+            buffer.copy_into(serialized.schedule, this->schedule);
             this->stop_i = serialized.stop_i;
             this->position = serialized.position;
             this->path.start = serialized.position;
-            buffer.copy_map_at_into(
-                serialized.items_offset, serialized.items_count, this->items
-            );
+            buffer.copy_into(serialized.items, this->items);
         }
         Agent(Agent&& other) noexcept = default;
         Agent& operator=(Agent&& other) noexcept = default;
         
         SerializedAgent serialize(engine::Arena& buffer) const {
             return SerializedAgent(
-                this->schedule.size(), buffer.alloc_array(this->schedule),
+                buffer.alloc(this->schedule),
                 this->stop_i,
                 this->position,
-                this->items.size(), buffer.alloc_map(this->items)
+                buffer.alloc(this->items)
             );
         }
 
@@ -627,7 +623,7 @@ namespace houseofatmos::world {
         using SerializedAgent = Agent::Serialized;
 
         struct Serialized {
-            u64 agent_count, agent_offset;
+            engine::Arena::Array<SerializedAgent> agents;
         };
 
         std::list<Agent> agents;
@@ -639,23 +635,18 @@ namespace houseofatmos::world {
             const Serialized& serialized, const engine::Arena& buffer,
             const Settings& settings
         ): network(std::move(network)) {
-            std::vector<SerializedAgent> agents;
-            buffer.copy_array_at_into(
-                serialized.agent_offset, serialized.agent_count, agents
+            buffer.copy_into<SerializedAgent, Agent>(
+                serialized.agents, this->agents,
+                [&](const auto& a) { return Agent(a, buffer, settings); }
             );
-            for(const SerializedAgent& agent: agents) {
-                this->agents.push_back(Agent(agent, buffer, settings));
-            }
         }
 
 
         Serialized serialize(engine::Arena& buffer) const {
-            std::vector<SerializedAgent> agents;
-            agents.reserve(this->agents.size());
-            for(const Agent& agent: this->agents) {
-                agents.push_back(agent.serialize(buffer));
-            }
-            return Serialized(agents.size(), buffer.alloc_array(agents));
+            return Serialized(buffer.alloc<Agent, SerializedAgent>(
+                this->agents,
+                [&](const auto& a) { return a.serialize(buffer); }
+            ));
         }
 
         void find_paths(Toasts* toasts) {

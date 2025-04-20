@@ -350,7 +350,9 @@ namespace houseofatmos::world {
                 BoatNetwork(&this->terrain, &this->complexes)
             )),
             personal_horse(PersonalHorse(this->settings)) {
-        const auto& serialized = buffer.value_at<World::Serialized>(0);
+        const auto& serialized = buffer.get(
+            engine::Arena::Position<World::Serialized>(0)
+        );
         this->terrain = Terrain(
             serialized.terrain, World::units_per_tile, World::tiles_per_chunk,
             buffer
@@ -382,11 +384,12 @@ namespace houseofatmos::world {
     engine::Arena World::serialize() const {
         auto buffer = engine::Arena();
         // we need to allocate the base struct first so that it's always at offset 0
-        size_t root_offset = buffer.alloc_array<World::Serialized>(nullptr, 1);
-        assert(root_offset == 0);
-        // we do not write to the allocated struct directly yet
-        // because these serialization calls may grow and reallocate the buffer,
-        // making the reference invalid
+        engine::Arena::Position<World::Serialized> root_pos 
+            = buffer.alloc<World::Serialized>();
+        assert(root_pos.byte_offset == 0);
+        // we do not get a reference to the allocated struct directly yet
+        // since the following operations may cause the buffer to grow and
+        // to reallocate, making the reference invalid
         Terrain::Serialized terrain = this->terrain.serialize(buffer);
         ComplexBank::Serialized complexes = this->complexes.serialize(buffer);
         Player::Serialized player = this->player.serialize();
@@ -394,7 +397,7 @@ namespace houseofatmos::world {
         TrainManager::Serialized trains = this->trains.serialize(buffer);
         BoatManager::Serialized boats = this->boats.serialize(buffer);
         research::Research::Serialized research = this->research.serialize(buffer);
-        auto& serialized = buffer.value_at<World::Serialized>(root_offset);
+        auto& serialized = buffer.get(root_pos);
         serialized.format_version = World::current_format_version;
         serialized.terrain = terrain;
         serialized.complexes = complexes;
