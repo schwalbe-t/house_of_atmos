@@ -1396,5 +1396,110 @@
         "en": "You are now the count of this county and free to manage it however you like.",
         "de": "Du bist hiermit der Graf dieses Bezirks und kannst es verwalten, so wie du es möchtest.",
         "bg": "Вече сте графът на този окръг и сте свободни да го управлявате, както пожелаете."
+    },
+
+
+
+    "settlement_name_prefix_0": {
+        "en": "Wester",
+        "de": "Sonne",
+        "bg": "Стрел"
+    },
+    "settlement_name_prefix_1": {
+        "en": "Minster",
+        "de": "Frei",
+        "bg": "Гит"
+    },
+    "settlement_name_prefix_2": {
+        "en": "Iving",
+        "de": "Winter",
+        "bg": "Гълъб"
+    },
+    "settlement_name_prefix_3": {
+        "en": "Green",
+        "de": "Rathe",
+        "bg": "Слив"
+    },
+    "settlement_name_prefix_4": {
+        "en": "Brack",
+        "de": "Nien",
+        "bg": "Вод"
+    },
+    "settlement_name_prefix_5": {
+        "en": "Deben",
+        "de": "Ober",
+        "bg": "Камен"
+    },
+    "settlement_name_prefix_6": {
+        "en": "Mund",
+        "de": "Mühl",
+        "bg": "Въл"
+    },
+    "settlement_name_prefix_7": {
+        "en": "Harting",
+        "de": "Neu",
+        "bg": "Салаш"
+    },
+    "settlement_name_prefix_8": {
+        "en": "Dent",
+        "de": "Nord",
+        "bg": "Бут"
+    },
+    "settlement_name_prefix_9": {
+        "en": "Conon",
+        "de": "Deggen",
+        "bg": "Коч"
+    },
+
+
+    "settlement_name_suffix_0": {
+        "en": "ham",
+        "de": "furt",
+        "bg": "ен"
+    },
+    "settlement_name_suffix_1": {
+        "en": "dale",
+        "de": "hausen",
+        "bg": "еч"
+    },
+    "settlement_name_suffix_2": {
+        "en": "bridge",
+        "de": "burg",
+        "bg": "ица"
+    },
+    "settlement_name_suffix_3": {
+        "en": "ford",
+        "de": "berg",
+        "bg": "ово"
+    },
+    "settlement_name_suffix_4": {
+        "en": "pool",
+        "de": "feld",
+        "bg": "ец"
+    },
+    "settlement_name_suffix_5": {
+        "en": "field",
+        "de": "stadt",
+        "bg": "ар"
+    },
+    "settlement_name_suffix_6": {
+        "en": "ton",
+        "de": "kirchen",
+        "bg": "ище"
+    },
+    "settlement_name_suffix_7": {
+        "en": "wich",
+        "de": "baden",
+        "bg": "ене"
+    },
+    "settlement_name_suffix_8": {
+        "en": "borough",
+        "de": "dorf",
+        "bg": "овград"
+    },
+    "settlement_name_suffix_9": {
+        "en": "haugh",
+        "de": "heim",
+        "bg": "оград"
     }
 }

@@ -133,7 +133,6 @@ namespace houseofatmos::world {
             model, std::array { transform },
             &animation, timestamp, 
             engine::FaceCulling::Enabled,
-            engine::Rendering::Surfaces,
             engine::DepthTesting::Enabled, 
             &texture
         );

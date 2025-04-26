@@ -1,5 +1,6 @@
 
-#version 330
+#version 300 es
+precision highp float;
 
 #include "common/palettes.glsl"
 #include "common/shadows.glsl"
@@ -17,7 +18,7 @@ out vec4 o_color;
 
 void main() {
     o_color = texture(u_texture, f_uv * u_uv_size + u_uv_offset);
-    if(o_color.a == 0) { discard; } // don't render the pixel if alpha = 0
+    if(o_color.a == 0.0) { discard; } // don't render the pixel if alpha = 0
     if(is_in_shadow(f_w_pos, -u_camera_forward)) {
         vec3 shadow_color = map_palette(o_color.rgb, palette, shadow_palette);
         o_color = vec4(shadow_color, o_color.a);

@@ -789,7 +789,6 @@ namespace houseofatmos::world {
                 renderer.output().as_target(), 
                 1, 
                 engine::FaceCulling::Disabled, 
-                engine::Rendering::Surfaces,
                 engine::DepthTesting::Disabled
             );
         }
@@ -812,7 +811,6 @@ namespace houseofatmos::world {
         type_info.render_buildings(
             window, scene, renderer,
             std::array { transform },
-            engine::Rendering::Wireframe, 
             &wireframe_texture
         );
     }

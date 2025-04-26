@@ -275,7 +275,7 @@ namespace houseofatmos::world {
             const AgentState& (*state)(void*);
             void (*reset_path)(void*);
             std::vector<AgentStop>& (*schedule)(void*);
-            size_t& (*stop_i)(void*);
+            u64& (*stop_i)(void*);
             Vec<3>& (*position)(void*);
             std::unordered_map<Item::Type, u64>& (*items)(void*);
             u64 (*item_storage_capacity)(void*);
@@ -295,7 +295,7 @@ namespace houseofatmos::world {
         std::vector<AgentStop>& schedule() const { 
             return this->impl->schedule(this->data); 
         };
-        size_t& stop_i() const {
+        u64& stop_i() const {
             return this->impl->stop_i(this->data);
         };
         Vec<3>& position() const {
@@ -344,30 +344,6 @@ namespace houseofatmos::world {
         bool has_path = false;
         f64 distance = 0.0;
         f64 load_start_time = 0.0;
-
-        static inline const AbstractAgent::Impl abstract_impl = {
-            +[](void* d) -> const AgentState& { 
-                return ((Agent<Network>*) d)->state; 
-            },
-            +[](void* d) { ((Agent<Network>*) d)->reset_path(); },
-            +[](void* d) -> std::vector<AgentStop>& { 
-                return ((Agent<Network>*) d)->schedule; 
-            },
-            +[](void* d) -> size_t& { return ((Agent<Network>*) d)->stop_i; },
-            +[](void* d) -> Vec<3>& { return ((Agent<Network>*) d)->position; },
-            +[](void* d) -> std::unordered_map<Item::Type, u64>& { 
-                return ((Agent<Network>*) d)->items; 
-            },
-            +[](void* d) -> u64 { 
-                return ((Agent<Network>*) d)->item_storage_capacity(); 
-            },
-            +[](void* d) -> std::string_view { 
-                return ((Agent<Network>*) d)->local_name(); 
-            },
-            +[](void* d) -> const ui::Background* { 
-                return ((Agent<Network>*) d)->icon(); 
-            }
-        };
 
         void do_stop_transfer(Network& network, const AgentStop& stop) {
             Complex& complex = network.complexes->get(stop.target);
@@ -485,6 +461,30 @@ namespace houseofatmos::world {
             this->path.start = this->position;
             this->distance = 0.0;
         }
+
+        static inline const AbstractAgent::Impl abstract_impl = {
+            +[](void* d) -> const AgentState& { 
+                return ((Agent<Network>*) d)->state; 
+            },
+            +[](void* d) { ((Agent<Network>*) d)->reset_path(); },
+            +[](void* d) -> std::vector<AgentStop>& { 
+                return ((Agent<Network>*) d)->schedule; 
+            },
+            +[](void* d) -> u64& { return ((Agent<Network>*) d)->stop_i; },
+            +[](void* d) -> Vec<3>& { return ((Agent<Network>*) d)->position; },
+            +[](void* d) -> std::unordered_map<Item::Type, u64>& { 
+                return ((Agent<Network>*) d)->items; 
+            },
+            +[](void* d) -> u64 { 
+                return ((Agent<Network>*) d)->item_storage_capacity(); 
+            },
+            +[](void* d) -> std::string_view { 
+                return ((Agent<Network>*) d)->local_name(); 
+            },
+            +[](void* d) -> const ui::Background* { 
+                return ((Agent<Network>*) d)->icon(); 
+            }
+        };
 
         AbstractAgent as_abstract() {
             return AbstractAgent((void*) this, &Agent<Network>::abstract_impl);

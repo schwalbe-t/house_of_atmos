@@ -453,7 +453,7 @@ namespace houseofatmos::world {
         renderer.render(
             scene.get(model), 
             std::array { piece_instance }, nullptr, 0.0,
-            engine::FaceCulling::Enabled, engine::Rendering::Wireframe,
+            engine::FaceCulling::Enabled,
             engine::DepthTesting::Enabled,
             &wireframe_texture
         );

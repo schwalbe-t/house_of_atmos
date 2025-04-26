@@ -48,7 +48,6 @@ namespace houseofatmos::world {
                 const engine::Window& window, engine::Scene& scene,
                 Renderer& renderer,
                 std::span<const Mat<4>> instances,
-                engine::Rendering rendering = engine::Rendering::Surfaces,
                 const engine::Texture* override_texture = nullptr
             ) const {
                 engine::Model& model = scene.get(this->model);
@@ -57,7 +56,6 @@ namespace houseofatmos::world {
                         model, instances, 
                         nullptr, 0.0,
                         engine::FaceCulling::Enabled,
-                        rendering, 
                         engine::DepthTesting::Enabled,
                         override_texture
                     );
@@ -72,7 +70,6 @@ namespace houseofatmos::world {
                     model, instances, 
                     &anim, timestamp, 
                     engine::FaceCulling::Enabled,
-                    rendering,
                     engine::DepthTesting::Enabled, 
                     override_texture
                 );

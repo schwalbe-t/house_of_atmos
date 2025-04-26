@@ -1,5 +1,6 @@
 
-#version 330
+#version 300 es
+precision highp float;
 
 #include "common/palettes.glsl"
 #include "common/shadows.glsl"
@@ -15,13 +16,13 @@ uniform sampler2D u_dither_pattern;
 
 out vec4 o_color;
 
-const float DITHER_PATTERNS = 7;
+const float DITHER_PATTERNS = 7.0;
 const float DITHER_PAT_UVW = 1.0 / DITHER_PATTERNS;
-const float DITHER_PAT_PX = 16;
+const float DITHER_PAT_PX = 16.0;
 
 void main() {
     o_color = texture(u_texture, f_uv);
-    if(o_color.a == 0) { discard; } // don't render the pixel if alpha = 0
+    if(o_color.a == 0.0) { discard; } // don't render the pixel if alpha = 0
     bool use_shadow_color = is_in_shadow(f_w_pos, f_norm);
     if(!use_shadow_color) {
         float diffuse_light = diffuse_intensity(f_norm);

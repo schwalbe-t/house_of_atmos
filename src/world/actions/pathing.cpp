@@ -127,7 +127,6 @@ namespace houseofatmos::world {
             renderer.output().as_target(),
             1,
             engine::FaceCulling::Disabled,
-            engine::Rendering::Surfaces,
             engine::DepthTesting::Disabled
         );
     }

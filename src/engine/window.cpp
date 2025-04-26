@@ -2,7 +2,7 @@
 #include <engine/window.hpp>
 #include <engine/logging.hpp>
 #include <engine/audio.hpp>
-#include <glad/gl.h>
+#include <glad/gles2.h>
 #include <GLFW/glfw3.h>
 #include <AL/alc.h>
 
@@ -43,7 +43,11 @@ namespace houseofatmos::engine {
     }
 
     static void init_opengl() {
-        gladLoadGL(&glfwGetProcAddress);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        gladLoadGLES2(&glfwGetProcAddress);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
     }

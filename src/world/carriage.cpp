@@ -267,7 +267,6 @@ namespace houseofatmos::world {
                 horse_model, std::array { horse_transform },
                 &horse_animation, timestamp, 
                 engine::FaceCulling::Enabled,
-                engine::Rendering::Surfaces, 
                 engine::DepthTesting::Enabled,
                 &horse_texture
             );

@@ -1,6 +1,6 @@
 
 #include <engine/rendering.hpp>
-#include <glad/gl.h>
+#include <glad/gles2.h>
 
 namespace houseofatmos::engine {
 
@@ -13,7 +13,7 @@ namespace houseofatmos::engine {
 
     void RenderTarget::clear_depth(f64 depth) const {
         glBindFramebuffer(GL_FRAMEBUFFER, this->fbo_id);
-        glClearDepth(depth);
+        glClearDepthf((f32) depth);
         glClear(GL_DEPTH_BUFFER_BIT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }

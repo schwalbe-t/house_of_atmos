@@ -14,20 +14,22 @@ project(
     house_of_atmos
     VERSION 0.1
     DESCRIPTION "A strategy game about turning a small county into an economical powerhouse."
-    LANGUAGES CXX
+    LANGUAGES CXX C
 )
 
 foreach(PKG ${REQUIRED_PACKAGES})
     find_package(${PKG} REQUIRED)
 endforeach()
 
-file(GLOB_RECURSE LIB_SOURCES "libsrc/*.cpp")
-file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE LIB_SOURCES "libsrc/*.cpp" "libsrc/*.c")
+file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
 add_executable(
     house_of_atmos
     ${LIB_SOURCES}
     ${SOURCES}
 )
+
+set_target_properties(house_of_atmos PROPERTIES LINKER_LANGUAGE CXX)
 
 include_directories("include")
 include_directories("glad/include")

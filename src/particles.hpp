@@ -112,7 +112,6 @@ namespace houseofatmos {
         void render(
             Renderer& renderer, 
             engine::Scene& scene, const engine::Window& window,
-            engine::Rendering rendering = engine::Rendering::Surfaces,
             engine::DepthTesting depth_testing = engine::DepthTesting::Enabled
         ) {
             engine::Shader& shader = scene.get(ParticleManager::shader_args);
@@ -151,7 +150,7 @@ namespace houseofatmos {
                     shader.set_uniform("u_w_center_pos", pos.subspan(o, c));
                     this->billboard.render(
                         shader, renderer.output().as_target(), c,
-                        engine::FaceCulling::Disabled, rendering, depth_testing
+                        engine::FaceCulling::Disabled, depth_testing
                     );
                     o += c;
                 }

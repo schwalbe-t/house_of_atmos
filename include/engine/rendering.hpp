@@ -311,8 +311,6 @@ namespace houseofatmos::engine {
     enum struct FaceCulling { Disabled, Enabled };
 
     enum struct DepthTesting { Disabled, Enabled };
-    
-    enum struct Rendering { Surfaces, Wireframe };
 
 
     struct Mesh {
@@ -388,7 +386,6 @@ namespace houseofatmos::engine {
             const Shader& shader, RenderTarget dest,
             size_t count = 1, 
             FaceCulling face_culling = FaceCulling::Enabled,
-            Rendering rendering = Rendering::Surfaces, 
             DepthTesting depth_testing = DepthTesting::Enabled
         );
 

@@ -1,7 +1,7 @@
 
 #include <engine/rendering.hpp>
 #include <engine/logging.hpp>
-#include <glad/gl.h>
+#include <glad/gles2.h>
 #include <numeric>
 
 namespace houseofatmos::engine {
@@ -315,16 +315,13 @@ namespace houseofatmos::engine {
 
     void Mesh::render(
         const Shader& shader, RenderTarget dest,
-        size_t count, FaceCulling face_culling, Rendering rendering, 
+        size_t count, FaceCulling face_culling, 
         DepthTesting depth_testing
     ) {
         if(count == 0) { return; }
         if(this->modified) { this->submit(); }
         if(face_culling == FaceCulling::Enabled) {
             glEnable(GL_CULL_FACE);
-        }
-        if(rendering == Rendering::Wireframe) { 
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
         }
         if(depth_testing == DepthTesting::Enabled) { 
             glEnable(GL_DEPTH_TEST); 
@@ -353,9 +350,6 @@ namespace houseofatmos::engine {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         if(depth_testing == DepthTesting::Enabled) { 
             glDisable(GL_DEPTH_TEST);
-        }
-        if(rendering == Rendering::Wireframe) { 
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
         if(face_culling == FaceCulling::Enabled) {
             glDisable(GL_CULL_FACE);

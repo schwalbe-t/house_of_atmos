@@ -1,5 +1,6 @@
 
-#version 330
+#version 300 es
+precision highp float;
 
 #include "common/packing.glsl"
 
@@ -12,6 +13,6 @@ out vec4 o_color;
 
 void main() {
     vec4 tex = texture(u_texture, f_uv);
-    if(tex.a == 0) { discard; } // don't render the pixel if alpha = 0
-    gl_FragColor = vec4(pack_value(gl_FragCoord.z), 1.0);
+    if(tex.a == 0.0) { discard; } // don't render the pixel if alpha = 0
+    o_color = vec4(pack_value(gl_FragCoord.z), 1.0);
 }

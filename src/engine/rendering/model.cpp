@@ -240,7 +240,7 @@ namespace houseofatmos::engine {
 
     static void gltf_collect_primitives(
         tinygltf::Model& model, std::vector<Model::Primitive>& primitives,
-        std::unordered_map<u64, size_t>& primitive_indices,
+        std::unordered_map<size_t, size_t>& primitive_indices,
         std::span<const std::pair<Model::Attrib, Mesh::Attrib>> attribs,
         const std::string& path
     ) {
@@ -536,7 +536,7 @@ namespace houseofatmos::engine {
         const std::string& name,
         const Mat<4>& transform,
         std::vector<Model::Primitive>& primitives,
-        std::unordered_map<u64, size_t>& primitive_indices,
+        std::unordered_map<size_t, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& meshes
     ) {
         const tinygltf::Mesh& mesh = model.meshes[mesh_i];
@@ -610,7 +610,7 @@ namespace houseofatmos::engine {
         tinygltf::Model& model, const std::vector<int>& nodes,
         const Mat<4>& parent_transform,
         std::vector<Model::Primitive>& primitives,
-        std::unordered_map<u64, size_t>& primitive_indices,
+        std::unordered_map<size_t, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& collected_meshes,
         std::vector<std::unordered_map<size_t, u16>>& node_to_joint, 
         std::vector<Animation::Skeleton>& skeletons,
@@ -711,7 +711,7 @@ namespace houseofatmos::engine {
         std::optional<std::string_view> local_transform_uniform,
         std::optional<std::string_view> texture_uniform,
         std::optional<std::string_view> joint_transform_uniform,
-        size_t count, FaceCulling face_culling, Rendering rendering, 
+        size_t count, FaceCulling face_culling, 
         DepthTesting depth_testing
     ) {
         FaceCulling allow_culling = this->face_culling == FaceCulling::Disabled
@@ -738,7 +738,7 @@ namespace houseofatmos::engine {
                 shader.set_uniform(*joint_transform_uniform, std::vector { Mat<4>() });
             }
             primitive.geometry.render(
-                shader, dest, count, allow_culling, rendering, depth_testing
+                shader, dest, count, allow_culling, depth_testing
             );
         }
     }
@@ -749,7 +749,7 @@ namespace houseofatmos::engine {
         std::string_view joint_transform_uniform,
         std::optional<std::string_view> local_transform_uniform,
         std::optional<std::string_view> texture_uniform,
-        size_t count, FaceCulling face_culling, Rendering rendering, 
+        size_t count, FaceCulling face_culling, 
         DepthTesting depth_testing
     ) {
         FaceCulling allow_culling = this->face_culling == FaceCulling::Disabled
@@ -775,7 +775,7 @@ namespace houseofatmos::engine {
                 shader.set_uniform(*texture_uniform, texture);
             }
             primitive.geometry.render(
-                shader, dest, count, allow_culling, rendering, depth_testing
+                shader, dest, count, allow_culling, depth_testing
             );
         }
     }

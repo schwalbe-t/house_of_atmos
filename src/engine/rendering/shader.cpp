@@ -2,7 +2,7 @@
 #include <engine/rendering.hpp>
 #include <engine/logging.hpp>
 #include <engine/scene.hpp>
-#include <glad/gl.h>
+#include <glad/gles2.h>
 #include <filesystem>
 
 namespace fs = std::filesystem;

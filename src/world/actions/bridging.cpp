@@ -224,7 +224,6 @@ namespace houseofatmos::world {
             this->planned.get_instances(this->world->terrain.units_per_tile()),
             nullptr, 0.0,
             engine::FaceCulling::Enabled,
-            engine::Rendering::Wireframe, 
             engine::DepthTesting::Enabled,
             &wireframe_texture
         );

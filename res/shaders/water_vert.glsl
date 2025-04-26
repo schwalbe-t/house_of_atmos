@@ -1,5 +1,6 @@
 
-#version 330
+#version 300 es
+precision highp float;
 
 #include "common/util.glsl"
 
@@ -16,7 +17,7 @@ const float wave_time = 10.0;
 const vec3 wave_force = vec3(0, 0.05, 0);
 
 void main() {
-    vec3 wave_offset = wave_force * sin(u_time * 2 * PI / wave_time);
+    vec3 wave_offset = wave_force * sin(u_time * 2.0 * PI / wave_time);
     vec4 w_pos = u_model_transf * u_local_transf * vec4(v_pos, 1.0)
         + vec4(wave_offset, 0.0);
     gl_Position = u_view_projection * w_pos;

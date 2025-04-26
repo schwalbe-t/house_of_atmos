@@ -2,7 +2,7 @@
 #include <engine/rendering.hpp>
 #include <engine/logging.hpp>
 #include <engine/scene.hpp>
-#include <glad/gl.h>
+#include <glad/gles2.h>
 #include <optional>
 
 namespace houseofatmos::engine {
@@ -94,8 +94,8 @@ namespace houseofatmos::engine {
         glFramebufferRenderbuffer(
             GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, dbo_id
         );
-        glFramebufferTexture(
-            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *this->tex, 0
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *this->tex, 0
         );
         bool success = glCheckFramebufferStatus(GL_FRAMEBUFFER)
             == GL_FRAMEBUFFER_COMPLETE;
@@ -136,7 +136,8 @@ namespace houseofatmos::engine {
 
     static void init_blit_resources() {
         blit_shader = Shader(
-            "#version 330 \n"
+            "#version 300 es \n"
+            "precision highp float; \n"
             "layout(location = 0) in vec2 v_pos_uv; \n"
             "out vec2 f_uv; \n"
             "uniform vec2 u_scale; \n"
@@ -148,8 +149,9 @@ namespace houseofatmos::engine {
             "#version 130 \n"
             "in vec2 f_uv; \n"
             "uniform sampler2D u_texture; \n"
+            "out vec4 o_color; \n"
             "void main() { \n"
-            "    gl_FragColor = texture(u_texture, f_uv); \n"
+            "    o_color = texture(u_texture, f_uv); \n"
             "}"
         );
         Mesh quad = Mesh { { Mesh::F32, 2 } };
@@ -188,7 +190,7 @@ namespace houseofatmos::engine {
         blit_shader.value().set_uniform("u_texture", *this);
         blit_quad.value().render(
             blit_shader.value(), dest, 1, 
-            FaceCulling::Disabled, Rendering::Surfaces, DepthTesting::Disabled
+            FaceCulling::Disabled, DepthTesting::Disabled
         );
     }
 
@@ -197,7 +199,7 @@ namespace houseofatmos::engine {
         shader.set_uniform("u_texture", *this);
         blit_quad.value().render(
             shader, dest, 1,
-            FaceCulling::Disabled, Rendering::Surfaces, DepthTesting::Disabled
+            FaceCulling::Disabled, DepthTesting::Disabled
         );
     }
 

@@ -92,7 +92,7 @@ namespace houseofatmos::world {
             return Boat::types().at((size_t) this->type).local_name;
         }
 
-        const ui::Background* icon() { 
+        const ui::Background* icon() override { 
             return Boat::types().at((size_t) this->type).icon;
         }
 

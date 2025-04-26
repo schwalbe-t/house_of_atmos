@@ -1,6 +1,6 @@
 
 #include <engine/rendering.hpp>
-#include <glad/gl.h>
+#include <glad/gles2.h>
 
 namespace houseofatmos::engine {
 

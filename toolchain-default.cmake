@@ -2,6 +2,11 @@
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGL_GLEXT_PROTOTYPES -DGL_ES_VERSION_3_0")
+
+set(GLES2_LIBRARIES /usr/lib64/libGLESv2.so)
+set(EGL_LIBRARIES /usr/lib64/libEGL.so)
+
 set(REQUIRED_PACKAGES
     OpenGL
     glfw3
@@ -9,8 +14,8 @@ set(REQUIRED_PACKAGES
 )
 
 set(LINKED_LIBS
-    OpenGL::GL
-    OpenGL::GLU
+    ${GLES2_LIBRARIES}
+    ${EGL_LIBRARIES}
     glfw
     OpenAL::OpenAL
 )

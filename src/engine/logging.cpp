@@ -1,6 +1,5 @@
 
 #include <engine/logging.hpp>
-#include <glad/gl.h>
 #include <iostream>
 
 namespace houseofatmos::engine {

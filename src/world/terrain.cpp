@@ -1112,7 +1112,7 @@ namespace houseofatmos::world {
                 = Resource::types().at((size_t) resource_type);
             renderer.render(
                 scene.get(type_info.model), instances, nullptr, 0.0,
-                engine::FaceCulling::Enabled, engine::Rendering::Surfaces,
+                engine::FaceCulling::Enabled,
                 engine::DepthTesting::Enabled,
                 &scene.get(type_info.texture)
             );

@@ -95,7 +95,6 @@ namespace houseofatmos::engine {
             std::optional<std::string_view> joint_transform_uniform = std::nullopt,
             size_t count = 1,
             FaceCulling face_culling = FaceCulling::Enabled,
-            Rendering rendering = Rendering::Surfaces, 
             DepthTesting depth_testing = DepthTesting::Enabled
         );
 
@@ -107,7 +106,6 @@ namespace houseofatmos::engine {
             std::optional<std::string_view> texture_uniform = std::nullopt,
             size_t count = 1,
             FaceCulling face_culling = FaceCulling::Enabled,
-            Rendering rendering = Rendering::Surfaces, 
             DepthTesting depth_testing = DepthTesting::Enabled
         );
 
