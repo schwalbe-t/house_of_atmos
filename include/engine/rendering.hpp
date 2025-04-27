@@ -8,6 +8,7 @@
 #include <span>
 #include <unordered_map>
 #include <utility>
+#include <list>
 #include <memory>
 
 namespace houseofatmos::engine {
@@ -237,7 +238,7 @@ namespace houseofatmos::engine {
         // <tex id> -> <tex slot>
         std::unordered_map<u64, std::pair<u64, bool>> texture_slots;
         // free tex slots
-        std::vector<u64> free_tex_slots;
+        std::list<u64> free_tex_slots;
         u64 next_slot;
 
         u64 allocate_texture_slot(std::string name, u64 tex_id, bool is_array);

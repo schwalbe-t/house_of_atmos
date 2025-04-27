@@ -213,10 +213,11 @@ namespace houseofatmos::engine {
     u64 Shader::allocate_texture_slot(
         std::string name, u64 tex_id, bool is_array
     ) {
+        u64 max_slot_count = Shader::max_textures();
         // if this variable already had a texture, get rid of it
         if(this->uniform_textures.contains(name)) {
-            u64 old_tex_id = this->uniform_textures[name];
-            u64 old_tex_count = this->texture_uniform_count[old_tex_id];
+            u64 old_tex_id = this->uniform_textures.at(name);
+            u64 old_tex_count = this->texture_uniform_count.at(old_tex_id);
             old_tex_count -= 1;
             if(old_tex_count > 0) {
                 // if there is another uniform still using the texture
@@ -225,10 +226,10 @@ namespace houseofatmos::engine {
             } else {
                 // else get rid of the texture and mark the slot as free
                 const auto& [old_slot, old_was_array] 
-                    = this->texture_slots[old_tex_id];
+                    = this->texture_slots.at(old_tex_id);
                 this->texture_uniform_count.erase(old_tex_id);
-                this->texture_slots.erase(old_tex_id);
                 this->free_tex_slots.push_back(old_slot);
+                this->texture_slots.erase(old_tex_id);
             }
         }
         // determine the slot
@@ -236,25 +237,25 @@ namespace houseofatmos::engine {
         if(this->texture_uniform_count.contains(tex_id)) {
             // if there are other uniforms already using the texture
             // use the same slot
-            slot = this->texture_slots[tex_id].first;
+            slot = this->texture_slots.at(tex_id).first;
         } else if(this->free_tex_slots.size() > 0) {
-            // if there are slots that are to be reused reuse them
-            slot = this->free_tex_slots.back();
-            this->free_tex_slots.pop_back();
+            slot = this->free_tex_slots.front();
+            this->free_tex_slots.pop_front();
         } else {
             // else use the next slot in order
             slot = this->next_slot;
-            if(this->next_slot > Shader::max_textures()) {
+            if(slot > max_slot_count) {
                 error("Attempted to register more textures at the same time"
                     " than supported ("
-                    + std::to_string(Shader::max_textures())
+                    + std::to_string(max_slot_count)
                     + " for this implementation)"
                 );
             }
             this->next_slot += 1;
         }
         // use the slot
-        this->texture_uniform_count[tex_id] += 1; 
+        auto [rc, inserted] = texture_uniform_count.emplace(tex_id, 0);
+        rc->second += 1;
         this->uniform_textures[name] = tex_id;
         this->texture_slots[tex_id] = { slot, is_array };
         return slot;

@@ -31,7 +31,7 @@ namespace houseofatmos::engine {
     Scene::Scene() {}
 
 
-    static std::unordered_map<std::string, std::weak_ptr<GenericLoader>> cached;
+    static std::unordered_map<std::string, std::weak_ptr<GenericLoader>> cached = {};
 
     std::shared_ptr<GenericLoader> Scene::get_cached_resource(
         const std::string& iden
