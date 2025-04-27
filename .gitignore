@@ -12,7 +12,10 @@ _deps
 CMakeUserPresets.json
 
 house_of_atmos
+house_of_atmos.data
 house_of_atmos.exe
+house_of_atmos.html
+house_of_atmos.js
 house_of_atmos.wasm
 .vscode
 build

@@ -136,8 +136,6 @@ namespace houseofatmos::engine {
 
     static void init_blit_resources() {
         blit_shader = Shader(
-            "#version 300 es \n"
-            "precision highp float; \n"
             "layout(location = 0) in vec2 v_pos_uv; \n"
             "out vec2 f_uv; \n"
             "uniform vec2 u_scale; \n"
@@ -146,7 +144,6 @@ namespace houseofatmos::engine {
             "    gl_Position = vec4(v_pos_uv * u_scale + u_offset, 0.0, 1.0); \n"
             "    f_uv = v_pos_uv; \n"
             "}",
-            "#version 130 \n"
             "in vec2 f_uv; \n"
             "uniform sampler2D u_texture; \n"
             "out vec4 o_color; \n"

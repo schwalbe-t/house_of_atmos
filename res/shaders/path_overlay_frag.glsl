@@ -1,7 +1,4 @@
 
-#version 300 es
-precision highp float;
-
 #include "common/util.glsl"
 
 in vec3 f_w_pos;

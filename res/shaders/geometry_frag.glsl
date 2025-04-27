@@ -1,7 +1,4 @@
 
-#version 300 es
-precision highp float;
-
 #include "common/palettes.glsl"
 #include "common/shadows.glsl"
 #include "common/diffuse.glsl"

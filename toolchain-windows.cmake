@@ -19,5 +19,9 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN")
 set(LINKED_LIBS
     ${GLFW_LIBRARIES}
     ${OpenAL_LIBRARIES}
-    -static -Wl,-subsystem,windows
 )
+set(LINKER_OPTIONS
+    "-static"
+    "-Wl,-subsystem,windows"
+)
+set(OUT_NAME "house_of_atmos.exe")

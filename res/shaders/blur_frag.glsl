@@ -1,7 +1,3 @@
-
-#version 300 es
-precision highp float;
-
 #include "common/util.glsl"
 
 in vec2 f_uv;

@@ -19,3 +19,5 @@ set(LINKED_LIBS
     glfw
     OpenAL::OpenAL
 )
+set(LINKER_OPTIONS "")
+set(OUT_NAME "house_of_atmos")

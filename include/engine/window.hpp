@@ -118,6 +118,9 @@ namespace houseofatmos::engine {
         void set_scene(std::shared_ptr<Scene>&& scene);
         std::shared_ptr<Scene> scene(); 
         void start();
+        private:
+        void do_frame();
+        public:
 
         void show_texture(const Texture& texture) const;
 

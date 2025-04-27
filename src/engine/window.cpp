@@ -5,6 +5,9 @@
 #include <glad/gles2.h>
 #include <GLFW/glfw3.h>
 #include <AL/alc.h>
+#ifdef __EMSCRIPTEN__
+    #include <emscripten.h>
+#endif
 
 namespace houseofatmos::engine {
     
@@ -271,29 +274,48 @@ namespace houseofatmos::engine {
         return this->current_scene;
     }
 
+
+    #ifdef __EMSCRIPTEN__
+        static Window* global_window = nullptr;
+    #endif
+
     void Window::start() {
-        while(!glfwWindowShouldClose((GLFWwindow*) this->ptr)) {
-            this->update_last_frame_input();
+        #ifdef __EMSCRIPTEN__
+            global_window = this;
+            emscripten_set_main_loop([]() {
+                global_window->do_frame();
+            }, 0, 1);
+        #else
+            while(!glfwWindowShouldClose((GLFWwindow*) this->ptr)) {
+                this->do_frame();
+            }
+        #endif
+
+    }
+
+    void Window::do_frame() {
+        #ifndef __EMSCRIPTEN__
             glfwPollEvents();
-            glfwGetFramebufferSize(
-                (GLFWwindow*) this->ptr, &this->last_width, &this->last_height
-            );
-            f64 current_time = glfwGetTime();
-            this->frame_delta = current_time - this->last_time;
-            this->last_time = current_time;
-            if(this->current_scene) {
-                this->current_scene->update(*this);
-                this->current_scene->listener.internal_make_current();
-                this->current_scene->render(*this);
-            }
-            if(this->next_scene) {
-                this->current_scene = this->next_scene;
-                this->current_scene->internal_load_all();
-                Scene::clean_cached_resources();
-                this->next_scene = nullptr;
-            }
-            glfwSwapBuffers((GLFWwindow*) this->ptr);
+        #endif
+        glfwGetFramebufferSize(
+            (GLFWwindow*) this->ptr, &this->last_width, &this->last_height
+        );
+        f64 current_time = glfwGetTime();
+        this->frame_delta = current_time - this->last_time;
+        this->last_time = current_time;
+        if(this->current_scene) {
+            this->current_scene->update(*this);
+            this->current_scene->listener.internal_make_current();
+            this->current_scene->render(*this);
         }
+        if(this->next_scene) {
+            this->current_scene = this->next_scene;
+            this->current_scene->internal_load_all();
+            Scene::clean_cached_resources();
+            this->next_scene = nullptr;
+        }
+        glfwSwapBuffers((GLFWwindow*) this->ptr);
+        this->update_last_frame_input();
     }
 
 

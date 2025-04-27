@@ -29,6 +29,8 @@ add_executable(
     ${SOURCES}
 )
 
+set_target_properties(house_of_atmos PROPERTIES OUTPUT_NAME ${OUT_NAME})
+
 set_target_properties(house_of_atmos PROPERTIES LINKER_LANGUAGE CXX)
 
 include_directories("include")
@@ -37,6 +39,11 @@ include_directories("glad/include")
 target_link_libraries(
     house_of_atmos PRIVATE
     ${LINKED_LIBS}
+)
+
+target_link_options(
+    house_of_atmos PRIVATE
+    ${LINKER_OPTIONS}
 )
 
 target_compile_features(house_of_atmos PRIVATE cxx_std_20)

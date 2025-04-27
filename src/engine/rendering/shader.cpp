@@ -56,6 +56,10 @@ namespace houseofatmos::engine {
         return result;
     }
 
+    static std::string common = "#version 300 es\n"
+        "precision highp float;\n"
+        "precision highp sampler2DArray;\n";
+
     static GLint compile_shader(
         std::string_view raw_source, std::string_view source_path, GLenum type
     ) {
@@ -63,9 +67,8 @@ namespace houseofatmos::engine {
         if(id == 0) {
             error("Unable to initialize shader");
         }
-        std::string expanded_source = expand_shader_includes(
-            std::string(raw_source), source_path
-        );
+        std::string expanded_source = common
+            + expand_shader_includes(std::string(raw_source), source_path);
         const char* expanded_source_cstr = expanded_source.c_str();
         glShaderSource(id, 1, &expanded_source_cstr, NULL);
         glCompileShader(id);

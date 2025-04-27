@@ -1,7 +1,4 @@
 
-#version 300 es
-precision highp float;
-
 layout(location = 0) in vec2 v_pos_uv;
 
 out vec2 f_uv;

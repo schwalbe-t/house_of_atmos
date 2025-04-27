@@ -1,7 +1,4 @@
 
-#version 300 es
-precision highp float;
-
 layout(location = 0) in vec2 v_pos_uv;
 
 uniform mat4 u_view_proj;

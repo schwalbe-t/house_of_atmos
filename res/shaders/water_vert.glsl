@@ -1,7 +1,4 @@
 
-#version 300 es
-precision highp float;
-
 #include "common/util.glsl"
 
 layout(location = 0) in vec3 v_pos;
