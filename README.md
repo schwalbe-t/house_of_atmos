@@ -6,8 +6,15 @@ For questions or development updates, feel free to join my Discord server: https
 ## Building
 To build this project for the computer you are using, run: 
 ```
-cmake .
+cmake . -DMODE=release
 make
+./house_of_atmos
+```
+
+Alternatively, Ninja can be used:
+```
+cmake -B . -G Ninja -DMODE=release
+ninja -j$(nproc)
 ./house_of_atmos
 ```
 

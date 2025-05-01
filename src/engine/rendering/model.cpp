@@ -240,7 +240,7 @@ namespace houseofatmos::engine {
 
     static void gltf_collect_primitives(
         tinygltf::Model& model, std::vector<Model::Primitive>& primitives,
-        std::unordered_map<size_t, size_t>& primitive_indices,
+        std::unordered_map<u64, size_t>& primitive_indices,
         std::span<const std::pair<Model::Attrib, Mesh::Attrib>> attribs,
         const std::string& path
     ) {
@@ -536,7 +536,7 @@ namespace houseofatmos::engine {
         const std::string& name,
         const Mat<4>& transform,
         std::vector<Model::Primitive>& primitives,
-        std::unordered_map<size_t, size_t>& primitive_indices,
+        std::unordered_map<u64, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& meshes
     ) {
         const tinygltf::Mesh& mesh = model.meshes[mesh_i];
@@ -610,7 +610,7 @@ namespace houseofatmos::engine {
         tinygltf::Model& model, const std::vector<int>& nodes,
         const Mat<4>& parent_transform,
         std::vector<Model::Primitive>& primitives,
-        std::unordered_map<size_t, size_t>& primitive_indices,
+        std::unordered_map<u64, size_t>& primitive_indices,
         std::unordered_map<std::string, std::tuple<size_t, size_t, std::optional<size_t>>>& collected_meshes,
         std::vector<std::unordered_map<size_t, u16>>& node_to_joint, 
         std::vector<Animation::Skeleton>& skeletons,
@@ -671,7 +671,7 @@ namespace houseofatmos::engine {
         Model result;
         result.face_culling = args.face_culling;
         gltf_collect_textures(model, result.textures, path);
-        std::unordered_map<size_t, size_t> primitive_indices;
+        std::unordered_map<u64, size_t> primitive_indices;
         gltf_collect_primitives(model, result.primitives, primitive_indices, attribs, path);
         std::vector<std::unordered_map<size_t, u16>> node_to_joint;
         gltf_collect_skeletons(model, result.skeletons, node_to_joint, path);
@@ -688,7 +688,7 @@ namespace houseofatmos::engine {
 
 
     std::tuple<Model::Primitive&, const Texture&, const Animation::Skeleton*> Model::mesh(
-        const std::string& mesh_name
+        std::string mesh_name
     ) {
         auto element = this->meshes.find(mesh_name);
         if(element == this->meshes.end()) {

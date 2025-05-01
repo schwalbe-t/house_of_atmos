@@ -253,7 +253,8 @@ namespace houseofatmos::world {
                 b_type.render_buildings(
                     window, scene, renderer,
                     std::array { transform },
-                    &wireframe_texture
+                    &wireframe_texture,
+                    engine::DepthTesting::Disabled
                 );
                 return;
             }
@@ -265,7 +266,7 @@ namespace houseofatmos::world {
                     bridge->get_instances(this->world->terrain.units_per_tile()),
                     nullptr, 0.0,
                     engine::FaceCulling::Enabled,
-                    engine::DepthTesting::Enabled, 
+                    engine::DepthTesting::Disabled, 
                     &wireframe_texture
                 );
                 return;
@@ -287,7 +288,7 @@ namespace houseofatmos::world {
                 renderer.render(
                     scene.get(model), std::array { instance }, nullptr, 0.0,
                     engine::FaceCulling::Enabled,
-                    engine::DepthTesting::Enabled, 
+                    engine::DepthTesting::Disabled, 
                     &wireframe_texture
                 );
                 return;

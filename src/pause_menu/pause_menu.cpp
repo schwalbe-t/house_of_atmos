@@ -60,33 +60,44 @@ namespace houseofatmos {
                 window->set_scene(std::shared_ptr<engine::Scene>(this->previous)); 
             }
         ));
-        if(this->world->saving_allowed && this->world->save_path.size() > 0) {
-            buttons.children.push_back(ui_util::create_wide_button(
-                local.text("menu_save_game"),
-                [this, window = &window]() {
-                    this->save_game(*window); 
-                }
-            ));
-        }
-        if(this->world->saving_allowed) {
-            buttons.children.push_back(ui_util::create_wide_button(
-                local.text("menu_save_game_as"),
-                [this, local = &local, window = &window]() {
-                    std::string new_path = pfd::save_file(
-                        local->text("menu_choose_save_location"),
-                        "",
-                        { local->text("menu_save_file"), "*.bin" }
-                    ).result();
-                    if(new_path.size() == 0) {
-                        this->toasts.add_error("toast_failed_to_save_game", {});
-                        return;
+        #ifdef __EMSCRIPTEN__
+            if(this->world->saving_allowed) {
+                buttons.children.push_back(ui_util::create_wide_button(
+                    local.text("menu_save_game"),
+                    [this, window = &window]() {
+                        this->save_game(*window); 
                     }
-                    this->world->save_path = std::move(new_path); 
-                    this->save_game(*window, true /* = new save location */);
-                    this->show_root_menu(*window);
-                }
-            ));
-        }
+                ));
+            }
+        #else
+            if(this->world->saving_allowed && this->world->save_path.size() > 0) {
+                buttons.children.push_back(ui_util::create_wide_button(
+                    local.text("menu_save_game"),
+                    [this, window = &window]() {
+                        this->save_game(*window); 
+                    }
+                ));
+            }
+            if(this->world->saving_allowed) {
+                buttons.children.push_back(ui_util::create_wide_button(
+                    local.text("menu_save_game_as"),
+                    [this, local = &local, window = &window]() {
+                        std::string new_path = pfd::save_file(
+                            local->text("menu_choose_save_location"),
+                            "",
+                            { local->text("menu_save_file"), "*.bin" }
+                        ).result();
+                        if(new_path.size() == 0) {
+                            this->toasts.add_error("toast_failed_to_save_game", {});
+                            return;
+                        }
+                        this->world->save_path = std::move(new_path); 
+                        this->save_game(*window, true /* = new save location */);
+                        this->show_root_menu(*window);
+                    }
+                ));
+            }
+        #endif
         buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_settings"),
             [window = &window, this]() {
@@ -96,7 +107,9 @@ namespace houseofatmos {
         buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_to_main_menu"),
             [window = &window, this]() {
-                this->world->write_to_file();
+                #ifndef __EMSCRIPTEN__
+                    this->world->write_to_file();
+                #endif
                 window->set_scene(std::make_shared<MainMenu>(
                     Settings(this->world->settings)
                 ));

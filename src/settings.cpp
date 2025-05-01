@@ -6,14 +6,43 @@
 #include <filesystem>
 #include <fstream>
 #include <format>
+#ifdef __EMSCRIPTEN__
+    #include <emscripten.h>
+
+    EM_JS(char*, hoa_read_settings, (int32_t* out_len), {
+        const s = localStorage.getItem("settings");
+        if(s === null) {
+            setValue(out_len, 0, 'i32');
+            return 0;
+        }
+        const len = lengthBytesUTF8(s);
+        const buffer = _malloc(len + 1);
+        stringToUTF8(s, buffer, len + 1);
+        setValue(out_len, len, 'i32');
+        return buffer;
+    });
+
+    EM_JS(void, hoa_store_settings, (const char* ptr, int len), {
+        localStorage.setItem("settings", UTF8ToString(ptr, len));
+    });
+#endif
 
 namespace houseofatmos {
 
     using json = nlohmann::json;
 
     Settings Settings::read_from_path(std::string_view path) {
-        if(!std::filesystem::exists(path)) { return Settings(); }
-        std::string text = engine::GenericLoader::read_string(path);
+        std::string text;
+        #ifndef __EMSCRIPTEN__
+            if(!std::filesystem::exists(path)) { return Settings(); }
+            text = engine::GenericLoader::read_string(path);
+        #else
+            (void) path;
+            int32_t len;
+            char* buffer = hoa_read_settings(&len);
+            if(buffer == NULL) { return Settings(); }
+            text = std::string(std::string_view(buffer, (size_t) len));
+        #endif
         json j = json::parse(text);
         auto s = Settings();
         if(j.contains("locale")) { s.locale = j.at("locale"); }
@@ -63,9 +92,15 @@ namespace houseofatmos {
             last_games.push_back(game);
         }
         serialized["last_games"] = std::move(last_games);
-        auto fout = std::ofstream(std::string(path));
-        fout << serialized.dump(4);
-        fout.close();
+        std::string text = serialized.dump(4);
+        #ifndef __EMSCRIPTEN__
+            auto fout = std::ofstream(std::string(path));
+            fout << text;
+            fout.close();
+        #else
+            (void) path;
+            hoa_store_settings(text.data(), text.size());
+        #endif
     }
 
     void Settings::add_recent_game(std::string&& path) {
@@ -216,11 +251,13 @@ namespace houseofatmos {
         toggle_labels.children.push_back(
             ui_util::create_text(local.text("menu_signal_side"), 4.0)
         );
-        toggle_buttons.children
-            .push_back(create_toggle(&this->fullscreen, &local));
-        toggle_labels.children.push_back(
-            ui_util::create_text(local.text("menu_fullscreen"), 4.0)
-        );
+        #ifndef __EMSCRIPTEN__
+            toggle_buttons.children
+                .push_back(create_toggle(&this->fullscreen, &local));
+            toggle_labels.children.push_back(
+                ui_util::create_text(local.text("menu_fullscreen"), 4.0)
+            );
+        #endif
         toggle_buttons.children
             .push_back(create_toggle(&this->do_dithering, &local));
         toggle_labels.children.push_back(

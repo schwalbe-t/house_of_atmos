@@ -53,7 +53,7 @@ namespace houseofatmos::engine {
             this->buffer = std::vector<u8>(256);
             this->next_offset = 0;
         }
-        Arena(const std::vector<char>& data) {
+        Arena(std::span<const char> data) {
             this->buffer.resize(data.size());
             size_t n = data.size() * sizeof(char);
             std::memcpy(

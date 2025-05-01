@@ -2,6 +2,9 @@
 #include "world.hpp"
 #include <filesystem>
 #include <fstream>
+#ifdef __EMSCRIPTEN__
+    #include <emscripten.h>
+#endif
 
 namespace houseofatmos::world {
 
@@ -411,37 +414,67 @@ namespace houseofatmos::world {
         return buffer;
     }
 
-    bool World::write_to_file(bool force_creation) {
-        bool exists = std::filesystem::exists(this->save_path);
-        bool has_path = this->save_path.size() > 0;
-        bool write_allowed = this->saving_allowed 
-            && has_path && (exists || force_creation);
-        if(!write_allowed) { return false; }
-        engine::Arena serialized = this->serialize();
-        std::ofstream fout;
-        fout.open(this->save_path, std::ios::binary | std::ios::out);
-        fout.write(
-            (const char*) serialized.data().data(), serialized.data().size()
-        );
-        fout.close();
-        return true;
-    }
+    #ifndef __EMSCRIPTEN__
+        bool World::write_to_file(bool force_creation) {
+            bool exists = std::filesystem::exists(this->save_path);
+            bool has_path = this->save_path.size() > 0;
+            bool write_allowed = this->saving_allowed 
+                && has_path && (exists || force_creation);
+            if(!write_allowed) { return false; }
+            engine::Arena serialized = this->serialize();
+            std::ofstream fout;
+            fout.open(this->save_path, std::ios::binary | std::ios::out);
+            fout.write(
+                (const char*) serialized.data().data(), serialized.data().size()
+            );
+            fout.close();
+            return true;
+        }
 
-    void World::trigger_autosave(
-        const engine::Window& window, Toasts& toasts
-    ) {
-        if(!this->saving_allowed) { return; }
-        if(window.time() < this->last_autosave_time + World::autosave_period) {
-            return;
+        void World::trigger_autosave(
+            const engine::Window& window, Toasts& toasts
+        ) {
+            if(!this->saving_allowed) { return; }
+            f64 next_autosave = this->last_autosave_time 
+                + World::autosave_period;
+            if(window.time() < next_autosave) { return; }
+            bool saved = this->write_to_file();
+            if(saved) {
+                toasts.add_toast("toast_auto_saved_game", {});
+            } else {
+                toasts.add_error("toast_failed_to_auto_save_game", {});
+            }
+            this->last_autosave_time = window.time();
         }
-        bool saved = this->write_to_file();
-        if(saved) {
-            toasts.add_toast("toast_auto_saved_game", {});
-        } else {
-            toasts.add_error("toast_failed_to_auto_save_game", {});
+    #else
+        EM_JS(void, hoa_save_file, (const uint8_t* data, size_t size), {
+            const blob = new Blob(
+                [HEAPU8.slice(data, data + size)], 
+                { type: "application/octet-stream" }
+            );
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "savegame.bin";
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        bool World::write_to_file(bool force_creation) {
+            (void) force_creation;
+            this->save_path = "<download>";
+            engine::Arena serialized = this->serialize();
+            hoa_save_file(serialized.data().data(), serialized.data().size());
+            return true;
         }
-        this->last_autosave_time = window.time();
-    }
+
+        void World::trigger_autosave(
+            const engine::Window& window, Toasts& toasts
+        ) {
+            (void) window;
+            (void) toasts;
+        }
+    #endif
 
     void World::update(
         engine::Scene& scene, const engine::Window& window, Toasts& toasts,

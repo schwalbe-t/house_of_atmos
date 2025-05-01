@@ -49,6 +49,10 @@ namespace houseofatmos {
             const std::string& path, 
             const engine::Localization& local, engine::Window& window 
         );
+        void load_game(
+            std::span<const char> data, const std::string& path,
+            const engine::Localization& local, engine::Window& window
+        );
 
         void show_title_screen(
             const engine::Localization& local, engine::Window& window

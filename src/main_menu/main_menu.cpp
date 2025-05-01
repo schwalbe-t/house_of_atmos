@@ -6,6 +6,39 @@
 #include "../tutorial/tutorial.hpp"
 #include <filesystem>
 #include <algorithm>
+#ifdef __EMSCRIPTEN__
+    #include <emscripten.h>
+
+    EM_JS(void, hoa_read_file, (void* raw_menu, void* raw_window, const void* raw_local), {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = () => {
+                const arrayBuffer = reader.result;
+                const byteArray = new Uint8Array(arrayBuffer);
+                const size = byteArray.length;
+                const ptr = _malloc(size);
+                HEAPU8.set(byteArray, ptr);
+                _hoa_handle_read_file(ptr, size, raw_menu, raw_window, raw_local);
+            };
+            reader.readAsArrayBuffer(file);
+        };
+        input.click();
+    });
+
+    extern "C" EMSCRIPTEN_KEEPALIVE void hoa_handle_read_file(
+        uint8_t* data, int size, void* raw_menu, void* raw_window, const void* raw_local
+    ) {
+        auto menu = (houseofatmos::MainMenu*) raw_menu;
+        auto window = (houseofatmos::engine::Window*) raw_window;
+        auto local = (const houseofatmos::engine::Localization*) raw_local;
+        std::span<const char> file_data((const char*) data, size);
+        menu->load_game(file_data, "<download>", *local, *window);
+        free(data);
+    }
+#endif
 
 namespace houseofatmos {
 
@@ -51,6 +84,13 @@ namespace houseofatmos {
         const engine::Localization& local, engine::Window& window  
     ) {
         std::vector<char> data = engine::GenericLoader::read_bytes(path);
+        this->load_game(data, path, local, window);
+    }
+
+    void MainMenu::load_game(
+        std::span<const char> data, const std::string& path,
+        const engine::Localization& local, engine::Window& window
+    ) {
         auto buffer = engine::Arena(data);
         u32 format_version = buffer.get(engine::Arena::Position<u32>(0));
         u32 required_version = world::World::current_format_version;
@@ -70,7 +110,6 @@ namespace houseofatmos {
     }
 
     static const size_t max_prev_games = 5;
-    static const size_t max_game_name_len = 10;
 
     void MainMenu::show_title_screen(
         const engine::Localization& local, engine::Window& window
@@ -108,46 +147,57 @@ namespace houseofatmos {
                 this->show_gamemode_screen(*local, *window);
             }
         ));
-        for(const std::string& game_path: this->settings.last_games) {
-            std::string displayed_name 
-                = world::World::shortened_path(game_path);
+        #ifndef __EMSCRIPTEN__
+            for(const std::string& game_path: this->settings.last_games) {
+                std::string displayed_name 
+                    = world::World::shortened_path(game_path);
+                buttons.children.push_back(ui_util::create_wide_button(
+                    local.pattern("menu_load_previous_game", { displayed_name }),
+                    [window = &window, local = &local, this, path = game_path]() {
+                        this->before_next_frame = [this, path, local, window]() {
+                            this->load_game_from(path, *local, *window);
+                        };
+                        this->show_loading_screen(*local);
+                    }
+                ));
+            }
             buttons.children.push_back(ui_util::create_wide_button(
-                local.pattern("menu_load_previous_game", { displayed_name }),
-                [window = &window, local = &local, this, path = game_path]() {
-                    this->before_next_frame = [this, path, local, window]() {
-                        this->load_game_from(path, *local, *window);
-                    };
+                local.text("menu_load_game"),
+                [local = &local, window = &window, this]() {
+                    std::vector<std::string> chosen = pfd::open_file(
+                        local->text("menu_choose_load_location"),
+                        "",
+                        { local->text("menu_save_file"), "*.bin" }
+                    ).result();
+                    if(chosen.empty()) { return; }
+                    if(!std::filesystem::exists(chosen[0])) { return; }
+                    this->before_next_frame 
+                        = [this, path = chosen[0], local, window]() {
+                            this->load_game_from(path, *local, *window);
+                        };
                     this->show_loading_screen(*local);
                 }
             ));
-        }
-        buttons.children.push_back(ui_util::create_wide_button(
-            local.text("menu_load_game"),
-            [local = &local, window = &window, this]() {
-                std::vector<std::string> chosen = pfd::open_file(
-                    local->text("menu_choose_load_location"),
-                    "",
-                    { local->text("menu_save_file"), "*.bin" }
-                ).result();
-                if(chosen.empty()) { return; }
-                if(!std::filesystem::exists(chosen[0])) { return; }
-                this->before_next_frame 
-                    = [this, path = chosen[0], local, window]() {
-                        this->load_game_from(path, *local, *window);
-                    };
-                this->show_loading_screen(*local);
-            }
-        ));
+        #else
+            buttons.children.push_back(ui_util::create_wide_button(
+                local.text("menu_load_game"),
+                [local = &local, window = &window, this]() {
+                    hoa_read_file(this, window, local);
+                }
+            ));
+        #endif
         buttons.children.push_back(ui_util::create_wide_button(
             local.text("menu_settings"),
             [this, local = &local, window = &window]() {
                 this->show_settings(*local, *window);
             }
         ));
-        buttons.children.push_back(ui_util::create_wide_button(
-            local.text("menu_exit_game"),
-            []() { std::exit(0); }
-        ));
+        #ifndef __EMSCRIPTEN__
+            buttons.children.push_back(ui_util::create_wide_button(
+                local.text("menu_exit_game"),
+                []() { std::exit(0); }
+            ));
+        #endif
         this->ui.with_element(buttons
             .with_padding(5)
             .with_background(&ui_background::scroll_vertical)

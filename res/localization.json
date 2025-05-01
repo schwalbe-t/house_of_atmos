@@ -391,19 +391,19 @@
         "_context": "Schedule item can be set to 'Pick up' items (move items from carriage to buildings) at some set building complex (or other location)",
         "de": "Belade",
         "en": "Pick up",
-        "bg": "Вземай"
+        "bg": "Вземи"
     },
     "ui_drop_off": {
         "_context": "Schedule item can be set to 'Drop off' items (move items from buildings to carriage) at some set building complex (or other location)",
         "de": "Entlade",
         "en": "Drop off",
-        "bg": "Оставяй"
+        "bg": "Остави"
     },
     "ui_maintain": {
         "_context": "Schedule item can be set to 'Maintain' a certain level of items at some set building complex (or other location)",
         "de": "Behalte",
         "en": "Maintain",
-        "bg": "Поддържай"
+        "bg": "Поддържи"
     },
     "ui_add_stop": {
         "_context": "Button used to add a building complex as a stop to a carriage's schedule",
