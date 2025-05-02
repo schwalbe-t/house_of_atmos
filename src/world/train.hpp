@@ -12,12 +12,32 @@ namespace houseofatmos::world {
     struct Train;
 
 
+    struct TrackPieceId {
+        u32 chunk_x, chunk_z;
+        u16 piece_i;
+
+        TrackPieceId(u64 chunk_x, u64 chunk_z, size_t piece_i):
+            chunk_x((u32) chunk_x), chunk_z((u32) chunk_z), 
+            piece_i((u16) piece_i) {}
+
+        bool operator==(const TrackPieceId& other) const { 
+            return this->chunk_x == other.chunk_x
+                && this->chunk_z == other.chunk_z
+                && this->piece_i == other.piece_i;
+        }
+    };
 
     struct TrackNetworkNode {
-        using NodeId = const TrackPiece*;
+        using NodeId = TrackPieceId;
         struct NodeIdHash {
-            std::size_t operator()(const NodeId& p) const { 
-                return (size_t) p; 
+            size_t operator()(const NodeId& p) const { 
+                size_t xh = std::hash<u64>{}(p.chunk_x);
+                size_t zh = std::hash<u64>{}(p.chunk_z);
+                size_t ih = std::hash<u16>{}(p.piece_i);
+                size_t r = xh;
+                r = r ^ (zh + 0x9e3779b9 + (r << 6) + (r >> 2));
+                r = r ^ (ih + 0x9e3779b9 + (r << 6) + (r >> 2));
+                return r;
             }
         };
     };
@@ -135,7 +155,6 @@ namespace houseofatmos::world {
         };
 
         struct Node {
-            u64 chunk_x, chunk_z;
             std::vector<NodeId> connected_low;
             std::vector<NodeId> connected_high;
             Block* block = nullptr;
@@ -164,9 +183,9 @@ namespace houseofatmos::world {
             Block* previous = nullptr
         );
         void create_signals(NodeId node);
+        
         public:
-        void reload() override;
-
+        void reset() override;
 
         void collect_next_nodes(
             std::optional<NodeId> prev, NodeId node, 
@@ -176,13 +195,6 @@ namespace houseofatmos::world {
         u64 node_target_dist(NodeId node, ComplexId target) override;
 
         bool node_at_target(NodeId node, ComplexId target) override;
-
-        void collect_node_points(
-            std::optional<NodeId> prev, NodeId node, std::optional<NodeId> next,
-            std::vector<Vec<3>>& out
-        ) override;
-
-        std::vector<NodeId> closest_nodes_to(const Vec<3>& position) override;
 
 
         void update(
@@ -199,13 +211,61 @@ namespace houseofatmos::world {
 
 
 
+    struct TrackPosition {
+        TrackPieceId piece_id;
+        TrackPiece::Direction direction; // direction when 'distance' gets larger
+        f64 distance;
+
+        TrackPosition(
+            TrackPieceId piece_id, TrackPiece::Direction direction, f64 distance
+        ): piece_id(piece_id), direction(direction), distance(distance) {}
+
+        f64 remaining(const TrackNetwork& network) const {
+            const TrackPiece& piece = network.track_piece_at(this->piece_id);
+            const TrackPiece::TypeInfo& pc_info 
+                = TrackPiece::types().at((size_t) piece.type);
+            return pc_info.length() - this->distance;
+        }
+
+        Vec<3> in_world(const TrackNetwork& network) const {
+            const TrackPiece& piece = network.track_piece_at(this->piece_id);
+            const TrackPiece::TypeInfo& pc_info 
+                = TrackPiece::types().at((size_t) piece.type);
+            if(pc_info.points.size() == 0) {
+                engine::error("Illegal piece type (points.size() == 0)");
+            }
+            f64 remaining = this->direction == TrackPiece::Direction::Ascending
+                ? this->distance : this->remaining(network);
+            Vec<3> point = pc_info.points.back();
+            for(size_t i = 1; i < pc_info.points.size(); i += 1) {
+                Vec<3> prev = pc_info.points[i - 1];
+                Vec<3> next = pc_info.points[i];
+                Vec<3> step = next - prev;
+                f64 step_len = step.len();
+                if(remaining > step_len) {
+                    remaining -= step_len;
+                    continue;
+                }
+                f64 step_prog = remaining / step_len;
+                point = prev + (step * step_prog);
+                break;
+            }
+            Mat<4> t = piece.build_transform(
+                this->piece_id.chunk_x, this->piece_id.chunk_z, 
+                network.terrain->tiles_per_chunk(), 
+                network.terrain->units_per_tile()
+            );
+            return (t * point.with(1.0)).swizzle<3>("xyz");
+        }
+    };
+
     struct Train: Agent<TrackNetwork> {
 
         struct Car {
             engine::Model::LoadArgs model;
             Vec<3> model_heading;
             f64 length;
-            f64 front_axle, back_axle;
+            f64 axle_distance;
             f64 wheel_radius;
             u64 capacity;
         };
@@ -253,10 +313,12 @@ namespace houseofatmos::world {
         }
 
 
+        using CarPosition = std::pair<TrackPosition, TrackPosition>;
+
         struct Serialized {
             SerializedAgent agent;
             LocomotiveType locomotive;
-            u64 car_count;
+            engine::Arena::Array<CarPosition> cars;
             f64 velocity;
         };
 
@@ -266,7 +328,8 @@ namespace houseofatmos::world {
         };
 
         LocomotiveType loco_type;
-        u64 car_count;
+        std::vector<CarPosition> cars;
+        f64 velocity = 0.0;
 
         private:
         engine::Speaker speaker = engine::Speaker(
@@ -277,11 +340,10 @@ namespace houseofatmos::world {
         std::vector<OwnedBlock> owning_blocks;
         AgentState prev_state = AgentState::Idle;
         f64 last_chugga_time = 0.0;
-        f64 velocity = 0.0;
 
         public:
         Train(
-            LocomotiveType loco_type, Vec<3> position, 
+            LocomotiveType loco_type, std::vector<CarPosition> cars, 
             const Settings& settings
         );
         Train(
@@ -297,27 +359,6 @@ namespace houseofatmos::world {
 
         static inline const f64 car_padding = 0.5;
 
-        f64 length() const { 
-            const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
-                .at((size_t) this->loco_type);
-            u64 car_count = loco_info.loco_cars.size() + this->car_count;
-            return this->offset_of_car(car_count); 
-        }
-
-        f64 back_path_dist() const {
-            return std::min(
-                this->current_path_dist(), 
-                this->current_path().length() - this->length()
-            );
-        }
-
-        f64 front_path_dist() const {
-            return std::min(
-                this->current_path_dist() + this->length(), 
-                this->current_path().length()
-            );
-        }
-
         const Car& car_at(size_t car_idx) const {
             const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
                 .at((size_t) this->loco_type);
@@ -331,9 +372,9 @@ namespace houseofatmos::world {
         f64 wait_point_distance(TrackNetwork& network) const;
 
 
-        f64 current_speed(TrackNetwork& network) override {
-            (void) network;
-            return this->velocity;
+
+        Vec<3> current_position(TrackNetwork& network) override {
+            return this->cars.front().first.in_world(network);
         }
 
         u64 item_storage_capacity() override {
@@ -343,7 +384,8 @@ namespace houseofatmos::world {
             for(const Car& car: loco_info.loco_cars) {
                 total += car.capacity;
             }
-            total += this->car_count * loco_info.car_type.capacity;
+            u64 car_count = this->cars.size() - loco_info.loco_cars.size();
+            total += car_count * loco_info.car_type.capacity;
             return total;
         }
 
@@ -356,11 +398,8 @@ namespace houseofatmos::world {
             return Train::locomotive_types().at((size_t) this->loco_type).icon;
         }
 
-        bool at_path_end() override {
-            return this->front_path_dist() >= this->current_path().length();
-        }
-
         Mat<4> build_car_transform(
+            const TrackNetwork& network,
             size_t car_idx, 
             Vec<3>* position_out = nullptr, 
             f64* pitch_out = nullptr, f64* yaw_out = nullptr
@@ -369,14 +408,23 @@ namespace houseofatmos::world {
         void release_unjustified_blocks(TrackNetwork& network);
         void take_next_blocks(TrackNetwork& network);
 
-        void on_new_path(TrackNetwork& network) override;
+        std::optional<AgentPath<TrackNetwork>> find_path_to(
+            TrackNetwork& network, ComplexId target
+        ) override;
+
         void on_network_reset(TrackNetwork& network) override;
 
         void update_velocity(
             const engine::Window& window, TrackNetwork& network
         );
 
-        void update_rideable(Player& player, Interactables& interactables);
+        void update_rideable(
+            TrackNetwork& network, Player& player, Interactables& interactables
+        );
+        
+        void move_distance(
+            const engine::Window& window, TrackNetwork& network, f64 distance
+        );
 
         void update(
             TrackNetwork& network, engine::Scene& scene, 
