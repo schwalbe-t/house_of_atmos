@@ -90,7 +90,7 @@ namespace houseofatmos::world {
             chunk.set_path_at(rel_x, rel_z, true);
             this->world->terrain.remove_foliage_at((i64) tile_x, (i64) tile_z);
             this->world->terrain.reload_chunk_at(chunk_x, chunk_z);
-            this->world->carriages.find_paths(&this->toasts);
+            this->world->carriages.reset(&this->toasts);
             this->speaker.position = Vec<3>(tile_x, 0, tile_z)
                 * this->world->terrain.units_per_tile()
                 + Vec<3>(0, this->world->terrain.elevation_at(tile_x, tile_z), 0);
@@ -98,7 +98,7 @@ namespace houseofatmos::world {
         } else if(has_path && window.is_down(engine::Button::Right)) {
             chunk.set_path_at(rel_x, rel_z, false);
             this->world->terrain.reload_chunk_at(chunk_x, chunk_z);
-            this->world->carriages.find_paths(&this->toasts);
+            this->world->carriages.reset(&this->toasts);
             this->world->balance.add_coins(path_removal_refund, this->toasts);
             this->speaker.position = Vec<3>(tile_x, 0, tile_z)
                 * this->world->terrain.units_per_tile()

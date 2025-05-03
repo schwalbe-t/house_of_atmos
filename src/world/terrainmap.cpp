@@ -194,7 +194,9 @@ namespace houseofatmos::world {
             stop.amount.fract = 1.0;
             stop.unit = AgentStop::Fraction;
             stop.item = (Item::Type) 0;
-            this->selected.agent.a.schedule().push_back(stop);
+            this->selected.agent.d
+                ->schedule_of(this->selected.agent.a)
+                .push_back(stop);
             this->adding_stop = false;
             return;
         } 
@@ -338,13 +340,14 @@ namespace houseofatmos::world {
     }
 
     void TerrainMap::add_agent_stop_marker(
-        AbstractAgent agent, std::span<const size_t> stop_indices
+        AbstractAgent agent, const AgentDisplay& agent_d,
+        std::span<const size_t> stop_indices
     ) {
         if(stop_indices.size() == 0) { return; }
-        Vec<3> ag_tile_pos = agent.position() 
+        Vec<3> ag_tile_pos = agent_d.position_of(agent, *this->world) 
             / this->world->terrain.units_per_tile();
         const Complex& complex = this->world->complexes
-            .get(agent.schedule()[stop_indices[0]].target);
+            .get(agent_d.schedule_of(agent)[stop_indices[0]].target);
         const auto& [mem_x, mem_z] = complex
             .closest_member_to((u64) ag_tile_pos.x(), (u64) ag_tile_pos.z());
         const Building* member = this->world->terrain
@@ -365,37 +368,38 @@ namespace houseofatmos::world {
     }
 
     void TerrainMap::add_agent_markers(
-        AbstractAgent agent, const AgentDisplay& agent_display
+        AbstractAgent agent, const AgentDisplay& agent_d
     ) {
         bool is_selected = this->selected_type == SelectionType::Agent
-            && this->selected.agent.a.data == agent.data;
+            && this->selected.agent.a == agent;
         this->add_icon_marker(
-            agent.position().swizzle<2>("xz"),
-            agent.state() == AgentState::Lost
+            agent_d.position_of(agent, *this->world).swizzle<2>("xz"),
+            agent_d.state_of(agent) == AgentState::Lost
                 ? &ui_icon::map_marker_agent_lost
                 : is_selected
                     ? &ui_icon::map_marker_selected
-                    : agent_display.marker,
-            [this, agent, ag_d = &agent_display]() {
+                    : agent_d.marker,
+            [this, agent, agent_d = &agent_d]() {
                 *this->selected_info_bottom 
-                    = TerrainMap::display_agent_info(agent, *this->local);
+                    = this->display_agent_info(agent, *agent_d);
                 *this->selected_info_right 
-                    = this->display_agent_details(agent, *ag_d);
+                    = this->display_agent_details(agent, *agent_d);
                 this->selected_type = SelectionType::Agent;
                 this->selected.agent.a = agent;
-                this->selected.agent.d = ag_d;
+                this->selected.agent.d = agent_d;
                 this->render_map();
             }, 
             false
         );
         if(!is_selected) { return; }
         std::unordered_map<size_t, std::vector<size_t>> complex_stops;
-        for(size_t stop_i = 0; stop_i < agent.schedule().size(); stop_i += 1) {
-            size_t complex_i = agent.schedule()[stop_i].target.index;
+        const auto& schedule = agent_d.schedule_of(agent);
+        for(size_t stop_i = 0; stop_i < schedule.size(); stop_i += 1) {
+            size_t complex_i = schedule[stop_i].target.index;
             complex_stops[complex_i].push_back(stop_i);
         }
         for(const auto& [complex_i, stop_indices]: complex_stops) {
-            this->add_agent_stop_marker(agent, stop_indices);
+            this->add_agent_stop_marker(agent, agent_d, stop_indices);
         }
     }
 
@@ -405,17 +409,17 @@ namespace houseofatmos::world {
         this->container->children.clear();
         for(Carriage& carriage: this->world->carriages.agents) {
             this->add_agent_markers(
-                carriage.as_abstract(), TerrainMap::carriage_display
+                (AbstractAgent) &carriage, TerrainMap::carriage_display
             );
         }
         for(Train& train: this->world->trains.agents) {
             this->add_agent_markers(
-                train.as_abstract(), TerrainMap::train_display
+                (AbstractAgent) &train, TerrainMap::train_display
             );
         }
         for(Boat& boat: this->world->boats.agents) {
             this->add_agent_markers(
-                boat.as_abstract(), TerrainMap::boat_display
+                (AbstractAgent) &boat, TerrainMap::boat_display
             );
         }
         this->add_icon_marker(
@@ -691,15 +695,16 @@ namespace houseofatmos::world {
     }
 
     ui::Element TerrainMap::display_agent_info(
-        AbstractAgent agent, const engine::Localization& local
+        AbstractAgent agent, const AgentDisplay& agent_d
     ) {
-        ui::Element icon = agent.icon() == nullptr? ui::Element()
-            : ui_util::create_icon(agent.icon());
-        ui::Element name 
-            = ui_util::create_text(local.text(agent.local_name()), 1);
-        std::string capacity_info_text = local.pattern(
+        ui::Element icon = agent_d.icon_of(agent) == nullptr? ui::Element()
+            : ui_util::create_icon(agent_d.icon_of(agent));
+        ui::Element name = ui_util::create_text(
+            this->local->text(agent_d.local_name_of(agent)), 1
+        );
+        std::string capacity_info_text = this->local->pattern(
             "ui_item_storage_capacity", 
-            { std::to_string(agent.item_storage_capacity()) }
+            { std::to_string(agent_d.item_capacity_of(agent)) }
         );
         ui::Element capacity_info = ui_util::create_text(capacity_info_text, 1);
         ui::Element info = ui::Element()
@@ -726,9 +731,10 @@ namespace houseofatmos::world {
     }
 
     ui::Element TerrainMap::display_agent_stop(
-        AbstractAgent agent, size_t stop_i
+        AbstractAgent agent, const AgentDisplay& agent_d, 
+        size_t stop_i
     ) {
-        AgentStop* stop = &agent.schedule()[stop_i];
+        AgentStop* stop = &agent_d.schedule_of(agent)[stop_i];
         std::string local_action = "";
         switch(stop->action) {
             case AgentStop::Load: local_action = "ui_pick_up"; break;
@@ -753,31 +759,30 @@ namespace houseofatmos::world {
             = Item::types().at((size_t) stop->item).local_name;
         ui::Element info = ui::Element()
             .with_list_dir(ui::Direction::Horizontal)
-            .with_child(ui_util::create_button("🗑", [agent, stop_i]() {
-                agent.schedule().erase(
-                    agent.schedule().begin() + stop_i
-                );
-                agent.reset_path();
-            }, 2, 1))
-            .with_child(ui_util::create_button("↑", [agent, stop_i]() {
-                size_t swapped_with_i = stop_i == 0
-                    ? agent.schedule().size() - 1
-                    : stop_i - 1;
-                std::swap(
-                    agent.schedule()[swapped_with_i],
-                    agent.schedule()[stop_i]
-                );
-                agent.reset_path();
-            }, 2, 1))
-            .with_child(ui_util::create_button("↓", [agent, stop_i]() {
-                size_t swapped_with_i = (stop_i + 1)
-                    % agent.schedule().size();
-                std::swap(
-                    agent.schedule()[swapped_with_i],
-                    agent.schedule()[stop_i]
-                );
-                agent.reset_path();
-            }, 2, 1))
+            .with_child(ui_util::create_button(
+                "🗑", [this, agent, agent_d = &agent_d, stop_i]() {
+                    auto& schedule = agent_d->schedule_of(agent);
+                    schedule.erase(schedule.begin() + stop_i);
+                    agent_d->reset_path_of(agent, *this->world);
+                }, 2, 1
+            ))
+            .with_child(ui_util::create_button(
+                "↑", [this, agent, agent_d = &agent_d, stop_i]() {
+                    auto& schedule = agent_d->schedule_of(agent);
+                    size_t swapped_with_i = stop_i == 0
+                        ? schedule.size() - 1 : stop_i - 1;
+                    std::swap(schedule[swapped_with_i], schedule[stop_i]);
+                    agent_d->reset_path_of(agent, *this->world);
+                }, 2, 1
+            ))
+            .with_child(ui_util::create_button(
+                "↓", [this, agent, agent_d = &agent_d, stop_i]() {
+                    auto& schedule = agent_d->schedule_of(agent);
+                    size_t swapped_with_i = (stop_i + 1) % schedule.size();
+                    std::swap(schedule[swapped_with_i], schedule[stop_i]);
+                    agent_d->reset_path_of(agent, *this->world);
+                }, 2, 1
+            ))
             .with_child(
                 ui_util::create_text("#" + std::to_string(stop_i + 1), 3)
             )
@@ -868,10 +873,10 @@ namespace houseofatmos::world {
     }
 
     ui::Element TerrainMap::display_agent_details(
-        AbstractAgent agent, const AgentDisplay& agent_display
+        AbstractAgent agent, const AgentDisplay& agent_d
     ) {
         std::string status;
-        switch(agent.state()) {
+        switch(agent_d.state_of(agent)) {
             case AgentState::Idle:
                 status = "ui_status_no_instructions"; break;
             case AgentState::Travelling: 
@@ -882,16 +887,18 @@ namespace houseofatmos::world {
                 status = "ui_status_lost"; break;
         }
         std::string status_text = this->local->pattern(
-            status, { std::to_string(agent.stop_i() + 1) }
+            status, { std::to_string(agent_d.target_stop_of(agent) + 1) }
         );
         ui::Element storage = ui::Element()
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        for(const auto& [item, count]: agent.items()) {
+        u64 total_item_count = 0;
+        for(const auto& [item, count]: agent_d.items_of(agent)) {
             if(count == 0) { continue; }
             storage.children.push_back(TerrainMap::display_item_stack(
                 item, std::to_string(count), *this->local
             ));
+            total_item_count += count;
         }
         if(storage.children.size() == 0) {
             storage.children.push_back(
@@ -901,9 +908,10 @@ namespace houseofatmos::world {
         ui::Element schedule_info = ui::Element()
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
-        for(u64 stop_i = 0; stop_i < agent.schedule().size(); stop_i += 1) {
+        size_t schedule_size = agent_d.schedule_of(agent).size();
+        for(size_t stop_i = 0; stop_i < schedule_size; stop_i += 1) {
             schedule_info.children
-                .push_back(this->display_agent_stop(agent, stop_i));
+                .push_back(this->display_agent_stop(agent, agent_d, stop_i));
         }
         if(schedule_info.children.size() == 0) {
             schedule_info.children.push_back(
@@ -930,7 +938,7 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         info.children.push_back(ui_util::create_text(
-            this->local->text(agent_display.local_title), 1
+            this->local->text(agent_d.local_title), 1
         ));
         info.children.push_back(ui_util::create_text(status_text, 3));
         ui::Element buttons = ui::Element()
@@ -938,9 +946,9 @@ namespace houseofatmos::world {
             .with_list_dir(ui::Direction::Vertical)
             .as_movable();
         buttons.children.push_back(ui_util::create_wide_button(
-            this->local->text(agent_display.local_remove),
-            [this, agent, ag_d = &agent_display]() {
-                ag_d->remove_impl(agent, *this->world);
+            this->local->text(agent_d.local_remove),
+            [this, agent, ag_d = &agent_d]() {
+                ag_d->remove(agent, *this->world);
                 this->selected_info_right->hidden = true;
                 this->selected_info_bottom->hidden = true;
                 this->selected_type = SelectionType::None;
@@ -948,18 +956,16 @@ namespace houseofatmos::world {
             },
             2, 1
         ));
-        for(const auto& button: agent_display.buttons) {
+        for(const auto& button: agent_d.buttons) {
             if(button.show_if(agent, *this->world)) {
                 buttons.children.push_back(ui_util::create_wide_button(
                     this->local->text(button.local_text),
                     [
-                        h = button.handler, agent, this, ag_d = &agent_display
+                        h = button.handler, agent, this, ag_d = &agent_d
                     ]() {
                         h(agent, *this->world, this->toasts);
                         *this->selected_info_bottom 
-                            = TerrainMap::display_agent_info(
-                                agent, *this->local
-                            );
+                            = this->display_agent_info(agent, *ag_d);
                         *this->selected_info_right 
                             = this->display_agent_details(agent, *ag_d);
                     },
@@ -980,8 +986,8 @@ namespace houseofatmos::world {
         );
         info.children.push_back(schedule_info.with_padding(3.0).as_movable());
         std::string on_board_text = this->local->pattern("ui_on_board", {
-            std::to_string(agent.stored_item_count()),
-            std::to_string(agent.item_storage_capacity())
+            std::to_string(total_item_count),
+            std::to_string(agent_d.item_capacity_of(agent))
         });
         info.children.push_back(ui_util::create_text(on_board_text, 1));
         info.children.push_back(storage.with_padding(3.0).as_movable());

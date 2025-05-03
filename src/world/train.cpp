@@ -341,6 +341,97 @@ namespace houseofatmos::world {
 
 
 
+    Vec<3> TrackPosition::in_world(const TrackNetwork& network) const {
+        const TrackPiece& piece = network.track_piece_at(this->piece_id);
+        const TrackPiece::TypeInfo& pc_info 
+            = TrackPiece::types().at((size_t) piece.type);
+        if(pc_info.points.size() == 0) {
+            engine::error("Illegal piece type (points.size() == 0)");
+        }
+        f64 remaining = this->direction == TrackPiece::Direction::Ascending
+            ? this->distance : this->remaining(network);
+        Vec<3> point = pc_info.points.back();
+        for(size_t i = 1; i < pc_info.points.size(); i += 1) {
+            Vec<3> prev = pc_info.points[i - 1];
+            Vec<3> next = pc_info.points[i];
+            Vec<3> step = next - prev;
+            f64 step_len = step.len();
+            if(remaining > step_len) {
+                remaining -= step_len;
+                continue;
+            }
+            f64 step_prog = remaining / step_len;
+            point = prev + (step * step_prog);
+            break;
+        }
+        Mat<4> t = piece.build_transform(
+            this->piece_id.chunk_x, this->piece_id.chunk_z, 
+            network.terrain->tiles_per_chunk(), 
+            network.terrain->units_per_tile()
+        );
+        return (t * point.with(1.0)).swizzle<3>("xyz");
+    }
+
+    TrackPosition TrackPosition::move_along(
+        const AgentPath<TrackNetwork>& path, const TrackNetwork& network,
+        f64 distance, bool* at_end_out
+    ) const {
+        size_t og_pt_i = SIZE_MAX;
+        for(size_t p = 0; p < path.points.size(); p += 1) {
+            if(path.points[p] != this->piece_id) { continue; }
+            og_pt_i = p;
+            break;
+        }
+        if(og_pt_i == SIZE_MAX || distance == 0.0) { return *this; }
+        bool is_backwards = distance < 0;
+        size_t pt_i = og_pt_i;
+        auto pos = *this;
+        pos.distance += distance;
+        for(;;) {
+            TrackPieceId prev = pos.piece_id;
+            const TrackPiece& prev_piece = network.track_piece_at(prev);
+            f64 prev_piece_len = TrackPiece::types()
+                .at((size_t) prev_piece.type).length();
+            if(is_backwards) {
+                if(pos.distance >= 0.0) { break; }
+                if(pt_i == 0) {
+                    if(at_end_out != nullptr) { *at_end_out = true; }
+                    pos.distance = 0.0;
+                    break;
+                }
+                pt_i -= 1;
+            } else {
+                if(prev_piece_len > pos.distance) { break; }
+                pt_i += 1;
+                if(pt_i >= path.points.size()) {
+                    if(at_end_out != nullptr) { *at_end_out = true; }
+                    pos.distance = prev_piece_len;
+                    break;
+                }
+            }
+            pos.piece_id = path.points[pt_i];
+            if(is_backwards) {
+                pos.distance += prev_piece_len;
+            } else {
+                pos.distance -= prev_piece_len;
+            }
+            const TrackNetwork::Node& next_node 
+                = network.graph.at(pos.piece_id);
+            bool is_ascending = std::find(
+                next_node.connected_low.begin(), 
+                next_node.connected_low.end(),
+                prev
+            ) != next_node.connected_low.end();
+            if(is_backwards) { is_ascending = !is_ascending; }
+            pos.direction = is_ascending
+                ? TrackPiece::Direction::Ascending 
+                : TrackPiece::Direction::Descending;
+        }
+        return pos;
+    }
+
+
+
     static Train::Car train_car_old = Train::Car(
         engine::Model::LoadArgs(
             "res/trains/train_car_old.glb", Renderer::model_attribs,
@@ -532,21 +623,6 @@ namespace houseofatmos::world {
         );
     }
 
-    f64 Train::offset_of_car(size_t car_idx) const {
-        const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
-            .at((size_t) this->loco_type);
-        size_t remaining_cars = car_idx;
-        f64 length_sum = 0.0;
-        for(const Car& car: loco_info.loco_cars) {
-            if(remaining_cars == 0) { break; }
-            length_sum += car.length;
-            remaining_cars -= 1;
-        }
-        length_sum += remaining_cars * loco_info.car_type.length;
-        f64 padding = car_idx * car_padding;
-        return length_sum + padding;
-    }
-
     f64 Train::wait_point_distance(TrackNetwork& network) const {
         if(!this->current_path().has_value()) { return 0.0; }
         const AgentPath<TrackNetwork>& path = *this->current_path();
@@ -684,7 +760,6 @@ namespace houseofatmos::world {
         TrackPosition f_pos = this->cars.front().first;
         TrackPosition b_pos = this->cars.back().second;
         const TrackNetwork::Node& f_node = network.graph.at(f_pos.piece_id);
-        const TrackNetwork::Node& b_node = network.graph.at(b_pos.piece_id);
         auto path = AgentPath<TrackNetwork>::find(
             network, b_pos.piece_id, target,
             // banned tiles (stops reversal of train)
@@ -751,26 +826,30 @@ namespace houseofatmos::world {
         });
     }
 
+    static inline const f64 car_padding = 0.5;
+
     void Train::move_distance(
         const engine::Window& window, TrackNetwork& network, f64 distance
     ) {
         if(!this->current_path().has_value()) { return; }
         const AgentPath<TrackNetwork>& path = *this->current_path();
-        TrackPieceId f_piece = this->cars.front().first.piece_id;
-        size_t front_point_i = SIZE_MAX;
-        for(size_t p = 0; p < path.points.size(); p += 1) {
-            TrackPieceId s_piece = path.points[p];
-            if(s_piece != f_piece) { continue; }
-            front_point_i = p; 
-            break;
-        }
-        if(front_point_i == SIZE_MAX) {
-            engine::warning("Train broken! Current segments is not in path");
-            return;
-        }
-        // TODO! MOVE THE FRONT CAR
         bool at_end = false;
-        // TODO! MAKE THE REST OF THE CARS TRAIL
+        TrackPosition front = this->cars.front().first
+            .move_along(path, network, distance, &at_end);
+        const Train::Car& first_car_info = this->car_at(0);
+        f64 first_car_pading 
+            = (first_car_info.length - first_car_info.axle_distance) / 2.0;
+        f64 offset = first_car_pading;
+        for(size_t car_i = 0; car_i < this->cars.size(); car_i += 1) {
+            Train::CarPosition& car_pos = this->cars[car_i];
+            const Train::Car& car_info = this->car_at(car_i);
+            f64 padding = (car_info.length - car_info.axle_distance) / 2.0;
+            car_pos.first = front
+                .move_along(path, network, offset - padding);
+            car_pos.second = car_pos.first
+                .move_along(path, network, -car_info.axle_distance);
+            offset -= car_info.length + car_padding;
+        }
         if(at_end) {
             this->reached_target(window);
         }
@@ -841,7 +920,6 @@ namespace houseofatmos::world {
         const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
             .at((size_t) this->loco_type);
         for(size_t car_idx = 0; car_idx < this->cars.size(); car_idx += 1) {
-            const CarPosition& car_pos = this->cars[car_idx];
             const Train::Car& car_info = this->car_at(car_idx);
             engine::Model& model = scene.get(car_info.model);
             Mat<4> transform = this->build_car_transform(network, car_idx);

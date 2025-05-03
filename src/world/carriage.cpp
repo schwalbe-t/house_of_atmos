@@ -13,23 +13,6 @@ namespace houseofatmos::world {
         return has_path || has_bridge;
     }
 
-    static inline const f64 max_path_pos_var = 0.05;
-
-    void CarriageNetwork::collect_node_points(
-        std::optional<NodeId> prev, NodeId node, std::optional<NodeId> next,
-        std::vector<Vec<3>>& out
-    ) {
-        (void) prev;
-        (void) next;
-        auto [x, z] = node;
-        Vec<3> o = Vec<3>(this->rng.next_f64(), 0, this->rng.next_f64());
-        o = (o * 2.0 - Vec<3>(1.0, 0.0, 1.0)) * max_path_pos_var;
-        Vec<3> point = Vec<3>(x, 0, z) * this->terrain->units_per_tile()
-            + (o + Vec<3>(0.5, 0, 0.5)) * this->terrain->units_per_tile();
-        point.y() = this->terrain->elevation_at(point);
-        out.push_back(point);
-    }
-
 
 
     static std::vector<Carriage::HorseTypeInfo> horse_infos = {
@@ -137,7 +120,7 @@ namespace houseofatmos::world {
     Carriage::Carriage(
         CarriageType type, Vec<3> position, StatefulRNG& rng, 
         const Settings& settings
-    ): Agent<CarriageNetwork>(position) {
+    ): TileAgent<CarriageNetwork>(position) {
         this->type = type;
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
             .at((size_t) this->type);
@@ -153,7 +136,7 @@ namespace houseofatmos::world {
     Carriage::Carriage(
         const Serialized& serialized, const engine::Arena& buffer,
         const Settings& settings
-    ): Agent<CarriageNetwork>(serialized.agent, buffer) {
+    ): TileAgent<CarriageNetwork>(serialized.agent, buffer) {
         this->type = serialized.type;
         buffer.copy_into(serialized.horses, this->horses);
         this->speaker.volume = settings.sfx_volume;
@@ -161,7 +144,7 @@ namespace houseofatmos::world {
 
     Carriage::Serialized Carriage::serialize(engine::Arena& buffer) const {
         return Serialized(
-            Agent<CarriageNetwork>::serialize(buffer), // this is a non-static
+            TileAgent<CarriageNetwork>::serialize(buffer), // this is a non-static
             this->type,
             buffer.alloc(this->horses)
         );
@@ -171,7 +154,7 @@ namespace houseofatmos::world {
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
             .at((size_t) this->type);
         f64 yaw;
-        Mat<4> inst = this->build_transform(nullptr, nullptr, &yaw);
+        Mat<4> inst = this->build_transform(nullptr, &yaw);
         Vec<3> offset = carriage_info.rideable.position 
             + carriage_info.carriage_offset;
         this->rideable.position = (inst * offset.with(1.0)).swizzle<3>("xyz");
@@ -197,6 +180,8 @@ namespace houseofatmos::world {
         Player& player, Interactables* interactables
     ) {
         (void) particles;
+        f64 speed = Carriage::carriage_types().at((size_t) this->type).speed;
+        this->move_distance(window, network, window.delta_time() * speed);
         if(interactables != nullptr) {
             this->update_rideable(player, *interactables);
         }
@@ -209,7 +194,7 @@ namespace houseofatmos::world {
             this->speaker.play(scene.get(sound::horse));
         }
         f64 next_step_time = this->last_step_time 
-            + step_sound_period * this->current_speed(network);
+            + step_sound_period * speed;
         bool play_step_sound = this->current_state() == AgentState::Travelling
             && next_step_time <= window.time()
             && !this->speaker.is_playing();
@@ -222,21 +207,12 @@ namespace houseofatmos::world {
     static const f64 alignment_points_dist = 1.5;
     static const Vec<3> model_heading = Vec<3>(0, 0, 1);
 
-    Mat<4> Carriage::build_transform(
-        Vec<3>* position_out, f64* pitch_out, f64* yaw_out
-    ) const {
-        Vec<3> back = this->current_path()
-            .after(this->current_path_dist() - alignment_points_dist).first;
-        Vec<3> front = this->current_path()
-            .after(this->current_path_dist() + alignment_points_dist).first;
-        Vec<3> position = (front - back) / 2 + back;
-        Vec<3> heading = (front - back).normalized();
+    Mat<4> Carriage::build_transform(f64* pitch_out, f64* yaw_out) const {
         auto [pitch, yaw] = Agent<CarriageNetwork>
-            ::compute_heading_angles(heading, model_heading);
-        if(position_out != nullptr) { *position_out = position; }
+            ::compute_heading_angles(this->current_heading(), model_heading);
         if(pitch_out != nullptr) { *pitch_out = pitch; }
         if(yaw_out != nullptr) { *yaw_out = yaw; }
-        return Mat<4>::translate(position)
+        return Mat<4>::translate(this->position)
             * Mat<4>::rotate_y(yaw)
             * Mat<4>::rotate_x(pitch);
     }
@@ -287,7 +263,7 @@ namespace houseofatmos::world {
         for(const auto& driver_inst: carriage_info.drivers) {
             f64 yaw;
             Mat<4> driver_transform 
-                = this->build_transform(nullptr, nullptr, &yaw)
+                = this->build_transform(nullptr, &yaw)
                 * Mat<4>::translate(driver_inst.offset)
                 * Mat<4>::translate(carriage_info.carriage_offset);
             driver.position = (driver_transform * Vec<4>(0, 0, 0, 1))
@@ -298,7 +274,7 @@ namespace houseofatmos::world {
     }
 
     void Carriage::render_carriage(
-        Renderer& renderer, engine::Scene& scene
+        Renderer& renderer, engine::Scene& scene, const engine::Window& window
     ) const {
         CarriageTypeInfo carriage_info = Carriage::carriage_types()
             .at((size_t) this->type);
@@ -307,8 +283,11 @@ namespace houseofatmos::world {
             * Mat<4>::translate(carriage_info.carriage_offset);
         const engine::Animation& carriage_animation
             = carriage_model.animation("roll");
-        f64 rolled_rotations = this->current_path_dist()
+        f64 rolled_rotations = (window.time() * carriage_info.speed)
             / (carriage_info.wheel_radius * 2 * pi);
+        if(this->current_state() != AgentState::Travelling) {
+            rolled_rotations = 0.0;
+        }
         f64 timestamp = fmod(rolled_rotations, 1.0) 
             * carriage_animation.length();
         renderer.render(
@@ -322,7 +301,7 @@ namespace houseofatmos::world {
         engine::Scene& scene, const engine::Window& window
     ) {
         (void) network;
-        this->render_carriage(renderer, scene);
+        this->render_carriage(renderer, scene, window);
         this->render_drivers(renderer, scene, window);
         this->render_horses(renderer, scene, window);
     }

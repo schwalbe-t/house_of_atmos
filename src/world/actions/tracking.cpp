@@ -35,8 +35,9 @@ namespace houseofatmos::world {
         if(skip) { return; }
         encountered.push_back(current);
         const TrackNetwork::Node& n = network.graph.at(current);
-        u64 t_x = n.chunk_x * terrain.tiles_per_chunk() + current->x;
-        u64 t_z = n.chunk_z * terrain.tiles_per_chunk() + current->z;
+        const TrackPiece& current_p = network.track_piece_at(current);
+        u64 t_x = current.chunk_x * terrain.tiles_per_chunk() + current_p.x;
+        u64 t_z = current.chunk_z * terrain.tiles_per_chunk() + current_p.z;
         std::vector<TrackPiece*> pieces;
         terrain.track_pieces_at((i64) t_x, (i64) t_z, &pieces);
         if(pieces.size() != 1) { return; }
@@ -156,7 +157,9 @@ namespace houseofatmos::world {
             for(u64 ch_z = (u64) s_ch_z; ch_z <= e_ch_z; ch_z += 1) {
                 Terrain::ChunkData& chunk = this->world->terrain
                     .chunk_at(ch_x, ch_z);
-                for(TrackPiece& piece: chunk.track_pieces) {
+
+                for(size_t pc_i = 0; pc_i < chunk.track_pieces.size(); pc_i += 1) {
+                    TrackPiece& piece = chunk.track_pieces[pc_i];
                     u64 t_x = ch_x * this->world->terrain.tiles_per_chunk()
                         + piece.x;
                     u64 t_z = ch_z * this->world->terrain.tiles_per_chunk()
@@ -196,6 +199,7 @@ namespace houseofatmos::world {
                         icon_i %= ui_icon::track_dir_icons.size();
                         icon = &ui_icon::track_dir_icons[icon_i];
                     }
+                    auto piece_id = TrackPieceId(ch_x, ch_z, pc_i);
                     this->track_markers->children.push_back(ui::Element()
                         .with_pos(
                             ui::horiz::window_ndc(ndc.x()) - ui::unit * 4,
@@ -203,7 +207,7 @@ namespace houseofatmos::world {
                         )
                         .with_size(ui::unit * 8, ui::unit * 8)
                         .with_background(icon)
-                        .with_click_handler([this, piece = &piece]() {
+                        .with_click_handler([this, piece = &piece, piece_id]() {
                             TrackPiece::Direction d = piece->direction;
                             switch(piece->direction) {
                                 case TrackPiece::Any: 
@@ -217,9 +221,9 @@ namespace houseofatmos::world {
                             fill_track_directions(
                                 this->world->terrain, 
                                 this->world->trains.network, 
-                                modified, piece, d
+                                modified, piece_id, d
                             );
-                            this->world->trains.find_paths(&this->toasts);
+                            this->world->trains.reset(&this->toasts);
                         })
                         .as_movable()
                     );
@@ -426,7 +430,7 @@ namespace houseofatmos::world {
                 .chunk_at(this->preview_ch_x, this->preview_ch_z);
             chunk.track_pieces.push_back(this->preview_piece);
             this->world->terrain.remove_foliage_at((i64) dx, (i64) dz);
-            this->world->trains.find_paths(&this->toasts);
+            this->world->trains.reset(&this->toasts);
             this->speaker.position = Vec<3>(dx + 0.5, 0.0, dz + 0.5)
                 * this->world->terrain.units_per_tile()
                 + Vec<3>(0, this->preview_piece.elevation, 0);

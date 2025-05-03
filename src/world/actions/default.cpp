@@ -56,7 +56,7 @@ namespace houseofatmos::world {
         u64 depot_cx, u64 depot_cz, Toasts& toasts,
         Train::LocomotiveType loco_type
     ) {
-        Vec<3> pos;
+        TrackPosition pos;
         bool found_pos = false;
         const Building::TypeInfo& depot
             = Building::types().at((size_t) Building::TrainDepot);
@@ -66,12 +66,29 @@ namespace houseofatmos::world {
         for(i64 x = start_x; x < end_x; x += 1) {
             if(x < 0 || (u64) x >= world.terrain.width_in_tiles()) { continue; }
             if(z < 0 || (u64) z >= world.terrain.height_in_tiles()) { continue; }
-            bool has_track = world.terrain.track_pieces_at(x, z) > 0;
-            if(!has_track) { continue; }
-            pos = Vec<3>(x + 0.5, 0, z + 0.5) * world.terrain.units_per_tile();
-            pos.y() = world.terrain.elevation_at(pos);
-            found_pos = true;
-            break;
+            u64 chunk_x = (u64) x / world.terrain.tiles_per_chunk();
+            u64 chunk_z = (u64) z / world.terrain.tiles_per_chunk();
+            u64 chunk_rx = (u64) x % world.terrain.tiles_per_chunk();
+            u64 chunk_rz = (u64) z % world.terrain.tiles_per_chunk();
+            const Terrain::ChunkData& chunk = world.terrain
+                .chunk_at(chunk_x, chunk_z);
+            for(size_t pc_i = 0; pc_i < chunk.track_pieces.size(); pc_i += 1) {
+                const TrackPiece& piece = chunk.track_pieces[pc_i];
+                if(piece.x != chunk_rx || piece.z != chunk_rz) { continue; }
+                auto piece_id = TrackPieceId(chunk_x, chunk_z, pc_i);
+                auto piece_node = world.trains.network.graph.at(piece_id);
+                bool is_ascending = piece_node.connected_low.size() == 0;
+                pos = TrackPosition(
+                    piece_id, 
+                    is_ascending
+                        ? TrackPiece::Direction::Ascending 
+                        : TrackPiece::Direction::Descending, 
+                    0.0
+                );
+                found_pos = true;
+                break;
+            }
+            if(found_pos) { break; }
         }
         if(!found_pos) {
             toasts.add_error("toast_no_valid_train_location", {});
@@ -81,8 +98,14 @@ namespace houseofatmos::world {
             .at((size_t) loco_type);
         u64 cost = loco_info.cost;
         if(!world.balance.pay_coins(cost, toasts)) { return; }
-        world.trains.agents.push_back(Train(loco_type, pos, world.settings));
-        speaker.position = pos;
+        world.trains.agents.push_back(Train(
+            loco_type, 
+            std::vector<Train::CarPosition>(
+                loco_info.loco_cars.size(), Train::CarPosition(pos, pos)
+            ), 
+            world.settings
+        ));
+        speaker.position = pos.in_world(world.trains.network);
         speaker.pitch = loco_info.whistle_pitch;
         speaker.play(scene.get(sound::train_whistle));
     }

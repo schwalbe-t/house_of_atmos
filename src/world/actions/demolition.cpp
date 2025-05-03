@@ -82,7 +82,7 @@ namespace houseofatmos::world {
                             .reload_chunk_at((u64) ch_x, (u64) ch_z);
                     }
                 }
-                this->world->carriages.find_paths(&this->toasts);
+                this->world->carriages.reset(&this->toasts);
                 this->selection.type = Selection::None;
                 this->speaker.play(scene.get(sound::demolish));
                 return;
@@ -132,8 +132,8 @@ namespace houseofatmos::world {
                     this->world->terrain.bridges.begin() + bridge_idx
                 );
                 this->world->balance.add_coins(refunded, this->toasts);
-                this->world->carriages.find_paths(&this->toasts);
-                this->world->boats.find_paths(&this->toasts);
+                this->world->carriages.reset(&this->toasts);
+                this->world->boats.reset(&this->toasts);
                 this->selection.type = Selection::None;
                 this->speaker.play(scene.get(sound::demolish));
                 return;
@@ -156,7 +156,7 @@ namespace houseofatmos::world {
                     .add_coins(track_removal_refund, this->toasts);
                 this->world->terrain
                     .reload_chunk_at(tp_s.chunk_x, tp_s.chunk_z);
-                this->world->trains.find_paths(&this->toasts);
+                this->world->trains.reset(&this->toasts);
                 this->selection.type = Selection::None;
                 this->speaker.play(scene.get(sound::demolish));
                 return;

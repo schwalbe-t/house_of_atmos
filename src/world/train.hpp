@@ -16,6 +16,7 @@ namespace houseofatmos::world {
         u32 chunk_x, chunk_z;
         u16 piece_i;
 
+        TrackPieceId() {}
         TrackPieceId(u64 chunk_x, u64 chunk_z, size_t piece_i):
             chunk_x((u32) chunk_x), chunk_z((u32) chunk_z), 
             piece_i((u16) piece_i) {}
@@ -216,6 +217,7 @@ namespace houseofatmos::world {
         TrackPiece::Direction direction; // direction when 'distance' gets larger
         f64 distance;
 
+        TrackPosition() {}
         TrackPosition(
             TrackPieceId piece_id, TrackPiece::Direction direction, f64 distance
         ): piece_id(piece_id), direction(direction), distance(distance) {}
@@ -227,37 +229,15 @@ namespace houseofatmos::world {
             return pc_info.length() - this->distance;
         }
 
-        Vec<3> in_world(const TrackNetwork& network) const {
-            const TrackPiece& piece = network.track_piece_at(this->piece_id);
-            const TrackPiece::TypeInfo& pc_info 
-                = TrackPiece::types().at((size_t) piece.type);
-            if(pc_info.points.size() == 0) {
-                engine::error("Illegal piece type (points.size() == 0)");
-            }
-            f64 remaining = this->direction == TrackPiece::Direction::Ascending
-                ? this->distance : this->remaining(network);
-            Vec<3> point = pc_info.points.back();
-            for(size_t i = 1; i < pc_info.points.size(); i += 1) {
-                Vec<3> prev = pc_info.points[i - 1];
-                Vec<3> next = pc_info.points[i];
-                Vec<3> step = next - prev;
-                f64 step_len = step.len();
-                if(remaining > step_len) {
-                    remaining -= step_len;
-                    continue;
-                }
-                f64 step_prog = remaining / step_len;
-                point = prev + (step * step_prog);
-                break;
-            }
-            Mat<4> t = piece.build_transform(
-                this->piece_id.chunk_x, this->piece_id.chunk_z, 
-                network.terrain->tiles_per_chunk(), 
-                network.terrain->units_per_tile()
-            );
-            return (t * point.with(1.0)).swizzle<3>("xyz");
-        }
+        Vec<3> in_world(const TrackNetwork& network) const;
+
+        TrackPosition move_along(
+            const AgentPath<TrackNetwork>& path, const TrackNetwork& network,
+            f64 distance, bool* at_end_out = nullptr
+        ) const;
     };
+
+
 
     struct Train: Agent<TrackNetwork> {
 
@@ -357,8 +337,6 @@ namespace houseofatmos::world {
         Serialized serialize(engine::Arena& buffer) const;
 
 
-        static inline const f64 car_padding = 0.5;
-
         const Car& car_at(size_t car_idx) const {
             const LocomotiveTypeInfo& loco_info = Train::locomotive_types()
                 .at((size_t) this->loco_type);
@@ -366,8 +344,6 @@ namespace houseofatmos::world {
             if(is_loco) { return loco_info.loco_cars[car_idx]; }
             return loco_info.car_type;
         }
-
-        f64 offset_of_car(size_t car_idx) const;
 
         f64 wait_point_distance(TrackNetwork& network) const;
 

@@ -113,7 +113,7 @@ namespace houseofatmos::world {
         }
 
         static AgentPath<Network> build_path(
-            Network& network, const NodeSearchStates& nodes, NodeId last
+            const NodeSearchStates& nodes, NodeId last
         ) {
             auto path = AgentPath<Network>();
             NodeId current = last;
@@ -144,7 +144,7 @@ namespace houseofatmos::world {
                 NodeSearchState& current_s = nodes[current];
                 current_s.explored = true;
                 if(network.node_at_target(current, target)) {
-                    return build_path(network, nodes, current);
+                    return build_path(nodes, current);
                 }
                 network.collect_next_nodes(
                     current_s.parent, current, connected
@@ -242,7 +242,9 @@ namespace houseofatmos::world {
             Network& network, ComplexId target
         ) = 0;
 
-        virtual void on_network_reset(Network& network) {}
+        virtual void on_network_reset(Network& network) {
+            (void) network;
+        }
 
         virtual void update(
             Network& network, engine::Scene& scene, 
@@ -343,8 +345,12 @@ namespace houseofatmos::world {
             }
             switch(action) {
                 case AgentStop::Load: {
+                    u64 used_space = 0;
+                    for(const auto stack: this->items) {
+                        used_space += stack.second;
+                    }
                     u64 remaining_space = this->item_storage_capacity()
-                        - this->stored_item_count();
+                        - used_space;
                     u64 transferred = std::min(planned, remaining_space);
                     complex.remove_stored(stop.item, transferred);
                     this->items[stop.item] += transferred;
@@ -459,9 +465,9 @@ namespace houseofatmos::world {
             bool any_became_lost = false;
             for(Agent& agent: this->agents) {
                 agent.on_network_reset(this->network);
-                if(agent.state == AgentState::Idle) { continue; }
+                if(agent.current_state() == AgentState::Idle) { continue; }
                 bool was_lost = agent.current_state() == AgentState::Lost;
-                agent.travel_to(this->network, agent.current_stop());
+                agent.travel_to(this->network, agent.next_stop().target);
                 bool is_lost = agent.current_state() == AgentState::Lost;
                 any_became_lost |= (!was_lost && is_lost);
             }
@@ -494,7 +500,8 @@ namespace houseofatmos::world {
                 observer, draw_distance, renderer, scene, window
             );
             for(Agent& agent: this->agents) {
-                f64 distance = (agent.position - observer).len();
+                Vec<3> position = agent.current_position(this->network);
+                f64 distance = (position - observer).len();
                 bool is_visible = distance <= draw_distance;
                 if(!is_visible) { continue; }
                 agent.render(renderer, this->network, scene, window);
