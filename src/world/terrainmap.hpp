@@ -102,11 +102,10 @@ namespace houseofatmos::world {
             while(current != agents.end()) {
                 A& agent = *current;
                 if((AbstractAgent) (&agent) == removed) {
-                    current = std::next(current);
-                    continue;
+                    agents.erase(current);
+                    return;
                 }
-                agents.erase(current);
-                return;
+                current = std::next(current);
             }
         }
 
@@ -131,6 +130,8 @@ namespace houseofatmos::world {
                 );
             },
             +[](AbstractAgent a, World& w) {
+                Carriage* carriage = (Carriage*) a;
+                if(w.player.riding == &carriage->rideable) { return; }
                 TerrainMap::remove_agent<Carriage>(a, w.carriages.agents);
             },
             {}
@@ -155,6 +156,8 @@ namespace houseofatmos::world {
                     ::reset_path_of_agent<TrackNetwork>(a, w.trains.network);
             },
             +[](AbstractAgent a, World& w) {
+                Train* train = (Train*) a;
+                if(w.player.riding == &train->rideable) { return; }
                 TerrainMap::remove_agent<Train>(a, w.trains.agents);
             },
             {

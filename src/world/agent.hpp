@@ -27,9 +27,7 @@ namespace houseofatmos::world {
             ComplexBank* complexes, const Terrain* terrain, 
             std::string local_lost_msg
         ): complexes(complexes), terrain(terrain), 
-            local_lost_msg(std::move(local_lost_msg)) {
-            this->reset();
-        }
+            local_lost_msg(std::move(local_lost_msg)) {}
 
         AgentNetwork(AgentNetwork&& other) noexcept = default;
         AgentNetwork& operator=(AgentNetwork&& other) noexcept = default;
@@ -130,7 +128,7 @@ namespace houseofatmos::world {
         public:
         static std::optional<AgentPath<Network>> find(
             Network& network, NodeId start, ComplexId target,
-            std::vector<NodeId> banned = {}
+            std::optional<NodeId> start_parent = std::nullopt
         ) {
             NodeSearchStates nodes;
             nodes[start] = NodeSearchState(
@@ -147,13 +145,11 @@ namespace houseofatmos::world {
                     return build_path(nodes, current);
                 }
                 network.collect_next_nodes(
-                    current_s.parent, current, connected
+                    current_s.parent.has_value()
+                        ? current_s.parent : start_parent, 
+                    current, connected
                 );
                 for(auto [neigh, step_dist]: connected) {
-                    bool allowed = std::find(
-                        banned.begin(), banned.end(), neigh
-                    ) == banned.end();
-                    if(!allowed) { continue; }
                     u64 new_start_dist = current_s.start_dist + step_dist;
                     if(!nodes.contains(neigh)) {
                         nodes[neigh] = NodeSearchState(

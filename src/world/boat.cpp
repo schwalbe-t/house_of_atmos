@@ -96,7 +96,17 @@ namespace houseofatmos::world {
         auto [pitch, yaw] = Agent<BoatNetwork>
             ::compute_heading_angles(this->current_heading(), model_heading);
         if(yaw_out != nullptr) { *yaw_out = yaw; }
-        return Mat<4>::translate(this->position)
+        u64 total_item_count = 0;
+        for(const auto& stack: this->items) {
+            total_item_count += stack.second;
+        }
+        TypeInfo boat_info = Boat::types().at((size_t) this->type);
+        f64 storage_level = (f64) total_item_count
+        / (f64) this->item_storage_capacity();
+        Vec<3> disp_pos = this->position;
+        disp_pos.y() = water_level 
+            + storage_level * boat_info.weight_height_factor;
+        return Mat<4>::translate(disp_pos)
             * Mat<4>::rotate_y(yaw);
     }
 
@@ -118,14 +128,6 @@ namespace houseofatmos::world {
         this->move_distance(
             window, network, window.delta_time() * boat_info.speed
         );
-        u64 total_item_count = 0;
-        for(const auto& stack: this->items) {
-            total_item_count += stack.second;
-        }
-        f64 storage_level = (f64) total_item_count
-            / (f64) this->item_storage_capacity();
-        this->position.y() = water_level 
-            + storage_level * boat_info.weight_height_factor;
     }
 
     void Boat::render(

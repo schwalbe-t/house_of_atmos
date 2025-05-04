@@ -120,18 +120,17 @@ namespace houseofatmos::world {
         u64 crz = tz - (cz * this->terrain->tiles_per_chunk());
         const Terrain::ChunkData& chunk = this->terrain->chunk_at(cx, cz);
         std::vector<TrackPieceId> pieces;
+        bool is_conflict = false;
         for(size_t pc_i = 0; pc_i < chunk.track_pieces.size(); pc_i += 1) {
             const TrackPiece& piece = chunk.track_pieces[pc_i];
             if(piece.x != crx || piece.z != crz) { continue; }
-            pieces.push_back(TrackPieceId(cx, cz, pc_i));
-        }
-        if(pieces.size() == 0) { return; }
-        bool is_conflict = pieces.size() > 1;
-        for(const TrackPieceId& piece_id: pieces) {
-            const TrackPiece& piece = this->track_piece_at(piece_id);
+            auto piece_id = TrackPieceId(cx, cz, pc_i);
             if(this->graph.at(piece_id).block != nullptr) { return; }
             is_conflict |= piece.direction == TrackPiece::Any;
+            pieces.push_back(piece_id);
         }
+        if(pieces.size() == 0) { return; }
+        is_conflict |= pieces.size() > 1;
         bool add_to_prev = !is_conflict
             && previous != nullptr
             && previous->type != Block::Conflict
@@ -151,13 +150,13 @@ namespace houseofatmos::world {
             // same tile already has an assigned block
             node.block = block;
             for(NodeId conn: node.connected_low) {
-                const TrackPiece& conn_piece = this->track_piece_at(piece_id);
+                const TrackPiece& conn_piece = this->track_piece_at(conn);
                 u64 ctx = conn.chunk_x * tpc + conn_piece.x;
                 u64 ctz = conn.chunk_z * tpc + conn_piece.z;
                 this->assign_nodes_to_blocks({ ctx, ctz }, node.block);
             }
             for(NodeId conn: node.connected_high) {
-                const TrackPiece& conn_piece = this->track_piece_at(piece_id);
+                const TrackPiece& conn_piece = this->track_piece_at(conn);
                 u64 ctx = conn.chunk_x * tpc + conn_piece.x;
                 u64 ctz = conn.chunk_z * tpc + conn_piece.z;
                 this->assign_nodes_to_blocks({ ctx, ctz }, node.block);
@@ -192,8 +191,8 @@ namespace houseofatmos::world {
             const Node& c_node = this->graph.at(c_node_i);
             const TrackPiece& c_piece = this->track_piece_at(c_node_i);
             if(c_node.block == node.block) { continue; }
-            u64 c_tx = node_i.chunk_x * tiles_per_chunk + piece.x;
-            u64 c_tz = node_i.chunk_z * tiles_per_chunk + piece.z;
+            u64 c_tx = c_node_i.chunk_x * tiles_per_chunk + c_piece.x;
+            u64 c_tz = c_node_i.chunk_z * tiles_per_chunk + c_piece.z;
             Vec<3> c_pos = Vec<3>(c_tx + 0.5, 0, c_tz + 0.5) * units_per_tile
                 + Vec<3>(0, c_piece.elevation, 0);
             Vec<3> dir = c_pos - pos;
@@ -372,7 +371,7 @@ namespace houseofatmos::world {
         return (t * point.with(1.0)).swizzle<3>("xyz");
     }
 
-    TrackPosition TrackPosition::move_along(
+    TrackPosition TrackPosition::move_forward(
         const AgentPath<TrackNetwork>& path, const TrackNetwork& network,
         f64 distance, bool* at_end_out
     ) const {
@@ -382,47 +381,81 @@ namespace houseofatmos::world {
             og_pt_i = p;
             break;
         }
-        if(og_pt_i == SIZE_MAX || distance == 0.0) { return *this; }
-        bool is_backwards = distance < 0;
+        if(og_pt_i == SIZE_MAX || distance <= 0.0) { return *this; }
         size_t pt_i = og_pt_i;
         auto pos = *this;
-        pos.distance += distance;
+        f64 remaining = distance;
         for(;;) {
-            TrackPieceId prev = pos.piece_id;
-            const TrackPiece& prev_piece = network.track_piece_at(prev);
-            f64 prev_piece_len = TrackPiece::types()
-                .at((size_t) prev_piece.type).length();
-            if(is_backwards) {
-                if(pos.distance >= 0.0) { break; }
-                if(pt_i == 0) {
-                    if(at_end_out != nullptr) { *at_end_out = true; }
-                    pos.distance = 0.0;
-                    break;
-                }
-                pt_i -= 1;
-            } else {
-                if(prev_piece_len > pos.distance) { break; }
-                pt_i += 1;
-                if(pt_i >= path.points.size()) {
-                    if(at_end_out != nullptr) { *at_end_out = true; }
-                    pos.distance = prev_piece_len;
-                    break;
-                }
+            TrackPieceId piece_id = pos.piece_id;
+            const TrackPiece& piece = network.track_piece_at(piece_id);
+            f64 piece_len = TrackPiece::types()
+                .at((size_t) piece.type).length();
+            f64 piece_rem = piece_len - pos.distance;
+            if(remaining < piece_rem) {
+                pos.distance += remaining;
+                break;
+            }
+            remaining -= piece_rem;
+            pt_i += 1;
+            if(pt_i >= path.points.size()) {
+                pos.distance = piece_len;
+                if(at_end_out != nullptr) { *at_end_out = true; }
+                break;
             }
             pos.piece_id = path.points[pt_i];
-            if(is_backwards) {
-                pos.distance += prev_piece_len;
-            } else {
-                pos.distance -= prev_piece_len;
-            }
+            pos.distance = 0.0;
             const TrackNetwork::Node& next_node 
                 = network.graph.at(pos.piece_id);
             bool is_ascending = std::find(
                 next_node.connected_low.begin(), 
                 next_node.connected_low.end(),
-                prev
+                piece_id
             ) != next_node.connected_low.end();
-            if(is_backwards) { is_ascending = !is_ascending; }
+            pos.direction = is_ascending
+                ? TrackPiece::Direction::Ascending 
+                : TrackPiece::Direction::Descending;
+        }
+        return pos;
+    }
+
+    TrackPosition TrackPosition::move_backward(
+        const AgentPath<TrackNetwork>& path, const TrackNetwork& network,
+        f64 distance
+    ) const {
+        size_t og_pt_i = SIZE_MAX;
+        for(size_t p = 0; p < path.points.size(); p += 1) {
+            if(path.points[p] != this->piece_id) { continue; }
+            og_pt_i = p;
+            break;
+        }
+        if(og_pt_i == SIZE_MAX || distance <= 0.0) { return *this; }
+        size_t pt_i = og_pt_i;
+        auto pos = *this;
+        f64 remaining = distance;
+        for(;;) {
+            TrackPieceId prev_piece_id = pos.piece_id;
+            if(pos.distance >= remaining) {
+                pos.distance -= remaining;
+                break;
+            }
+            remaining -= pos.distance;
+            if(pt_i == 0) {
+                pos.distance = 0.0;
+                break;
+            }
+            pt_i -= 1;
+            pos.piece_id = path.points[pt_i];
+            const TrackPiece& next_piece = network.track_piece_at(pos.piece_id);
+            f64 next_piece_len = TrackPiece::types()
+                .at((size_t) next_piece.type).length();
+            pos.distance = next_piece_len;
+            const TrackNetwork::Node& next_node 
+                = network.graph.at(pos.piece_id);
+            bool is_ascending = std::find(
+                next_node.connected_high.begin(), 
+                next_node.connected_high.end(),
+                prev_piece_id
+            ) != next_node.connected_high.end();
             pos.direction = is_ascending
                 ? TrackPiece::Direction::Ascending 
                 : TrackPiece::Direction::Descending;
@@ -635,7 +668,7 @@ namespace houseofatmos::world {
             break;
         }
         if(front_point_i == SIZE_MAX) {
-            engine::warning("Train broken! Current front segment is not in path");
+            engine::warning("wait_point_distance: Train broken! Current front segment is not in path");
             return 0.0;
         }
         f64 distance = this->cars.front().first.remaining(network);
@@ -643,15 +676,16 @@ namespace houseofatmos::world {
             TrackPieceId piece_id = path.points[p];
             const TrackNetwork::Node& node = network.graph.at(piece_id);
             if(node.block->owner != this) { 
-                distance -= 2.5; // wait a bit before the next block
-                break; 
+                // distance to next unowned block
+                return distance - 5.0; // wait a bit before the next block
             }
             const TrackPiece& piece = network.track_piece_at(piece_id);
             const TrackPiece::TypeInfo& pc_info 
                 = TrackPiece::types().at((size_t) piece.type);
             distance += pc_info.length();
         }
-        return distance;
+        // distance to end of path
+        return distance + 1.0; // don't completely slow down :)
     }
 
     Mat<4> Train::build_car_transform(
@@ -680,20 +714,19 @@ namespace houseofatmos::world {
         for(OwnedBlock& owning: this->owning_blocks) {
             owning.justified = false;
         }
-        TrackPieceId f_piece = this->cars.front().first.piece_id;
         TrackPieceId b_piece = this->cars.back().second.piece_id;
-        size_t front_point_i = SIZE_MAX;
         size_t back_point_i = SIZE_MAX;
         for(size_t p = 0; p < path.points.size(); p += 1) {
             TrackPieceId s_piece = path.points[p];
-            if(s_piece == f_piece) { front_point_i = p; }
-            if(b_piece == f_piece) { back_point_i = p; }
+            if(s_piece != b_piece) { continue; }
+            back_point_i = p;
+            break;
         }
-        if(front_point_i == SIZE_MAX || back_point_i == SIZE_MAX) {
-            engine::warning("Train broken! Current segments is not in path");
+        if(back_point_i == SIZE_MAX) {
+            engine::warning("release_unjustified_blocks: Train broken! Current segments are not in path");
             return;
         }
-        for(size_t p = back_point_i; p < front_point_i; p += 1) {
+        for(size_t p = back_point_i; p < path.points.size(); p += 1) {
             TrackPieceId piece_id = path.points[p];
             const TrackNetwork::Node& node = network.graph.at(piece_id);
             if(node.block->owner != this) { continue; }
@@ -727,7 +760,7 @@ namespace houseofatmos::world {
             break;
         }
         if(front_point_i == SIZE_MAX) {
-            engine::warning("Train broken! Current segments is not in path");
+            engine::warning("take_next_blocks: Train broken! Current segments are not in path");
             return;
         }
         TrackNetwork::Block* current_block = network.graph
@@ -758,18 +791,20 @@ namespace houseofatmos::world {
         TrackNetwork& network, ComplexId target
     ) {
         TrackPosition f_pos = this->cars.front().first;
-        TrackPosition b_pos = this->cars.back().second;
-        const TrackNetwork::Node& f_node = network.graph.at(f_pos.piece_id);
-        auto path = AgentPath<TrackNetwork>::find(
-            network, b_pos.piece_id, target,
-            // banned tiles (stops reversal of train)
-            f_pos.direction == TrackPiece::Direction::Ascending
-                ? f_node.connected_low : f_node.connected_high
-        );
+        std::optional<TrackPieceId> f_prev = std::nullopt;
+        for(const CarPosition& car_pos: this->cars) {
+            TrackPieceId front = car_pos.first.piece_id;
+            if(front != f_pos.piece_id) { f_prev = front; break; }
+            TrackPieceId back = car_pos.second.piece_id;
+            if(back != f_pos.piece_id) { f_prev = back; break; }
+        }
+        auto path = AgentPath<TrackNetwork>
+            ::find(network, f_pos.piece_id, target, f_prev);
         if(!path.has_value()) { return path; }
         // the generated path begins from the start of the train,
         // but it actually must start from the END of the train
         // for the rest of the functions to work correctly
+        path->points.insert(path->points.begin(), f_pos.piece_id);
         for(const CarPosition& car_pos: this->cars) { // front -> back of train
             TrackPieceId front = car_pos.first.piece_id;
             if(path->points.front() != front) {
@@ -796,9 +831,9 @@ namespace houseofatmos::world {
         f64 end_after = this->wait_point_distance(network);
         f64 stop_limit = end_after / loco_info.braking_distance;
         this->velocity += loco_info.acceleration * window.delta_time();
-        this->velocity = std::max(this->velocity, 0.0);
-        this->velocity = std::min(this->velocity, loco_info.top_speed);
         this->velocity = std::min(this->velocity, stop_limit);
+        this->velocity = std::min(this->velocity, loco_info.top_speed);
+        this->velocity = std::max(this->velocity, 0.0);
     }
 
     void Train::update_rideable(
@@ -835,20 +870,20 @@ namespace houseofatmos::world {
         const AgentPath<TrackNetwork>& path = *this->current_path();
         bool at_end = false;
         TrackPosition front = this->cars.front().first
-            .move_along(path, network, distance, &at_end);
+            .move_forward(path, network, distance, &at_end);
         const Train::Car& first_car_info = this->car_at(0);
         f64 first_car_pading 
             = (first_car_info.length - first_car_info.axle_distance) / 2.0;
-        f64 offset = first_car_pading;
+        f64 offset = -first_car_pading;
         for(size_t car_i = 0; car_i < this->cars.size(); car_i += 1) {
             Train::CarPosition& car_pos = this->cars[car_i];
             const Train::Car& car_info = this->car_at(car_i);
             f64 padding = (car_info.length - car_info.axle_distance) / 2.0;
             car_pos.first = front
-                .move_along(path, network, offset - padding);
+                .move_backward(path, network, offset + padding);
             car_pos.second = car_pos.first
-                .move_along(path, network, -car_info.axle_distance);
-            offset -= car_info.length + car_padding;
+                .move_backward(path, network, car_info.axle_distance);
+            offset += car_info.length + car_padding;
         }
         if(at_end) {
             this->reached_target(window);
@@ -866,8 +901,9 @@ namespace houseofatmos::world {
         this->release_unjustified_blocks(network);
         this->take_next_blocks(network);
         this->update_velocity(window, network);
-        f64 moved_distance = this->velocity * window.delta_time();
-        this->move_distance(window, network, moved_distance);
+        f64 distance_delta = this->velocity * window.delta_time();
+        this->move_distance(window, network, distance_delta);
+        this->moved_distance += distance_delta;
         if(interactables != nullptr) {
             this->update_rideable(network, player, *interactables);
         }
@@ -924,7 +960,7 @@ namespace houseofatmos::world {
             engine::Model& model = scene.get(car_info.model);
             Mat<4> transform = this->build_car_transform(network, car_idx);
             const engine::Animation& animation = model.animation("roll");
-            f64 rolled_rotations = (window.time() * this->velocity)
+            f64 rolled_rotations = this->moved_distance
                 / (car_info.wheel_radius * 2 * pi);
             f64 timestamp = fmod(rolled_rotations, 1.0) * animation.length();
             renderer.render(

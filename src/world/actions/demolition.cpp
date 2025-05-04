@@ -145,6 +145,19 @@ namespace houseofatmos::world {
                     .chunk_at(tp_s.chunk_x, tp_s.chunk_z);
                 const TrackPiece& removed_piece 
                     = chunk.track_pieces[tp_s.piece_i];
+                auto removed_id 
+                    = TrackPieceId(tp_s.chunk_x, tp_s.chunk_z, tp_s.piece_i);
+                bool allowed = true;
+                for(const Train& train: this->world->trains.agents) {
+                    for(const Train::CarPosition& car_pos: train.cars) {
+                        allowed &= car_pos.first.piece_id != removed_id;
+                        allowed &= car_pos.second.piece_id != removed_id;
+                    }
+                }
+                if(!allowed) {
+                    this->toasts.add_error("toast_tracks_occupied", {});
+                    return;
+                }
                 this->speaker.position 
                     = Vec<3>(tp_s.tile_x + 0.5, 0.0, tp_s.tile_z + 0.5)
                     * this->world->terrain.units_per_tile()

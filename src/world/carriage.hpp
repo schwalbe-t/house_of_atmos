@@ -89,13 +89,13 @@ namespace houseofatmos::world {
 
         CarriageType type;
         std::vector<HorseType> horses;
+        Player::Rideable rideable;
 
         private:
         engine::Speaker speaker = engine::Speaker(
             engine::Speaker::Space::World, 5.0
         );
         std::shared_ptr<Interactable> interactable = nullptr;
-        Player::Rideable rideable;
         AgentState prev_state = AgentState::Travelling;
         f64 last_step_time = 0.0;
 

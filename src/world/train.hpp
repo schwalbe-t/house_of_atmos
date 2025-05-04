@@ -231,9 +231,14 @@ namespace houseofatmos::world {
 
         Vec<3> in_world(const TrackNetwork& network) const;
 
-        TrackPosition move_along(
+        TrackPosition move_forward(
             const AgentPath<TrackNetwork>& path, const TrackNetwork& network,
             f64 distance, bool* at_end_out = nullptr
+        ) const;
+
+        TrackPosition move_backward(
+            const AgentPath<TrackNetwork>& path, const TrackNetwork& network,
+            f64 distance
         ) const;
     };
 
@@ -310,16 +315,17 @@ namespace houseofatmos::world {
         LocomotiveType loco_type;
         std::vector<CarPosition> cars;
         f64 velocity = 0.0;
+        Player::Rideable rideable;
 
         private:
         engine::Speaker speaker = engine::Speaker(
             engine::Speaker::Space::World, 5.0
         );
         std::shared_ptr<Interactable> interactable = nullptr;
-        Player::Rideable rideable;
         std::vector<OwnedBlock> owning_blocks;
         AgentState prev_state = AgentState::Idle;
         f64 last_chugga_time = 0.0;
+        f64 moved_distance = 0.0;
 
         public:
         Train(
