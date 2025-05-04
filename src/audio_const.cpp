@@ -99,9 +99,10 @@ namespace houseofatmos::audio_const {
     const Soundtrack::LoadArgs soundtrack = Soundtrack::LoadArgs(
         {
             "res/soundtrack/track_1.ogg",
-            "res/soundtrack/track_2.ogg"
+            "res/soundtrack/track_2.ogg",
+            "res/soundtrack/track_3.ogg"
         },
-        Soundtrack::Repetition::Allowed
+        Soundtrack::Repetition::Forbidden
     );
 
 }
