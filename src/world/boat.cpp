@@ -36,18 +36,6 @@ namespace houseofatmos::world {
         return true;
     }
 
-    void BoatNetwork::collect_node_points(
-        std::optional<NodeId> prev, NodeId node, std::optional<NodeId> next,
-        std::vector<Vec<3>>& out
-    ) {
-        (void) prev;
-        (void) next;
-        auto [x, z] = node;
-        Vec<3> point = Vec<3>(x, 0, z) * this->terrain->units_per_tile()
-            + Vec<3>(0, water_level, 0);
-        out.push_back(point);
-    }
-
 
 
     static std::vector<Boat::TypeInfo> type_infos = {
@@ -82,21 +70,21 @@ namespace houseofatmos::world {
     }
 
 
-    Boat::Boat(Type type, Vec<3> position): Agent<BoatNetwork>(position) {
+    Boat::Boat(Type type, Vec<3> position): TileAgent<BoatNetwork>(position) {
         this->type = type;
     }
 
     Boat::Boat(
         const Serialized& serialized, const engine::Arena& buffer,
         const Settings& settings
-    ): Agent<BoatNetwork>(serialized.agent, buffer) {
+    ): TileAgent<BoatNetwork>(serialized.agent, buffer) {
         (void) settings;
         this->type = serialized.type;
     }
 
     Boat::Serialized Boat::serialize(engine::Arena& buffer) const {
         return Serialized(
-            Agent<BoatNetwork>::serialize(buffer), // this is a non-static
+            TileAgent<BoatNetwork>::serialize(buffer), // this is a non-static
             this->type
         );
     }
@@ -104,22 +92,21 @@ namespace houseofatmos::world {
     static const f64 alignment_points_dist = 2.5;
     static const Vec<3> model_heading = Vec<3>(0, 0, 1);
 
-    Mat<4> Boat::build_transform(Vec<3>* position_out, f64* yaw_out) {
-        TypeInfo boat_info = Boat::types().at((size_t) this->type);
-        Vec<3> back = this->current_path()
-            .after(this->current_path_dist() - alignment_points_dist).first;
-        Vec<3> front = this->current_path()
-            .after(this->current_path_dist() + alignment_points_dist).first;
-        f64 storage_level = (f64) this->stored_item_count() 
-            / (f64) this->item_storage_capacity();
-        f64 elev = water_level + storage_level * boat_info.weight_height_factor;
-        Vec<3> position = (front - back) / 2 + back + Vec<3>(0, elev, 0);
-        Vec<3> heading = (front - back).normalized();
+    Mat<4> Boat::build_transform(f64* yaw_out) {
         auto [pitch, yaw] = Agent<BoatNetwork>
-            ::compute_heading_angles(heading, model_heading);
-        if(position_out != nullptr) { *position_out = position; }
+            ::compute_heading_angles(this->current_heading(), model_heading);
         if(yaw_out != nullptr) { *yaw_out = yaw; }
-        return Mat<4>::translate(position)
+        u64 total_item_count = 0;
+        for(const auto& stack: this->items) {
+            total_item_count += stack.second;
+        }
+        TypeInfo boat_info = Boat::types().at((size_t) this->type);
+        f64 storage_level = (f64) total_item_count
+        / (f64) this->item_storage_capacity();
+        Vec<3> disp_pos = this->position;
+        disp_pos.y() = water_level 
+            + storage_level * boat_info.weight_height_factor;
+        return Mat<4>::translate(disp_pos)
             * Mat<4>::rotate_y(yaw);
     }
 
@@ -127,6 +114,21 @@ namespace houseofatmos::world {
         &human::male, &human::peasant_man, 
         { 0, 0, 0 }, (u64) human::Animation::Sit
     );
+
+    void Boat::update(
+        BoatNetwork& network, engine::Scene& scene, 
+        const engine::Window& window, ParticleManager* particles,
+        Player& player, Interactables* interactables
+    ) {
+        (void) scene;
+        (void) particles;
+        (void) player;
+        (void) interactables;
+        TypeInfo boat_info = Boat::types().at((size_t) this->type);
+        this->move_distance(
+            window, network, window.delta_time() * boat_info.speed
+        );
+    }
 
     void Boat::render(
         Renderer& renderer, BoatNetwork& network,
@@ -137,7 +139,7 @@ namespace houseofatmos::world {
         TypeInfo boat_info = Boat::types().at((size_t) this->type);
         engine::Model& model = scene.get(boat_info.model);
         f64 yaw;
-        Mat<4> transform = this->build_transform(nullptr, &yaw);
+        Mat<4> transform = this->build_transform(&yaw);
         renderer.render(model, std::array { transform });
         crew_member.update(scene, window);
         for(const Boat::TypeInfo::CrewMember& m: boat_info.crew_members) {

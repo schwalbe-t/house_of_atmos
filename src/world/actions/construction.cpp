@@ -734,7 +734,7 @@ namespace houseofatmos::world {
                     tile_x, tile_z, this->world->terrain, this->world->complexes,
                     *this->selected_type, type_info, *this->selected_variant
                 );
-                this->world->carriages.find_paths(&this->toasts);
+                this->world->carriages.reset(&this->toasts);
                 this->speaker.position = tile_bounded_position(
                     tile_x, tile_z, 
                     tile_x + type_info.width, tile_z + type_info.height,

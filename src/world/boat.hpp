@@ -16,16 +16,11 @@ namespace houseofatmos::world {
 
         bool is_passable(NodeId node) override;
 
-        void collect_node_points(
-            std::optional<NodeId> prev, NodeId node, std::optional<NodeId> next,
-            std::vector<Vec<3>>& out
-        ) override;
-
     };
 
 
 
-    struct Boat: Agent<BoatNetwork> {
+    struct Boat: TileAgent<BoatNetwork> {
 
         struct TypeInfo {
             struct CrewMember {
@@ -59,7 +54,7 @@ namespace houseofatmos::world {
 
 
         struct Serialized {
-            SerializedAgent agent;
+            SerializedTileAgent agent;
             Type type;
         };
 
@@ -79,11 +74,6 @@ namespace houseofatmos::world {
 
 
 
-        f64 current_speed(BoatNetwork& network) override { 
-            (void) network;
-            return Boat::types().at((size_t) this->type).speed;
-        }
-
         u64 item_storage_capacity() override {
             return Boat::types().at((size_t) this->type).capacity;
         }
@@ -96,9 +86,13 @@ namespace houseofatmos::world {
             return Boat::types().at((size_t) this->type).icon;
         }
 
-        Mat<4> build_transform(
-            Vec<3>* position_out = nullptr, f64* yaw_out = nullptr
-        );
+        Mat<4> build_transform(f64* yaw_out = nullptr);
+
+        void update(
+            BoatNetwork& network, engine::Scene& scene, 
+            const engine::Window& window, ParticleManager* particles,
+            Player& player, Interactables* interactables
+        ) override;
 
         void render(
             Renderer& renderer, BoatNetwork& network,

@@ -192,7 +192,7 @@ namespace houseofatmos::world {
                 && this->world->balance.pay_coins(cost, this->toasts);
             if(doing_placement) {
                 this->world->terrain.bridges.push_back(this->planned);
-                this->world->carriages.find_paths(&this->toasts);
+                this->world->carriages.reset(&this->toasts);
                 this->speaker.position = tile_bounded_position(
                     this->planned.start_x, this->planned.start_z, 
                     this->planned.end_x, this->planned.end_z,

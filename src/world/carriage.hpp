@@ -18,16 +18,11 @@ namespace houseofatmos::world {
 
         bool is_passable(NodeId node) override;
 
-        void collect_node_points(
-            std::optional<NodeId> prev, NodeId node, std::optional<NodeId> next,
-            std::vector<Vec<3>>& out
-        ) override;
-
     };
 
 
 
-    struct Carriage: Agent<CarriageNetwork> {
+    struct Carriage: TileAgent<CarriageNetwork> {
         
         static const inline engine::Model::LoadArgs horse_model = {
             "res/entities/horse.glb", Renderer::model_attribs,
@@ -87,20 +82,20 @@ namespace houseofatmos::world {
 
 
         struct Serialized {
-            SerializedAgent agent;
+            SerializedTileAgent agent;
             CarriageType type;
             engine::Arena::Array<HorseType> horses;
         };
 
         CarriageType type;
         std::vector<HorseType> horses;
+        Player::Rideable rideable;
 
         private:
         engine::Speaker speaker = engine::Speaker(
             engine::Speaker::Space::World, 5.0
         );
         std::shared_ptr<Interactable> interactable = nullptr;
-        Player::Rideable rideable;
         AgentState prev_state = AgentState::Travelling;
         f64 last_step_time = 0.0;
 
@@ -119,11 +114,6 @@ namespace houseofatmos::world {
 
         Serialized serialize(engine::Arena& buffer) const;
 
-
-        f64 current_speed(CarriageNetwork& network) override { 
-            (void) network;
-            return Carriage::carriage_types().at((size_t) this->type).speed;
-        }
 
         u64 item_storage_capacity() override {
             return Carriage::carriage_types().at((size_t) this->type).capacity;
@@ -147,7 +137,6 @@ namespace houseofatmos::world {
         ) override;
 
         Mat<4> build_transform(
-            Vec<3>* position_out = nullptr, 
             f64* pitch_out = nullptr, f64* yaw_out = nullptr
         ) const;
 
@@ -160,7 +149,10 @@ namespace houseofatmos::world {
             Renderer& renderer, engine::Scene& scene, 
             const engine::Window& window
         ) const;
-        void render_carriage(Renderer& renderer, engine::Scene& scene) const;
+        void render_carriage(
+            Renderer& renderer, engine::Scene& scene,
+            const engine::Window& window
+        ) const;
 
         public:
         void render(

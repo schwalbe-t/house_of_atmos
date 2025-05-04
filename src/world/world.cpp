@@ -333,9 +333,9 @@ namespace houseofatmos::world {
             BoatNetwork(&this->terrain, &this->complexes)
         )),
         personal_horse(PersonalHorse(this->settings)) {
-        this->carriages.find_paths(nullptr);
-        this->trains.find_paths(nullptr);
-        this->boats.find_paths(nullptr);
+        this->carriages.reset(nullptr);
+        this->trains.reset(nullptr);
+        this->boats.reset(nullptr);
     }
 
 
@@ -379,9 +379,9 @@ namespace houseofatmos::world {
             this->settings, serialized.personal_horse
         );
         this->research = research::Research(serialized.research, buffer);
-        this->carriages.find_paths(nullptr);
-        this->trains.find_paths(nullptr);
-        this->boats.find_paths(nullptr);
+        this->carriages.reset(nullptr);
+        this->trains.reset(nullptr);
+        this->boats.reset(nullptr);
     }
 
     engine::Arena World::serialize() const {

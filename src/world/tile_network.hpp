@@ -86,17 +86,106 @@ namespace houseofatmos::world {
                 <= this->max_target_dist;
         }
 
-        std::vector<NodeId> closest_nodes_to(const Vec<3>& position) override {
+        NodeId tile_of(const Vec<3>& position) const {
             Vec<3> tile = position / this->terrain->units_per_tile();
             u64 x = (u64) std::max(tile.x(), 0.0);
             x = std::min(x, this->terrain->width_in_tiles());
             u64 z = (u64) std::max(tile.z(), 0.0);
             z = std::min(z, this->terrain->height_in_tiles());
-            NodeId node = NodeId(x, z);
-            if(!this->is_passable(node)) { return {}; }
-            return { node };
+            return NodeId(x, z);
         }
 
+    };
+
+
+
+    struct SerializedTileAgent {
+        SerializedAgent agent;
+        Vec<3> position;
+        Vec<3> heading;
+    };
+
+    template<typename Network>
+    struct TileAgent: Agent<Network> {
+
+        Vec<3> position;
+
+        private:
+        size_t next_point_i = 0;
+        Vec<3> heading = Vec<3>(0, 0, 1);
+
+        public:
+        TileAgent(Vec<3> position): position(position) {}
+        TileAgent(
+            const SerializedTileAgent& serialized, const engine::Arena& buffer
+        ): Agent<Network>(serialized.agent, buffer) {
+            this->position = serialized.position;
+            this->heading = serialized.heading;
+        }
+
+        TileAgent(TileAgent&& other) noexcept = default;
+        TileAgent& operator=(TileAgent&& other) noexcept = default;
+
+        SerializedTileAgent serialize(engine::Arena& buffer) const {
+            return {
+                Agent<Network>::serialize(buffer), // this is a non-static
+                this->position,
+                this->heading
+            };
+        }
+
+        const Vec<3>& current_heading() const { return this->heading; }
+
+        Vec<3> current_position(Network& network) override {
+            (void) network;
+            return this->position;
+        }
+
+        std::optional<AgentPath<Network>> find_path_to(
+            Network& network, ComplexId target
+        ) override {
+            this->next_point_i = 0;
+            auto start = network.tile_of(this->position);
+            return AgentPath<Network>::find(network, start, target);
+        }
+
+        void move_distance(
+            const engine::Window& window, Network& network, f64 distance 
+        ) {
+            if(!this->current_path().has_value()) { return; }
+            const AgentPath<Network>& path = *this->current_path();
+            f64 remaining = distance;
+            Vec<3> last_heading_point = this->position - this->heading;
+            Vec<3> true_heading = this->heading;
+            for(;;) {
+                if(this->next_point_i >= path.points.size()) {
+                    this->reached_target(window);
+                    break;
+                }
+                auto [tgtt_x, tgtt_z] = path.points[this->next_point_i];
+                Vec<3> target = Vec<3>(tgtt_x + 0.5, 0, tgtt_z + 0.5)
+                    * network.terrain->units_per_tile();
+                target.y() = network.terrain->elevation_at(target);
+                Vec<3> step = target - this->position;
+                f64 step_len = step.len();
+                if(step_len != 0.0) { true_heading = step / step_len; }
+                if(remaining >= step_len) {
+                    remaining -= step_len;
+                    this->next_point_i += 1;
+                    this->position = target;
+                    continue;
+                }
+                f64 step_progr = distance / step_len;
+                this->position += step * step_progr;
+                break;
+            }
+            this->heading = (this->position - last_heading_point).normalized();
+            f64 heading_inacc = (this->heading - true_heading).abs().sum();
+            if(heading_inacc > 1.5) { // should they differ too much, reset
+                this->heading = true_heading; 
+            }
+        }
+        
     };
 
 }

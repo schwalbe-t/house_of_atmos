@@ -24,12 +24,24 @@ namespace houseofatmos::world {
         struct TypeInfo {
             engine::Model::LoadArgs model;
             // must be applied to the model before rotation
+            // NO SCALING ALLOWED (only mirroring)
             Mat<4> base_transform;
             // with 'base_transform' and rotation
             // (simply apply the built transform to get in world space)
             std::vector<Vec<3>> points;
             bool has_ballast;
             std::optional<Type> ballastless;
+
+            f64 length() const {
+                if(this->points.size() <= 1) { return 0.0; }
+                f64 total = 0.0;
+                for(size_t i = 1; i < this->points.size(); i += 1) {
+                    Vec<3> prev = this->points[i - 1];
+                    Vec<3> next = this->points[i];
+                    total += (next - prev).len();
+                }
+                return total;
+            }
         };
 
         static const std::vector<TypeInfo>& types();

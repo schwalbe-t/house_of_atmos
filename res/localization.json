@@ -488,6 +488,12 @@
         "en": "Terrain occupied by structures may not be modified!",
         "bg": "Земя, заета от структури, не може да се променя."
     },
+    "toast_tracks_occupied": {
+        "_context": "Pop-up that notifies the user when they try to delete train tracks with trains on them (note: localized text should be why they can't do it, not what they did)",
+        "de": "Schienen unter Zügen können nicht entfernt werden!",
+        "en": "Train tracks occupied by trains may not be removed!",
+        "bg": "Железопътни линии, заети от влакове, не могат да бъдат премахнати!"
+    },
     "toast_invalid_building_placement": {
         "_context": "Pop-up that notifies the user when they try to place a building on uneven terrain (note: localized text should be why they can't do it, not what they did)",
         "de": "Gebäude müssen auf flachem, freiem Bodem plaziert werden!",
