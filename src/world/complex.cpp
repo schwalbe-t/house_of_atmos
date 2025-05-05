@@ -253,7 +253,8 @@ namespace houseofatmos::world {
 
     void Complex::update(
         const engine::Window& window, Balance& balance, 
-        research::Research& research, const Terrain& terrain, Toasts& toasts
+        research::Research& research, const Terrain& terrain, Toasts& toasts,
+        PopulationManager& populations, ComplexId id
     ) {
         for(auto& member: this->members) {
             for(Conversion& conversion: member.second.conversions) {
@@ -272,19 +273,26 @@ namespace houseofatmos::world {
                     allowed_times = std::min(allowed_times, capacity_count);
                 }
                 if(allowed_times == 0) { continue; }
-                for(auto& [count, item]: conversion.inputs) {
-                    u64 consumed = allowed_times * count;
-                    this->remove_stored(item, consumed);
-                }
+                bool is_purchase = false;
                 for(auto& [count, item]: conversion.outputs) {
                     bool storable = Item::types().at(item).storable;
                     u64 produced = allowed_times * count;
                     research.report_item_production(item, produced, toasts);
                     if(item == Item::Coins) {
+                        is_purchase = true;
                         balance.add_coins_silent(produced);
                     }
                     if(!storable) { continue; }
                     this->add_stored(item, produced, terrain);
+                }
+                for(auto& [count, item]: conversion.inputs) {
+                    u64 consumed = allowed_times * count;
+                    this->remove_stored(item, consumed);
+                    if(is_purchase) {
+                        populations.report_item_purchase(
+                            item, consumed, id, terrain
+                        );
+                    }
                 }
             }
         }
@@ -358,11 +366,15 @@ namespace houseofatmos::world {
     void ComplexBank::update(
         const engine::Window& window, Balance& balance, 
         research::Research& research, const Terrain& terrain,
-        Toasts& toasts
+        Toasts& toasts, PopulationManager& populations
     ) {
-        for(Complex& complex: this->complexes) {
+        for(u32 id = 0; id < this->complexes.size(); id += 1) {
+            Complex& complex = this->complexes[id];
             if(complex.is_free()) { continue; }
-            complex.update(window, balance, research, terrain, toasts);
+            complex.update(
+                window, balance, research, terrain, toasts, populations,
+                ComplexId(id)
+            );
         }
     }
 

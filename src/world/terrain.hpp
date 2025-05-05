@@ -96,7 +96,6 @@ namespace houseofatmos::world {
         };
 
         private:
-        StatefulRNG rng;
         u64 width, height;
         u64 tile_size;
         u64 chunk_tiles;
@@ -135,6 +134,7 @@ namespace houseofatmos::world {
 
 
         public:
+        StatefulRNG rng;
         std::vector<Bridge> bridges;
 
 

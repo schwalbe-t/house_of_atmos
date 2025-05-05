@@ -81,7 +81,8 @@ namespace houseofatmos::world {
                 Vec<3>(0.0, 0.6, -1.75), // position offset
                 pi, // rotation offset - 180 degrees
                 (u64) human::Animation::Sit // animation
-            )
+            ),
+            std::nullopt // does not carry passengers
         },
         /* Passenger */ {
             "carriage_name_passenger",
@@ -108,7 +109,8 @@ namespace houseofatmos::world {
                 Vec<3>(0.0, 1.25, -1.2), // position offset
                 0.0, // rotation offset
                 (u64) human::Animation::Sit // animation
-            )
+            ),
+            2.5 // carries passengers 2.5 tiles around each stop (radius)
         }
     };
 

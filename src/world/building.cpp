@@ -166,7 +166,7 @@ namespace houseofatmos::world {
             { RelCollider({ -2.5, -0.5, -1.25 }, { 5, 1, 2.5 }) },
             1, 1, // size
             std::nullopt, // no interior
-            500, // building cost
+            0, // building cost
             0, // storage capacity
             Building::TypeInfo::allow_destruction,
             0, // workers

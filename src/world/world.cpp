@@ -97,7 +97,8 @@ namespace houseofatmos::world {
     static const f64 min_settlement_distance = 20; // in tiles
 
     bool World::settlement_allowed_at(
-        u64 center_x, u64 center_z, const std::vector<Vec<3>> settlements
+        u64 center_x, u64 center_z, 
+        const std::vector<std::pair<u64, u64>> settlements
     ) {
         // center height must be less than maximum
         bool is_too_high = this->terrain.elevation_at(center_x, center_z) 
@@ -120,8 +121,8 @@ namespace houseofatmos::world {
         }
         // no other settlements nearby
         Vec<3> center = Vec<3>(center_x, 0, center_z);
-        for(const Vec<3>& compared: settlements) {
-            f64 distance = (compared - center).len();
+        for(const auto& [comp_x, comp_z]: settlements) {
+            f64 distance = (Vec<3>(comp_x, 0, comp_z) - center).len();
             if(distance < min_settlement_distance) { return false; }
         }
         return true;
@@ -137,100 +138,6 @@ namespace houseofatmos::world {
         ) && terrain.vert_area_elev_mutable(
             x, z, x + type_info.width, z + type_info.height
         );
-    }
-
-    static const u64 settlement_min_spawn_radius = 6; // in tiles
-    static const u64 settlement_max_spawn_radius = 10; // in tiles
-    static const u64 pwalk_count = 4; // amount of path walks to do
-    static const u64 pwalk_min_step = 3; // minimum step size of a path walker
-    static const u64 pwalk_max_step = 5; // maximum step size of a path walker
-    static const u64 pwalk_step_count = 20; // fairly large value
-    static Complex::Member settlement_plaza_cm = Complex::Member({
-        Conversion({ { 1, Item::Bread } }, { { 10, Item::Coins } }, 0.05),
-        Conversion({ { 1, Item::Milk } }, { { 10, Item::Coins } }, 0.05),
-        Conversion({ { 1, Item::Cheese } }, { { 30, Item::Coins } }, 0.1),
-        Conversion({ { 1, Item::Steak } }, { { 30, Item::Coins } }, 0.1),
-        Conversion({ { 1, Item::Beer } }, { { 30, Item::Coins } }, 0.1),
-        Conversion({ { 1, Item::Oil } }, { { 30, Item::Coins } }, 0.1),
-        Conversion({ { 1, Item::OilLanterns} }, { { 30, Item::Coins } }, 0.1),
-        Conversion({ { 1, Item::Clothing } }, { { 50, Item::Coins } }, 0.2),
-        Conversion({ { 1, Item::Tools } }, { { 75, Item::Coins } }, 0.4),
-        Conversion({ { 1, Item::Watches } }, { { 75, Item::Coins } }, 0.4),
-        Conversion({ { 1, Item::Armor } }, { { 100, Item::Coins } }, 0.5),
-        Conversion({ { 1, Item::BrassPots } }, { { 100, Item::Coins } }, 0.5)
-    });
-
-    void World::generate_settlement(
-        u64 center_x, u64 center_z, StatefulRNG& rng
-    ) {
-        u64 spawn_radius = rng.next_u64()
-            % (settlement_max_spawn_radius - settlement_min_spawn_radius)
-            + settlement_min_spawn_radius;
-        u64 min_x = (u64) std::max((i64) center_x - (i64) spawn_radius, (i64) 0);
-        u64 min_z = (u64) std::max((i64) center_z - (i64) spawn_radius, (i64) 0);
-        u64 max_x = std::min(center_x + spawn_radius, this->terrain.width_in_tiles());
-        u64 max_z = std::min(center_z + spawn_radius, this->terrain.height_in_tiles());
-        // generate paths
-        for(size_t pwalker_i = 0; pwalker_i < pwalk_count; pwalker_i += 1) {
-            i64 pwalker_x = center_x;
-            i64 pwalker_z = center_z;
-            for(size_t step_i = 0; step_i < pwalk_step_count; step_i += 1) {
-                u64 step_len = rng.next_u64() 
-                    % (pwalk_max_step - pwalk_min_step) 
-                    + pwalk_min_step;
-                bool move_on_x = rng.next_bool();
-                bool step_neg = rng.next_bool();
-                i64 step_x = (!move_on_x)? 0
-                    : ((i64) step_len * (step_neg? -1 : 1));
-                i64 step_z = move_on_x? 0
-                    : ((i64) step_len * (step_neg? -1 : 1));
-                bool valid_pos = pwalker_x + step_x >= (i64) min_x 
-                    && (u64) pwalker_x + (u64) step_x < max_x
-                    && pwalker_z + step_z >= (i64) min_z 
-                    && (u64) pwalker_z + (u64) step_z < max_z;
-                if(!valid_pos) { break; }
-                for(u64 abs_o = 0; abs_o < step_len; abs_o += 1) {
-                    i64 o = (i64) abs_o * (step_neg? -1 : 1);
-                    u64 curr_x = (u64) (pwalker_x + (move_on_x? o : 0));
-                    u64 curr_z = (u64) (pwalker_z + (move_on_x? 0 : o));
-                    bool on_land = this->terrain.elevation_at(curr_x, curr_z) >= 0
-                        && this->terrain.elevation_at(curr_x + 1, curr_z) >= 0
-                        && this->terrain.elevation_at(curr_x,     curr_z + 1) >= 0
-                        && this->terrain.elevation_at(curr_x + 1, curr_z + 1) >= 0;
-                    if(!on_land) { continue; }
-                    this->terrain.set_path_at(curr_x, curr_z);
-                }
-                pwalker_x += step_x;
-                pwalker_z += step_z;
-            }
-        }
-        // generate plaza
-        const Building::TypeInfo& plaza_info
-            = Building::types().at((size_t) Building::Plaza);
-        ComplexId plaza_complex_i = this->complexes.create_complex();
-        Complex& plaza_complex = this->complexes.get(plaza_complex_i);
-        u64 plaza_x = center_x - plaza_info.width / 2;
-        u64 plaza_z = center_z - plaza_info.height / 2;
-        plaza_complex.add_member(plaza_x, plaza_z, settlement_plaza_cm);
-        this->terrain.place_building(
-            Building::Plaza, plaza_x, plaza_z, plaza_complex_i
-        );
-        // generate houses
-        for(u64 x = min_x; x < max_x; x += 1) {
-            for(u64 z = min_z; z < max_z; z += 1) {
-                bool at_path = this->terrain.path_at((i64) x - 1, (i64) z)
-                    || this->terrain.path_at((i64) x + 1, (i64) z    )
-                    || this->terrain.path_at((i64) x,     (i64) z - 1)
-                    || this->terrain.path_at((i64) x,     (i64) z + 1);
-                bool is_valid = at_path
-                    && !this->terrain.path_at((i64) x, (i64) z)
-                    && building_placement_allowed(
-                        this->terrain, x, z, Building::House
-                    );
-                if(!is_valid) { continue; }
-                this->terrain.place_building(Building::House, x, z);
-            }
-        }
     }
 
     std::pair<u64, u64> World::generate_mansion() {
@@ -270,27 +177,33 @@ namespace houseofatmos::world {
         this->generate_rivers(rng, seed);
         this->terrain.generate_resources();
         this->terrain.generate_foliage((u32) seed);
-        std::vector<Vec<3>> created_settlements;
+        std::vector<std::pair<u64, u64>> created_settlements;
         u64 world_area = this->terrain.width_in_tiles()
             * this->terrain.height_in_tiles();
         u64 max_settlement_count = (u64) (
             max_settlements_per_sq_tile * (f64) world_area
         );
-        u64 settlement_attempts = 0;
-        for(;;) {
+        for(u64 s_att = 0; s_att < max_settlement_attempts; s_att += 1) {
             if(created_settlements.size() >= max_settlement_count) { break; }
-            if(settlement_attempts >= max_settlement_attempts) { break; }
             u64 center_x = rng.next_u64() % this->terrain.width_in_tiles();
             u64 center_z = rng.next_u64() % this->terrain.height_in_tiles();
             bool valid_pos = this->settlement_allowed_at(
                 center_x, center_z, created_settlements
             );
-            if(!valid_pos) {
-                settlement_attempts += 1;
-                continue;
+            if(!valid_pos) { continue; }
+            PopulationName name;
+            for(;;) {
+                name = PopulationName(rng);
+                bool exists = false;
+                for(const Population& p: this->populations.populations) {
+                    exists |= p.name == name;
+                    if(exists) { break; }
+                }
+                if(!exists) { break; }
             }
-            this->generate_settlement(center_x, center_z, rng);
-            created_settlements.push_back(Vec<3>(center_x, 0, center_z));
+            this->populations.populations
+                .push_back(Population(center_x, center_z, name));
+            created_settlements.push_back({ center_x, center_z });
         }
         if(created_settlements.size() == 0) {
             // this shouldn't happen, but in the rare case that it does
@@ -317,6 +230,32 @@ namespace houseofatmos::world {
     }
 
 
+    static std::function<void (PopulationManager&)> on_populations_reset(
+        World* world
+    ) {
+        return [world](PopulationManager& populations) {
+            for(const Carriage& carr: world->carriages.agents) {
+                const Carriage::CarriageTypeInfo& carr_info
+                    = Carriage::carriage_types().at((size_t) carr.type);
+                if(!carr_info.passenger_radius.has_value()) { continue; }
+                populations.register_stops(carr, *carr_info.passenger_radius);
+            }
+            for(const Train& train: world->trains.agents) {
+                const Train::LocomotiveTypeInfo& train_info
+                    = Train::locomotive_types().at((size_t) train.loco_type);
+                if(!train_info.passenger_radius.has_value()) { continue; }
+                populations.register_stops(train, *train_info.passenger_radius);
+            }
+            for(const Boat& boat: world->boats.agents) {
+                const Boat::TypeInfo& boat_info
+                    = Boat::types().at((size_t) boat.type);
+                if(!boat_info.passenger_radius.has_value()) { continue; }
+                populations.register_stops(boat, *boat_info.passenger_radius);
+            }
+        };
+    }
+
+
     World::World(Settings&& settings, u64 width, u64 height): 
         settings(std::move(settings)), 
         terrain(Terrain(
@@ -332,10 +271,12 @@ namespace houseofatmos::world {
         boats(BoatManager(
             BoatNetwork(&this->terrain, &this->complexes)
         )),
-        personal_horse(PersonalHorse(this->settings)) {
+        personal_horse(PersonalHorse(this->settings)),
+        populations(PopulationManager(on_populations_reset(this))) {
         this->carriages.reset(nullptr);
         this->trains.reset(nullptr);
         this->boats.reset(nullptr);
+        this->populations.reset();
     }
 
 
@@ -352,7 +293,8 @@ namespace houseofatmos::world {
             boats(BoatManager(
                 BoatNetwork(&this->terrain, &this->complexes)
             )),
-            personal_horse(PersonalHorse(this->settings)) {
+            personal_horse(PersonalHorse(this->settings)),
+            populations(PopulationManager(on_populations_reset(this))) {
         const auto& serialized = buffer.get(
             engine::Arena::Position<World::Serialized>(0)
         );
@@ -379,9 +321,13 @@ namespace houseofatmos::world {
             this->settings, serialized.personal_horse
         );
         this->research = research::Research(serialized.research, buffer);
+        this->populations = PopulationManager(
+            serialized.populations, buffer, on_populations_reset(this)
+        );
         this->carriages.reset(nullptr);
         this->trains.reset(nullptr);
         this->boats.reset(nullptr);
+        this->populations.reset();
     }
 
     engine::Arena World::serialize() const {
@@ -399,7 +345,9 @@ namespace houseofatmos::world {
         CarriageManager::Serialized carriages = this->carriages.serialize(buffer);
         TrainManager::Serialized trains = this->trains.serialize(buffer);
         BoatManager::Serialized boats = this->boats.serialize(buffer);
+        PersonalHorse::Serialized personal_horse = this->personal_horse.serialize();
         research::Research::Serialized research = this->research.serialize(buffer);
+        PopulationManager::Serialized populations = this->populations.serialize(buffer);
         auto& serialized = buffer.get(root_pos);
         serialized.format_version = World::current_format_version;
         serialized.terrain = terrain;
@@ -409,8 +357,9 @@ namespace houseofatmos::world {
         serialized.carriages = carriages;
         serialized.trains = trains;
         serialized.boats = boats;
-        serialized.personal_horse = this->personal_horse.serialize();
+        serialized.personal_horse = personal_horse;
         serialized.research = research;
+        serialized.populations = populations;
         return buffer;
     }
 
@@ -491,8 +440,10 @@ namespace houseofatmos::world {
             scene, window, particles, this->player, interactables
         );
         this->complexes.update(
-            window, this->balance, this->research, this->terrain, toasts
+            window, this->balance, this->research, this->terrain, 
+            toasts, this->populations
         );
+        this->populations.update(window, this->terrain, this->complexes);
     }
 
 }

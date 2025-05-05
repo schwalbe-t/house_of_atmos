@@ -272,6 +272,7 @@ namespace houseofatmos::world {
         void add_agent_markers(
             AbstractAgent agent, const AgentDisplay& agent_display
         );
+        void add_settlement_markers();
         void create_markers();
 
         public:

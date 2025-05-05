@@ -4,6 +4,7 @@
 #include <engine/arena.hpp>
 #include <engine/window.hpp>
 #include "complex_id.hpp"
+#include "population.hpp"
 #include "../balance.hpp"
 #include "../research/research.hpp"
 #include "terrain.hpp"
@@ -115,7 +116,7 @@ namespace houseofatmos::world {
         void update(
             const engine::Window& window, Balance& balance, 
             research::Research& research, const Terrain& terrain,
-            Toasts& toasts
+            Toasts& toasts, PopulationManager& populations, ComplexId id
         );
 
         Serialized serialize(engine::Arena& buffer) const;
@@ -148,7 +149,7 @@ namespace houseofatmos::world {
         void update(
             const engine::Window& window, Balance& balance, 
             research::Research& research, const Terrain& terrain,
-            Toasts& toasts
+            Toasts& toasts, PopulationManager& populations
         );
 
         Serialized serialize(engine::Arena& buffer) const;

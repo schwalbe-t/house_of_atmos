@@ -61,7 +61,8 @@ namespace houseofatmos::world {
             -1.0, // may sink up to one unit if loaded fully
             1000, // capacity
             2.5, // speed
-            10000 // cost
+            10000, // cost
+            std::nullopt // does not carry passengers
         }
     };
 

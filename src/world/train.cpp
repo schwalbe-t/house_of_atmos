@@ -540,7 +540,8 @@ namespace houseofatmos::world {
                 Vec<3>(-0.5, 0.9, -1.72), // position offset
                 0.0, // rotation offset
                 (u64) human::Animation::Stand // animation
-            )
+            ),
+            std::nullopt // does not carry passengers
         },
         /* Small */ {
             "locomotive_name_small",
@@ -579,7 +580,8 @@ namespace houseofatmos::world {
                 Vec<3>(-0.5, 1.325, -2.20), // position offset
                 0.0, // rotation offset
                 (u64) human::Animation::Sit // animation
-            )
+            ),
+            std::nullopt // does not carry passengers
         },
         /* Tram */ {
             "locomotive_name_tram",
@@ -618,7 +620,8 @@ namespace houseofatmos::world {
                 Vec<3>(0.0, 1.2, -2.15), // position offset
                 0.0, // rotation offset
                 (u64) human::Animation::Sit // animation
-            )
+            ),
+            5.0 // carries passengers 5 tiles around each stop (radius)
         }
     };
 

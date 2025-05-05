@@ -198,6 +198,7 @@ namespace houseofatmos::world {
                 ->schedule_of(this->selected.agent.a)
                 .push_back(stop);
             this->adding_stop = false;
+            this->world->populations.reset();
             return;
         } 
         *this->selected_info_bottom = ui::Element().as_phantom().as_movable();
@@ -403,10 +404,21 @@ namespace houseofatmos::world {
         }
     }
 
+    void TerrainMap::add_settlement_markers() {
+        for(const Population& p: this->world->populations.populations) {
+            Vec<2> marker_pos = Vec<2>(p.tile.first, p.tile.second) 
+                * this->world->terrain.units_per_tile();
+            std::string text = p.name.display(*this->local)
+                + " (" + std::to_string((u64) p.size) + ")";
+            this->add_marker(marker_pos, ui_util::create_text(text, 0));
+        }
+    }
+
     void TerrainMap::create_markers() {
         if(this->container == nullptr) { return; }
         if(this->container->hidden) { return; }
         this->container->children.clear();
+        this->add_settlement_markers();
         for(Carriage& carriage: this->world->carriages.agents) {
             this->add_agent_markers(
                 (AbstractAgent) &carriage, TerrainMap::carriage_display
@@ -764,6 +776,7 @@ namespace houseofatmos::world {
                     auto& schedule = agent_d->schedule_of(agent);
                     schedule.erase(schedule.begin() + stop_i);
                     agent_d->reset_path_of(agent, *this->world);
+                    this->world->populations.reset();
                 }, 2, 1
             ))
             .with_child(ui_util::create_button(

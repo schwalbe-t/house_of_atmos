@@ -9,6 +9,7 @@
 #include "train.hpp"
 #include "boat.hpp"
 #include "personal_horse.hpp"
+#include "population.hpp"
 
 namespace houseofatmos::world {
 
@@ -17,7 +18,7 @@ namespace houseofatmos::world {
         // For any breaking change to the serialized structure of the world,
         // increment this number by 1
         // (any time an update makes it so old files can't be loaded anymore)
-        static inline u32 current_format_version = 4;
+        static inline u32 current_format_version = 5;
 
         struct Serialized {
             u32 format_version;
@@ -30,6 +31,7 @@ namespace houseofatmos::world {
             BoatManager::Serialized boats;
             PersonalHorse::Serialized personal_horse;
             research::Research::Serialized research;
+            PopulationManager::Serialized populations;
         };
 
         static inline u64 units_per_tile = 5;
@@ -49,6 +51,7 @@ namespace houseofatmos::world {
         BoatManager boats;
         PersonalHorse personal_horse;
         research::Research research;
+        PopulationManager populations;
 
         bool saving_allowed = true;
         f64 last_autosave_time;
@@ -56,10 +59,8 @@ namespace houseofatmos::world {
         private:
         void generate_rivers(StatefulRNG& rng, u32 seed);
         bool settlement_allowed_at(
-            u64 center_x, u64 center_z, const std::vector<Vec<3>> settlements
-        );
-        void generate_settlement(
-            u64 center_x, u64 center_z, StatefulRNG& rng
+            u64 center_x, u64 center_z,
+            const std::vector<std::pair<u64, u64>> settlements
         );
         std::pair<u64, u64> generate_mansion();
 

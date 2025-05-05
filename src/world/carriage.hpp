@@ -61,6 +61,7 @@ namespace houseofatmos::world {
             f64 speed;
             u64 cost;
             Player::Rideable rideable;
+            std::optional<f64> passenger_radius;
         };
 
         static const std::vector<CarriageTypeInfo>& carriage_types();

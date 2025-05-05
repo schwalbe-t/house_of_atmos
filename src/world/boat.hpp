@@ -37,6 +37,7 @@ namespace houseofatmos::world {
             u64 capacity;
             f64 speed;
             f64 cost;
+            std::optional<f64> passenger_radius;
         };
 
         static const std::vector<TypeInfo>& types();
