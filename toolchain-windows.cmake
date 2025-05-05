@@ -9,6 +9,11 @@ set(CMAKE_FIND_ROOT_PATH ${CMAKE_SOURCE_DIR}/windows_libs)
 include_directories("${CMAKE_SOURCE_DIR}/windows_libs/include")
 set(GLFW_LIBRARIES "${CMAKE_SOURCE_DIR}/windows_libs/lib/libglfw3dll.a")
 set(OpenAL_LIBRARIES "${CMAKE_SOURCE_DIR}/windows_libs/lib/libOpenAL32.dll.a")
+set(GLES_LIBRARIES 
+    "${CMAKE_SOURCE_DIR}/windows_libs/lib/libEGL.dll.lib"
+    "${CMAKE_SOURCE_DIR}/windows_libs/lib/libGLESv1_CM.dll.lib"
+    "${CMAKE_SOURCE_DIR}/windows_libs/lib/libGLESv2.dll.lib"
+)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -19,9 +24,10 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN")
 set(LINKED_LIBS
     ${GLFW_LIBRARIES}
     ${OpenAL_LIBRARIES}
+    ${GLES_LIBRARIES}
 )
 set(LINKER_OPTIONS
     "-static"
     "-Wl,-subsystem,windows"
 )
-set(OUT_NAME "house_of_atmos.exe")
+set(OUT_NAME "house_of_atmos")
