@@ -245,12 +245,23 @@
         "en": "Requires {} worker(s)",
         "bg": "Нуждае се от {} работни(к/ци)"
     },
-    "ui_provided_workers": {
-        "_context": "The number of workers provided by a building",
-        "_placeholders": "Number of workers",
-        "de": "Stellt {} Arbeiter bereit",
-        "en": "Provides {} worker(s)",
-        "bg": "Предоставя {} работни(к/ци)"
+    "ui_workers_working": {
+        "_context": "Shows the player that the building is being operated by a sufficent number of workers",
+        "de": "In Benutzung",
+        "en": "Working",
+        "bg": "Работи"
+    },
+    "ui_workers_shortage": {
+        "_context": "Shows the player that there are not enough available workers to operate the building",
+        "de": "Zu wenig Arbeiter!",
+        "en": "Not enough workers!",
+        "bg": "Недостатъчно работници!"
+    },
+    "ui_workers_unreachable": {
+        "_context": "Shows the player that the building cannot be reached by workers",
+        "de": "Nicht von Arbeitern erreichbar!",
+        "en": "Not reachable by workers!",
+        "bg": "Недостъпна за работници!"
     },
     "ui_item_storage_capacity": {
         "_contxt": "The number of items an agent (carriage, boat, train, ...) can carry at a time",
@@ -528,13 +539,6 @@
         "en": "- {} 🪙",
         "bg": "- {} 🪙"
     },
-    "toast_missing_unemployment": {
-        "_context": "Pop-up that notifies the user that the operation was cancelled because not enough workers are or would be available",
-        "_placeholders": "#1: number of workers that are or would be available; #2: number of workers required after the operation",
-        "de": "Keine verfügbaren Arbeiter! ({}/{})",
-        "en": "Missing unemployed workers! ({}/{})",
-        "bg": "Липсващи безработн работници! ({}/{})"
-    },
     "toast_no_valid_carriage_location": {
         "_context": "Pop-up that informs the user when they try to create a carriage at a stable, but the stable is not adjacent to any paths",
         "de": "Kein gültiger Ort für eine Kutsche in der Nähe!",
@@ -570,6 +574,12 @@
         "de": "Ein Boot hat sich verirrt!",
         "en": "A boat got lost!",
         "bg": "Лодка се изгуби!"
+    },
+    "toast_missing_workers": {
+        "_context": "Pop-up that informs that some buildings are missing workers, either because they have no way to get to the building or because there is a shortage of workers",
+        "de": "Ein Gebäude hat nicht genug Arbeiter!",
+        "en": "A building is missing workers!",
+        "bg": "Сграда има недостиг на работници!"
     },
     "toast_personal_horse_travelling": {
         "_context": "Shown when the personal horse is instructed to come to the player usign the [H] button.",

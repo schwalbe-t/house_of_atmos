@@ -33,15 +33,6 @@ namespace houseofatmos::world {
                     this->toasts.add_error("toast_indestructible", {});
                     return;
                 }
-                i64 unemployment = this->world->terrain.compute_unemployment();
-                bool enough_people = unemployment >= (i64) b_type.residents;
-                if(!enough_people) {
-                    this->toasts.add_error("toast_missing_unemployment", {
-                        std::to_string(unemployment), 
-                        std::to_string(b_type.residents)
-                    });
-                    return;
-                }
                 this->speaker.position = tile_bounded_position(
                     building.tile_x, building.tile_z, 
                     building.tile_x + b_type.width, 
@@ -83,6 +74,8 @@ namespace houseofatmos::world {
                     }
                 }
                 this->world->carriages.reset(&this->toasts);
+                this->world->populations
+                    .reset(this->world->terrain, &this->toasts);
                 this->selection.type = Selection::None;
                 this->speaker.play(scene.get(sound::demolish));
                 return;

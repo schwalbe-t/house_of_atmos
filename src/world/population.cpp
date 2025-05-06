@@ -6,7 +6,7 @@
 
 namespace houseofatmos::world {
 
-    static inline f64 min_population = 25.0;
+    static inline f64 min_population = 50.0;
 
     Population::Population(u64 tile_x, u64 tile_z, PopulationName name):
         tile({ tile_x, tile_z }), name(name),
@@ -169,7 +169,7 @@ namespace houseofatmos::world {
         for(size_t h = p.houses.size(); h < target_houses; h += 1) {
             for(size_t att_c = 0; att_c < 10; att_c += 1) {
                 f64 angle = terrain.rng.next_f64() * 2.0 * pi;
-                f64 dist = terrain.rng.next_f64() * p.radius();
+                f64 dist = terrain.rng.next_f64() * p.building_radius();
                 u64 x = (u64) (p.tile.first + (i64) (cos(angle) * dist));
                 u64 z = (u64) (p.tile.second + (i64) (sin(angle) * dist));
                 bool allowed = building_placement_allowed(
@@ -192,7 +192,7 @@ namespace houseofatmos::world {
             bool was_placed = false;
             for(size_t att_c = 0; att_c < 10; att_c += 1) {
                 f64 angle = terrain.rng.next_f64() * 2.0 * pi;
-                f64 dist = terrain.rng.next_f64() * p.radius();
+                f64 dist = terrain.rng.next_f64() * p.building_radius();
                 u64 x = (u64) (p.tile.first + (i64) (cos(angle) * dist));
                 u64 z = (u64) (p.tile.second + (i64) (sin(angle) * dist));
                 bool allowed = building_placement_allowed(
@@ -266,13 +266,24 @@ namespace houseofatmos::world {
         }
     }
 
+    static void register_populations(PopulationManager& pm) {
+        for(u32 p_id = 0; p_id < pm.populations.size(); p_id += 1) {
+            const Population& p = pm.populations[p_id];
+            auto group_id = PopulationGroupId(pm.groups.size());
+            PopulationGroup group;
+            group.populations.push_back(PopulationId(p_id));
+            pm.groups.push_back(group);
+            pm.nodes.push_back({ group_id, p.tile, p.worker_radius() });
+        }
+    }
+
     static void merge_group_into(
-        PopulationManager& p, 
+        PopulationManager& pm, 
         PopulationGroupId from, PopulationGroupId into
     ) {
         if(from.index == into.index) { return; }
-        PopulationGroup& from_g = p.groups.at(from.index);
-        PopulationGroup& into_g = p.groups.at(into.index);
+        PopulationGroup& from_g = pm.groups.at(from.index);
+        PopulationGroup& into_g = pm.groups.at(into.index);
         for(PopulationId pid: from_g.populations) {
             bool exists = false;
             for(PopulationId e_pid: into_g.populations) {
@@ -286,30 +297,81 @@ namespace houseofatmos::world {
         // force deallocation of the internal vector buffer
         // (we know the group won't be used anymore)
         std::vector<PopulationId>().swap(from_g.populations);
-        for(PopulationNode& n: p.nodes) {
+        for(PopulationNode& n: pm.nodes) {
             if(n.group.index == from.index) { n.group = into; }
         }
     }
 
-    void PopulationManager::reset() {
-        this->groups.clear();
-        this->nodes.clear();
-        for(const Population& p: this->populations) {
-            auto group = PopulationGroupId(this->groups.size());
-            this->groups.push_back(PopulationGroup());
-            this->nodes.push_back({ group, p.tile, p.radius() });
-        }
-        this->stop_register_handler(*this);
-        for(const PopulationNode& node_a: this->nodes) {
+    static void merge_nearby_nodes(PopulationManager& pm) {
+        for(const PopulationNode& node_a: pm.nodes) {
             Vec<2> tile_a = Vec<2>(node_a.tile.first, node_a.tile.second);
-            for(const PopulationNode& node_b: this->nodes) {
+            for(const PopulationNode& node_b: pm.nodes) {
                 if(node_a.group.index == node_b.group.index) { continue; }
                 Vec<2> tile_b = Vec<2>(node_b.tile.first, node_b.tile.second);
                 f64 dist = (tile_a - tile_b).len();
                 if(dist > node_a.radius + node_b.radius) { continue; }
-                merge_group_into(*this, node_a.group, node_b.group);
+                merge_group_into(pm, node_a.group, node_b.group);
             }
         }
+    }
+
+    static void update_worker_distribution(
+        PopulationManager& pm, Terrain& terrain, Toasts* toasts
+    ) {
+        for(PopulationGroup& g: pm.groups) {
+            g.available = 0.0;
+            for(PopulationId p_id: g.populations) {
+                g.available += pm.populations[p_id.index].size;
+            }
+        }
+        bool all_working = true;
+        for(u64 ch_x = 0; ch_x < terrain.width_in_chunks(); ch_x += 1) {
+            for(u64 ch_z = 0; ch_z < terrain.height_in_chunks(); ch_z += 1) {
+                Terrain::ChunkData& chunk = terrain.chunk_at(ch_x, ch_z);
+                for(Building& building: chunk.buildings) {
+                    const Building::TypeInfo& building_info
+                        = Building::types().at((size_t) building.type);
+                    if(building_info.workers == 0) {
+                        building.workers = Building::WorkerState::Working;
+                        continue;
+                    }
+                    u64 t_x = ch_x * terrain.tiles_per_chunk() + building.x;
+                    u64 t_z = ch_z * terrain.tiles_per_chunk() + building.z;
+                    std::optional<PopulationGroupId> group_id
+                        = pm.group_at(t_x, t_z);
+                    if(!group_id.has_value()) {
+                        building.workers = Building::WorkerState::Unreachable;
+                        all_working = false;
+                        continue;
+                    }
+                    PopulationGroup& group = pm.groups[group_id->index];
+                    if(group.populations.size() == 0) {
+                        building.workers = Building::WorkerState::Unreachable;
+                        all_working = false;
+                        continue;
+                    }
+                    f64 required = (f64) building_info.workers;
+                    if(group.available < required) {
+                        building.workers = Building::WorkerState::Shortage;
+                        continue;
+                    }
+                    group.available -= required;
+                    building.workers = Building::WorkerState::Working;
+                }
+            }
+        }
+        if(!all_working && toasts != nullptr) {
+            toasts->add_error("toast_missing_workers", {});
+        }
+    }
+
+    void PopulationManager::reset(Terrain& terrain, Toasts* toasts) {
+        this->groups.clear();
+        this->nodes.clear();
+        register_populations(*this);
+        this->stop_register_handler(*this);
+        merge_nearby_nodes(*this);
+        update_worker_distribution(*this, terrain, toasts);
     }
 
     void PopulationManager::report_item_purchase(
@@ -344,21 +406,20 @@ namespace houseofatmos::world {
         u64 tile_x, u64 tile_z
     ) const {
         u64 closest_dist = UINT64_MAX;
-        const PopulationNode* closest_node = nullptr;
-        for(const PopulationNode& node: this->nodes) {
-            u64 dx = (u64) std::abs((i64) node.tile.first - (i64) tile_x);
-            u64 dz = (u64) std::abs((i64) node.tile.second - (i64) tile_z);
+        const PopulationNode* node = nullptr;
+        for(const PopulationNode& n: this->nodes) {
+            u64 dx = (u64) std::abs((i64) n.tile.first - (i64) tile_x);
+            u64 dz = (u64) std::abs((i64) n.tile.second - (i64) tile_z);
             u64 dist = dx + dz;
             if(dist >= closest_dist) { continue; }
-            closest_node = &node;
+            node = &n;
             closest_dist = dist;
         }
-        if(closest_node == nullptr) { return std::nullopt; }
-        Vec<2> node_pos 
-            = Vec<2>(closest_node->tile.first, closest_node->tile.second);
+        if(node == nullptr) { return std::nullopt; }
+        Vec<2> node_pos = Vec<2>(node->tile.first, node->tile.second);
         f64 true_dist = (Vec<2>(tile_x, tile_z) - node_pos).len();
-        if(true_dist > closest_node->radius) { return std::nullopt; }
-        return closest_node->group;
+        if(true_dist > node->radius) { return std::nullopt; }
+        return node->group;
     }
 
 }

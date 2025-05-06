@@ -18,7 +18,7 @@ namespace houseofatmos::world {
         // For any breaking change to the serialized structure of the world,
         // increment this number by 1
         // (any time an update makes it so old files can't be loaded anymore)
-        static inline u32 current_format_version = 5;
+        static inline u32 current_format_version = 6;
 
         struct Serialized {
             u32 format_version;

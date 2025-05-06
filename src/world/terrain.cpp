@@ -1042,17 +1042,6 @@ namespace houseofatmos::world {
         return current;
     }
 
-    i64 Terrain::compute_unemployment() const {
-        i64 unemployment = 0;
-        for(const ChunkData& chunk: this->chunks) {
-            for(const Building& building: chunk.buildings) {
-                const Building::TypeInfo& type = building.get_type_info();
-                unemployment += (i64) type.residents - (i64) type.workers;
-            }
-        }
-        return unemployment;
-    }
-
 
     void Terrain::spawn_particles(
         const engine::Window& window, ParticleManager& particles
@@ -1234,7 +1223,10 @@ namespace houseofatmos::world {
     ) {
         this->size_tiles = size_tiles;
         buffer.copy_into(serialized.foliage, this->foliage);
-        buffer.copy_into(serialized.buildings, this->buildings);
+        buffer.copy_into<Building::Serialized, Building>(
+            serialized.buildings, this->buildings,
+            [](const auto& b) { return Building(b); }
+        );
         buffer.copy_into(serialized.resources, this->resources);
         buffer.copy_into(serialized.track_pieces, this->track_pieces);
         buffer.copy_into(serialized.paths, this->paths);
@@ -1245,7 +1237,9 @@ namespace houseofatmos::world {
     ) const {
         return {
             buffer.alloc(this->foliage),
-            buffer.alloc(this->buildings),
+            buffer.alloc<Building, Building::Serialized>(
+                this->buildings, [](const auto& b) { return b.serialize(); }
+            ),
             buffer.alloc(this->resources),
             buffer.alloc(this->track_pieces),
             buffer.alloc(this->paths)

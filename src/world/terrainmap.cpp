@@ -198,7 +198,7 @@ namespace houseofatmos::world {
                 ->schedule_of(this->selected.agent.a)
                 .push_back(stop);
             this->adding_stop = false;
-            this->world->populations.reset();
+            this->world->populations.reset(this->world->terrain, &this->toasts);
             return;
         } 
         *this->selected_info_bottom = ui::Element().as_phantom().as_movable();
@@ -220,7 +220,7 @@ namespace houseofatmos::world {
                 this->selected.complex = *building->complex;
             }
             *this->selected_info_bottom = TerrainMap::display_building_info(
-                building->type, conversions, *this->local
+                building->type, conversions, building->workers, *this->local
             );
             *this->selected_info_right = building->complex.has_value()
                 ? TerrainMap::display_complex_info(
@@ -414,11 +414,36 @@ namespace houseofatmos::world {
         }
     }
 
+    void TerrainMap::add_offline_building_markers() {
+        u64 ch_width = this->world->terrain.width_in_chunks();
+        u64 ch_height = this->world->terrain.height_in_chunks();
+        u64 tpc = this->world->terrain.tiles_per_chunk();
+        for(u64 ch_x = 0; ch_x < ch_width; ch_x += 1) {
+            for(u64 ch_z = 0; ch_z < ch_height; ch_z += 1) {
+                const Terrain::ChunkData& chunk = this->world->terrain
+                    .chunk_at(ch_x, ch_z);
+                for(const Building& b: chunk.buildings) {
+                    if(b.workers == Building::WorkerState::Working) { 
+                        continue; 
+                    }
+                    const Building::TypeInfo& b_info
+                        = Building::types().at((size_t) b.type);
+                    Vec<2> pos = Vec<2>(ch_x * tpc + b.x, ch_z * tpc + b.z);
+                    pos += Vec<2>(b_info.width / 2.0, b_info.height / 2.0);
+                    pos *= this->world->terrain.units_per_tile();
+                    this->add_icon_marker(
+                        pos, &ui_icon::map_marker_agent_lost, []() {}, true
+                    );
+                }    
+            }
+        }
+    }
+
     void TerrainMap::create_markers() {
         if(this->container == nullptr) { return; }
         if(this->container->hidden) { return; }
         this->container->children.clear();
-        this->add_settlement_markers();
+        this->add_offline_building_markers();
         for(Carriage& carriage: this->world->carriages.agents) {
             this->add_agent_markers(
                 (AbstractAgent) &carriage, TerrainMap::carriage_display
@@ -444,6 +469,7 @@ namespace houseofatmos::world {
             &ui_icon::map_marker_player,
             [](){}, true
         );
+        this->add_settlement_markers();
     }
 
     void TerrainMap::render() {
@@ -552,23 +578,41 @@ namespace houseofatmos::world {
     }
 
     ui::Element TerrainMap::display_building_info(
-        Building::Type type, std::span<const Conversion> conversions,
+        Building::Type type,
+        std::span<const Conversion> conversions,
+        std::optional<Building::WorkerState> workers,
         const engine::Localization& local
     ) {
         const Building::TypeInfo& building = Building::types().at((size_t) type);
-        std::string worker_info_text = building.residents > building.workers
-            ? local.pattern(
-                "ui_provided_workers", 
-                { std::to_string(building.residents - building.workers) }
+        ui::Element stats = ui::Element()
+            .with_list_dir(ui::Direction::Vertical)
+            .with_child(
+                ui_util::create_text(local.text(building.local_name), 1)
             )
-            : local.pattern(
-                "ui_required_workers",
-                { std::to_string(building.workers - building.residents) }
-            );
-        std::string capacity_info_text = local.pattern(
-            "ui_item_storage_capacity", 
-            { std::to_string(building.capacity) }
-        );
+            .as_movable();
+        if(building.capacity > 0) {
+            stats.children.push_back(ui_util::create_text(local.pattern(
+                "ui_item_storage_capacity", 
+                { std::to_string(building.capacity) }
+            ), 1));
+        }
+        if(building.workers > 0) {
+            stats.children.push_back(ui_util::create_text(local.pattern(
+                "ui_required_workers", 
+                { std::to_string(building.workers) }
+            ), 1));
+        }
+        if(building.workers > 0 && workers.has_value()) {
+            std::string key = "ui_workers_";
+            if(workers.has_value()) {
+                switch(*workers) {
+                    case Building::WorkerState::Working: key += "working"; break;
+                    case Building::WorkerState::Shortage: key += "shortage"; break;
+                    case Building::WorkerState::Unreachable: key += "unreachable"; break;
+                }
+            }
+            stats.children.push_back(ui_util::create_text(local.text(key), 1));
+        }
         ui::Element info = ui::Element()
             .with_pos(
                 ui::horiz::in_window_fract(0.5),
@@ -582,16 +626,7 @@ namespace houseofatmos::world {
                     .with_padding(2)
                     .as_movable()
                 )
-                .with_child(ui::Element()
-                    .with_list_dir(ui::Direction::Vertical)
-                    .with_child(
-                        ui_util::create_text(local.text(building.local_name), 1)
-                    )
-                    .with_child(ui_util::create_text(worker_info_text, 1))
-                    .with_child(ui_util::create_text(capacity_info_text, 1))
-                    .with_padding(1)
-                    .as_movable()
-                )
+                .with_child(stats.with_padding(1).as_movable())
                 .as_movable()
             )
             .as_movable();
@@ -776,7 +811,9 @@ namespace houseofatmos::world {
                     auto& schedule = agent_d->schedule_of(agent);
                     schedule.erase(schedule.begin() + stop_i);
                     agent_d->reset_path_of(agent, *this->world);
-                    this->world->populations.reset();
+                    this->world->populations.reset(
+                        this->world->terrain, &this->toasts
+                    );
                 }, 2, 1
             ))
             .with_child(ui_util::create_button(

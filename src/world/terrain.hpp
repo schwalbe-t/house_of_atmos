@@ -55,7 +55,7 @@ namespace houseofatmos::world {
         struct ChunkData {
             struct Serialized {
                 engine::Arena::Array<Foliage> foliage;
-                engine::Arena::Array<Building> buildings;
+                engine::Arena::Array<Building::Serialized> buildings;
                 engine::Arena::Array<Resource> resources;
                 engine::Arena::Array<TrackPiece> track_pieces;
                 engine::Arena::Array<u8> paths;
@@ -270,7 +270,6 @@ namespace houseofatmos::world {
         std::pair<u64, u64> find_selected_terrain_tile(
             Vec<2> cursor_pos_ndc, const Renderer& renderer, Vec<3> tile_offset
         ) const;
-        i64 compute_unemployment() const;
 
         void generate_elevation(
             u32 seed = (u32) random_init(), 

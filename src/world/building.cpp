@@ -91,7 +91,6 @@ namespace houseofatmos::world {
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
             5, // workers
-            0, // residents
             std::nullopt // no particles
         },
         /* Type::Mineshaft */ {
@@ -112,8 +111,7 @@ namespace houseofatmos::world {
             1000, // building cost
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
-            15, // workers
-            0, // residents
+            10, // workers
             std::nullopt // no particles
         },
         /* Type::Windmill */ {
@@ -132,7 +130,6 @@ namespace houseofatmos::world {
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
             5, // workers
-            0, // residents
             std::nullopt // no particles
         },
         /* Type::Factory */ {
@@ -151,7 +148,6 @@ namespace houseofatmos::world {
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
             25, // workers
-            0, // residents
             [](Vec<3> p, StatefulRNG& r) { return factory_smoke.at(p, r); }
         },
         /* Type::House */ {
@@ -170,7 +166,6 @@ namespace houseofatmos::world {
             0, // storage capacity
             Building::TypeInfo::allow_destruction,
             0, // workers
-            5, // residents
             [](Vec<3> p, StatefulRNG& r) {
                 bool emits_smoke = r.next_f64() < 0.10;
                 Vec<3> position = emits_smoke? p : Vec<3>(1.0, 1.0, 1.0) / 0.0;
@@ -202,8 +197,7 @@ namespace houseofatmos::world {
             2000, // building cost
             0, // storage capacity
             Building::TypeInfo::allow_destruction,
-            20, // workers
-            0, // residents
+            0, // workers
             std::nullopt // no particles
         },
         /* Type::Plaza */ {
@@ -239,7 +233,6 @@ namespace houseofatmos::world {
             500, // storage capacity
             Building::TypeInfo::indestructible,
             0, // workers
-            0, // residents
             std::nullopt // no particles
         },
         /* Type::Mansion */ {
@@ -262,7 +255,6 @@ namespace houseofatmos::world {
             0, // storage capacity
             Building::TypeInfo::indestructible,
             0, // workers
-            0, // residents
             std::nullopt // no particles
         },
         /* Type::Pasture */ {
@@ -287,7 +279,6 @@ namespace houseofatmos::world {
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
             5, // workers
-            0, // residents
             std::nullopt // no particles
         },
         /* Type::TreeFarm */ {
@@ -312,7 +303,6 @@ namespace houseofatmos::world {
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
             5, // workers
-            0, // residents
             std::nullopt // no particles
         },
         /* Type::TrainDepot */ {
@@ -333,8 +323,7 @@ namespace houseofatmos::world {
             5000, // building cost
             0, // storage capacity
             Building::TypeInfo::allow_destruction,
-            20, // workers
-            0, // residents
+            0, // workers
             std::nullopt // no particles
         },
         /* Type::ShipYard */ {
@@ -355,8 +344,7 @@ namespace houseofatmos::world {
             5000, // building cost
             0, // storage capacity
             Building::TypeInfo::allow_destruction,
-            30, // workers
-            0, // residents
+            0, // workers
             std::nullopt // no particles
         },
         /* Type::Storage */ {
@@ -375,7 +363,6 @@ namespace houseofatmos::world {
             500, // storage capacity
             Building::TypeInfo::allow_destruction,
             0, // workers
-            0, // residents
             std::nullopt // no particles
         },
         /* Type::CommissaryWorks */ {
@@ -398,8 +385,7 @@ namespace houseofatmos::world {
             1000, // building cost
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
-            25, // workers
-            0, // residents
+            10, // workers
             [](Vec<3> p, StatefulRNG& r) { 
                 return commissary_works_smoke.at(p, r); 
             }
@@ -419,8 +405,7 @@ namespace houseofatmos::world {
             2000, // building cost
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
-            25, // workers
-            0, // residents
+            20, // workers
             std::nullopt // no particles
         },
         /* Type::ClothWorks */ {
@@ -441,8 +426,7 @@ namespace houseofatmos::world {
             1500, // building cost
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
-            15, // workers
-            0, // residents
+            20, // workers
             std::nullopt // no particles
         },
         /* Type::MetallurgicalWorks */ {
@@ -464,8 +448,7 @@ namespace houseofatmos::world {
             1500, // building cost
             10, // storage capacity
             Building::TypeInfo::allow_destruction,
-            20, // workers
-            0, // residents
+            10, // workers
             [](Vec<3> p, StatefulRNG& r) { 
                 return metallurgical_works_particles.at(p, r); 
             }

@@ -110,7 +110,7 @@ namespace houseofatmos::world {
                 0.0, // rotation offset
                 (u64) human::Animation::Sit // animation
             ),
-            2.5 // carries passengers 2.5 tiles around each stop (radius)
+            7.5 // carries passengers 7.5 tiles around each stop (radius)
         }
     };
 

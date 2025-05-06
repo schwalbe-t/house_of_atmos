@@ -273,6 +273,7 @@ namespace houseofatmos::world {
             AbstractAgent agent, const AgentDisplay& agent_display
         );
         void add_settlement_markers();
+        void add_offline_building_markers();
         void create_markers();
 
         public:
@@ -317,6 +318,7 @@ namespace houseofatmos::world {
 
         static ui::Element display_building_info(
             Building::Type type, std::span<const Conversion> conversions,
+            std::optional<Building::WorkerState> workers, 
             const engine::Localization& local
         );
 

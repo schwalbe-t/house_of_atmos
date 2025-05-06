@@ -285,7 +285,7 @@ namespace houseofatmos::world {
         this->carriages.reset(nullptr);
         this->trains.reset(nullptr);
         this->boats.reset(nullptr);
-        this->populations.reset();
+        this->populations.reset(this->terrain, nullptr);
     }
 
 
@@ -336,7 +336,7 @@ namespace houseofatmos::world {
         this->carriages.reset(nullptr);
         this->trains.reset(nullptr);
         this->boats.reset(nullptr);
-        this->populations.reset();
+        this->populations.reset(this->terrain, nullptr);
     }
 
     engine::Arena World::serialize() const {

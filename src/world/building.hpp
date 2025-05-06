@@ -39,7 +39,6 @@ namespace houseofatmos::world {
             u64 capacity;
             bool destructible;
             u64 workers;
-            u64 residents;
 
             std::optional<std::function<ParticleSpawner (Vec<3>, StatefulRNG&)>> 
                 particle_spawner;
@@ -107,10 +106,46 @@ namespace houseofatmos::world {
             MetallurgicalWorks
         };
 
+        enum struct WorkerState {
+            Working,
+            Shortage,
+            Unreachable
+        };
+
+        struct Serialized {
+            Type type;
+            u8 x, z; // in tiles relative to chunk origin
+            u8 has_complex;
+            ComplexId complex;
+        };
+
         Type type;
         u8 x, z; // in tiles relative to chunk origin
-        std::optional<ComplexId> complex;
+        std::optional<ComplexId> complex = std::nullopt;
+        WorkerState workers;
 
+        Building(
+            Type type, u8 x, u8 z, 
+            std::optional<ComplexId> complex = std::nullopt
+        ): type(type), x(x), z(z), complex(complex), 
+            workers(WorkerState::Working) {}
+        Building(const Serialized& serialized) {
+            this->type = serialized.type;
+            this->x = serialized.x;
+            this->z = serialized.z;
+            this->complex = serialized.has_complex
+                ? std::optional<ComplexId>(serialized.complex) : std::nullopt;
+            this->workers = WorkerState::Working;
+        }
+
+        Serialized serialize() const {
+            return {
+                this->type,
+                this->x, this->z,
+                this->complex.has_value(),
+                this->complex.has_value()? *this->complex : ComplexId(0)
+            };
+        }
 
         const TypeInfo& get_type_info() const {
             return Building::types().at((size_t) this->type);

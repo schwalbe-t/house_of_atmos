@@ -437,7 +437,7 @@ namespace houseofatmos::world {
                         *ctx.s_type = type;
                         *ctx.s_variant = variant;
                         *ctx.info = TerrainMap::display_building_info(
-                            type, variant->conversions, *ctx.local
+                            type, variant->conversions, std::nullopt, *ctx.local
                         );
                         show_group_selector(ctx, category);
                     }
@@ -489,7 +489,8 @@ namespace houseofatmos::world {
                         *ctx.s_type = group->type;
                         *ctx.s_variant = nullptr;
                         *ctx.info = TerrainMap::display_building_info(
-                            group->type, std::span<Conversion>(), *ctx.local
+                            group->type, std::span<Conversion>(), 
+                            std::nullopt, *ctx.local
                         );
                         show_group_selector(ctx, category);
                         return;
@@ -499,7 +500,7 @@ namespace houseofatmos::world {
                         *ctx.s_variant = &group->variants[v[0]];
                         *ctx.info = TerrainMap::display_building_info(
                             group->type, (**ctx.s_variant).conversions, 
-                            *ctx.local
+                            std::nullopt, *ctx.local
                         );
                         show_group_selector(ctx, category);
                         return;
@@ -556,7 +557,7 @@ namespace houseofatmos::world {
             *this->selected_variant != nullptr
                 ? std::span((**this->selected_variant).conversions)
                 : std::span<Conversion>(), 
-            local
+            std::nullopt, local
         );
         auto ctx = SelectionContext(
             &local, &this->world->research,
@@ -721,13 +722,11 @@ namespace houseofatmos::world {
         bool attempted = window.was_pressed(engine::Button::Left)
             && !this->ui.was_clicked();
         if(attempted && this->placement_valid) {
-            i64 unemployment = this->world->terrain.compute_unemployment();
             bool has_resource = required_resource_present(
                 this->world->terrain, tile_x, tile_z,
                 type_info, *this->selected_variant
             );
-            bool allowed = unemployment >= (i64) type_info.workers
-                && has_resource
+            bool allowed = has_resource
                 && this->world->balance.pay_coins(type_info.cost, this->toasts);
             if(allowed) {
                 place_building(
@@ -735,7 +734,9 @@ namespace houseofatmos::world {
                     *this->selected_type, type_info, *this->selected_variant
                 );
                 this->world->carriages.reset(&this->toasts);
-                this->world->populations.reset();
+                this->world->populations.reset(
+                    this->world->terrain, &this->toasts
+                );
                 this->speaker.position = tile_bounded_position(
                     tile_x, tile_z, 
                     tile_x + type_info.width, tile_z + type_info.height,
@@ -743,11 +744,6 @@ namespace houseofatmos::world {
                     this->world->terrain
                 );
                 this->speaker.play(scene.get(sound::build));
-            } else if(unemployment < (i64) type_info.workers) {
-                this->toasts.add_error("toast_missing_unemployment", {
-                    std::to_string(unemployment), 
-                    std::to_string(type_info.workers)
-                });
             } else if(!has_resource) {
                 Resource::Type r_resource = *(**this->selected_variant)
                     .req_resource;

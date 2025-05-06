@@ -6,6 +6,7 @@
 #include <engine/localization.hpp>
 #include "item.hpp"
 #include "complex_id.hpp"
+#include "../toasts.hpp"
 #include <optional>
 
 namespace houseofatmos::world {
@@ -83,8 +84,12 @@ namespace houseofatmos::world {
         } 
 
         // 1 tile per 10.0 people
-        f64 radius() const {
+        f64 building_radius() const {
             return this->size / 10.0;
+        }
+
+        f64 worker_radius() const {
+            return this->building_radius() * 2.0;
         }
 
         void report_item_purchase(Item::Type item, u64 count);
@@ -99,6 +104,7 @@ namespace houseofatmos::world {
     struct PopulationGroupId { u32 index; };
     struct PopulationGroup {
         std::vector<PopulationId> populations;
+        f64 available = 0.0;
     };
 
     struct PopulationNode {
@@ -135,7 +141,7 @@ namespace houseofatmos::world {
             const ComplexBank& complexes
         );
 
-        void reset();
+        void reset(Terrain& terrain, Toasts* toasts);
 
         void report_item_purchase(
             Item::Type item, u64 count, ComplexId complex, 

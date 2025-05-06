@@ -257,6 +257,12 @@ namespace houseofatmos::world {
         PopulationManager& populations, ComplexId id
     ) {
         for(auto& member: this->members) {
+            const Building* building = terrain.building_at(
+                (i64) member.first.first, (i64) member.first.second
+            );
+            bool working = building != nullptr
+                && building->workers == Building::WorkerState::Working;
+            if(!working) { continue; }
             for(Conversion& conversion: member.second.conversions) {
                 conversion.passed += window.delta_time();
                 u64 passed_times = (u64) (conversion.passed / conversion.period);
