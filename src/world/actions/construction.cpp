@@ -735,6 +735,7 @@ namespace houseofatmos::world {
                     *this->selected_type, type_info, *this->selected_variant
                 );
                 this->world->carriages.reset(&this->toasts);
+                this->world->populations.reset();
                 this->speaker.position = tile_bounded_position(
                     tile_x, tile_z, 
                     tile_x + type_info.width, tile_z + type_info.height,

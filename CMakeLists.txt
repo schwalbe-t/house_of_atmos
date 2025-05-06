@@ -52,9 +52,18 @@ set(MODE "debug" CACHE STRING "Build mode: debug or release")
 string(TOLOWER "${MODE}" MODE)
 message(MODE="${MODE}")
 if(MODE STREQUAL "debug")
-    target_compile_options(house_of_atmos PRIVATE -g -Wall -Wextra -O0)
+    target_compile_options(house_of_atmos PRIVATE 
+        -Wall -Wextra 
+        -g -O0
+    )
 elseif(MODE STREQUAL "release")
-    target_compile_options(house_of_atmos PRIVATE -Wall -Wextra -O3)
+    target_compile_options(house_of_atmos PRIVATE 
+        -Wall -Wextra 
+        -O3 -flto=auto 
+        -fno-math-errno -funsafe-math-optimizations -fno-trapping-math 
+        -fcx-limited-range -fexcess-precision=fast
+        -freciprocal-math -fno-signed-zeros
+    )
 else()
     message(FATAL_ERROR "Unknown build mode '${MODE}'")
 endif()

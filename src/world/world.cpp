@@ -238,19 +238,28 @@ namespace houseofatmos::world {
                 const Carriage::CarriageTypeInfo& carr_info
                     = Carriage::carriage_types().at((size_t) carr.type);
                 if(!carr_info.passenger_radius.has_value()) { continue; }
-                populations.register_stops(carr, *carr_info.passenger_radius);
+                populations.register_stops(
+                    carr.schedule, *carr_info.passenger_radius, 
+                    world->complexes
+                );
             }
             for(const Train& train: world->trains.agents) {
                 const Train::LocomotiveTypeInfo& train_info
                     = Train::locomotive_types().at((size_t) train.loco_type);
                 if(!train_info.passenger_radius.has_value()) { continue; }
-                populations.register_stops(train, *train_info.passenger_radius);
+                populations.register_stops(
+                    train.schedule, *train_info.passenger_radius, 
+                    world->complexes
+                );
             }
             for(const Boat& boat: world->boats.agents) {
                 const Boat::TypeInfo& boat_info
                     = Boat::types().at((size_t) boat.type);
                 if(!boat_info.passenger_radius.has_value()) { continue; }
-                populations.register_stops(boat, *boat_info.passenger_radius);
+                populations.register_stops(
+                    boat.schedule, *boat_info.passenger_radius, 
+                    world->complexes
+                );
             }
         };
     }

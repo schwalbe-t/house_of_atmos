@@ -15,6 +15,7 @@ namespace houseofatmos::world {
 
     struct Terrain;
     struct ComplexBank;
+    struct AgentStop;
 
 
     struct PopulationName {
@@ -129,11 +130,10 @@ namespace houseofatmos::world {
 
         Serialized serialize(engine::Arena& buffer) const;
 
-        template<typename A>
-        void register_stops(const A& agent, f64 radius) {
-            // TODO!
-            // create a new group, and a node with that group at each stop
-        }
+        void register_stops(
+            const std::vector<AgentStop>& schedule, f64 radius, 
+            const ComplexBank& complexes
+        );
 
         void reset();
 

@@ -2,6 +2,7 @@
 #include "terrain.hpp"
 #include "complex.hpp"
 #include "population.hpp"
+#include "agent.hpp"
 
 namespace houseofatmos::world {
 
@@ -244,13 +245,71 @@ namespace houseofatmos::world {
         };
     }
 
+    void PopulationManager::register_stops(
+        const std::vector<AgentStop>& schedule, f64 radius, 
+        const ComplexBank& complexes
+    ) {
+        auto group = PopulationGroupId(this->groups.size());
+        this->groups.push_back(PopulationGroup());
+        for(const AgentStop& stop: schedule) {
+            const Complex& target = complexes.get(stop.target);
+            if(target.get_members().size() == 0) { continue; }
+            u64 x = 0;
+            u64 z = 0;
+            for(const auto& member: target.get_members()) {
+                x += member.first.first;
+                z += member.first.second;
+            }
+            x /= target.get_members().size();
+            z /= target.get_members().size();
+            this->nodes.push_back({ group, { x, z }, radius });
+        }
+    }
+
+    static void merge_group_into(
+        PopulationManager& p, 
+        PopulationGroupId from, PopulationGroupId into
+    ) {
+        if(from.index == into.index) { return; }
+        PopulationGroup& from_g = p.groups.at(from.index);
+        PopulationGroup& into_g = p.groups.at(into.index);
+        for(PopulationId pid: from_g.populations) {
+            bool exists = false;
+            for(PopulationId e_pid: into_g.populations) {
+                exists |= e_pid.index == pid.index;
+                if(exists) { break; }
+            }
+            if(!exists) {
+                into_g.populations.push_back(pid);
+            }
+        }
+        // force deallocation of the internal vector buffer
+        // (we know the group won't be used anymore)
+        std::vector<PopulationId>().swap(from_g.populations);
+        for(PopulationNode& n: p.nodes) {
+            if(n.group.index == from.index) { n.group = into; }
+        }
+    }
+
     void PopulationManager::reset() {
-        // TODO!
-        // reset groups and nodes
-        // create nodes and groups for all populations
-        //     (scale node size with population size)
-        // call the handler
-        // combine the groups of all nearby nodes
+        this->groups.clear();
+        this->nodes.clear();
+        for(const Population& p: this->populations) {
+            auto group = PopulationGroupId(this->groups.size());
+            this->groups.push_back(PopulationGroup());
+            this->nodes.push_back({ group, p.tile, p.radius() });
+        }
+        this->stop_register_handler(*this);
+        for(const PopulationNode& node_a: this->nodes) {
+            Vec<2> tile_a = Vec<2>(node_a.tile.first, node_a.tile.second);
+            for(const PopulationNode& node_b: this->nodes) {
+                if(node_a.group.index == node_b.group.index) { continue; }
+                Vec<2> tile_b = Vec<2>(node_b.tile.first, node_b.tile.second);
+                f64 dist = (tile_a - tile_b).len();
+                if(dist > node_a.radius + node_b.radius) { continue; }
+                merge_group_into(*this, node_a.group, node_b.group);
+            }
+        }
     }
 
     void PopulationManager::report_item_purchase(
@@ -284,9 +343,22 @@ namespace houseofatmos::world {
     std::optional<PopulationGroupId> PopulationManager::group_at(
         u64 tile_x, u64 tile_z
     ) const {
-        // TODO!
-        // find the closest node to the tile (return if there is none)
-        // return its group
+        u64 closest_dist = UINT64_MAX;
+        const PopulationNode* closest_node = nullptr;
+        for(const PopulationNode& node: this->nodes) {
+            u64 dx = (u64) std::abs((i64) node.tile.first - (i64) tile_x);
+            u64 dz = (u64) std::abs((i64) node.tile.second - (i64) tile_z);
+            u64 dist = dx + dz;
+            if(dist >= closest_dist) { continue; }
+            closest_node = &node;
+            closest_dist = dist;
+        }
+        if(closest_node == nullptr) { return std::nullopt; }
+        Vec<2> node_pos 
+            = Vec<2>(closest_node->tile.first, closest_node->tile.second);
+        f64 true_dist = (Vec<2>(tile_x, tile_z) - node_pos).len();
+        if(true_dist > closest_node->radius) { return std::nullopt; }
+        return closest_node->group;
     }
 
 }
