@@ -415,6 +415,7 @@ namespace houseofatmos {
         this->settings.apply(*this, window);
         this->ui.unit_fract_size = this->settings.ui_size_fract();
         this->get(audio_const::soundtrack).update();
+        this->get(audio_const::ambience).stop();
         this->before_next_frame();
         this->before_next_frame = []() {};
         if(this->ui.root.children.size() == 0) {

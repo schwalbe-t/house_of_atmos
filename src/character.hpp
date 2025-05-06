@@ -91,7 +91,7 @@ namespace houseofatmos {
         const CharacterType* type;
         const CharacterVariant::LoadArgs* variant;
         engine::Speaker speaker = engine::Speaker(
-            engine::Speaker::Space::World, 1.0
+            engine::Speaker::Space::World, 5.0
         );
         u64 default_animation_id;
         Action action;

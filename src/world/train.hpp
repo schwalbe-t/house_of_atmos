@@ -320,7 +320,7 @@ namespace houseofatmos::world {
 
         private:
         engine::Speaker speaker = engine::Speaker(
-            engine::Speaker::Space::World, 5.0
+            engine::Speaker::Space::World, 15.0
         );
         std::shared_ptr<Interactable> interactable = nullptr;
         std::vector<OwnedBlock> owning_blocks;

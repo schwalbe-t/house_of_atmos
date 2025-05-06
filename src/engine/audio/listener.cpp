@@ -10,7 +10,7 @@ namespace houseofatmos::engine {
     void Listener::internal_make_current() const {
         const Vec<3>& pos = this->position;
         alListener3f(AL_POSITION, pos.x(), pos.y(), pos.z());
-        Vec<3> look_at = -this->look_at.normalized();
+        Vec<3> look_at = (this->look_at - this->position).normalized();
         Vec<3> up = this->up.normalized();
         ALfloat orientation[] = {
             (ALfloat) look_at.x(), (ALfloat) look_at.y(), (ALfloat) look_at.z(),

@@ -315,6 +315,7 @@ namespace houseofatmos {
             window.set_windowed();
         }
         scene.get(audio_const::soundtrack).speaker.volume = this->ost_volume;
+        scene.get(audio_const::ambience).speaker.volume = this->sfx_volume;
         // other speakers contain references to their respective controlling volumes
         // view distance needs to be respected by the specific scene
         // ui size needs to be respected by the specific scene

@@ -680,7 +680,7 @@ namespace houseofatmos::world {
             const TrackNetwork::Node& node = network.graph.at(piece_id);
             if(node.block->owner != this) { 
                 // distance to next unowned block
-                return distance - 5.0; // wait a bit before the next block
+                return distance - 3.0; // wait a bit before the next block
             }
             const TrackPiece& piece = network.track_piece_at(piece_id);
             const TrackPiece::TypeInfo& pc_info 

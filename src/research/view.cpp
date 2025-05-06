@@ -301,6 +301,7 @@ namespace houseofatmos::research {
     void View::update(engine::Window& window) {
         this->world->settings.apply(*this, window);
         this->get(audio_const::soundtrack).update();
+        this->get(audio_const::ambience).stop();
         bool was_closed = window.was_pressed(engine::Key::E)
             || window.was_pressed(engine::Key::Escape);
         if(was_closed) {

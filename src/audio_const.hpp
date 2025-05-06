@@ -79,12 +79,14 @@ namespace houseofatmos::audio_const {
     using Soundtrack = houseofatmos::engine::Soundtrack;
 
     extern const Soundtrack::LoadArgs soundtrack;
+    extern const Soundtrack::LoadArgs ambience;
 
 
     inline void load_all(engine::Scene& scene) {
         sound::load_sounds(scene);
         voice::load_voices(scene);
         scene.load(soundtrack);
+        scene.load(ambience);
     }
 
 }

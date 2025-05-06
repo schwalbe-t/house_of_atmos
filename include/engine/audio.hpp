@@ -171,7 +171,9 @@ namespace houseofatmos::engine {
         u64 last_played_idx = UINT64_MAX;
 
         public:
-        Speaker speaker;
+        Speaker speaker = Speaker(
+            Speaker::Space::Listener, 5.0, Vec<3>(0, 1, 0)
+        );
         std::vector<Audio> tracks;
         Repetition repetition;
         math::StatefulRNG rng;
@@ -206,6 +208,10 @@ namespace houseofatmos::engine {
                 this->speaker.play(this->tracks[track_idx]);
                 break;
             }
+        }
+
+        void stop() {
+            this->speaker.stop();
         }
 
     };

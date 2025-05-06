@@ -150,6 +150,7 @@ namespace houseofatmos {
         this->world->settings.apply(*this, window);
         this->ui.unit_fract_size = this->world->settings.ui_size_fract();
         this->get(audio_const::soundtrack).update();
+        this->get(audio_const::ambience).stop();
         if(this->ui.root.children.size() == 0) {
             this->show_root_menu(window);
         }

@@ -52,8 +52,8 @@ namespace houseofatmos::voice {
             MAKE_VOICED(U'Е', "e.ogg"), MAKE_VOICED(U'е', "e.ogg"),
             MAKE_VOICED(U'Ж', "j.ogg"), MAKE_VOICED(U'ж', "j.ogg"),
             MAKE_VOICED(U'З', "z.ogg"), MAKE_VOICED(U'з', "z.ogg"),
-            MAKE_VOICED(U'И', "i.ogg"), MAKE_VOICED(U'и', "i.ogg"),
-            MAKE_VOICED(U'Й', "i.ogg"), MAKE_VOICED(U'й', "i.ogg"),
+            MAKE_VOICED(U'И', "y.ogg"), MAKE_VOICED(U'и', "y.ogg"),
+            MAKE_VOICED(U'Й', "y.ogg"), MAKE_VOICED(U'й', "y.ogg"),
             MAKE_VOICED(U'К', "k.ogg"), MAKE_VOICED(U'к', "k.ogg"),
             MAKE_VOICED(U'Л', "l.ogg"), MAKE_VOICED(U'л', "l.ogg"),
             MAKE_VOICED(U'М', "m.ogg"), MAKE_VOICED(U'м', "m.ogg"),
@@ -78,7 +78,7 @@ namespace houseofatmos::voice {
         },
         // default fallback sound
         engine::Sound::LoadArgs("res/sounds/dialogue_pop.ogg", 0.05),
-        0.1 // base duration of each charater
+        0.20 // base duration of each charater
     };
 
     const Dialogue::Voice popped = {
@@ -88,7 +88,7 @@ namespace houseofatmos::voice {
         },
         // default fallback sound
         engine::Sound::LoadArgs("res/sounds/dialogue_pop.ogg", 0.05),
-        0.1 // base duration of each character
+        0.20 // base duration of each character
     };
 
 }
@@ -103,6 +103,13 @@ namespace houseofatmos::audio_const {
             "res/soundtrack/track_3.ogg"
         },
         Soundtrack::Repetition::Forbidden
+    );
+
+    const Soundtrack::LoadArgs ambience = Soundtrack::LoadArgs(
+        { 
+            "res/sounds/ambient.ogg" 
+        },
+        Soundtrack::Repetition::Allowed
     );
 
 }

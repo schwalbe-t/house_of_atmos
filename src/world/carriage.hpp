@@ -94,7 +94,7 @@ namespace houseofatmos::world {
 
         private:
         engine::Speaker speaker = engine::Speaker(
-            engine::Speaker::Space::World, 5.0
+            engine::Speaker::Space::World, 10.0
         );
         std::shared_ptr<Interactable> interactable = nullptr;
         AgentState prev_state = AgentState::Travelling;
