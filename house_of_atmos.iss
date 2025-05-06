@@ -1,10 +1,10 @@
 
 #define MyAppName "House of Atmos"
-#define MyAppVersion "0.2.1"
+#define MyAppVersion "0.3.0"
 #define MyAppPublisher "schwalbe_t"
 #define MyAppURL "https://www.github.com/schwalbe-t/house_of_atmos"
 #define MyAppExeName "house_of_atmos.exe"
-#define MyAppSrcDir "E:\hoa-v0.2.1"
+#define MyAppSrcDir "E:\hoa-v0.3.0"
 
 [Setup]
 AppId={{29C4F25C-F217-41C5-999F-B5F9C65C8B8F}
@@ -39,9 +39,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#MyAppSrcDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppSrcDir}\glfw3.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyAppSrcDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppSrcDir}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppSrcDir}\OpenAL32.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppSrcDir}\res\*"; DestDir: "{app}\res"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
