@@ -4,12 +4,6 @@
 
 namespace houseofatmos::tutorial {
 
-    // introduction to carriages
-    //     - stable
-    //     - creation
-    //     - following pathways
-    //     - schedules
-
     static world::Complex::Member wheat_farm_cm = world::Complex::Member({
         world::Conversion(
             {}, 
