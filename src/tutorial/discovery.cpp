@@ -48,7 +48,7 @@ namespace houseofatmos::tutorial {
             ),
             say_dialogue(
                 scene, local,
-                "dialogue_maid_name", "dialogue_tutorial_2_maid_0",
+                "dialogue_maid_name", "dialogue_tutorial_4_maid_0",
                 voice::voiced, maid_v_pitch, maid_v_speed
             ),
             await_dialogue_end(scene, force_player_sit),
@@ -58,22 +58,22 @@ namespace houseofatmos::tutorial {
             ),
             say_dialogue(
                 scene, local,
-                "dialogue_maid_name", "dialogue_tutorial_2_maid_1",
+                "dialogue_maid_name", "dialogue_tutorial_4_maid_1",
                 voice::voiced, maid_v_pitch, maid_v_speed
             ),
             say_dialogue(
                 scene, local,
-                "dialogue_maid_name", "dialogue_tutorial_2_maid_2",
+                "dialogue_maid_name", "dialogue_tutorial_4_maid_2",
                 voice::voiced, maid_v_pitch, maid_v_speed
             ),
             say_dialogue(
                 scene, local,
-                "dialogue_maid_name", "dialogue_tutorial_2_maid_3",
+                "dialogue_maid_name", "dialogue_tutorial_4_maid_3",
                 voice::voiced, maid_v_pitch, maid_v_speed
             ),
             say_dialogue(
                 scene, local,
-                "dialogue_maid_name", "dialogue_tutorial_2_maid_4",
+                "dialogue_maid_name", "dialogue_tutorial_4_maid_4",
                 voice::voiced, maid_v_pitch, maid_v_speed
             ),
             await_dialogue_end(
@@ -91,17 +91,17 @@ namespace houseofatmos::tutorial {
             ),
             say_dialogue(
                 scene, local,
-                "dialogue_tutorial_prompt_name", "dialogue_tutorial_2_prompt_5",
+                "dialogue_tutorial_prompt_name", "dialogue_tutorial_4_prompt_5",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
             say_dialogue(
                 scene, local,
-                "dialogue_tutorial_prompt_name", "dialogue_tutorial_2_prompt_6",
+                "dialogue_tutorial_prompt_name", "dialogue_tutorial_4_prompt_6",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
             say_dialogue(
                 scene, local,
-                "dialogue_tutorial_prompt_name", "dialogue_tutorial_2_prompt_7",
+                "dialogue_tutorial_prompt_name", "dialogue_tutorial_4_prompt_7",
                 voice::popped, prompt_v_pitch, prompt_v_speed
             ),
             await_dialogue_end(scene)

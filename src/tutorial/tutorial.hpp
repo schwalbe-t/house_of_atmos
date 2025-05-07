@@ -14,7 +14,15 @@ namespace houseofatmos::tutorial {
         std::shared_ptr<world::World> world_after
     );
 
-    std::shared_ptr<engine::Scene> create_grownup_scene(
+    std::shared_ptr<engine::Scene> create_terraform_scene(
+        std::shared_ptr<world::World> world_after
+    );
+
+    std::shared_ptr<engine::Scene> create_buildings_scene(
+        std::shared_ptr<world::World> world_after
+    );
+
+    std::shared_ptr<engine::Scene> create_logistics_scene(
         std::shared_ptr<world::World> world_after
     );
 

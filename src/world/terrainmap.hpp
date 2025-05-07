@@ -13,10 +13,6 @@ namespace houseofatmos::world {
 
     struct TerrainMap {
 
-        enum struct SelectionType {
-            None, Complex, Agent, Population
-        };
-
         using AbstractAgent = void*;
 
         struct AgentDisplay {
@@ -226,6 +222,19 @@ namespace houseofatmos::world {
             {}
         };
 
+        enum struct SelectionType {
+            None, Complex, Agent, Population
+        };
+
+        union SelectionValue {
+            ComplexId complex;
+            struct {
+                AbstractAgent a;
+                const AgentDisplay* d;
+            } agent;
+            PopulationId population;
+        };
+
         private:
         u64 t_width, t_height;
         const engine::Localization::LoadArgs local_ref;
@@ -246,14 +255,7 @@ namespace houseofatmos::world {
         ui::Element* selected_info_bottom = nullptr;
 
         SelectionType selected_type = SelectionType::None;
-        union {
-            ComplexId complex;
-            struct {
-                AbstractAgent a;
-                const AgentDisplay* d;
-            } agent;
-            PopulationId population;
-        } selected;
+        SelectionValue selected;
         bool adding_stop = false;
 
         void update_view(const engine::Window& window);
@@ -293,6 +295,9 @@ namespace houseofatmos::world {
 
         void create_container();
         ui::Element* element() const { return this->container; }
+
+        SelectionType selection_type() const { return this->selected_type; }
+        const SelectionValue& selection_value() const { return this->selected; }
 
         void hide();
         bool toggle_with_key(engine::Key key, const engine::Window& window);

@@ -514,7 +514,7 @@
     },
     "toast_invalid_building_placement": {
         "_context": "Pop-up that notifies the user when they try to place a building on uneven terrain (note: localized text should be why they can't do it, not what they did)",
-        "de": "Gebäude müssen auf flachem, freiem Bodem plaziert werden!",
+        "de": "Gebäude müssen auf flachem, freiem Bodem platziert werden!",
         "en": "Buildings must be placed on flat, unoccupied ground!",
         "bg": "Сгради тряба да се поставят на плоска и свободна земя!"
     },
@@ -1066,356 +1066,346 @@
 
 
     "dialogue_peasant_name_male": {
-        "_context": "Displayed name of a male peasant when talked to",
         "en": "Villager",
         "de": "Dorfbewohner",
         "bg": "Селянин"
     },
     "dialogue_peasant_name_female": {
-        "_context": "Displayed name of a female peasant when talked to",
         "en": "Villager",
         "de": "Dorfbewohnerin",
         "bg": "Селянка"
     },
     "dialogue_peasant_0": {
-        "_context": "One of the possible greetings when talking with peasants",
         "en": "Oh, your lordship! Is there something I can help your lordship with?",
         "de": "Oh, Herr Graf! Gibt es etwas, womit ich Euch dienen kann?",
         "bg": "О, Ваше благородие! С нещо мога ли да Ви помогна?"
     },
     "dialogue_peasant_1": {
-        "_context": "One of the possible greetings when talking with peasants",
         "en": "That I would one day speak to your lordship... I must tell my children about this!",
         "de": "Dass ich eines Tages mit Euer Gnaden sprechen würde... Davon muss ich meinen Kindern erzählen!",
         "bg": "Че аз някога ще говоря с Ваше благородие... Трябва да разкажа на децата си за това!"
     },
     "dialogue_peasant_2": {
-        "_context": "One of the possible greetings when talking with peasants",
         "en": "I feel truly proud to live in such a pretty part of the Kingdom.",
         "de": "Ich bin wirklich stolz darauf, in so einem schönen Teil des Königreichs zu leben.",
         "bg": "Чувствам се наистина горд, че живея в толкова хубава част на кралството."
     },
     "dialogue_peasant_3": {
-        "_context": "One of the possible greetings when talking with peasants",
         "en": "May the goddess protect your lordship.",
         "de": "Möge die Göttin über Euer Gnaden wachen.",
         "bg": "Нека богинята закриля Ваше благородие."
     },
     "dialogue_peasant_4": {
-        "_context": "One of the possible greetings when talking with peasants",
         "en": "I am most honored to be visited by your lordship.",
         "de": "Es ist mir eine große Ehre, von Euer Gnaden besucht zu werden.",
         "bg": "За мен е най-голяма чест да бъда посетен от Ваше благородие."
     },
     "dialogue_maid_name": {
-        "_context": "Displayed name of the maid when talked to",
         "en": "Maid",
         "de": "Zofe",
         "bg": "Камериерка"
     },
     "dialogue_maid_0": {
-        "_context": "One of the possible dialogues when talking to the maid",
         "en": "My lordship, is there possibly any way in which I may assist you?",
         "de": "Euer Gnaden, gibt es möglicherweise etwas, womit ich Euch behilflich sein könnte?",
         "bg": "Благородие, има ли някакъв начин, по който бих могла да ви бъда от полза?"
     },
     "dialogue_maid_1": {
-        "_context": "One of the possible dialogues when talking to the maid",
         "en": "Is it already time for dinner? I shall start preparations immediately.",
         "de": "Ist es bereits Zeit für das Abendmahl? Ich werde sogleich mit der Zubereitung beginnen.",
         "bg": "Вече ли настъпи часът за вечеря? Ще пристъпя към приготовленията незабавно."
     },
     "dialogue_maid_2": {
-        "_context": "One of the possible dialogues when talking to the maid",
         "en": "If your lordship has any problems with my work, please feel free to speak your mind.",
         "de": "Sollte Euer Gnaden jegliche Beanstandungen an meiner Arbeit haben, so zögert nicht, es mir mitzuteilen.",
         "bg": "Ако благородието има някакви забележки относно моята служба, моля, не се колебайте да ги изкажете."
     },
 
     "dialogue_tutorial_prompt_name": {
-        "_context": "Displayed name of the prompts shown in the tutorial",
         "en": "Tutorial",
         "de": "Tutorial",
         "bg": "Урок"
     },
     "dialogue_tutorial_father_name": {
-        "_context": "Displayed name of the father of the player in the tutorial",
         "en": "Father",
         "de": "Vater",
         "bg": "Баща"
     },
     "dialogue_tutorial_instructions_name": {
-        "_context": "Displayed name of the instructions the father has given to the player in the second tutorial",
         "en": "Father's Instructions",
         "de": "Vaters Anweisungen",
         "bg": "Напътствия на баща ти"
     },
     "dialogue_tutorial_0_father_1": {
-        "_context": "The count father tells his small son to go and take a walk with him",
         "en": "Come son, let us take a walk.",
         "de": "Komm Sohn, lass uns spazieren gehen.",
         "bg": "Хайде, сине, да се разходим."
     },
     "dialogue_tutorial_0_prompt_2": {
-        "_context": "The prompt tells the player to use certain keys to move around",
         "en": "Press [W], [A], [S] and [D] to move around and follow your father.",
         "de": "Drücke [W], [A], [S] und [D], um dich zu bewegen und folge deinem Vater.",
         "bg": "Натисни [W], [A], [S] и [D], за да се движиш, и следвай баща си."
     },
     "dialogue_tutorial_0_father_3": {
-        "_context": "The father asks his son whether he can see the other end of the path, since it suddenly ended",
         "en": "The path suddenly ended... Can you see the other end?",
         "de": "Der Pfad endet hier plötzlich... Kannst du das andere Ende sehen?",
         "bg": "Пътеката внезапно свършва... Виждаш ли другия й край?"
     },
     "dialogue_tutorial_0_prompt_4": {
-        "_context": "The prompt tells the player to use the mouse wheel to zoom out the camera",
         "en": "Use the scroll wheel to zoom the camera in and out.",
         "de": "Drehe das Mausrad, um die Kamera heraus- oder hereinzuzoomen.",
         "bg": "Използвай колелцето на мишката, за да приближиш или отдалечиш камерата."
     },
     "dialogue_tutorial_0_father_5": {
-        "_context": "The player zoomed out the camera and can now see the path",
         "en": "Well done! Let us continue.",
         "de": "Gut gemacht! Lass uns weitergehen.",
         "bg": "Браво! Да продължим."
     },
     "dialogue_tutorial_0_father_6": {
-        "_context": "The final dialogue of the father in the first tutorial",
         "en": "Take a good look at this land my son, as for one day you shall inherit it.",
         "de": "Schau dir dieses Land gut an, mein Sohn, da du es eines Tages erben wirst.",
         "bg": "Погледни добре тази земя, сине мой, защото един ден ще я наследиш."
     },
+
     "dialogue_tutorial_1_father_0": {
-        "_context": "Father greets his son at the start of the second tutorial",
-        "en": "Hello, my son. As you know, I want you to take over my position as count in the near future.",
-        "de": "Hallo, mein Sohn. Wie du bereits weißt, möchte ich, dass du bald meine Position als Graf übernimmst.",
-        "bg": "Здравей, сине мой. Както знаеш, искам скоро да поемеш моето място като граф."
+        "en": "Son, the first thing I shall teach you is how you can shape the terrain to fit your needs.",
+        "de": "Sohn, zuerst möchte ich dir beibringen, wie du den Boden nach deinem Belieben bearbeiten kannst.",
+        "bg": "Сине, първото нещо, на което ще те науча, е как да оформяш терена според нуждите си."
     },
-    "dialogue_tutorial_1_father_1": {
-        "_context": "Father explains his task for his son to prepare him for his abdication",
-        "en": "For that reason, I am tasking you with developing the area around the village in the east.",
-        "de": "Deshalb gebe ich dir die Aufgabe, das Gebiet um das Dorf im Osten weiterzuentwickeln.",
-        "bg": "Затова ти възлагам задачата да развиеш района около селото на изток."
+    "dialogue_tutorial_1_prompt_1": {
+        "en": "Click the shovel icon (top icon) in the bottom left or press [G] to start shaping the terrain.",
+        "de": "Klicke das Schaufel-Symbol (oberstes Symbol) unten links oder drücke [G], um mit der Geländebearbeitung anzufangen.",
+        "bg": "Натисни иконата с лопатата (най-горната в долния ляв ъгъл) или клавиша [G], за да започнеш да оформяш терена."
     },
-    "dialogue_tutorial_1_father_2": {
-        "_context": "Father tells the player what he is giving him",
-        "en": "Take this map, some money and this list of instructions with you.",
-        "de": "Nimm diese Karte, etwas Geld und diese Liste mit Anweisungen mit.",
-        "bg": "Вземи тази карта, малко пари и този списък с напътствия."
+    "dialogue_tutorial_1_prompt_2": {
+        "en": "Three additional buttons will pop up; use these to choose between flattening, raising and lowering the terrain.",
+        "de": "Drei weitere Knöpfe werden auftauchen; benutze diese, um zwischen Planieren, Anheben und Absenken zu wählen.",
+        "bg": "Ще се появят още три бутона – използвай ги, за да избираш между изравняване, повдигане и понижаване на терена."
     },
     "dialogue_tutorial_1_prompt_3": {
-        "_context": "Explains to the user that they can open the map using the M key",
-        "en": "Open the map at any time by pressing [M].",
-        "de": "Du kannst die Karte jederzeit mit [M] öffnen.",
-        "bg": "Отвори картата по всяко време, като натиснеш [M]."
+        "en": "Clicking modifies a single point, while dragging modifies a whole area.",
+        "de": "Klicken modifiziert einen einzelnen Punkt und Ziehen modifiziert einen gesamten Bereich.",
+        "bg": "Кликването променя само една точка, а влаченето променя цяла зона."
     },
-    "dialogue_tutorial_1_prompt_4": {
-        "_context": "Explains to the user that they can call their horse by presing the H key",
-        "en": "Call your horse from anywhere by pressing [H]. Press space to get off the horse.",
-        "de": "Rufe dein Pferd von überall, indem du [H] drückst. Drücke die Leertaste, um abzusteigen.",
-        "bg": "Извикай коня си от всяко място, като натиснеш [H]. Натисни Space, за да слезеш."
+    "dialogue_tutorial_1_father_4": {
+        "en": "Can you flattern the terrain around us?",
+        "de": "Kannst du das Gelände um uns herum planieren?",
+        "bg": "Можеш ли да изравниш терена около нас?"
     },
-    "dialogue_tutorial_1_instructions_5": {
-        "_context": "First, the instructions tell the player to ensure that there is a path over the river to the east of the village",
-        "en": "First, I want you to make sure that there is a way to the farmland near the village.",
-        "de": "Zuerst möchte ich, dass du sicherstellst, dass es einen Weg zu den Feldern nahe dem Dorf gibt.",
-        "bg": "Първо искам да се увериш, че има път до земеделските земи край селото."
+    "dialogue_tutorial_1_father_5": {
+        "en": "Great job!",
+        "de": "Gute Arbeit!",
+        "bg": "Страхотна работа!"
     },
-    "dialogue_tutorial_1_instructions_6": {
-        "_context": "Continuation of 'dialogue_tutorial_1_instructions_5'",
-        "en": "The farmland is just across the river to the east of the village.",
-        "de": "Die Felder liegen direkt auf der anderen Seite des Flusses, östlich des Dorfes.",
-        "bg": "Земеделските земи са точно от другата страна на реката, на изток от селото."
+
+    "dialogue_tutorial_2_father_0": {
+        "en": "My next lesson for you is about buildings.",
+        "de": "In meiner nächsten Lektion geht es um Gebäude.",
+        "bg": "Следващият ми урок е за сградите."
     },
-    "dialogue_tutorial_1_instructions_7": {
-        "_context": "Instructs the player to build a bridge to cross the river",
-        "en": "In the case that there is no way across, I need you to make a new bridge across the river.",
-        "de": "Sollte es keinen Weg über den Fluss geben, so möchte ich, dass du eine neue Brücke baust.",
-        "bg": "Ако няма път през реката, искам да построиш нов мост."
+    "dialogue_tutorial_2_father_1": {
+        "en": "Buildings are the place where your people can produce things for you.",
+        "de": "Gebäude sind der Ort, an dem deine Leute Dinge für dich produzieren können.",
+        "bg": "Сградите са мястото, където хората ти могат да произвеждат неща за теб."
     },
-    "dialogue_tutorial_1_prompt_8": {
-        "_context": "Explains to the user that they can create bridges by clicking the bridge icon in the bottom left",
-        "en": "Click the bridge icon in the bottom left of the screen or press [B] to open the bridge menu.",
-        "de": "Klicke das Brückensymbol unten links oder drücke [M], um das Brückenmenü zu öffnen.",
-        "bg": "Кликни върху иконата на моста в долния ляв ъгъл или натисни [B], за да отвориш менюто за мостове."
+    "dialogue_tutorial_2_father_2": {
+        "en": "However, often they need other resources to produce these things, or sometimes they need to be placed in specific locations (such as mineshafts).",
+        "de": "Jedoch brauchen diese oft andere Ressourcen oder müssen an einem bestimmten Ort platziert werden (zum Beispiel Minenschächte).",
+        "bg": "Понякога обаче те се нуждаят от други ресурси или трябва да бъдат поставени на конкретни места (като мини)."
     },
-    "dialogue_tutorial_1_prompt_9": {
-        "_context": "Continuation of 'dialogue_tutorial_1_prompt_9'",
-        "en": "You can then create a bridge by dragging between two cliffs of equal elevation.",
-        "de": "Danach kannst du eine Brücke zwischen zwei Klippen gleicher Höhe ziehen.",
-        "bg": "След това можеш да построиш мост, като плъзнеш между два склона с еднаква височина."
+    "dialogue_tutorial_2_father_3": {
+        "en": "Next to us I have set up a field.",
+        "de": "Neben uns habe ich ein Feld angelegt.",
+        "bg": "До нас съм изградил едно поле."
     },
-    "dialogue_tutorial_1_instructions_10": {
-        "_context": "Father instructs the player to build a windmill",
-        "en": "This area already has bakeries and farmland, but we need a windmill.",
-        "de": "Dieses Gebiet hat bereits Bäckereien und Felder, aber wir brauchen noch eine Windmühle.",
-        "bg": "Тази област вече има пекарни и земеделски полета, но ни трябва и вятърна мелница."
+    "dialogue_tutorial_2_prompt_4": {
+        "en": "Press [M] to open the map. Once open, use the right mouse button to pan the map around and the scroll wheel to zoom in and out.",
+        "de": "Drücke [M], um die Karte zu öffnen. Wenn geöffnet kannst du die rechte Maustaste verwenden, um die Karte zu bewegen und das Mausrad drehen, um zu zoomen.",
+        "bg": "Натисни [M], за да отвориш картата. След това използвай десния бутон на мишката, за да я местиш, и скролера, за да приближаваш и отдалечаваш."
     },
-    "dialogue_tutorial_1_instructions_11": {
-        "_context": "Continuation of 'dialogue_tutorial_1_instructions_10'",
-        "en": "Build a new windmill for flour near the farmland.",
-        "de": "Baue eine neue Windmühle für Mehl neben den Feldern.",
-        "bg": "Построй нова вятърна мелница за брашно близо до нивите."
+    "dialogue_tutorial_2_prompt_5": {
+        "en": "Clicking a building on the map tells you more information about it and the buildings it's connected to.",
+        "de": "Außerdem kannst du ein Gebäude auf der Karte anklicken, um mehr über das Gebäude und die Gebäude, mit denen es verbunden ist, zu erfahren.",
+        "bg": "Кликни върху сграда на картата, за да научиш повече за нея и за сградите, с които е свързана."
     },
-    "dialogue_tutorial_1_prompt_12": {
-        "_context": "Informs the user how to open the build menu.",
-        "en": "Clicking the hammer icon in the bottom left of the screen or pressing [C] opens the construction menu.",
-        "de": "Klicke auf das Hammersymbol unten links oder drücke [C], um das Baumenü zu öffnen.",
-        "bg": "Кликни върху иконата с чук в долния ляв ъгъл или натисни [C], за да отвориш строителното меню."
+    "dialogue_tutorial_2_father_6": {
+        "en": "My task for you is to look at the map and use it to find out about what the farmland produces.",
+        "de": "Meine Aufgabe an dich ist, dir das Feld auf der Karte anzuschauen, und mir zu sagen, was es produziert.",
+        "bg": "Задачата ми за теб е да използваш картата и да разбереш какво произвежда полето."
     },
-    "dialogue_tutorial_1_prompt_13": {
-        "_context": "Informs the user about the production statistics in the map.",
-        "en": "Clicking on the farmland on the map ([M]) shows us that it produces wheat.",
-        "de": "Wenn wir auf der Karte ([M]) auf die Felder klicken, sehen wir, dass sie Weizen produzieren.",
-        "bg": "Ако кликнем върху нивите на картата ([M]), ще видим, че произвеждат пшеница."
+    "dialogue_tutorial_2_father_7": {
+        "en": "You are correct, this field is in fact producing wheat.",
+        "de": "Du hast recht, das Feld produziert Weizen.",
+        "bg": "Точно така - това поле наистина произвежда пшеница."
     },
-    "dialogue_tutorial_1_prompt_14": {
-        "_context": "Informs the user to match inputs / outputs.",
-        "en": "Therefore we can build a windmill for flour, as it requires wheat.",
-        "de": "Deswegen können wir eine Windmühle für Mehl bauen, da sie Weizen benötigt.",
-        "bg": "Затова можем да построим мелница за брашно, тъй като тя изисква пшеница."
+    "dialogue_tutorial_2_father_8": {
+        "en": "However, the wheat is currently going unused.",
+        "de": "Jedoch wird der Weizen im Moment nicht verwendet.",
+        "bg": "В момента обаче пшеницата не се използва."
     },
-    "dialogue_tutorial_1_prompt_15": {
-        "_context": "Informs the user that buildings built close to each other share storage.",
-        "en": "Buildings placed next to each other have a shared storage.",
-        "de": "Gebäude, die nebeneinander stehen, haben ein gemeinsames Lager.",
-        "bg": "Сгради, построени една до друга, споделят общ склад."
+    "dialogue_tutorial_2_prompt_9": {
+        "en": "Click the hammer icon (second from the top) in the bottom left or press [C] to start building.",
+        "de": "Klicke das Hammer-Symbol (zweites von oben) unten links oder drücke [C], um mit dem Bauen anzufangen.",
+        "bg": "Кликни върху иконата с чука (втора отгоре) в долния ляв ъгъл или натисни [C], за да започнеш да строиш."
     },
-    "dialogue_tutorial_1_instructions_16": {
-        "_context": "Father instructs the player to next build a stable",
-        "en": "After that is done, I need you to fix up the path leading to the farmland.",
-        "de": "Nachdem das erledigt ist, möchte ich, dass du den Pfad zu den Feldern in Ordnung bringst.",
-        "bg": "След като това е направено, искам да поправиш пътеката към нивите."
+    "dialogue_tutorial_2_prompt_10": {
+        "en": "Another menu will open on the right, allowing you to choose which building to build.",
+        "de": "Ein weiteres Menü wird sich rechts öffnen, das dir erlaubt, ein Gebäude zum Platzieren zu wählen.",
+        "bg": "Ще се отвори ново меню отдясно, откъдето можеш да избереш каква сграда да построиш."
     },
-    "dialogue_tutorial_1_prompt_17": {
-        "_context": "Informs the user how to add / remove paths.",
-        "en": "Open the pathing menu by clicking the trowel (right-most) icon in the bottom left or by pressing [V].",
-        "de": "Öffne das Pfadmenü, indem du das Kellensymbol (ganz rechts) unten links anklickst oder [V] drückst.",
-        "bg": "Отвори менюто за пътеки, като кликнеш върху иконата с мистрия (най-вдясно) в долния ляв ъгъл или натиснеш [V]."
+    "dialogue_tutorial_2_prompt_11": {
+        "en": "Buildings can also be demolished by pressing the wrecking ball icon (bottom) in the bottom left or by pressing [R]. Clicking a building then demolishes it.",
+        "de": "Gebäude können auch abgerissen werden, indem du das Abrisskugeln-Symbol (ganz unten) unten links anklickst oder [R] drückst. Klicke dann ein Gebäude an, um es abzureißen.",
+        "bg": "Сградите могат да бъдат разрушени чрез иконата с топката за събаряне (най-долу вляво) или с клавиша [R]. След това кликни върху сграда, за да я премахнеш."
     },
-    "dialogue_tutorial_1_prompt_18": {
-        "_context": "Informs the user how to use the pathing mode.",
-        "en": "With the pathing menu open left clicking then adds paths, while right clicking removes them.",
-        "de": "Mit geöffnetem Pfadmenü erstellt die linke Maustaste Pfade, während die Rechte sie entfernt.",
-        "bg": "С отворено меню за пътеки левият бутон на мишката създава пътеки, а десният ги премахва."
+    "dialogue_tutorial_2_father_12": {
+        "en": "Can you make a windmill for flour and place it next to the fields?",
+        "de": "Kannst du eine Windmühle für Mehl neben den Feldern platzieren?",
+        "bg": "Можеш ли да построиш вятърна мелница за брашно до полето?"
     },
-    "dialogue_tutorial_1_instructions_19": {
-        "_context": "Father explains to the player why they need a carriage",
-        "en": "Now we only need a way to move the flour to the village, where the bakeries are.",
-        "de": "Jetzt müssen wir das Mehl nur noch irgendwie zum Dorf bringen, wo die Bäckereien sind.",
-        "bg": "Сега трябва само да закараме брашното до селото, където са пекарните."
+    "dialogue_tutorial_2_father_13": {
+        "en": "Well done!",
+        "de": "Gut gemacht!",
+        "bg": "Браво!"
     },
-    "dialogue_tutorial_1_instructions_20": {
-        "_context": "Father tells the player to build a stable",
-        "en": "For this reason I want you to build a stable next to the path.",
-        "de": "Deshalb möchte ich, dass du einen Pferdestall baust.",
-        "bg": "Затова искам да построиш конюшня."
+    "dialogue_tutorial_2_father_14": {
+        "en": "However, the windmill isn't producing much since there is no space for all the flour it's producing.",
+        "de": "Leider produziert die Windmühle jedoch im Moment nicht so viel, weil sie keinen Platz für das ganze Mehl hat.",
+        "bg": "За съжаление, мелницата в момента не произвежда много, защото няма достатъчно място за цялото брашно."
     },
-    "dialogue_tutorial_1_instructions_21": {
-        "_context": "Father instructs the player to create a carriage",
-        "en": "Next, I need you to create a carriage.",
-        "de": "Danach erstellst du eine Kutsche.",
-        "bg": "След това трябва да направиш каруца."
+    "dialogue_tutorial_2_father_15": {
+        "en": "For this reason I want you to place a storage building next to the farmland or windmill.",
+        "de": "Deswegen möchte ich, dass du ein Lagergebäude neben dem Feld oder der Windmühle platzierst.",
+        "bg": "Затова искам да построиш склад до полето или мелницата."
     },
-    "dialogue_tutorial_1_prompt_22": {
-        "_context": "Tells the user how to make a carriage",
-        "en": "Click the stable without having any other menus open.",
-        "de": "Klicke auf den Stall, ohne jegliche andere Menüs offen zu haben.",
-        "bg": "Кликни върху конюшнята, без да имаш отворени други менюта."
+    "dialogue_tutorial_2_father_16": {
+        "en": "Wonderful. Take a look at the map again and look how much space they have now.",
+        "de": "Wundervoll. Schau noch einmal auf die Karte und sieh, wie viel Platz die Mühle jetzt hat.",
+        "bg": "Чудесно. Погледни отново картата и виж колко място имат сега."
     },
-    "dialogue_tutorial_1_prompt_23": {
-        "_context": "Continuation of 'dialogue_tutorial_1_prompt_22'",
-        "en": "This reveals a button you can use to create a new carriage.",
-        "de": "Dadurch erscheint ein Knopf, mit dem du eine Kutsche erstellen kannst.",
-        "bg": "Това ще покаже бутон, с който можеш да направиш каруца."
+
+    "dialogue_tutorial_3_father_0": {
+        "en": "Remember how we set up this windmill together a few years ago?",
+        "de": "Erinnerst du dich noch daran, wie wir vor ein paar Jahren zusammen diese Windmühle aufgesetzt haben?",
+        "bg": "Помниш ли как заедно изградихме тази вятърна мелница преди няколко години?"
     },
-    "dialogue_tutorial_1_instructions_24": {
-        "_context": "Father instructs the player to create a carriage",
-        "en": "Now you just need to tell the driver to transport the flour to the village.",
-        "de": "Jetzt musst du dem Kutscher nur noch erklären, dass er das Mehl zum Dorf bringen soll.",
-        "bg": "Сега просто трябва да обясниш на кочияша да закара брашното до селото."
+    "dialogue_tutorial_3_father_1": {
+        "en": "We have a bakery in the village to the east of here, and I want to connect the two.",
+        "de": "Wir haben eine Bäckerei im Dorf im Osten von hier, und ich möchte die beiden verbinden.",
+        "bg": "Имаме пекарна в селото източно оттук и искам да свържем двете места."
     },
-    "dialogue_tutorial_1_prompt_25": {
-        "_context": "Tells the user that carriages show up on the map",
-        "en": "The newly created carriage is also visible on the map ([M] to open).",
-        "de": "Die neu erstellte Kutsche ist auf der Karte sichtbar ([M], um zu öffnen).",
-        "bg": "Новосъздадената каруца също е видима на картата ([M] за отваряне)."
+    "dialogue_tutorial_3_prompt_2": {
+        "en": "Press the trowel icon (second from the bottom) in the bottom left or press [V] to start creating paths.",
+        "de": "Drücke das Kellen-Symbol (zweites von unten) unten links oder drücke [V], um mit der Pfaderstellung anzufangen.",
+        "bg": "Натисни иконата с мистрия (втора отдолу) в долния ляв ъгъл или натисни [V], за да започнеш да създаваш пътеки."
     },
-    "dialogue_tutorial_1_prompt_26": {
-        "_context": "Tells the user how to configure carriages",
-        "en": "Clicking the carriage on the map allows you to configure them.",
-        "de": "Kutschen lassen sich konfigurieren, indem du auf der Karte auf sie klickst.",
-        "bg": "Каруците могат да се конфигурират, като кликнеш върху тях на картата."
+    "dialogue_tutorial_3_prompt_3": {
+        "en": "Once selected, you can left click to turn a tile into a path and right click to remove paths.",
+        "de": "Dann kannst du mit Linksklick Pfade erstellen und sie mit Rechtsklick wieder entfernen.",
+        "bg": "След като избереш инструмента, можеш с ляв клик да създаваш пътеки и с десен клик да ги премахваш."
     },
-    "dialogue_tutorial_1_prompt_27": {
-        "_context": "Continuation of 'dialogue_tutorial_1_prompt_25'",
-        "en": "A carriage must be told where to go and what to transfer there.",
-        "de": "Einer Kutsche muss gesagt werden, wohin sie fahren soll und was sie dort verlagern soll.",
-        "bg": "Трябва да кажеш на каруцата къде да отиде и какво да пренесе там."
+    "dialogue_tutorial_3_father_4": {
+        "en": "Have a look at the map again.",
+        "de": "Schau dir nochmal die Karte an.",
+        "bg": "Погледни отново картата."
     },
-    "dialogue_tutorial_1_prompt_28": {
-        "_context": "Tells the user that carriages need an unbroken path to their destination",
-        "en": "Carriages can only travel to their destinations on pathed tiles or bridges.",
-        "de": "Kutschen können nur über Pfade oder Brücken zu ihren Zielen fahren.",
-        "bg": "Каруците могат да се движат само по пътеки или мостове."
+    "dialogue_tutorial_3_father_5": {
+        "en": "Can you make a path to the bakery in the village east of here?",
+        "de": "Kannst du einen Pfad von hier zur Bäckerei im Dorf im Osten machen?",
+        "bg": "Можеш ли да направиш пътека до пекарната в селото източно оттук?"
     },
-    "dialogue_tutorial_1_prompt_29": {
-        "_context": "Tells the user (again) to set up a carriage to transport the flour to the village",
-        "en": "Configure the carriage to transport flour from the farmland to the village center.",
-        "de": "Konfiguriere die Kutsche, um Mehl von den Feldern zum Dorfzentrum zu bringen.",
-        "bg": "Конфигурирай каруцата така, че да транспортира брашно от нивите до центъра на селото."
+    "dialogue_tutorial_3_prompt_6": {
+        "en": "Use [E] (or click it on screen) when close to your horse to ride it. Press the space bar to get off and press [H] to call for your horse.",
+        "de": "Drücke [E] (oder klicke es auf dem Bildschirm) wenn du in der Nähe deines Pferdes bist, um es zu reiten. Drücke die Leertaste, um abzuspringen und [H], um dein Pferd zu rufen.",
+        "bg": "Използвай [E] (или го натисни на екрана), когато си близо до коня си, за да го възседнеш. Натисни интервал, за да слезеш, и [H], за да повикаш коня си."
     },
-    "dialogue_tutorial_1_prompt_30": {
-        "_context": "Tells the user that the tutorial is done",
-        "en": "Congratulations! You have completed the tutorial.",
-        "de": "Glückwunsch! Du hast das Tutorial abgeschlossen.",
-        "bg": "Поздравления! Завърши обучението."
+    "dialogue_tutorial_3_prompt_7": {
+        "en": "Note that many actions (including laying paths) are impossible on a horse.",
+        "de": "Beachte, dass viele Handlungen (inklusive Pfaderstellung) nicht auf dem Pferd möglich sind.",
+        "bg": "Имай предвид, че много действия (включително изграждането на пътеки) не могат да се извършват, докато си на кон."
     },
-    "dialogue_tutorial_2_maid_0": {
-        "_context": "The maid asks the player if they may enter",
+    "dialogue_tutorial_3_father_8": {
+        "en": "Amazing work!",
+        "de": "Tolle Arbeit!",
+        "bg": "Страхотна работа!"
+    },
+    "dialogue_tutorial_3_father_9": {
+        "en": "Next, let us use the path you just created to transport the flour from our windmill to the bakery.",
+        "de": "Als Nächstes möchte ich den Pfad verwenden, um das Mehl von der Windmühle zur Bäckerei zu transportieren.",
+        "bg": "Сега нека използваме пътеката, която току-що създаде, за да пренесем брашното от вятърната мелница до пекарната."
+    },
+    "dialogue_tutorial_3_father_10": {
+        "en": "For this, we need a carriage. First, build a stable close to but not on the path.",
+        "de": "Dafür brauchen wir eine Kutsche. Baue zuerst einen Pferdestall in der Nähe des Pfads, aber nicht direkt darauf.",
+        "bg": "За това ни трябва каруца. Първо построй конюшня близо до, но не върху пътеката."
+    },
+    "dialogue_tutorial_3_prompt_11": {
+        "en": "Clicking a stable, ship yard or train depot opens a menu on the right that allows you to create vehicles of that type.",
+        "de": "Klicke einen Pferdestall, eine Werft oder ein Zugdepot an, um ein Menü zu öffnen, das dir erlaubt, Fahrzeuge des jeweiligen Typs zu erstellen.",
+        "bg": "Кликни върху конюшня, корабостроителница или влаков депо, за да се отвори меню вдясно, което ти позволява да създаваш съответния тип превозни средства."
+    },
+    "dialogue_tutorial_3_father_12": {
+        "en": "Next, use the stable to create a goods carriage. We will use it to transport the flour.",
+        "de": "Verwende nun den Stall, um eine Güterkutsche zu erstellen. Wir werden sie verwenden, um das Mehl zu transportieren.",
+        "bg": "След това използвай конюшнята, за да създадеш товарна каруца. Ще я използваме, за да пренесем брашното."
+    },
+    "dialogue_tutorial_3_prompt_13": {
+        "en": "Clicking a carriage on the map allows you to configure its schedule.",
+        "de": "Klicke eine Kutsche auf der Karte an, um ihren Fahrplan zu konfigurieren.",
+        "bg": "Кликни върху каруцата на картата, за да конфигурираш графиката ѝ."
+    },
+    "dialogue_tutorial_3_prompt_14": {
+        "en": "New stops can be created, their order can be changed and the specific item and amount can be specified for each stop.",
+        "de": "Neue Haltestellen können hinzugefügt werden, die Reihenfolge kann geändert werden und die spezifischen Gegenstände und Mengen können für jeden Halt festgelegt werden.",
+        "bg": "Можеш да добавяш нови спирки, да променяш реда им и да задаваш конкретни стоки и количества за всяка спирка."
+    },
+    "dialogue_tutorial_3_father_15": {
+        "en": "Can you make the carriage transport all flour from our windmill to the bakery?",
+        "de": "Kannst du dafür sorgen, dass die Kutsche alles Mehl von der Windmühle zur Bäckerei transportiert?",
+        "bg": "Можеш ли да накараш каруцата да пренесе цялото брашно от вятърната мелница до пекарната?"
+    },
+    "dialogue_tutorial_3_prompt_16": {
+        "en": "Great job! You have completed the tutorial.",
+        "de": "Großartige Arbeit! Du hast das Tutorial abgeschlossen.",
+        "bg": "Страхотна работа! Завършихте урока."
+    },
+
+    "dialogue_tutorial_4_maid_0": {
         "en": "My lordship, may I enter? I have urgent news to report.",
         "de": "Euer Gnaden, darf ich eintreten? Ich bringe dringende Kunde.",
         "bg": "Благородие, позволете ли ми да вляза? Нося спешна вест."
     },
-    "dialogue_tutorial_2_maid_1": {
-        "_context": "The maid reports that she has found very old books about something called 'Industrialization'",
+    "dialogue_tutorial_4_maid_1": {
         "en": "While I was cleaning the mansion I found a book titled \"Industrialization\".",
         "de": "Während ich das Herrenhaus säuberte, entdeckte ich ein Buch mit dem Titel \"Industrialisierung\".",
         "bg": "Докато почиствах имението, открих книга, озаглавена \"Индустриализация\"."
     },
-    "dialogue_tutorial_2_maid_2": {
-        "_context": "The maid tells the player that she has no idea what it means",
+    "dialogue_tutorial_4_maid_2": {
         "en": "I have never heard of something like that before, and the book seems quite hard to read too...",
         "de": "Nie zuvor habe ich von etwas dergleichen vernommen, und das Buch ist zudem höchst schwer zu entziffern...",
         "bg": "Никога досега не бях чувала за нещо подобно, а книгата също така изглежда извънредно трудна за разчитане..."
     },
-    "dialogue_tutorial_2_maid_3": {
-        "_context": "The maid excuses herself for peeking into the book",
+    "dialogue_tutorial_4_maid_3": {
         "en": "Oh! My lordship, please excuse me. I should not have peeked into the book without prior consent.",
         "de": "Oh! Euer Gnaden, verzeiht mir. Es war nicht meine Absicht, ohne Eure Erlaubnis in das Buch zu blicken.",
         "bg": "О, Благородие, простете ми! Не възнамерявах да надничам в книгата без Ваше позволение."
     },
-    "dialogue_tutorial_2_maid_4": {
-        "_context": "The maid tells the count (player) that she will put the book into the bookshelf",
+    "dialogue_tutorial_4_maid_4": {
         "en": "I will swiftly put it into the bookshelf.",
         "de": "Ich werde es sogleich im Bücherregal verstauen.",
         "bg": "Ще я поставя веднага на лавицата."
     },
-    "dialogue_tutorial_2_prompt_5": {
-        "_context": "Tells the user that they can interact with the bookshelf to read the books",
+    "dialogue_tutorial_4_prompt_5": {
         "en": "Interact with the bookshelf to read the book.",
         "de": "Interagiere mit dem Bücherregal, um das Buch zu lesen.",
         "bg": "Докоснете лавицата, за да прочетете книгата."
     },
-    "dialogue_tutorial_2_prompt_6": {
-        "_context": "Tells the user that they can press escape to pause the game",
+    "dialogue_tutorial_4_prompt_6": {
         "en": "Press the escape key to pause the game and save, change settings or exit.",
         "de": "Drücke die Escape-Taste, um zu pausieren und zu speichern, Einstellungen zu ändern oder zu verlassen.",
         "bg": "Натиснете Escape, за да поставите играта на пауза, да запазите, промените настройките или да излезете."
     },
-    "dialogue_tutorial_2_prompt_7": {
-        "_context": "Tells the user that they are now free to do whatever they want",
+    "dialogue_tutorial_4_prompt_7": {
         "en": "You are now the count of this county and free to manage it however you like.",
         "de": "Du bist hiermit der Graf dieses Bezirks und kannst es verwalten, so wie du es möchtest.",
         "bg": "Вече сте графът на този окръг и сте свободни да го управлявате, както пожелаете."

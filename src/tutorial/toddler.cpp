@@ -221,7 +221,7 @@ namespace houseofatmos::tutorial {
                 update_scene, 3.0,
                 [scene, after](engine::Window& window) {
                     after->settings = scene->world->settings;
-                    window.set_scene(create_grownup_scene(after));
+                    window.set_scene(create_terraform_scene(after));
                 }
             )
         };
