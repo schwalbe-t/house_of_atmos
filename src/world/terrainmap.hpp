@@ -14,7 +14,7 @@ namespace houseofatmos::world {
     struct TerrainMap {
 
         enum struct SelectionType {
-            None, Complex, Agent
+            None, Complex, Agent, Population
         };
 
         using AbstractAgent = void*;
@@ -252,6 +252,7 @@ namespace houseofatmos::world {
                 AbstractAgent a;
                 const AgentDisplay* d;
             } agent;
+            PopulationId population;
         } selected;
         bool adding_stop = false;
 
@@ -345,6 +346,8 @@ namespace houseofatmos::world {
         ui::Element display_agent_details(
             AbstractAgent agent, const AgentDisplay& agent_display
         );
+
+        ui::Element display_populations_info(PopulationId population);
 
     };
 

@@ -227,6 +227,7 @@ namespace houseofatmos::world {
         Vec<3> horse_spawn_pos = (player_spawn_tile + Vec<3>(-0.25, 0, 0.5))
             * this->terrain.units_per_tile();
         this->personal_horse.set_free(horse_spawn_pos);
+        this->populations.reset(this->terrain, nullptr);
     }
 
 

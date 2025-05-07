@@ -319,9 +319,10 @@ namespace houseofatmos::world {
         PopulationManager& pm, Terrain& terrain, Toasts* toasts
     ) {
         for(PopulationGroup& g: pm.groups) {
-            g.available = 0.0;
+            g.total_workers = 0.0;
+            g.used_workers = 0.0;
             for(PopulationId p_id: g.populations) {
-                g.available += pm.populations[p_id.index].size;
+                g.total_workers += pm.populations[p_id.index].size;
             }
         }
         bool all_working = true;
@@ -351,11 +352,12 @@ namespace houseofatmos::world {
                         continue;
                     }
                     f64 required = (f64) building_info.workers;
-                    if(group.available < required) {
+                    f64 remaining = group.total_workers - group.used_workers;
+                    if(remaining < required) {
                         building.workers = Building::WorkerState::Shortage;
                         continue;
                     }
-                    group.available -= required;
+                    group.used_workers += required;
                     building.workers = Building::WorkerState::Working;
                 }
             }

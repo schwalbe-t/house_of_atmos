@@ -48,6 +48,7 @@ namespace houseofatmos::world {
     }
 
     BridgingMode::BridgingMode(ActionContext ctx): ActionMode(ctx) {
+        this->has_selection = false;
         this->selected_type = std::make_unique<Bridge::Type>(Bridge::Wooden);
     }
 

@@ -243,7 +243,7 @@
         "_placeholders": "Number of workers",
         "de": "Benötigt {} Arbeiter",
         "en": "Requires {} worker(s)",
-        "bg": "Нуждае се от {} работни(к/ци)"
+        "bg": "Нуждае се от {} работници"
     },
     "ui_workers_working": {
         "_context": "Shows the player that the building is being operated by a sufficent number of workers",
@@ -262,6 +262,13 @@
         "de": "Nicht von Arbeitern erreichbar!",
         "en": "Not reachable by workers!",
         "bg": "Недостъпна за работници!"
+    },
+    "ui_workers_unemployment": {
+        "_context": "Shows how many unallocated workers are remaining out of a group of populations, in comparison to the total population",
+        "_placeholders": "#1: number of unallocated workers; #2: total sum of workers",
+        "de": "Ungenutzte Arbeiter: {}/{}",
+        "en": "Unused workers: {}/{}",
+        "bg": "Неизползвани работници: {}/{}"
     },
     "ui_item_storage_capacity": {
         "_contxt": "The number of items an agent (carriage, boat, train, ...) can carry at a time",

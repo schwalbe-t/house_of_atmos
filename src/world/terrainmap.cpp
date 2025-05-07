@@ -222,12 +222,6 @@ namespace houseofatmos::world {
             *this->selected_info_bottom = TerrainMap::display_building_info(
                 building->type, conversions, building->workers, *this->local
             );
-            *this->selected_info_right = building->complex.has_value()
-                ? TerrainMap::display_complex_info(
-                    this->world->complexes.get(*building->complex), 
-                    *this->local, this->world->terrain
-                )
-                : ui::Element().as_phantom().as_movable();
         }
         this->render_map();
     }
@@ -249,6 +243,10 @@ namespace houseofatmos::world {
             *this->selected_info_right = this->display_agent_details(
                 this->selected.agent.a, *this->selected.agent.d
             );
+        }
+        if(this->selected_type == SelectionType::Population) {
+            *this->selected_info_right 
+                = this->display_populations_info(this->selected.population);
         }
     }
 
@@ -284,8 +282,9 @@ namespace houseofatmos::world {
         this->container->children.push_back(ui::Element()
             .as_phantom()
             .with_pos(
-                ui::horiz::in_window_fract(0.05),
-                ui::vert::in_window_fract(0.95)
+                ui::horiz::parent + ui::unit * 3.0,
+                ui::vert::parent + ui::height::parent
+                    - ui::vert::height - ui::unit * 2.0
             )
             .with_list_dir(ui::Direction::Vertical)
             .with_child(ui_util::create_icon_with_text(
@@ -383,8 +382,6 @@ namespace houseofatmos::world {
             [this, agent, agent_d = &agent_d]() {
                 *this->selected_info_bottom 
                     = this->display_agent_info(agent, *agent_d);
-                *this->selected_info_right 
-                    = this->display_agent_details(agent, *agent_d);
                 this->selected_type = SelectionType::Agent;
                 this->selected.agent.a = agent;
                 this->selected.agent.d = agent_d;
@@ -405,12 +402,42 @@ namespace houseofatmos::world {
     }
 
     void TerrainMap::add_settlement_markers() {
-        for(const Population& p: this->world->populations.populations) {
+        size_t p_count = this->world->populations.populations.size();
+        for(size_t p_i = 0; p_i < p_count; p_i += 1) {
+            const Population& p = this->world->populations.populations[p_i];
             Vec<2> marker_pos = Vec<2>(p.tile.first, p.tile.second) 
                 * this->world->terrain.units_per_tile();
             std::string text = p.name.display(*this->local)
                 + " (" + std::to_string((u64) p.size) + ")";
-            this->add_marker(marker_pos, ui_util::create_text(text, 0));
+            bool selected = false;
+            if(this->selected_type == SelectionType::Population) {
+                size_t group_c = this->world->populations.groups.size();
+                for(size_t group_i = 0; group_i < group_c; group_i += 1) {
+                    const PopulationGroup& s_group 
+                        = this->world->populations.groups[group_i];
+                    bool has_selected = false;
+                    bool has_current = false;
+                    for(PopulationId m_p_id: s_group.populations) {
+                        has_selected |= m_p_id.index 
+                            == this->selected.population.index;
+                        has_current |= m_p_id.index == p_i;
+                        if(has_selected && has_current) { break; }
+                    }
+                    selected |= has_selected && has_current;
+                    if(selected) { break; }
+                } 
+            }
+            const ui::Font* font = selected? &ui_font::bright : &ui_font::dark;
+            ui::Element marker = ui_util::create_text(text, 0, font)
+                .as_phantom(false)
+                .with_click_handler([this, p_i]() {
+                    this->selected_info_bottom->hidden = true;
+                    this->selected_type = SelectionType::Population;
+                    this->selected.population = PopulationId(p_i);
+                    this->render_map();
+                })
+                .as_movable();
+            this->add_marker(marker_pos, std::move(marker));
         }
     }
 
@@ -1041,6 +1068,50 @@ namespace houseofatmos::world {
         });
         info.children.push_back(ui_util::create_text(on_board_text, 1));
         info.children.push_back(storage.with_padding(3.0).as_movable());
+        return info;
+    }
+
+    ui::Element TerrainMap::display_populations_info(PopulationId root_p_id) {
+        const PopulationGroup* group = nullptr;
+        size_t group_c = this->world->populations.groups.size();
+        for(size_t group_i = 0; group_i < group_c; group_i += 1) {
+            const PopulationGroup& s_group 
+                = this->world->populations.groups[group_i];
+            bool in_group = false;
+            for(PopulationId m_p_id: s_group.populations) {
+                in_group |= m_p_id.index == root_p_id.index;
+                if(in_group) { break; }
+            }
+            if(!in_group) { continue; }
+            group = &s_group;
+            break;
+        }
+        if(group == nullptr) { 
+            return ui::Element().as_phantom(true).as_movable(); 
+        }
+        ui::Element info = ui::Element()
+            .with_pos(
+                ui::horiz::in_window_fract(0.95), ui::vert::in_window_fract(0.5)
+            )
+            .with_background(&ui_background::note)
+            .with_list_dir(ui::Direction::Vertical)
+            .as_movable();
+        f64 total_population = 0.0;
+        for(PopulationId p_id: group->populations) {
+            const Population& p = this->world
+                ->populations.populations[p_id.index];
+            std::string d = p.name.display(*this->local) 
+                + " (" + std::to_string((u64) p.size) + ")";
+            info.children.push_back(ui_util::create_text(d, 1));
+            total_population += p.size;
+        }
+        info.children.push_back(ui_util::create_text("", 0));
+        info.children.push_back(ui_util::create_text(this->local->pattern(
+            "ui_workers_unemployment", {
+                std::to_string((u64) (total_population - group->used_workers)), 
+                std::to_string((u64) total_population)
+            }
+        ), 1));
         return info;
     }
 

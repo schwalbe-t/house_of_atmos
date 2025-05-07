@@ -83,9 +83,10 @@ namespace houseofatmos::world {
             return this->size * seconds;
         } 
 
-        // 1 tile per 10.0 people
+        // 1.5 tiles of area per one person
         f64 building_radius() const {
-            return this->size / 10.0;
+            f64 area = this->size * 1.5;
+            return sqrt(area / pi);
         }
 
         f64 worker_radius() const {
@@ -104,7 +105,8 @@ namespace houseofatmos::world {
     struct PopulationGroupId { u32 index; };
     struct PopulationGroup {
         std::vector<PopulationId> populations;
-        f64 available = 0.0;
+        f64 total_workers = 0.0;
+        f64 used_workers = 0.0;
     };
 
     struct PopulationNode {
